@@ -62,3 +62,7 @@ vendor/
 
 # Local agent planning (task slices)
 /.plan/
+
+# E2E generated reports
+apps/api/e2e-report.xml
+apps/api/e2e-contract-drift.md
