@@ -2,24 +2,27 @@ package e2e
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/MangriMen/UCRP/e2e/harness"
 )
 
+const zoneCohortSize = 5
+
 type zoneWorld struct {
-	source       string
-	mallA        string
-	mallB        string
-	tenantA2     string
-	tenantA3     string
-	tenantB2     string
-	buyerA2      string
-	visitorA2    string
-	buyerB2      string
-	buyerA3      string
-	buyerA2AndB2 string
+	source        string
+	mallA         string
+	mallB         string
+	tenantA2      string
+	tenantA3      string
+	tenantB2      string
+	buyersA2      []string
+	visitorsA2    []string
+	buyersB2      []string
+	buyersA3      []string
+	buyersA2AndB2 []string
 }
 
 func buildZoneWorld(t *testing.T, s *harness.Suite, suffix string) *zoneWorld {
@@ -56,40 +59,64 @@ func buildZoneWorld(t *testing.T, s *harness.Suite, suffix string) *zoneWorld {
 		t.Fatalf("fixture data source: %v", err)
 	}
 
-	guest := func(name string) string {
-		g, err := s.Reg.Guest(ctx, suffix+"-"+name)
-		if err != nil {
-			t.Fatalf("fixture guest %s: %v", name, err)
+	cohort := func(name string) []string {
+		ids := make([]string, zoneCohortSize)
+		for i := range ids {
+			g, err := s.Reg.Guest(ctx, suffix+"-"+name+"-"+strconv.Itoa(i))
+			if err != nil {
+				t.Fatalf("fixture guest %s %d: %v", name, i, err)
+			}
+			ids[i] = g.ID
 		}
-		return g.ID
+		return ids
 	}
-	event := func(code, guestID, tenantID, key string, hoursAgo int) {
+	events := func(code string, guestIDs []string, tenantID, key string, hoursAgo int) {
 		at := time.Now().UTC().Add(-time.Duration(hoursAgo) * time.Hour)
-		if err := s.Reg.PresenceEvent(ctx, code, guestID, tenantID, source.ID, suffix+"-"+key, at); err != nil {
-			t.Fatalf("fixture event %s: %v", key, err)
+		for i, guestID := range guestIDs {
+			if err := s.Reg.PresenceEvent(ctx, code, guestID, tenantID, source.ID, suffix+"-"+key+"-"+strconv.Itoa(i), at); err != nil {
+				t.Fatalf("fixture event %s %d: %v", key, i, err)
+			}
 		}
 	}
 
 	w := &zoneWorld{
-		source:       source.ID,
-		mallA:        mallA.ID,
-		mallB:        mallB.ID,
-		tenantA2:     tenantA2.ID,
-		tenantA3:     tenantA3.ID,
-		tenantB2:     tenantB2.ID,
-		buyerA2:      guest("buyer-a2"),
-		visitorA2:    guest("visitor-a2"),
-		buyerB2:      guest("buyer-b2"),
-		buyerA3:      guest("buyer-a3"),
-		buyerA2AndB2: guest("buyer-both"),
+		source:        source.ID,
+		mallA:         mallA.ID,
+		mallB:         mallB.ID,
+		tenantA2:      tenantA2.ID,
+		tenantA3:      tenantA3.ID,
+		tenantB2:      tenantB2.ID,
+		buyersA2:      cohort("buyer-a2"),
+		visitorsA2:    cohort("visitor-a2"),
+		buyersB2:      cohort("buyer-b2"),
+		buyersA3:      cohort("buyer-a3"),
+		buyersA2AndB2: cohort("buyer-both"),
 	}
-	event("purchase", w.buyerA2, w.tenantA2, "buyer-a2", 5)
-	event("visit", w.visitorA2, w.tenantA2, "visitor-a2", 5)
-	event("purchase", w.buyerB2, w.tenantB2, "buyer-b2", 5)
-	event("purchase", w.buyerA3, w.tenantA3, "buyer-a3", 5)
-	event("purchase", w.buyerA2AndB2, w.tenantA2, "both-a2", 6)
-	event("purchase", w.buyerA2AndB2, w.tenantB2, "both-b2", 4)
+	events("purchase", w.buyersA2, w.tenantA2, "buyer-a2", 5)
+	events("visit", w.visitorsA2, w.tenantA2, "visitor-a2", 5)
+	events("purchase", w.buyersB2, w.tenantB2, "buyer-b2", 5)
+	events("purchase", w.buyersA3, w.tenantA3, "buyer-a3", 5)
+	events("purchase", w.buyersA2AndB2, w.tenantA2, "both-a2", 6)
+	events("purchase", w.buyersA2AndB2, w.tenantB2, "both-b2", 4)
 	return w
+}
+
+func containsAll(haystack, needles []string) bool {
+	for _, needle := range needles {
+		if !containsString(haystack, needle) {
+			return false
+		}
+	}
+	return true
+}
+
+func containsAny(haystack, needles []string) bool {
+	for _, needle := range needles {
+		if containsString(haystack, needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func previewMembers(t *testing.T, s *harness.Suite, rule map[string]any) []string {
@@ -119,11 +146,11 @@ func TestSegmentPurchasedZones_CountsOnlyPurchasesInTheZone(t *testing.T) {
 		"purchasedZones": []map[string]any{{"mallId": w.mallA, "floor": 2}},
 	})
 
-	if !containsString(got, w.buyerA2) || !containsString(got, w.buyerA2AndB2) {
+	if !containsAll(got, w.buyersA2) || !containsAll(got, w.buyersA2AndB2) {
 		t.Fatalf("buyers on mall A floor 2 must match, got %v", got)
 	}
-	for name, id := range map[string]string{"visitor": w.visitorA2, "other mall": w.buyerB2, "other floor": w.buyerA3} {
-		if containsString(got, id) {
+	for name, ids := range map[string][]string{"visitors": w.visitorsA2, "other mall": w.buyersB2, "other floor": w.buyersA3} {
+		if containsAny(got, ids) {
 			t.Fatalf("%s must not match the zone, got %v", name, got)
 		}
 	}
@@ -141,13 +168,13 @@ func TestSegmentPurchasedZones_MatchesAnyOfSeveralZones(t *testing.T) {
 		},
 	})
 
-	for _, id := range []string{w.buyerA3, w.buyerB2, w.buyerA2AndB2} {
-		if !containsString(got, id) {
-			t.Fatalf("guest %s must match one of the zones, got %v", id, got)
+	for _, ids := range [][]string{w.buyersA3, w.buyersB2, w.buyersA2AndB2} {
+		if !containsAll(got, ids) {
+			t.Fatalf("guests %v must match one of the zones, got %v", ids, got)
 		}
 	}
-	if containsString(got, w.buyerA2) {
-		t.Fatalf("a buyer only on mall A floor 2 must not match, got %v", got)
+	if containsAny(got, w.buyersA2) {
+		t.Fatalf("buyers only on mall A floor 2 must not match, got %v", got)
 	}
 }
 
@@ -161,11 +188,11 @@ func TestSegmentPurchasedZones_CombinesWithExcludedTenants(t *testing.T) {
 		"excludedTenantIds": []string{w.tenantB2},
 	})
 
-	if !containsString(got, w.buyerA2) {
-		t.Fatalf("the buyer who never visited the excluded tenant must match, got %v", got)
+	if !containsAll(got, w.buyersA2) {
+		t.Fatalf("buyers who never visited the excluded tenant must match, got %v", got)
 	}
-	if containsString(got, w.buyerA2AndB2) {
-		t.Fatalf("the buyer at the excluded tenant must not match, got %v", got)
+	if containsAny(got, w.buyersA2AndB2) {
+		t.Fatalf("buyers at the excluded tenant must not match, got %v", got)
 	}
 }
 
@@ -176,18 +203,18 @@ func TestSegmentRuleGroups_CombineZonesWithAndOr(t *testing.T) {
 	zoneB2 := map[string]any{"periodDays": 30, "purchasedZones": []map[string]any{{"mallId": w.mallB, "floor": 2}}}
 
 	both := previewMembers(t, s, map[string]any{"operator": "and", "conditions": []any{zoneA2, zoneB2}})
-	if len(both) != 1 || both[0] != w.buyerA2AndB2 {
-		t.Fatalf("and of two zones must keep only the guest who bought in both, got %v", both)
+	if len(both) != len(w.buyersA2AndB2) || !containsAll(both, w.buyersA2AndB2) {
+		t.Fatalf("and of two zones must keep only the guests who bought in both, got %v", both)
 	}
 
 	either := previewMembers(t, s, map[string]any{"operator": "or", "conditions": []any{zoneA2, zoneB2}})
-	for _, id := range []string{w.buyerA2, w.buyerB2, w.buyerA2AndB2} {
-		if !containsString(either, id) {
-			t.Fatalf("or of two zones must include %s, got %v", id, either)
+	for _, ids := range [][]string{w.buyersA2, w.buyersB2, w.buyersA2AndB2} {
+		if !containsAll(either, ids) {
+			t.Fatalf("or of two zones must include %v, got %v", ids, either)
 		}
 	}
-	if containsString(either, w.buyerA3) {
-		t.Fatalf("a buyer outside both zones must not match, got %v", either)
+	if containsAny(either, w.buyersA3) {
+		t.Fatalf("buyers outside both zones must not match, got %v", either)
 	}
 }
 
@@ -211,7 +238,7 @@ func TestGuestMovement_ListsPresenceEventsWithMallAndFloor(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := s.API.Get(ctx, "/api/v1/guests/"+w.buyerA2AndB2+"/movement", nil)
+	resp, err := s.API.Get(ctx, "/api/v1/guests/"+w.buyersA2AndB2[0]+"/movement", nil)
 	if err != nil {
 		t.Fatalf("GET /api/v1/guests/{id}/movement: %v", err)
 	}
