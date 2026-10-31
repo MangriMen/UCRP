@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AccessAuditTable } from '@/entities/access'
+import { useAuth } from '@/entities/user'
 import { AuditActor, useSubjectDirectory } from '@/features/manage-access-grants'
 import { useListParams } from '@/shared/lib/list-params'
 import { endOfDay, startOfDay } from '@/shared/lib/period'
@@ -14,6 +15,7 @@ const FILTER_KEYS = ['actor', 'grant_id', 'from', 'to'] as const
 const INPUT_DEBOUNCE_MS = 300
 
 export function AccessAuditPage() {
+  const { can } = useAuth()
   const directory = useSubjectDirectory()
   const { get, update, page, pageSize, setPage, setPageSize, reset } = useListParams()
   const [grantInput, setGrantInput] = useState(get('grant_id'))
@@ -48,7 +50,10 @@ export function AccessAuditPage() {
       <PageHeader
         title="Аудит доступа"
         description="Выдача, изменение и отзыв грантов, проверки доступа и отказы"
-        breadcrumbs={[{ label: 'Доступы', to: '/access/grants' }, { label: 'Аудит доступа' }]}
+        breadcrumbs={[
+          { label: 'Доступы', to: can('access.grant.read') ? '/access/grants' : undefined },
+          { label: 'Аудит доступа' },
+        ]}
       />
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-3">

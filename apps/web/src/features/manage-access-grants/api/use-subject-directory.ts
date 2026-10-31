@@ -17,8 +17,8 @@ export interface SubjectDirectory {
 }
 
 export function useSubjectDirectory(): SubjectDirectory {
-  const { user: me } = useAuth()
-  const users = useUsers({ pageSize: DIRECTORY_PAGE_SIZE })
+  const { user: me, can } = useAuth()
+  const users = useUsers({ pageSize: DIRECTORY_PAGE_SIZE }, { enabled: can('user.read') })
   const tenants = useTenants({ pageSize: DIRECTORY_PAGE_SIZE })
 
   const userList = useMemo(
