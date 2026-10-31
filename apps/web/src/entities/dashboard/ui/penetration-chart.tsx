@@ -59,7 +59,7 @@ export function PenetrationChart({ series }: PenetrationChartProps) {
               />
             }
           />
-          <ChartLegend content={<ChartLegendContent />} />
+          <ChartLegend content={<ChartLegendContent />} itemSorter={null} />
           {segmentKeys.map((key) => (
             <Bar key={key} dataKey={key} stackId="guests" fill={`var(--color-${key})`} />
           ))}
