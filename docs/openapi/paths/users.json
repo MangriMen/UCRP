@@ -60,8 +60,8 @@
       "post": {
         "tags": ["Users"],
         "operationId": "createUser",
-        "summary": "Create a user",
-        "description": "For the `tenant` role (R-3) `tenantId` is required; a database CHECK constraint ties the role to the tenant. The password is set by the administrator and delivered outside the API (or via a reset link).",
+        "summary": "Direct account creation is disabled",
+        "description": "Direct password assignment is disabled. Use the employee invitation flow when delivery is configured.",
         "x-roles": ["R-2"],
         "x-uc": ["UC-18"],
         "requestBody": {
@@ -75,16 +75,6 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "User created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "../components/schemas/users.json#/User"
-                }
-              }
-            }
-          },
           "400": {
             "$ref": "../components/responses.json#/BadRequest"
           },
@@ -137,8 +127,8 @@
       "patch": {
         "tags": ["Users"],
         "operationId": "updateUser",
-        "summary": "Change role, activity, reset password",
-        "description": "Partial update. Changing the role to `tenant` requires `tenantId`. A password reset invalidates the user refresh tokens.",
+        "summary": "Update a user's display name",
+        "description": "Role, tenant, activity and password changes are disabled until a verified account-management flow is available.",
         "x-roles": ["R-2"],
         "x-uc": ["UC-18"],
         "requestBody": {
