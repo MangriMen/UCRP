@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { GuestsPage } from './guests-page'
 
@@ -11,7 +11,10 @@ function renderPage(url = '/guests') {
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <MemoryRouter initialEntries={[url]}>
-        <GuestsPage />
+        <Routes>
+          <Route path="/guests" element={<GuestsPage />} />
+          <Route path="/guests/:id" element={<div>Профиль гостя</div>} />
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -34,5 +37,11 @@ describe('GuestsPage', () => {
     renderPage('/guests?q=Мария')
     expect(await screen.findByText('Мария Иванова')).toBeInTheDocument()
     expect(screen.getByLabelText('Поиск гостей')).toHaveValue('Мария')
+  })
+
+  it('opens the guest profile on row click', async () => {
+    renderPage('/guests?q=Мария')
+    await userEvent.click(await screen.findByText('Мария Иванова'))
+    expect(await screen.findByText('Профиль гостя')).toBeInTheDocument()
   })
 })

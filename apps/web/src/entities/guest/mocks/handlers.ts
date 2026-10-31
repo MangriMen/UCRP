@@ -1,7 +1,13 @@
 import { http, HttpResponse } from 'msw'
 import { API, apiError, paged } from '@/shared/api/mocks/helpers'
 import { MIN_SEARCH_LENGTH } from '../model/keys'
-import { mockGuestContacts, mockGuestEvents, mockGuests } from './fixtures'
+import {
+  emptyProfile,
+  mockGuestContacts,
+  mockGuestEvents,
+  mockGuestProfileExtras,
+  mockGuests,
+} from './fixtures'
 
 const digits = (value: string) => value.replace(/\D/g, '')
 
@@ -23,7 +29,7 @@ export const guestHandlers = [
   http.get(`${API}/guests/:id`, ({ params }) => {
     const guest = mockGuests.find((g) => g.id === params.id)
     if (!guest) return apiError(404, 'not_found', 'Гость не найден')
-    return HttpResponse.json(guest)
+    return HttpResponse.json({ ...emptyProfile, ...guest, ...mockGuestProfileExtras[guest.id] })
   }),
 
   http.get(`${API}/guests/:id/events`, ({ params, request }) => {

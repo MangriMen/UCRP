@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { GuestStatusBadge, MIN_SEARCH_LENGTH, useGuestSearch, type Guest } from '@/entities/guest'
 import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
 import { formatDateTime } from '@/shared/lib/format'
@@ -28,6 +28,7 @@ const parsePage = (value: string | null) => {
 }
 
 export function GuestsPage() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const urlQuery = searchParams.get('q') ?? ''
   const page = parsePage(searchParams.get('page'))
@@ -79,6 +80,7 @@ export function GuestsPage() {
           emptyTitle="Гости не найдены"
           meta={guests.data?.meta}
           onPageChange={changePage}
+          onRowClick={(g) => navigate(`/guests/${g.id}`)}
         />
       ) : (
         <EmptyState

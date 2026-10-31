@@ -1,2 +1,2 @@
 export { guestHandlers } from './handlers'
-export { mockGuestContacts, mockGuestEvents, mockGuests } from './fixtures'
+export { mockGuestContacts, mockGuestEvents, mockGuestProfileExtras, mockGuests } from './fixtures'

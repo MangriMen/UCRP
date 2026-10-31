@@ -2,5 +2,16 @@ export { useGuest, useGuestContacts, useGuestEvents, useGuestSearch } from './ap
 export { GuestStatusBadge } from './ui/guest-status-badge'
 export { guestKeys, MIN_SEARCH_LENGTH } from './model/keys'
 export type { GuestContactFilters, GuestEventFilters, GuestSearchFilters } from './model/keys'
-export { guestStatusLabels } from './model/status'
-export type { Guest, GuestContact, GuestEvent, GuestStatus } from './model/types'
+export { contactChannelLabels, guestStatusLabels, identifierTypeLabels } from './model/labels'
+export type {
+  ContactChannel,
+  Guest,
+  GuestContact,
+  GuestEvent,
+  GuestIdentifier,
+  GuestProfile,
+  GuestSegmentSummary,
+  GuestStatus,
+  GuestTenantSummary,
+  IdentifierType,
+} from './model/types'

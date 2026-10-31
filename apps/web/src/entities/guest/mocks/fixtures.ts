@@ -1,4 +1,4 @@
-import type { Guest, GuestContact, GuestEvent } from '../model/types'
+import type { Guest, GuestContact, GuestEvent, GuestProfile } from '../model/types'
 
 export const mockGuests: Guest[] = [
   {
@@ -82,3 +82,50 @@ export const mockGuestContacts: GuestContact[] = [
     contactedAt: '2026-10-25T10:00:00Z',
   },
 ]
+
+type ProfileExtras = Pick<GuestProfile, 'identifiers' | 'tenants' | 'segments'> &
+  Partial<Pick<GuestProfile, 'totalAmountMinor' | 'currency'>>
+
+export const emptyProfile: ProfileExtras = { identifiers: [], tenants: [], segments: [] }
+
+export const mockGuestProfileExtras: Record<string, ProfileExtras> = {
+  'guest-0001': {
+    identifiers: [
+      {
+        id: 'identifier-0001',
+        guestId: 'guest-0001',
+        idType: 'phone',
+        valueNormalized: '79001234567',
+        isReliable: true,
+      },
+      {
+        id: 'identifier-0002',
+        guestId: 'guest-0001',
+        idType: 'email',
+        valueNormalized: 'ivan.petrov@example.com',
+        isReliable: true,
+      },
+    ],
+    tenants: [
+      {
+        tenantId: 'tenant-0001',
+        tenantName: 'Лента',
+        categoryName: 'Продукты',
+        floor: 1,
+        eventCount: 9,
+        lastVisitAt: '2026-10-28T18:20:00Z',
+      },
+      {
+        tenantId: 'tenant-0002',
+        tenantName: 'Зара',
+        categoryName: 'Одежда',
+        floor: 2,
+        eventCount: 5,
+        lastVisitAt: '2026-10-20T12:00:00Z',
+      },
+    ],
+    segments: [{ segmentId: 'segment-0001', name: 'Постоянные гости', versionNo: 2 }],
+    totalAmountMinor: 1250000,
+    currency: 'RUB',
+  },
+}

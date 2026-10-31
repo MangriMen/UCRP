@@ -7,7 +7,7 @@ import {
   type GuestEventFilters,
   type GuestSearchFilters,
 } from '../model/keys'
-import type { Guest } from '../model/types'
+import type { GuestProfile } from '../model/types'
 
 export function useGuestSearch(filters: GuestSearchFilters) {
   return useQuery({
@@ -22,7 +22,7 @@ export function useGuestSearch(filters: GuestSearchFilters) {
 }
 
 export function useGuest(id: string) {
-  return useQuery<Guest>({
+  return useQuery<GuestProfile>({
     queryKey: guestKeys.detail(id),
     queryFn: () => api.get('/guests/{id}', { params: { id } }),
   })
