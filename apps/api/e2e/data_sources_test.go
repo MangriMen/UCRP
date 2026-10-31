@@ -191,6 +191,10 @@ func TestDataSourceListContainsFixture(t *testing.T) {
 	if !found {
 		t.Fatalf("data source list must contain fixture source %s", w.source.ID)
 	}
+	meta, _ := body.(map[string]any)["meta"].(map[string]any)
+	if pageSize, ok := harness.IntField(meta, "pageSize"); !ok || pageSize != 50 {
+		t.Fatalf("default page size = %v, want the contract default 50: %s", meta["pageSize"], resp.Snippet())
+	}
 }
 
 func trackDataSource(s *harness.Suite, sourceID string) {

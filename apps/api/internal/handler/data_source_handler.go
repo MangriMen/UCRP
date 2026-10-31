@@ -85,13 +85,15 @@ func (h *DataSourceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+const dataSourcePageSize = 50
+
 func (h *DataSourceHandler) List(w http.ResponseWriter, r *http.Request) {
 	filter, problem := parseDataSourceFilter(r)
 	if problem != "" {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", problem)
 		return
 	}
-	limit, offset := pageParams(r)
+	limit, offset := pageParams(withDefaultPageSize(r, dataSourcePageSize))
 	items, total, err := h.sources.Search(r.Context(), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
