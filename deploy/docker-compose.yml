@@ -2,8 +2,8 @@ name: ucrp
 
 x-environment: &environment
   UCRP_HTTP_ADDR: ':8080'
-  UCRP_DATABASE_URL: 'postgres://${POSTGRES_USER:-ucrp}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ucrp}?sslmode=disable'
-  UCRP_JWT_SECRET: '${UCRP_JWT_SECRET}'
+  UCRP_DATABASE_URL: 'postgres://${POSTGRES_USER:-ucrp}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ucrp}?sslmode=disable'
+  UCRP_JWT_SECRET: '${UCRP_JWT_SECRET:?set UCRP_JWT_SECRET}'
   UCRP_UPLOAD_DIR: /data/uploads
   UCRP_LOG_LEVEL: '${UCRP_LOG_LEVEL:-info}'
   UCRP_ADMIN_EMAIL: '${UCRP_ADMIN_EMAIL:-}'
@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: '${POSTGRES_USER:-ucrp}'
-      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}'
       POSTGRES_DB: '${POSTGRES_DB:-ucrp}'
     volumes:
       - ucrp_pg:/var/lib/postgresql/data
@@ -26,7 +26,7 @@ services:
       retries: 20
 
   api:
-    image: ghcr.io/mangrimen/ucrp/ucrp-api:${IMAGE_TAG}
+    image: ghcr.io/mangrimen/ucrp/ucrp-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks:
       default:
@@ -41,12 +41,14 @@ services:
         condition: service_healthy
 
   worker:
-    image: ghcr.io/mangrimen/ucrp/ucrp-worker:${IMAGE_TAG}
+    image: ghcr.io/mangrimen/ucrp/ucrp-worker:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       <<: *environment
     volumes:
       - ucrp_data:/data
+    healthcheck:
+      disable: true
     depends_on:
       db:
         condition: service_healthy
@@ -54,7 +56,7 @@ services:
         condition: service_healthy
 
   web:
-    image: ghcr.io/mangrimen/ucrp/ucrp-web:${IMAGE_TAG}
+    image: ghcr.io/mangrimen/ucrp/ucrp-web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       DOCS_HTPASSWD: '${DOCS_HTPASSWD:-}'

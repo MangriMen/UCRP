@@ -22,7 +22,6 @@ apps/api/
 │   ├── export/         каналы и форматы выгрузки
 │   └── platform/       auth, httpx, queue, cache, storage, config, logging, scheduler
 ├── migrations/         goose (common/ + postgres/)
-└── docker/             Dockerfile + docker-compose.yml
 ```
 
 ## Команды
@@ -49,9 +48,9 @@ go run ./cmd/seed -reset       # удалить только демо-данны
 Docker:
 
 ```sh
-cd apps/api
-docker compose -f docker/docker-compose.yml up --build
-# API: http://localhost:8080/healthz (когда реализован)
+cp deploy/.env.example deploy/.env
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up --build
+# API: http://localhost:8080/healthz
 ```
 
 ## Базовые зависимости
@@ -100,19 +99,14 @@ docker compose -f docker/docker-compose.yml up --build
 
 ## Docker
 
-| Файл                        | Назначение                                                               |
-| --------------------------- | ------------------------------------------------------------------------ |
-| `docker/Dockerfile`         | multi-stage: `golang:1.24-alpine` → `alpine:3.21`; `ARG APP=api\|worker` |
-| `docker/docker-compose.yml` | сервисы `api` и `worker`, shared volume `api-data` (SQLite + uploads)    |
-| `docker/.dockerignore`      | контекст = `apps/api`                                                    |
-
-Образ без root (uid 10001), CGO off, healthcheck на `/healthz` (появится с реализацией cmd/api).
+Сборка и деплой — в `deploy/` (`api/Dockerfile`, `web/Dockerfile`, `docker-compose.yml`, `docker-compose.dev.yml` для локальной сборки).
+Образ без root (uid 10001), CGO off, healthcheck на `/healthz`.
 
 ## Статус
 
 - [x] Дерево пакетов по `go-package-tree.md`
 - [x] `go.mod` (`github.com/MangriMen/UCRP`), заглушки `cmd/*`, package docs
-- [x] Dockerfile + compose в `docker/` (api + worker, volume `api-data`)
+- [x] Dockerfile + compose в `deploy/`
 - [x] `migrations/ddl.sql` — копия `docs/appendix/ddl.sql` (source of truth в docs)
 - [ ] Реализация слоёв (по этапам / базовому промпту)
 - [ ] goose-файлы `migrations/common/00001_…` по `migrations-plan.md`
