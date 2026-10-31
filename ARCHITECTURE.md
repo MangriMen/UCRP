@@ -1,59 +1,61 @@
 # UCRP Architecture Guidelines
 
-Правила структуры кода, направления зависимостей и границ модулей. Обязательны для людей и AI-агентов.
+Rules for code structure, dependency direction and module boundaries. Mandatory for people and AI agents.
 
-Product requirements, design diagrams and the OpenAPI contract live in `docs/`. This document describes **how the code is organized**, not **what the system does**; it is written in Russian like the rest of the design documents.
+Product requirements, design diagrams and the OpenAPI contract live in `docs/` (see `docs/README.md`). This document describes **how the code is organized**, not **what the system does**.
 
 ---
 
-## 1. Общая схема
+## 1. Overview
 
 ```text
 apps/web (React SPA)  ──REST /api/v1──▶  apps/api (Go)
-                                            ├── cmd/api      HTTP-сервер
-                                            ├── cmd/worker   воркеры и планировщик
-                                            ├── internal/    домен и сценарии
+                                            ├── cmd/api      HTTP server
+                                            ├── cmd/worker   workers and scheduler
+                                            ├── internal/    domain and use cases
                                             └── migrations/  goose
 ```
 
-Монорепозиторий на Bun workspaces + Turborepo. Go-модуль один на репозиторий (`github.com/MangriMen/UCRP`), живёт в `apps/api`.
+Monorepo on Bun workspaces and Turborepo. There is a single Go module for the repository (`github.com/MangriMen/UCRP`), located in `apps/api`.
 
 ---
 
-## 2. Backend: слои и направление зависимостей
+## 2. Backend: layers and dependency direction
 
-Зависимости направлены строго внутрь:
+Dependencies point strictly inward:
 
-$$\text{handler} \longrightarrow \text{service} \longrightarrow \text{domain} \longleftarrow \text{repository}$$
+```text
+handler → service → domain ← repository
+```
 
-| Слой         | Ответственность                                                                   | Может импортировать                                    | Не может                                                |
-| ------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
-| `domain`     | Сущности, value objects, инварианты, ошибки, **интерфейсы** репозиториев и портов | только стандартную библиотеку                          | всё остальное                                           |
-| `service`    | Сценарии (use cases), транзакционные границы, координация                         | `domain`                                               | `handler`, `repository` (только интерфейсы из `domain`) |
-| `repository` | SQL-реализации интерфейсов `domain`                                               | `domain`, `repository/sqlstore`                        | `service`, `handler`                                    |
-| `handler`    | HTTP: роутинг, разбор запросов, коды ответов, DTO                                 | `service`, `domain`, `platform/httpx`, `platform/auth` | `repository`                                            |
-| `cmd/*`      | Композиция: конфиг, DI, graceful shutdown                                         | всё                                                    | —                                                       |
+| Layer        | Responsibility                                                                        | May import                                             | Must not import                                             |
+| ------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------- |
+| `domain`     | Entities, value objects, invariants, errors, **interfaces** of repositories and ports | standard library only                                  | everything else                                             |
+| `service`    | Use cases, transaction boundaries, coordination                                       | `domain`                                               | `handler`, `repository` (only the interfaces from `domain`) |
+| `repository` | SQL implementations of `domain` interfaces                                            | `domain`, `repository/sqlstore`                        | `service`, `handler`                                        |
+| `handler`    | HTTP: routing, request parsing, status codes, DTOs                                    | `service`, `domain`, `platform/httpx`, `platform/auth` | `repository`                                                |
+| `cmd/*`      | Composition: config, DI, graceful shutdown                                            | everything                                             | —                                                           |
 
-Пакеты бизнес-способностей (`ingestion`, `identity`, `segments`, `recommend`, `export`) зависят только от `domain` и `platform/*`. Друг друга напрямую не вызывают — взаимодействие через `service` или очередь заданий.
+Capability packages (`ingestion`, `identity`, `segments`, `recommend`, `export`) depend only on `domain` and `platform/*`. They never call each other directly; they interact through `service` or the job queue.
 
-### Целевое дерево `apps/api`
+### Target tree of `apps/api`
 
 ```text
 apps/api/
 ├── cmd/
-│   ├── api/            # HTTP-точка входа
-│   └── worker/         # воркеры: очередь заданий, планировщик
+│   ├── api/            # HTTP entry point
+│   └── worker/         # workers: job queue, scheduler
 ├── internal/
-│   ├── domain/         # сущности, value objects, ошибки, интерфейсы портов
-│   ├── access/         # политика прав: роли, гранты, разрешения
-│   ├── handler/        # HTTP-слой, роутер /api/v1, dto/
-│   ├── service/        # сценарии
-│   ├── repository/     # SQL-реализации, sqlstore/ (подключение, UnitOfWork)
-│   ├── ingestion/      # конвейер импорта, connector/ (csv, crm, pos, api)
-│   ├── identity/       # нормализация ключей, резолвер, политика склейки
-│   ├── segments/       # компилятор правил, вычислитель
-│   ├── recommend/      # скоринг и обоснования
-│   ├── export/         # каналы и форматы выгрузки
+│   ├── domain/         # entities, value objects, errors, port interfaces
+│   ├── access/         # permission policy: roles, grants, permissions
+│   ├── handler/        # HTTP layer, /api/v1 router, dto/
+│   ├── service/        # use cases
+│   ├── repository/     # SQL implementations, sqlstore/ (connection, UnitOfWork)
+│   ├── ingestion/      # import pipeline, connector/ (csv, crm, pos, api)
+│   ├── identity/       # key normalization, resolver, merge policy
+│   ├── segments/       # rule compiler, evaluator
+│   ├── recommend/      # scoring and explanations
+│   ├── export/         # export channels and formats
 │   └── platform/       # auth, httpx, queue, cache, storage, config, logging
 ├── migrations/         # goose
 └── go.mod
@@ -61,68 +63,68 @@ apps/api/
 
 ---
 
-## 3. Frontend: вертикальные срезы
+## 3. Frontend: vertical slices
 
-`apps/web/src` организован по FSD (облегчённый, без лишних слоёв):
+`apps/web/src` follows a light FSD (without extra layers):
 
-- **`app/`** — композиция: провайдеры, роутер, layout, меню по роли, глобальные стили.
-- **`pages/`** — по папке на маршрут; только композиция фич и сущностей.
-- **`widgets/`** — создаётся только когда блок переиспользуется на 2+ страницах.
-- **`features/`** — действия пользователя (`login`, `upload-import`, `confirm-merge`, `build-segment`, `create-export`, …).
-- **`entities/`** — бизнес-сущности (`guest`, `segment`, `import-batch`, `user`, …): типы, api-хуки, моки, малые UI-блоки.
-- **`shared/`** — технические срезы без бизнес-логики: `api/` (fetch-клиент, типы из OpenAPI, моки MSW), `ui/`, `lib/`, `config/`.
+- **`app/`**: composition: providers, router, layout, role-based menu, global styles.
+- **`pages/`**: one folder per route; only composes features and entities.
+- **`widgets/`**: created only when a block is reused on two or more pages.
+- **`features/`**: user actions (`login`, `upload-import`, `confirm-merge`, `build-segment`, `create-export`, ...).
+- **`entities/`**: business entities (`guest`, `segment`, `import-batch`, `user`, ...): types, API hooks, mocks, small UI blocks.
+- **`shared/`**: technical slices without business logic: `api/` (fetch client, types generated from OpenAPI, MSW mocks), `ui/`, `lib/`, `config/`.
 
-Внутри среза сегменты `ui/ api/ model/ mocks/ lib/` создаются по необходимости; публичный API — `index.ts`.
+Inside a slice the segments `ui/ api/ model/ mocks/ lib/` are created as needed; the public API is `index.ts`.
 
-### Правила
+### Rules
 
-| Правило                    | Описание                                                                                       |
-| -------------------------- | ---------------------------------------------------------------------------------------------- |
-| Единственный вход к данным | Компоненты не вызывают `fetch` напрямую — только хуки из `entities/*/api` или `features/*/api` |
-| Направление импортов       | `app → pages → widgets → features → entities → shared`. Обратные запрещены (oxlint)            |
-| Изоляция срезов            | Срезы одного слоя не импортируют друг друга; общее выносится ниже по слоям                     |
-| Серверное состояние        | TanStack Query; глобальный стор — только для аутентификации                                    |
-| Проверка прав              | UI скрывает недоступное, но решающая проверка — на backend (403)                               |
-
----
-
-## 4. Общие пакеты (`packages/`)
-
-| Пакет               | Назначение                                                     |
-| ------------------- | -------------------------------------------------------------- |
-| `packages/api-docs` | Swagger UI, собираемый из `docs/openapi.json` (`bun run docs`) |
-
-Новый пакет попадает в `packages/` только если его использует **два и более** приложения. Иначе код живёт внутри приложения.
+| Rule              | Description                                                                                    |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| Single data entry | Components never call `fetch` directly, only hooks from `entities/*/api` or `features/*/api`   |
+| Import direction  | `app → pages → widgets → features → entities → shared`. Reverse imports are forbidden (oxlint) |
+| Slice isolation   | Slices of one layer do not import each other; shared code moves down a layer                   |
+| Server state      | TanStack Query; a global store only for authentication                                         |
+| Permission checks | The UI hides what is unavailable, but the deciding check is on the backend (403)               |
 
 ---
 
-## 5. Тестирование
+## 4. Shared packages (`packages/`)
 
-| Уровень           | Что тестируем              | Инструменты               |
-| ----------------- | -------------------------- | ------------------------- |
-| `domain` (Go)     | Инварианты, чистые функции | `testing`, без БД и сети  |
-| `service` (Go)    | Сценарии с моками портов   | `testing`, `testify/mock` |
-| `repository` (Go) | SQL против реальной SQLite | `testing`, временная БД   |
-| `handler` (Go)    | HTTP-контракты             | `httptest`                |
-| Frontend          | Компоненты и хуки          | Vitest, Testing Library   |
+| Package             | Purpose                                                    |
+| ------------------- | ---------------------------------------------------------- |
+| `packages/api-docs` | Swagger UI built from `docs/openapi.json` (`bun run docs`) |
 
-Имена тестов описывают ожидаемое поведение и условие: `TestMerge_RejectsConflictingNames_WhenPhoneMatches`.
+A new package goes to `packages/` only if **two or more** applications use it. Otherwise the code lives inside the application.
 
 ---
 
-## 6. Комментарии в коде
+## 5. Testing
 
-1. **Не оставляйте комментарии в коде.** Код должен читаться сам. Удаляйте «что делает строка», narration, TODO-шум, placeholder-фразы.
-2. Публичный godoc — только если без него невалидна экспортируемая сигнатура; предпочтительно минимум. `doc.go` в скелете — голый `package name`.
-3. Стиль и упрощения — по [`.agents/skills/code-simplification/SKILL.md`](.agents/skills/code-simplification/SKILL.md) (ясность > изящество, поведение не меняем, без нейрослопа).
+| Level             | What is tested              | Tools                       |
+| ----------------- | --------------------------- | --------------------------- |
+| `domain` (Go)     | Invariants, pure functions  | `testing`, no DB or network |
+| `service` (Go)    | Use cases with mocked ports | `testing`, `testify/mock`   |
+| `repository` (Go) | SQL against a real database | `testing`, temporary DB     |
+| `handler` (Go)    | HTTP contracts              | `httptest`                  |
+| Frontend          | Components and hooks        | Vitest, Testing Library     |
+
+Test names describe the expected behavior and the condition: `TestMerge_RejectsConflictingNames_WhenPhoneMatches`.
 
 ---
 
-## 7. Правила для AI-агентов
+## 6. Comments in code
 
-1. **Не раздувайте дерево.** Новый файл — только когда существующий стал нечитаемым (> ~400 строк) или появился новый связный модуль.
-2. **Соблюдайте направление зависимостей.** Импорт `repository` из `service` или `handler` — ошибка, даже если компилируется.
-3. **Не меняйте видимость ради тестов.** Используйте тесты в том же пакете.
-4. **Контракт API — источник истины: `docs/openapi.json` и `docs/openapi/`.** Меняя эндпоинт, обновляйте спеку и перегенерируйте типы фронтенда (`gen:api` в `apps/web`).
-5. **Не добавляйте зависимость** без проверки, что её нет в стандартной библиотеке или уже подключённых пакетах.
-6. **Код без комментариев и без нейрослопа** — `AGENTS.md` + skill `code-simplification`.
+1. **Do not leave comments in code.** The code must read on its own. Remove "what the line does" narration, TODO noise and placeholder phrases.
+2. Public godoc only when an exported signature is invalid without it; prefer none. `doc.go` in a skeleton is a bare `package name`.
+3. Style and simplification follow [`.agents/skills/code-simplification/SKILL.md`](.agents/skills/code-simplification/SKILL.md): clarity over cleverness, behavior preserved, no slop.
+
+---
+
+## 7. Rules for AI agents
+
+1. **Do not bloat the tree.** Add a file only when an existing one became unreadable (over ~400 lines) or a new cohesive module appeared.
+2. **Respect the dependency direction.** Importing `repository` from `service` or `handler` is an error even if it compiles.
+3. **Do not change visibility for tests.** Use tests in the same package.
+4. **The API contract source of truth is `docs/openapi.json` and `docs/openapi/`.** When changing an endpoint, update the spec and regenerate the frontend types (`gen:api` in `apps/web`).
+5. **Do not add a dependency** without checking that the standard library or an existing package does not already cover it.
+6. **Code without comments and without slop**: `AGENTS.md` plus the `code-simplification` skill.
