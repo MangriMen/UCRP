@@ -39,6 +39,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
+	setRefreshCookie(w, res.RefreshToken)
 	httpx.WriteJSON(w, http.StatusOK, loginResponse{
 		AccessToken: res.AccessToken,
 		ExpiresIn:   res.ExpiresIn,

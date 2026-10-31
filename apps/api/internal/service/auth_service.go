@@ -21,9 +21,10 @@ func NewAuthService(users domain.UserRepo, tokens *auth.Manager, clock domain.Cl
 }
 
 type LoginResult struct {
-	AccessToken string
-	ExpiresIn   int64
-	User        PublicUser
+	AccessToken  string
+	RefreshToken string
+	ExpiresIn    int64
+	User         PublicUser
 }
 
 type PublicUser struct {
@@ -48,9 +49,10 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (LoginR
 		return LoginResult{}, err
 	}
 	return LoginResult{
-		AccessToken: pair.AccessToken,
-		ExpiresIn:   pair.ExpiresIn,
-		User:        PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID},
+		AccessToken:  pair.AccessToken,
+		RefreshToken: pair.RefreshToken,
+		ExpiresIn:    pair.ExpiresIn,
+		User:         PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID},
 	}, nil
 }
 
