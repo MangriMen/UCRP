@@ -41,7 +41,11 @@ func run(log *slog.Logger, cfg config.Config) error {
 	if err != nil {
 		return err
 	}
-	defer store.Close()
+	defer func() {
+		if err := store.Close(); err != nil {
+			log.Error("close store", "err", err)
+		}
+	}()
 
 	clock := domain.SystemClock{}
 	q := queue.NewDBQueue(store.DB, clock, idgen.UUID{})

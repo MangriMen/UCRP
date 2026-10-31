@@ -109,7 +109,7 @@ func (r *WeightedRecommender) visitedTenants(ctx context.Context, guestID string
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := map[string]bool{}
 	for rows.Next() {
 		var id string
@@ -127,7 +127,7 @@ func (r *WeightedRecommender) activeTenants(ctx context.Context) ([]candidate, e
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]candidate, 0)
 	for rows.Next() {
 		var t candidate
@@ -164,7 +164,7 @@ func (r *WeightedRecommender) similarGuestTenants(ctx context.Context, guestID s
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := map[string]int{}
 	for rows.Next() {
 		var (

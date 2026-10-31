@@ -285,7 +285,7 @@ func (s *ImportService) processFile(ctx context.Context, batch *domain.ImportBat
 	if err != nil {
 		return s.pipeline.Fail(ctx, batch.ID, "Файл не найден в хранилище")
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	rows, err := readCSV(rc, mapping)
 	if err != nil {
 		return s.pipeline.Fail(ctx, batch.ID, csvError(err).Message)
@@ -318,7 +318,7 @@ func (s *ImportService) processPull(ctx context.Context, batch *domain.ImportBat
 	if err != nil {
 		return s.pipeline.Fail(ctx, batch.ID, "Не удалось получить данные источника")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return s.pipeline.Fail(ctx, batch.ID, fmt.Sprintf("Источник ответил %d", resp.StatusCode))
 	}

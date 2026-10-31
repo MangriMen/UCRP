@@ -32,7 +32,7 @@ func (h *ImportHandler) Create(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Не передан файл")
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	p, ok := auth.PrincipalFrom(r.Context())
 	if !ok {
 		httpx.WriteError(w, r, http.StatusUnauthorized, "unauthorized", "Нет пользователя")

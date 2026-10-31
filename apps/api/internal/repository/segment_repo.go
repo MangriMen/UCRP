@@ -88,7 +88,7 @@ func (r *SegmentSQL) List(ctx context.Context, limit, offset int) ([]domain.Segm
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.Segment, 0)
 	for rows.Next() {
 		var (
@@ -143,7 +143,7 @@ func (r *SegmentSQL) ListMemberContacts(ctx context.Context, versionID string) (
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.GuestContact, 0)
 	for rows.Next() {
 		var c domain.GuestContact

@@ -13,6 +13,17 @@ pre-commit:
       glob: '**/*.go'
       run: go vet ./...
 
+    - name: go:lint
+      root: 'apps/api/'
+      glob: '**/*.go'
+      run: |
+        version=2.15.0
+        if ! golangci-lint version 2>/dev/null | grep -q "version $version"; then
+          echo "golangci-lint v$version не найден. Установите: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v$version"
+          exit 1
+        fi
+        golangci-lint run ./...
+
     - name: fmt
       glob: '**/*.{js,jsx,ts,tsx,json,jsonc,css,md,yml,yaml}'
       run: bun x oxfmt --no-error-on-unmatched-pattern {staged_files}

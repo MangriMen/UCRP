@@ -38,7 +38,7 @@ func (l *Local) path(key string) (string, error) {
 	return full, nil
 }
 
-func (l *Local) Save(ctx context.Context, key string, r io.Reader) error {
+func (l *Local) Save(ctx context.Context, key string, r io.Reader) (err error) {
 	path, err := l.path(key)
 	if err != nil {
 		return err
@@ -50,7 +50,11 @@ func (l *Local) Save(ctx context.Context, key string, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); err == nil {
+			err = closeErr
+		}
+	}()
 	_, err = io.Copy(f, r)
 	return err
 }

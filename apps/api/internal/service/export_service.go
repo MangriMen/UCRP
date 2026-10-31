@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"strings"
@@ -114,7 +115,7 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 	}
 	if existing, err := s.exports.FindByKey(ctx, actorUserID, req.IdempotencyKey); err == nil {
 		return toExportDTO(*existing), nil
-	} else if err != domain.ErrNotFound {
+	} else if !errors.Is(err, domain.ErrNotFound) {
 		return nil, err
 	}
 
@@ -370,7 +371,7 @@ func hashSeed(key string) int64 {
 
 func hash64(guestID string, seed int64) uint64 {
 	h := fnv.New64a()
-	_, _ = h.Write([]byte(fmt.Sprintf("%s:%d", guestID, seed)))
+	_, _ = fmt.Fprintf(h, "%s:%d", guestID, seed)
 	return h.Sum64()
 }
 

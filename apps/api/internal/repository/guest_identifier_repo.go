@@ -24,7 +24,7 @@ func (r *GuestIdentifierSQL) ListByGuest(ctx context.Context, guestID string) ([
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.GuestIdentifier, 0)
 	for rows.Next() {
 		var gi domain.GuestIdentifier
@@ -44,7 +44,7 @@ func (r *GuestIdentifierSQL) FindByValue(ctx context.Context, idType, value stri
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.GuestIdentifier, 0)
 	for rows.Next() {
 		var gi domain.GuestIdentifier

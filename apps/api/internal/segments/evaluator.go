@@ -79,7 +79,7 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]string, 0)
 	for rows.Next() {
 		var id string
