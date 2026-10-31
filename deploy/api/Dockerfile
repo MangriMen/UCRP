@@ -6,9 +6,11 @@ RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY apps/api .
 ARG APP=api
 ARG TARGETARCH
+ARG VERSION=dev
+ARG BUILD_TIME=unknown
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
-    go build -trimpath -ldflags='-s -w' -o /out/server ./cmd/${APP}
+    go build -trimpath -ldflags="-s -w -X github.com/MangriMen/UCRP/internal/platform/buildinfo.Version=${VERSION} -X github.com/MangriMen/UCRP/internal/platform/buildinfo.BuildTime=${BUILD_TIME}" -o /out/server ./cmd/${APP}
 
 FROM alpine:3.21 AS runner
 RUN apk add --no-cache ca-certificates tzdata

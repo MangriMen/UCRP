@@ -9,6 +9,9 @@ RUN bun install --frozen-lockfile --ignore-scripts
 FROM deps AS builder
 COPY tsconfig.base.json ./
 COPY apps/web apps/web
+ARG VERSION=dev
+ARG BUILD_TIME=unknown
+ENV VITE_APP_VERSION=${VERSION} VITE_BUILD_TIME=${BUILD_TIME}
 RUN bun run --filter=@ucrp/web build
 
 FROM deps AS docs

@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router'
 import { roleLabels, useAuth } from '@/entities/user'
 import { LogoutButton } from '@/features/auth'
+import { buildInfo } from '@/shared/config/build-info'
 import {
   Sidebar,
   SidebarContent,
@@ -53,6 +54,12 @@ export function AppSidebar() {
           </div>
         )}
         <LogoutButton />
+        <p
+          className="truncate text-xs text-muted-foreground"
+          title={`Build ${buildInfo.version} · ${buildInfo.buildTime}`}
+        >
+          {buildInfo.version.slice(0, 7)} · {buildInfo.buildTime}
+        </p>
       </SidebarFooter>
     </Sidebar>
   )

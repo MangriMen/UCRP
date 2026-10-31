@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/platform/auth"
+	"github.com/MangriMen/UCRP/internal/platform/buildinfo"
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/service"
 )
@@ -66,8 +67,9 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Healthz(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{
-		"status":  "ok",
-		"version": "1.0.0",
-		"time":    time.Now().UTC().Format(time.RFC3339),
+		"status":    "ok",
+		"version":   buildinfo.Version,
+		"buildTime": buildinfo.BuildTime,
+		"time":      time.Now().UTC().Format(time.RFC3339),
 	})
 }
