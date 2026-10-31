@@ -50,7 +50,11 @@ func run(log *slog.Logger, cfg config.Config) error {
 	if err != nil {
 		return err
 	}
-	defer store.Close()
+	defer func() {
+		if err := store.Close(); err != nil {
+			log.Error("close store", "err", err)
+		}
+	}()
 
 	if err := sqlstore.Migrate(ctx, store.DB, migrations.FS, "common"); err != nil {
 		return err

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
@@ -51,7 +52,7 @@ func (r *MergeSQL) CreatePending(ctx context.Context, guestA, guestB, matchType,
 	if err == nil {
 		return r.candidate(ctx, existing)
 	}
-	if err != sql.ErrNoRows {
+	if !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 	id := uuid.NewString()

@@ -3,6 +3,7 @@ package identity
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -107,7 +108,7 @@ func (r *Resolver) lookupGuests(ctx context.Context, keys map[string]string) ([]
 func (r *Resolver) activeGuest(ctx context.Context, guestID string) (string, error) {
 	g, err := r.guests.GetByID(ctx, guestID)
 	if err != nil {
-		if err == domain.ErrNotFound {
+		if errors.Is(err, domain.ErrNotFound) {
 			return "", nil
 		}
 		return "", err

@@ -190,7 +190,7 @@ func (r *MergeSQL) List(ctx context.Context, resolution domain.MergeResolution, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.MergeCandidate, 0)
 	for rows.Next() {
 		c, err := scanCandidate(rows)

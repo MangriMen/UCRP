@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -99,7 +100,7 @@ func (q *DBQueue) Take(ctx context.Context, jobTypes []string, workerID string) 
 	err = tx.QueryRowContext(ctx, query, args...).Scan(
 		&job.ID, &job.JobType, &job.Payload, &dedup, &status, &job.Attempts, &job.RunAfter, &job.CreatedAt,
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
