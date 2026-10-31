@@ -78,7 +78,7 @@ bun run clean        # очистка артефактов сборки
 
 ### Статус
 
-Каркас монорепозитория. Приложения `apps/api` и `apps/web` ещё не инициализированы.
+Каркас монорепозитория. `apps/web` инициализирован (React + Vite + TypeScript), `apps/api` ещё нет.
 
 ---
 
@@ -113,4 +113,4 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module boundaries and depen
 
 ### Status
 
-Monorepo scaffold only. `apps/api` and `apps/web` are not initialized yet.
+Monorepo scaffold. `apps/web` is initialized (React + Vite + TypeScript); `apps/api` is not yet.
