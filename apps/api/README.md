@@ -16,6 +16,8 @@ go run ./cmd/worker
 
 End-to-end tests against a running API live in `e2e/` (`e2e/run.sh` or `e2e/run.ps1`). Reports are written to `apps/api/e2e-report.xml` and `apps/api/e2e-contract-drift.md` and are git-ignored.
 
+The contract is read from a bundled JSON. The run scripts build it with `bun run --cwd packages/api-docs bundle:json` into `packages/api-docs/dist/openapi.json` (the default of `UCRP_E2E_OPENAPI`) unless `UCRP_E2E_OPENAPI` is already set. When you run `go test ./e2e/...` directly, build the bundle first or point `UCRP_E2E_OPENAPI` at one. The source spec is `packages/openapi`; `docs/openapi.json` no longer exists.
+
 Docker (see `deploy/`), from the repository root:
 
 ```sh
