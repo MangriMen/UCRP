@@ -98,7 +98,7 @@ export const router = createBrowserRouter([
           },
           {
             element: <RoleGuard roles={['analyst']} />,
-            children: [{ path: 'identity/blocks', element: <MergeBlocksPage /> }],
+            children: [{ path: 'identity/merge-blocks', element: <MergeBlocksPage /> }],
           },
           { path: '*', element: <NotFoundPage /> },
         ],

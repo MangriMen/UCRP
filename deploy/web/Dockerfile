@@ -15,7 +15,7 @@ COPY apps/web apps/web
 ARG VERSION=dev
 ARG BUILD_TIME=unknown
 ENV VITE_APP_VERSION=${VERSION} VITE_BUILD_TIME=${BUILD_TIME}
-RUN bun run --filter=@ucrp/web build
+RUN bun run --filter=@ucrp/api-types build && bun run --filter=@ucrp/web build
 
 FROM deps AS docs
 COPY packages/openapi packages/openapi

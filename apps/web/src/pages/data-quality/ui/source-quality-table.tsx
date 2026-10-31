@@ -4,7 +4,7 @@ import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
-const hidden = '—'
+const suppressed = '—'
 
 interface SourceQualityTableProps {
   rows: DataQualityListItem[] | undefined
@@ -24,9 +24,13 @@ export function SourceQualityTable({ rows, isLoading, error, onSelect }: SourceQ
     {
       id: 'rejected',
       header: 'Отклонено за 30 дней',
-      cell: (s) => (s.rejectedShare30d === null ? hidden : formatPercent(s.rejectedShare30d)),
+      cell: (s) => (s.rejectedShare30d === null ? suppressed : formatPercent(s.rejectedShare30d)),
     },
-    { id: 'pending', header: 'Спорные профили', cell: (s) => s.pendingMergeCandidates ?? hidden },
+    {
+      id: 'pending',
+      header: 'Спорные профили',
+      cell: (s) => s.pendingMergeCandidates ?? suppressed,
+    },
     {
       id: 'warning',
       header: 'Состояние',
