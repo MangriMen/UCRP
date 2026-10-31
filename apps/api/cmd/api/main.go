@@ -80,6 +80,13 @@ func run(log *slog.Logger, cfg config.Config) error {
 	segmentHandler := handler.NewSegmentHandler(segmentSvc)
 	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), recommend.NewWeightedRecommender(store.DB))
 	recoHandler := handler.NewRecommendationHandler(recoSvc)
+	exportSvc := service.NewExportService(
+		repository.NewExportSQL(store.DB),
+		repository.NewContactLimitSQL(store.DB),
+		repository.NewContactLogSQL(store.DB),
+		repository.NewSegmentSQL(store.DB),
+	)
+	exportHandler := handler.NewExportHandler(exportSvc)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -112,6 +119,13 @@ func run(log *slog.Logger, cfg config.Config) error {
 			})
 			priv.Get("/guests/{id}/recommendations", recoHandler.List)
 			priv.Post("/guests/{id}/recommendations/refresh", recoHandler.Refresh)
+			priv.Route("/exports", func(x chi.Router) {
+				x.Get("/", exportHandler.List)
+				x.Post("/preview", exportHandler.Preview)
+				x.Post("/", exportHandler.Create)
+				x.Get("/{id}", exportHandler.Get)
+				x.Get("/{id}/download", exportHandler.Download)
+			})
 		})
 	})
 
