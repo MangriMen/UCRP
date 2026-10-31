@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -129,7 +130,7 @@ func TestSegmentNotReadyConflict(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected conflict")
 	}
-	if !errorsAsExport(err, &ce) || ce.Code != "segment_not_ready" {
+	if !errors.As(err, &ce) || ce.Code != "segment_not_ready" {
 		t.Fatalf("err=%v", err)
 	}
 }
@@ -149,20 +150,9 @@ func TestAllBlockedConflict(t *testing.T) {
 		SegmentID: "seg", Channel: "sms", Format: "csv", IdempotencyKey: "k2",
 	}, "u1")
 	var ce *ExportConflictError
-	if !errorsAsExport(err, &ce) || ce.Code != "contact_limit_exceeded" {
+	if !errors.As(err, &ce) || ce.Code != "contact_limit_exceeded" {
 		t.Fatalf("want contact_limit_exceeded, got %v", err)
 	}
-}
-
-func errorsAsExport(err error, target **ExportConflictError) bool {
-	if err == nil {
-		return false
-	}
-	if e, ok := err.(*ExportConflictError); ok {
-		*target = e
-		return true
-	}
-	return false
 }
 
 type fakeExportRepo struct{}
