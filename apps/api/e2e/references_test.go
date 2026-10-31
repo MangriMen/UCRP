@@ -18,10 +18,10 @@ func TestTenantCreateAndPatch(t *testing.T) {
 	}
 	code := s.Reg.Code("api-tenant")
 	resp, err := s.API.Post(ctx, "/api/v1/tenants", map[string]any{
-		"code":        code,
-		"name":        "E2E API tenant",
-		"category_id": category.ID,
-		"priority":    70,
+		"code":       code,
+		"name":       "E2E API tenant",
+		"categoryId": category.ID,
+		"priority":   70,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/tenants: %v", err)
@@ -61,9 +61,9 @@ func TestTenantCreateDuplicateCode(t *testing.T) {
 		t.Fatalf("fixture category: %v", err)
 	}
 	payload := map[string]any{
-		"code":        s.Reg.Code("dup-tenant"),
-		"name":        "E2E duplicate tenant",
-		"category_id": category.ID,
+		"code":       s.Reg.Code("dup-tenant"),
+		"name":       "E2E duplicate tenant",
+		"categoryId": category.ID,
 	}
 
 	first, err := s.API.Post(ctx, "/api/v1/tenants", payload)
@@ -172,8 +172,8 @@ func TestCategoryRelationsReplace(t *testing.T) {
 	}
 
 	replace, err := s.API.Put(ctx, "/api/v1/tenant-categories/"+primary.ID+"/relations", map[string]any{
-		"items": []any{
-			map[string]any{"related_category_id": related.ID, "relation_type": "adjacent", "weight_pct": 25},
+		"relations": []any{
+			map[string]any{"categoryId": primary.ID, "relatedCategoryId": related.ID, "relationType": "adjacent", "weightPct": 25},
 		},
 	})
 	if err != nil {
@@ -182,16 +182,24 @@ func TestCategoryRelationsReplace(t *testing.T) {
 	s.RequireStatus(replace, 200, "PUT /api/v1/tenant-categories/{id}/relations")
 	s.RequireDeclaredStatus("PUT", "/api/v1/tenant-categories/{id}/relations", replace)
 
-	items, ok := harness.Items(mustJSON(t, replace, "replaced relations"))
+	replaceBody := mustJSON(t, replace, "replaced relations")
+	replaceObj, ok := replaceBody.(map[string]any)
+	if !ok {
+		t.Fatalf("replaced relations is not an object: %s", replace.Snippet())
+	}
+	if cat := harness.StringField(replaceObj, "categoryId"); cat != primary.ID {
+		t.Fatalf("categoryId: expected %q, got %q", primary.ID, cat)
+	}
+	items, ok := replaceObj["relations"].([]any)
 	if !ok || len(items) != 1 {
 		t.Fatalf("the relation set must contain exactly one entry: %s", replace.Snippet())
 	}
 	entry, _ := items[0].(map[string]any)
-	if got := harness.StringField(entry, "relation_type"); got != "adjacent" {
-		t.Fatalf("relation_type: expected adjacent, got %q", got)
+	if got := harness.StringField(entry, "relationType"); got != "adjacent" {
+		t.Fatalf("relationType: expected adjacent, got %q", got)
 	}
-	if got, _ := harness.IntField(entry, "weight_pct"); got != 25 {
-		t.Fatalf("weight_pct: expected 25, got %d", got)
+	if got, _ := harness.IntField(entry, "weightPct"); got != 25 {
+		t.Fatalf("weightPct: expected 25, got %d", got)
 	}
 
 	list, err := s.API.Get(ctx, "/api/v1/tenant-categories/"+primary.ID+"/relations", nil)
@@ -218,8 +226,8 @@ func TestCategoryRelationsRejectUnknownType(t *testing.T) {
 	}
 
 	resp, err := s.API.Put(ctx, "/api/v1/tenant-categories/"+primary.ID+"/relations", map[string]any{
-		"items": []any{
-			map[string]any{"related_category_id": related.ID, "relation_type": "bogus", "weight_pct": 10},
+		"relations": []any{
+			map[string]any{"categoryId": primary.ID, "relatedCategoryId": related.ID, "relationType": "bogus", "weightPct": 10},
 		},
 	})
 	if err != nil {
@@ -246,9 +254,9 @@ func TestProjectCrud(t *testing.T) {
 	code := s.Reg.Code("project")
 
 	create, err := s.API.Post(ctx, "/api/v1/projects", map[string]any{
-		"tenant_id": tenant.ID,
-		"code":      code,
-		"name":      "E2E project",
+		"tenantId": tenant.ID,
+		"code":     code,
+		"name":     "E2E project",
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/projects: %v", err)
@@ -296,10 +304,10 @@ func TestEventTypeCountsAsPresence(t *testing.T) {
 
 	code := s.Reg.Code("api-evt")
 	create, err := s.API.Post(ctx, "/api/v1/event-types", map[string]any{
-		"code":               code,
-		"name":               "E2E top up",
-		"has_amount":         true,
-		"counts_as_presence": false,
+		"code":             code,
+		"name":             "E2E top up",
+		"hasAmount":        true,
+		"countsAsPresence": false,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/event-types: %v", err)
@@ -313,8 +321,8 @@ func TestEventTypeCountsAsPresence(t *testing.T) {
 	if eventTypeID == "" {
 		t.Fatalf("created event type has no id: %s", create.Snippet())
 	}
-	if presence, ok := created["counts_as_presence"].(bool); !ok || presence {
-		t.Fatalf("counts_as_presence must stay false for a top-up type, got %v", created["counts_as_presence"])
+	if presence, ok := created["countsAsPresence"].(bool); !ok || presence {
+		t.Fatalf("countsAsPresence must stay false for a top-up type, got %v", created["countsAsPresence"])
 	}
 	trackEventType(s, eventTypeID)
 

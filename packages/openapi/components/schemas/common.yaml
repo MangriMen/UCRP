@@ -47,6 +47,7 @@ ErrorResponse:
             - connector_not_registered
             - file_too_large
             - bad_format
+            - missing_columns
             - rate_limited
             - timeout
             - internal_error

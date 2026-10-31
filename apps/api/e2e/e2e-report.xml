@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ucrp-e2e" tests="1" failures="0" skipped="0" time="0.212">
+  <testcase name="TestCrossTenantDistributionsContract" classname="TestCrossTenantDistributionsContract" time="0.212"></testcase>
+</testsuite>

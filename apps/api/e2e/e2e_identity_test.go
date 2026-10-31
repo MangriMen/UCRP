@@ -187,6 +187,13 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 		t.Fatalf("fixture guest: %v", err)
 	}
 	w.visit(t, s, guest.ID, w.tenantA.ID, "e2e-segment-reco-a", 3)
+	for i := 0; i < 4; i++ {
+		extra, err := s.Reg.Guest(ctx, "e2e-segment-reco-extra-"+string(rune('a'+i)))
+		if err != nil {
+			t.Fatalf("fixture extra guest %d: %v", i, err)
+		}
+		w.visit(t, s, extra.ID, w.tenantA.ID, "e2e-segment-reco-extra-"+string(rune('a'+i)), 3)
+	}
 
 	preview, err := s.PostContractShape(ctx, "/api/v1/segments/preview",
 		map[string]any{"rule": map[string]any{"visitedTenantIds": []string{w.tenantA.ID}, "excludedTenantIds": []string{w.tenantC.ID}, "periodDays": 90}},

@@ -198,10 +198,21 @@ func TestSegmentPreviewCountsMatchingGuests(t *testing.T) {
 	if err != nil {
 		t.Fatalf("fixture guest only C: %v", err)
 	}
+	extraA := make([]string, 0, 3)
+	for i := 0; i < 3; i++ {
+		g, err := s.Reg.Guest(ctx, "preview-extra-a-"+string(rune('a'+i)))
+		if err != nil {
+			t.Fatalf("fixture extra guest A %d: %v", i, err)
+		}
+		extraA = append(extraA, g.ID)
+	}
 	w.visit(t, s, both.ID, w.tenantA.ID, "preview-both-a", 5)
 	w.visit(t, s, both.ID, w.tenantB.ID, "preview-both-b", 4)
 	w.visit(t, s, onlyA.ID, w.tenantA.ID, "preview-only-a-a", 3)
 	w.visit(t, s, onlyC.ID, w.tenantC.ID, "preview-only-c-c", 2)
+	for i, id := range extraA {
+		w.visit(t, s, id, w.tenantA.ID, "preview-extra-a-"+string(rune('a'+i)), 3)
+	}
 
 	contractBody := map[string]any{
 		"rule": map[string]any{
@@ -231,8 +242,8 @@ func TestSegmentPreviewCountsMatchingGuests(t *testing.T) {
 	if !ok {
 		t.Fatalf("preview response has no size field: %s", resp.Snippet())
 	}
-	if size != 2 {
-		t.Fatalf("preview size: expected 2 guests that visited A or B and never C, got %d", size)
+	if size != 5 {
+		t.Fatalf("preview size: expected 5 guests that visited A or B and never C, got %d", size)
 	}
 }
 
@@ -360,8 +371,17 @@ func TestSegmentGetReportsReadyVersion(t *testing.T) {
 		t.Fatalf("fixture guest: %v", err)
 	}
 	w.visit(t, s, guest.ID, w.tenantA.ID, "segment-ready-a", 1)
+	memberIDs := []string{guest.ID}
+	for i := 0; i < 4; i++ {
+		extra, err := s.Reg.Guest(ctx, "segment-ready-"+string(rune('b'+i)))
+		if err != nil {
+			t.Fatalf("fixture extra guest %d: %v", i, err)
+		}
+		w.visit(t, s, extra.ID, w.tenantA.ID, "segment-ready-extra-"+string(rune('b'+i)), 1)
+		memberIDs = append(memberIDs, extra.ID)
+	}
 
-	segment, err := s.Reg.Segment(ctx, "ready", `{"visitedTenantIds":[],"excludedTenantIds":[],"periodDays":90}`, []string{guest.ID})
+	segment, err := s.Reg.Segment(ctx, "ready", `{"visitedTenantIds":[],"excludedTenantIds":[],"periodDays":90}`, memberIDs)
 	if err != nil {
 		t.Fatalf("fixture segment: %v", err)
 	}
@@ -382,8 +402,8 @@ func TestSegmentGetReportsReadyVersion(t *testing.T) {
 	if !ok {
 		t.Fatalf("segment response has no memberCount: %s", resp.Snippet())
 	}
-	if count != 1 {
-		t.Fatalf("memberCount: expected 1 materialized member, got %d", count)
+	if count != 5 {
+		t.Fatalf("memberCount: expected 5 materialized members, got %d", count)
 	}
 }
 

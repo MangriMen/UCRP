@@ -144,7 +144,7 @@ func (p *Pipeline) parseRow(ctx context.Context, row Row, mapping FieldMapping, 
 		return nil, &rowError{"internal", "Ошибка справочника типов событий"}
 	}
 	if !ok {
-		return nil, &rowError{"bad_event_type", "Неизвестный тип события: " + eventTypeCode}
+		return nil, &rowError{"unknown_event_type", "Неизвестный тип события: " + eventTypeCode}
 	}
 
 	tenantID, re := p.resolveTenant(ctx, row, mapping, lookups, batch)

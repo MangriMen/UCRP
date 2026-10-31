@@ -33,8 +33,8 @@ func TestGuestContactsList(t *testing.T) {
 		t.Fatalf("the exported guest must have exactly one contact record: %s", resp.Snippet())
 	}
 	entry, _ := items[0].(map[string]any)
-	if got := harness.StringField(entry, "export_id"); got != exportID {
-		t.Fatalf("contact record export_id: expected %s, got %q", exportID, got)
+	if got := harness.StringField(entry, "exportId"); got != exportID {
+		t.Fatalf("contact record exportId: expected %s, got %q", exportID, got)
 	}
 }
 

@@ -68,9 +68,10 @@ func TestDataSourceCreate(t *testing.T) {
 	}
 
 	resp, err := s.API.Post(ctx, "/api/v1/data-sources", map[string]any{
-		"tenantId": w.tenantA.ID,
-		"typeId":   csvTypeID,
-		"name":     s.Reg.Name("source-created"),
+		"tenantId":     w.tenantA.ID,
+		"typeId":       csvTypeID,
+		"name":         s.Reg.Name("source-created"),
+		"fieldMapping": map[string]string{"externalId": "external_id", "occurredAt": "occurred_at"},
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/data-sources: %v", err)

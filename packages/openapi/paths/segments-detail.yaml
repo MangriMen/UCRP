@@ -61,6 +61,8 @@ paths:
           $ref: ../components/responses.yaml#/Forbidden
         '404':
           $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
     delete:
       tags:
         - Segments

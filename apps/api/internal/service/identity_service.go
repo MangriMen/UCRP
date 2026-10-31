@@ -36,6 +36,7 @@ type MergeCandidateDTO struct {
 	Resolution    string `json:"resolution"`
 	WinnerGuestID string `json:"winnerGuestId,omitempty"`
 	MergedGuestID string `json:"mergedGuestId,omitempty"`
+	CreatedAt     string `json:"createdAt"`
 }
 
 func (s *IdentityService) List(ctx context.Context, resolution string, limit, offset int) ([]MergeCandidateDTO, error) {
@@ -172,5 +173,6 @@ func toMergeDTO(c domain.MergeCandidate) MergeCandidateDTO {
 		Resolution:    string(c.Resolution),
 		WinnerGuestID: c.WinnerGuestID,
 		MergedGuestID: c.MergedGuestID,
+		CreatedAt:     c.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 	}
 }

@@ -186,12 +186,12 @@ func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *SegmentHandler) Members(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
 	versionNo, _ := strconv.Atoi(r.URL.Query().Get("version"))
-	items, err := h.segments.Members(r.Context(), chi.URLParam(r, "id"), versionNo, limit, offset)
+	page, err := h.segments.Members(r.Context(), chi.URLParam(r, "id"), versionNo, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, page)
 }
 
 func (h *SegmentHandler) Versions(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +200,7 @@ func (h *SegmentHandler) Versions(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *SegmentHandler) Recompute(w http.ResponseWriter, r *http.Request) {
@@ -218,7 +218,7 @@ func (h *SegmentHandler) Templates(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
@@ -242,7 +242,7 @@ func (h *GuestHandler) Contacts(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, offset+len(items))
 }
 
 func (h *GuestHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -367,27 +367,29 @@ func (h *ReferenceHandler) DeleteCategory(w http.ResponseWriter, r *http.Request
 }
 
 func (h *ReferenceHandler) ListRelations(w http.ResponseWriter, r *http.Request) {
-	items, err := h.ref.ListRelations(r.Context(), chi.URLParam(r, "id"))
+	categoryID := chi.URLParam(r, "id")
+	items, err := h.ref.ListRelations(r.Context(), categoryID)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"categoryId": categoryID, "relations": nonNil(items)})
 }
 
 func (h *ReferenceHandler) ReplaceRelations(w http.ResponseWriter, r *http.Request) {
 	req, ok := decode[struct {
-		Items []service.RelationDTO `json:"items"`
+		Relations []service.RelationDTO `json:"relations"`
 	}](w, r)
 	if !ok {
 		return
 	}
-	items, err := h.ref.ReplaceRelations(r.Context(), chi.URLParam(r, "id"), req.Items)
+	categoryID := chi.URLParam(r, "id")
+	items, err := h.ref.ReplaceRelations(r.Context(), categoryID, req.Relations)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"categoryId": categoryID, "relations": nonNil(items)})
 }
 
 func (h *ReferenceHandler) ListProjects(w http.ResponseWriter, r *http.Request) {

@@ -15,10 +15,10 @@ func TestUserCreateByManager(t *testing.T) {
 	manager := actor(t, s, "manager")
 	email := s.Reg.Name("created-user") + "@e2e.local"
 	resp, err := manager.Post(ctx, "/api/v1/users", map[string]any{
-		"email":        email,
-		"password":     "e2e-password-1",
-		"display_name": "E2E created user",
-		"role":         "analyst",
+		"email":       email,
+		"password":    "e2e-password-1",
+		"displayName": "E2E created user",
+		"role":        "analyst",
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/users: %v", err)
@@ -44,10 +44,10 @@ func TestUserCreateTenantRequiresTenantID(t *testing.T) {
 
 	manager := actor(t, s, "manager")
 	resp, err := manager.Post(ctx, "/api/v1/users", map[string]any{
-		"email":        s.Reg.Name("tenant-no-id") + "@e2e.local",
-		"password":     "e2e-password-1",
-		"display_name": "E2E tenant user",
-		"role":         "tenant",
+		"email":       s.Reg.Name("tenant-no-id") + "@e2e.local",
+		"password":    "e2e-password-1",
+		"displayName": "E2E tenant user",
+		"role":        "tenant",
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/users: %v", err)
@@ -64,10 +64,10 @@ func TestUserCreateDuplicateEmail(t *testing.T) {
 
 	manager := actor(t, s, "manager")
 	payload := map[string]any{
-		"email":        s.Reg.Name("duplicate-user") + "@e2e.local",
-		"password":     "e2e-password-1",
-		"display_name": "E2E duplicate",
-		"role":         "analyst",
+		"email":       s.Reg.Name("duplicate-user") + "@e2e.local",
+		"password":    "e2e-password-1",
+		"displayName": "E2E duplicate",
+		"role":        "analyst",
 	}
 
 	first, err := manager.Post(ctx, "/api/v1/users", payload)
@@ -164,10 +164,10 @@ func TestUsersForbiddenForOtherRoles(t *testing.T) {
 		s.RequireStatus(list, 403, "GET /api/v1/users as "+role)
 
 		create, err := c.Post(ctx, "/api/v1/users", map[string]any{
-			"email":        s.Reg.Name("forbidden-"+role) + "@e2e.local",
-			"password":     "e2e-password-1",
-			"display_name": "E2E forbidden " + role,
-			"role":         "analyst",
+			"email":       s.Reg.Name("forbidden-"+role) + "@e2e.local",
+			"password":    "e2e-password-1",
+			"displayName": "E2E forbidden " + role,
+			"role":        "analyst",
 		})
 		if err != nil {
 			t.Fatalf("POST /api/v1/users as %s: %v", role, err)

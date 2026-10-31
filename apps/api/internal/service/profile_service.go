@@ -54,15 +54,30 @@ type GuestProfile struct {
 	Status       string               `json:"status"`
 	MergedIntoID string               `json:"mergedIntoId,omitempty"`
 	TenantCount  int                  `json:"tenantCount"`
-	Tenants      []string             `json:"tenants"`
+	Tenants      []GuestTenantEntry   `json:"tenants"`
+	Segments     []GuestSegmentEntry  `json:"segments"`
 	Identifiers  []GuestIdentifierDTO `json:"identifiers"`
 	CreatedAt    string               `json:"createdAt"`
 	UpdatedAt    string               `json:"updatedAt"`
 }
 
+type GuestTenantEntry struct {
+	TenantID   string `json:"tenantId"`
+	TenantName string `json:"tenantName"`
+	EventCount int    `json:"eventCount"`
+}
+
+type GuestSegmentEntry struct {
+	SegmentID string `json:"segmentId"`
+	Name      string `json:"name"`
+	VersionNo int    `json:"versionNo,omitempty"`
+}
+
 type GuestIdentifierDTO struct {
-	IDType string `json:"idType"`
-	Value  string `json:"value"`
+	ID              string `json:"id"`
+	GuestID         string `json:"guestId"`
+	IDType          string `json:"idType"`
+	ValueNormalized string `json:"valueNormalized"`
 }
 
 type EventDTO struct {
@@ -151,7 +166,11 @@ func (s *ProfileService) Get(ctx context.Context, id string) (*GuestProfile, err
 	if err != nil {
 		return nil, err
 	}
-	tenants, err := s.guests.TenantNames(ctx, g.ID)
+	tenantRows, err := s.guests.TenantSummaries(ctx, g.ID)
+	if err != nil {
+		return nil, err
+	}
+	segmentRows, err := s.guests.SegmentSummaries(ctx, g.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +180,15 @@ func (s *ProfileService) Get(ctx context.Context, id string) (*GuestProfile, err
 	}
 	identifiers := make([]GuestIdentifierDTO, 0, len(ids))
 	for _, id := range ids {
-		identifiers = append(identifiers, GuestIdentifierDTO{IDType: id.IDType, Value: id.ValueNormalized})
+		identifiers = append(identifiers, GuestIdentifierDTO{ID: id.ID, GuestID: id.GuestID, IDType: id.IDType, ValueNormalized: id.ValueNormalized})
+	}
+	tenants := make([]GuestTenantEntry, 0, len(tenantRows))
+	for _, t := range tenantRows {
+		tenants = append(tenants, GuestTenantEntry{TenantID: t.TenantID, TenantName: t.TenantName, EventCount: t.EventCount})
+	}
+	segments := make([]GuestSegmentEntry, 0, len(segmentRows))
+	for _, sg := range segmentRows {
+		segments = append(segments, GuestSegmentEntry{SegmentID: sg.SegmentID, Name: sg.Name, VersionNo: sg.VersionNo})
 	}
 	return &GuestProfile{
 		ID:           g.ID,
@@ -170,6 +197,7 @@ func (s *ProfileService) Get(ctx context.Context, id string) (*GuestProfile, err
 		MergedIntoID: g.MergedIntoID,
 		TenantCount:  tenantCount,
 		Tenants:      tenants,
+		Segments:     segments,
 		Identifiers:  identifiers,
 		CreatedAt:    g.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:    g.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),

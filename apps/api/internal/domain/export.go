@@ -73,6 +73,7 @@ type ContactLog struct {
 	ID          string
 	GuestID     string
 	ExportID    string
+	Channel     string
 	ContactedAt time.Time
 }
 

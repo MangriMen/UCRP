@@ -133,9 +133,14 @@ RejectedRow:
       enum:
         - invalid_date
         - no_external_id
+        - bad_external_id
         - invalid_amount
         - unknown_event_type
         - invalid_phone
+        - invalid_tenant
+        - bad_email
+        - no_tenant
+        - internal
     errorMessage:
       type: string
       description: Reason

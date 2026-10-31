@@ -40,6 +40,7 @@ func (s *AuthService) ListUsers(ctx context.Context, limit, offset int) ([]UserD
 		out = append(out, UserDTO{
 			ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
 			Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive,
+			CreatedAt: u.CreatedAt, UpdatedAt: u.UpdatedAt,
 		})
 	}
 	return out, nil
@@ -53,16 +54,19 @@ func (s *AuthService) GetUser(ctx context.Context, id string) (*UserDTO, error) 
 	return &UserDTO{
 		ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
 		Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive,
+		CreatedAt: u.CreatedAt, UpdatedAt: u.UpdatedAt,
 	}, nil
 }
 
 type UserDTO struct {
-	ID          string `json:"id"`
-	Email       string `json:"email"`
-	DisplayName string `json:"displayName"`
-	Role        string `json:"role"`
-	TenantID    string `json:"tenantId,omitempty"`
-	IsActive    bool   `json:"isActive"`
+	ID          string    `json:"id"`
+	Email       string    `json:"email"`
+	DisplayName string    `json:"displayName"`
+	Role        string    `json:"role"`
+	TenantID    string    `json:"tenantId,omitempty"`
+	IsActive    bool      `json:"isActive"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 type UserCreateRequest struct {
@@ -100,7 +104,15 @@ func (s *AuthService) CreateUserService(ctx context.Context, req UserCreateReque
 	if err != nil {
 		return nil, err
 	}
-	return &UserDTO{ID: pub.UserID, Email: email, DisplayName: req.DisplayName, Role: pub.Role, TenantID: pub.TenantID, IsActive: true}, nil
+	created, err := s.users.GetByID(ctx, pub.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return &UserDTO{
+		ID: created.ID, Email: created.Email, DisplayName: created.DisplayName,
+		Role: string(created.Role), TenantID: created.TenantID, IsActive: created.IsActive,
+		CreatedAt: created.CreatedAt, UpdatedAt: created.UpdatedAt,
+	}, nil
 }
 
 func (s *AuthService) UpdateUser(ctx context.Context, id string, req UserUpdateRequest) (*UserDTO, error) {
@@ -114,6 +126,7 @@ func (s *AuthService) UpdateUser(ctx context.Context, id string, req UserUpdateR
 	if req.DisplayName != "" {
 		u.DisplayName = req.DisplayName
 	}
+	u.UpdatedAt = s.clock.Now().UTC().Truncate(time.Second)
 	if err := s.users.Update(ctx, u); err != nil {
 		return nil, err
 	}

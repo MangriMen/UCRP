@@ -16,10 +16,10 @@ func TestCampaignCreateRequiresTenantAndSegment(t *testing.T) {
 	segment := mustSegment(t, s, w, "campaign-create")
 
 	resp, err := s.API.Post(ctx, "/api/v1/campaigns", map[string]any{
-		"name":             s.Reg.Name("campaign"),
-		"tenant_id":        w.tenantC.ID,
-		"segment_id":       segment.ID,
-		"attribution_days": 14,
+		"name":            s.Reg.Name("campaign"),
+		"targetTenantId":  w.tenantC.ID,
+		"segmentId":       segment.ID,
+		"attributionDays": 14,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/campaigns: %v", err)
@@ -29,10 +29,10 @@ func TestCampaignCreateRequiresTenantAndSegment(t *testing.T) {
 	s.RequireSchema("POST", "/api/v1/campaigns", resp)
 
 	created := jsonObject(t, resp, "created campaign")
-	if got := harness.StringField(created, "tenant_id", "target_tenant_id"); got != w.tenantC.ID {
+	if got := harness.StringField(created, "targetTenantId"); got != w.tenantC.ID {
 		t.Fatalf("campaign target tenant: expected %s, got %q", w.tenantC.ID, got)
 	}
-	if days, _ := harness.IntField(created, "attribution_days"); days != 14 {
+	if days, _ := harness.IntField(created, "attributionDays"); days != 14 {
 		t.Fatalf("attribution_days: expected 14, got %d", days)
 	}
 	trackCampaign(s, harness.StringField(created, "id"))
@@ -46,15 +46,15 @@ func TestCampaignCreateDefaultsAttributionWindow(t *testing.T) {
 
 	segment := mustSegment(t, s, w, "campaign-default")
 	resp, err := s.API.Post(ctx, "/api/v1/campaigns", map[string]any{
-		"name":       s.Reg.Name("campaign-default"),
-		"tenant_id":  w.tenantC.ID,
-		"segment_id": segment.ID,
+		"name":           s.Reg.Name("campaign-default"),
+		"targetTenantId": w.tenantC.ID,
+		"segmentId":      segment.ID,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/campaigns: %v", err)
 	}
 	s.RequireStatusOrDrift(resp, 201, "POST /api/v1/campaigns without attribution_days")
-	if days, _ := harness.IntField(jsonObject(t, resp, "created campaign"), "attribution_days"); days != 14 {
+	if days, _ := harness.IntField(jsonObject(t, resp, "created campaign"), "attributionDays"); days != 14 {
 		t.Fatalf("the default attribution window must be 14 days, got %d", days)
 	}
 	trackCampaign(s, harness.StringField(jsonObject(t, resp, "created campaign"), "id"))
@@ -68,9 +68,9 @@ func TestCampaignDeleteWithExportsReturns409(t *testing.T) {
 
 	segment := mustSegment(t, s, w, "campaign-delete")
 	create, err := s.API.Post(ctx, "/api/v1/campaigns", map[string]any{
-		"name":       s.Reg.Name("campaign-delete"),
-		"tenant_id":  w.tenantC.ID,
-		"segment_id": segment.ID,
+		"name":           s.Reg.Name("campaign-delete"),
+		"targetTenantId": w.tenantC.ID,
+		"segmentId":      segment.ID,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/campaigns: %v", err)
@@ -80,11 +80,11 @@ func TestCampaignDeleteWithExportsReturns409(t *testing.T) {
 	trackCampaign(s, campaignID)
 
 	export, err := s.API.Post(ctx, "/api/v1/exports", map[string]any{
-		"segment_id":      segment.ID,
-		"channel":         "sms",
-		"format":          "csv",
-		"campaign_id":     campaignID,
-		"idempotency_key": s.Reg.Name("campaign-export"),
+		"segmentId":      segment.ID,
+		"channel":        "sms",
+		"format":         "csv",
+		"campaignId":     campaignID,
+		"idempotencyKey": s.Reg.Name("campaign-export"),
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/exports: %v", err)
@@ -108,9 +108,9 @@ func TestCampaignDeleteWithoutExports(t *testing.T) {
 
 	segment := mustSegment(t, s, w, "campaign-clean")
 	create, err := s.API.Post(ctx, "/api/v1/campaigns", map[string]any{
-		"name":       s.Reg.Name("campaign-clean"),
-		"tenant_id":  w.tenantC.ID,
-		"segment_id": segment.ID,
+		"name":           s.Reg.Name("campaign-clean"),
+		"targetTenantId": w.tenantC.ID,
+		"segmentId":      segment.ID,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/campaigns: %v", err)
@@ -136,9 +136,9 @@ func TestCampaignCreateForbiddenForManagerAndAnalyst(t *testing.T) {
 	for _, role := range []string{"manager", "analyst"} {
 		c := actor(t, s, role)
 		resp, err := c.Post(ctx, "/api/v1/campaigns", map[string]any{
-			"name":       s.Reg.Name("campaign-" + role),
-			"tenant_id":  w.tenantC.ID,
-			"segment_id": segment.ID,
+			"name":           s.Reg.Name("campaign-" + role),
+			"targetTenantId": w.tenantC.ID,
+			"segmentId":      segment.ID,
 		})
 		if err != nil {
 			t.Fatalf("POST /api/v1/campaigns as %s: %v", role, err)

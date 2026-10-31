@@ -255,6 +255,29 @@ func (s *Spec) validate(schema map[string]any, value any, at string, problems *[
 		}
 	}
 
+	if branches, ok := schema["oneOf"].([]any); ok {
+		var fallback []string
+		for _, raw := range branches {
+			sub, ok := raw.(map[string]any)
+			if !ok {
+				continue
+			}
+			var branchProblems []string
+			s.validate(sub, value, at, &branchProblems)
+			if len(branchProblems) == 0 {
+				fallback = nil
+				break
+			}
+			if fallback == nil || len(branchProblems) < len(fallback) {
+				fallback = branchProblems
+			}
+		}
+		if fallback != nil {
+			*problems = append(*problems, fallback...)
+		}
+		return
+	}
+
 	if enum, ok := schema["enum"].([]any); ok {
 		if !containsValue(enum, value) {
 			*problems = append(*problems, fmt.Sprintf("%s: %v is not one of %v", at, value, enum))

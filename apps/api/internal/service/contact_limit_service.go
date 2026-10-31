@@ -162,7 +162,9 @@ func (s *ProfileService) Contacts(ctx context.Context, guestID string, limit, of
 	for _, l := range logs {
 		out = append(out, ContactDTO{
 			ID:          l.ID,
+			GuestID:     l.GuestID,
 			ExportID:    l.ExportID,
+			Channel:     l.Channel,
 			ContactedAt: l.ContactedAt.UTC().Format(time.RFC3339),
 		})
 	}
@@ -171,7 +173,9 @@ func (s *ProfileService) Contacts(ctx context.Context, guestID string, limit, of
 
 type ContactDTO struct {
 	ID          string `json:"id"`
+	GuestID     string `json:"guestId"`
 	ExportID    string `json:"exportId"`
+	Channel     string `json:"channel"`
 	ContactedAt string `json:"contactedAt"`
 }
 

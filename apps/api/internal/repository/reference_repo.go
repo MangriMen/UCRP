@@ -19,9 +19,11 @@ func (r *ContactLogSQL) ListByGuest(ctx context.Context, guestID string, limit, 
 		offset = 0
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, guest_id, export_id, contacted_at
-		FROM contact_log WHERE guest_id = $1
-		ORDER BY contacted_at DESC LIMIT $2 OFFSET $3`, guestID, limit, offset)
+		SELECT cl.id, cl.guest_id, cl.export_id, ej.channel, cl.contacted_at
+		FROM contact_log cl
+		JOIN export_job ej ON ej.id = cl.export_id
+		WHERE cl.guest_id = $1
+		ORDER BY cl.contacted_at DESC LIMIT $2 OFFSET $3`, guestID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +31,7 @@ func (r *ContactLogSQL) ListByGuest(ctx context.Context, guestID string, limit, 
 	out := make([]domain.ContactLog, 0)
 	for rows.Next() {
 		var l domain.ContactLog
-		if err := rows.Scan(&l.ID, &l.GuestID, &l.ExportID, &l.ContactedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.GuestID, &l.ExportID, &l.Channel, &l.ContactedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, l)

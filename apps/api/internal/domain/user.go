@@ -16,6 +16,7 @@ type User struct {
 	AuthVersion  int64
 	LastLoginAt  *time.Time
 	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 type UserRepo interface {
