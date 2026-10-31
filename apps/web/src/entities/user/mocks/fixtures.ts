@@ -1,4 +1,4 @@
-import type { Me } from '../model/types'
+import type { Me, User } from '../model/types'
 
 export const MOCK_PASSWORD = 'password'
 
@@ -34,5 +34,32 @@ export const mockUsers: Me[] = [
     role: 'analyst',
     tenantId: null,
     permissions: ['guests:read', 'dashboard:read', 'dq:read'],
+  },
+]
+
+export const SELF_USER_ID = 'user-manager'
+
+export const mockUserRecords: User[] = [
+  ...mockUsers.map((u) => ({
+    id: u.userId,
+    email: u.email,
+    displayName: u.displayName,
+    role: u.role,
+    tenantId: u.tenantId ?? null,
+    isActive: true,
+    lastLoginAt: '2026-10-30T08:00:00Z',
+    createdAt: '2026-01-05T09:00:00Z',
+    updatedAt: '2026-01-05T09:00:00Z',
+  })),
+  {
+    id: 'user-marketer-2',
+    email: 'olga@ucrp.test',
+    displayName: 'Ольга Маркетолог',
+    role: 'marketer',
+    tenantId: null,
+    isActive: false,
+    lastLoginAt: null,
+    createdAt: '2026-03-12T09:00:00Z',
+    updatedAt: '2026-06-01T09:00:00Z',
   },
 ]

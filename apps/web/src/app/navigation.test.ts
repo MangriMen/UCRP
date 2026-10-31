@@ -18,4 +18,16 @@ describe('navigationFor', () => {
     expect(titles('analyst')).not.toContain('Пользователи')
     expect(titles('marketer')).not.toContain('Пользователи')
   })
+
+  it('lets only the analyst manage merge blocks', () => {
+    expect(titles('analyst')).toContain('Запреты склейки')
+    expect(titles('marketer')).toContain('Склейка профилей')
+    expect(titles('marketer')).not.toContain('Запреты склейки')
+  })
+
+  it('hides segment and export write entries from the tenant', () => {
+    expect(titles('tenant')).not.toContain('Выгрузки')
+    expect(titles('tenant')).not.toContain('Лимиты контактов')
+    expect(titles('tenant')).not.toContain('Сегменты')
+  })
 })

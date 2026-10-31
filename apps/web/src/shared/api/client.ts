@@ -70,7 +70,7 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
   query?: Record<string, string | number | boolean | undefined>
 }
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function requestResponse(path: string, options: RequestOptions = {}): Promise<Response> {
   const { body, query, headers, ...init } = options
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -109,5 +109,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     }
   }
   if (!res.ok) throw await toApiError(res)
+  return res
+}
+
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const res = await requestResponse(path, options)
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T)
+}
+
+export async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const res = await requestResponse(path, options)
+  return res.blob()
 }

@@ -5,19 +5,59 @@
         "tags": ["Guests"],
         "operationId": "searchGuests",
         "summary": "Search guests",
-        "description": "Searches by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Merged profiles (`status=merged`) are excluded from results.",
+        "description": "Lists and searches guests. All filters are optional and combined with AND; `q` is no longer mandatory when any filter is given, and an empty request lists all guests. Filters `period_from`/`period_to` select guests with activity in the period (both bounds inclusive). Search by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Merged profiles (`status=merged`) are excluded from results.",
         "x-roles": ["R-1", "R-4"],
         "x-uc": ["UC-2"],
         "parameters": [
           {
             "name": "q",
             "in": "query",
-            "required": true,
-            "description": "Phone, email, card, or name",
+            "required": false,
+            "description": "Phone, email, card, or name. Optional: not required when any other filter is given; a request with no `q` and no filters lists all guests. When provided, must be 2 to 200 characters.",
             "schema": {
               "type": "string",
               "minLength": 2,
               "maxLength": 200
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "query",
+            "required": false,
+            "description": "Only guests that have events from this data source.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "description": "Only guests that have events at this tenant.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "period_from",
+            "in": "query",
+            "required": false,
+            "description": "Start of the activity period, inclusive. Only guests with activity on or after this date.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "period_to",
+            "in": "query",
+            "required": false,
+            "description": "End of the activity period, inclusive. Only guests with activity on or before this date.",
+            "schema": {
+              "type": "string",
+              "format": "date"
             }
           },
           {

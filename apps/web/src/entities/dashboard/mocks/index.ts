@@ -1,0 +1,1 @@
+export { dashboardHandlers } from './handlers'

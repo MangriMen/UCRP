@@ -446,7 +446,7 @@ export interface paths {
         };
         /**
          * Search guests
-         * @description Searches by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Merged profiles (`status=merged`) are excluded from results.
+         * @description Lists and searches guests. All filters are optional and combined with AND; `q` is no longer mandatory when any filter is given, and an empty request lists all guests. Filters `period_from`/`period_to` select guests with activity in the period (both bounds inclusive). Search by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Merged profiles (`status=merged`) are excluded from results.
          */
         get: operations["searchGuests"];
         put?: never;
@@ -2399,11 +2399,19 @@ export interface components {
             /** Format: int64 */
             minAmountMinor?: number | null;
         };
+        /** @description A rule tree node: either a flat `SegmentRule` or a `SegmentRuleGroup`. A node with `operator` and `conditions` is a group; otherwise it is a flat rule. Existing flat rules remain valid unchanged. */
+        SegmentRuleNode: components["schemas"]["SegmentRule"] | components["schemas"]["SegmentRuleGroup"];
+        /** @description Nested group of rule nodes combined with a logical operator. `and`: a guest must match every condition; `or`: a guest must match at least one. Groups may be nested to any depth the server accepts. Each flat condition keeps its own `periodDays` window. */
+        SegmentRuleGroup: {
+            /** @enum {string} */
+            operator: "and" | "or";
+            conditions: components["schemas"]["SegmentRuleNode"][];
+        };
         SegmentVersion: {
             id: string;
             segmentId: string;
             versionNo: number;
-            rule: components["schemas"]["SegmentRule"];
+            rule: components["schemas"]["SegmentRuleNode"];
             /** @description Rule in business language */
             ruleText?: string;
             status: components["schemas"]["SegmentStatus"];
@@ -2426,7 +2434,7 @@ export interface components {
             memberCount: number;
             /** Format: date-time */
             computedAt?: string | null;
-            rule?: components["schemas"]["SegmentRule"];
+            rule?: components["schemas"]["SegmentRuleNode"];
             ruleText?: string;
             createdBy?: string | null;
             /** Format: date-time */
@@ -2439,15 +2447,15 @@ export interface components {
             description?: string | null;
             /** @description When set, template parameters are applied to the rule */
             templateCode?: string | null;
-            rule: components["schemas"]["SegmentRule"];
+            rule: components["schemas"]["SegmentRuleNode"];
         };
         SegmentUpdateRequest: {
             name?: string;
             description?: string | null;
-            rule: components["schemas"]["SegmentRule"];
+            rule: components["schemas"]["SegmentRuleNode"];
         };
         SegmentPreviewRequest: {
-            rule: components["schemas"]["SegmentRule"];
+            rule: components["schemas"]["SegmentRuleNode"];
             /**
              * @description How many examples to return
              * @default 20
@@ -2491,7 +2499,7 @@ export interface components {
             /** @example Sleeping neighbor */
             name: string;
             description?: string;
-            rule: components["schemas"]["SegmentRule"];
+            rule: components["schemas"]["SegmentRuleNode"];
             defaultPeriodDays?: number;
         };
         LoginRequest: {
@@ -3395,9 +3403,17 @@ export interface operations {
     };
     searchGuests: {
         parameters: {
-            query: {
-                /** @description Phone, email, card, or name */
-                q: string;
+            query?: {
+                /** @description Phone, email, card, or name. Optional: not required when any other filter is given; a request with no `q` and no filters lists all guests. When provided, must be 2 to 200 characters. */
+                q?: string;
+                /** @description Only guests that have events from this data source. */
+                source_id?: string;
+                /** @description Only guests that have events at this tenant. */
+                tenant_id?: string;
+                /** @description Start of the activity period, inclusive. Only guests with activity on or after this date. */
+                period_from?: string;
+                /** @description End of the activity period, inclusive. Only guests with activity on or before this date. */
+                period_to?: string;
                 /** @description Page number, starting at 1 */
                 page?: components["parameters"]["Page"];
                 /** @description Page size */

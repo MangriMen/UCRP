@@ -19,7 +19,7 @@
         "description": "When set, template parameters are applied to the rule"
       },
       "rule": {
-        "$ref": "./segments.json#/SegmentRule"
+        "$ref": "./segments.json#/SegmentRuleNode"
       }
     }
   },
@@ -38,7 +38,7 @@
         "maxLength": 1000
       },
       "rule": {
-        "$ref": "./segments.json#/SegmentRule"
+        "$ref": "./segments.json#/SegmentRuleNode"
       }
     }
   },
@@ -47,7 +47,7 @@
     "required": ["rule"],
     "properties": {
       "rule": {
-        "$ref": "./segments.json#/SegmentRule"
+        "$ref": "./segments.json#/SegmentRuleNode"
       },
       "limit": {
         "type": "integer",
@@ -176,7 +176,7 @@
         "type": "string"
       },
       "rule": {
-        "$ref": "./segments.json#/SegmentRule"
+        "$ref": "./segments.json#/SegmentRuleNode"
       },
       "defaultPeriodDays": {
         "type": "integer",

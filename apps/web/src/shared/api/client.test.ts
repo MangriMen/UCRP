@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, request, setAccessToken } from './client'
+import { ApiError, request, requestBlob, setAccessToken } from './client'
 
 const json = (status: number, body?: unknown) =>
   new Response(body === undefined ? null : JSON.stringify(body), { status })
@@ -36,6 +36,17 @@ describe('request', () => {
     await Promise.all([request('/a'), request('/b')])
     expect(fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/auth/refresh'))).toHaveLength(
       1,
+    )
+  })
+
+  it('returns the response body as a blob with the bearer token', async () => {
+    setAccessToken('token')
+    const fetchMock = vi.fn().mockResolvedValue(new Response('id,phone\n1,+7'))
+    vi.stubGlobal('fetch', fetchMock)
+    const blob = await requestBlob('/exports/x/download')
+    expect(await blob.text()).toBe('id,phone\n1,+7')
+    expect(new Headers(fetchMock.mock.calls[0][1].headers).get('Authorization')).toBe(
+      'Bearer token',
     )
   })
 })

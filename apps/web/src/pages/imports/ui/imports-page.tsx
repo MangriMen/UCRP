@@ -10,12 +10,11 @@ import {
 import { useAuth } from '@/entities/user'
 import { UploadImportForm } from '@/features/upload-import'
 import { formatDateTime } from '@/shared/lib/format'
+import { ALL_OPTION, parsePage } from '@/shared/lib/search-params'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DataTable, type Column } from '@/shared/ui/data-table'
+import { OptionSelect } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
-
-const ALL = 'all'
 
 const columns: Column<ImportBatch>[] = [
   { id: 'createdAt', header: 'Создан', cell: (b) => formatDateTime(b.createdAt) },
@@ -27,28 +26,23 @@ const columns: Column<ImportBatch>[] = [
 ]
 
 const statusItems = [
-  { value: ALL, label: 'Все статусы' },
+  { value: ALL_OPTION, label: 'Все статусы' },
   ...Object.entries(importStatusLabels).map(([value, label]) => ({ value, label })),
 ]
 
 const isImportStatus = (value: string): value is ImportStatus => value in importStatusLabels
 
-const parsePage = (value: string | null) => {
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
-
 export function ImportsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const dataSourceId = searchParams.get('source') ?? ALL
-  const status = searchParams.get('status') ?? ALL
+  const dataSourceId = searchParams.get('source') ?? ALL_OPTION
+  const status = searchParams.get('status') ?? ALL_OPTION
   const page = parsePage(searchParams.get('page'))
 
   const { role } = useAuth()
   const sources = useDataSources()
   const imports = useImports({
-    dataSourceId: dataSourceId === ALL ? undefined : dataSourceId,
+    dataSourceId: dataSourceId === ALL_OPTION ? undefined : dataSourceId,
     status: isImportStatus(status) ? status : undefined,
     page,
   })
@@ -57,14 +51,14 @@ export function ImportsPage() {
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
       for (const [key, value] of Object.entries(changes)) {
-        if (value === null || value === ALL) next.delete(key)
+        if (value === null || value === ALL_OPTION) next.delete(key)
         else next.set(key, value)
       }
       return next
     })
 
   const sourceItems = [
-    { value: ALL, label: 'Все источники' },
+    { value: ALL_OPTION, label: 'Все источники' },
     ...(sources.data ?? []).map((s) => ({ value: s.id, label: s.name })),
   ]
 
@@ -89,38 +83,20 @@ export function ImportsPage() {
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">
-          <Select
+          <OptionSelect
             items={sourceItems}
             value={dataSourceId}
             onValueChange={(value) => updateParams({ source: value, page: null })}
-          >
-            <SelectTrigger className="w-56" aria-label="Источник">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {sourceItems.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
+            ariaLabel="Источник"
+            className="w-56"
+          />
+          <OptionSelect
             items={statusItems}
             value={status}
             onValueChange={(value) => updateParams({ status: value, page: null })}
-          >
-            <SelectTrigger className="w-56" aria-label="Статус">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusItems.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            ariaLabel="Статус"
+            className="w-56"
+          />
         </div>
         <DataTable
           columns={columns}

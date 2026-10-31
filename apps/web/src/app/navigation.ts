@@ -1,4 +1,5 @@
 import {
+  Ban,
   BarChart3,
   Database,
   FileDown,
@@ -6,6 +7,7 @@ import {
   History,
   Layers,
   Megaphone,
+  Plug,
   Settings,
   ShieldCheck,
   Store,
@@ -57,6 +59,7 @@ const navigation: NavGroup[] = [
         icon: GitMerge,
         roles: ['analyst', 'marketer'],
       },
+      { title: 'Запреты склейки', to: '/identity/blocks', icon: Ban, roles: ['analyst'] },
       {
         title: 'Сегменты',
         to: '/segments',
@@ -90,7 +93,15 @@ const navigation: NavGroup[] = [
   },
   {
     label: 'Данные',
-    items: [{ title: 'Импорт', to: '/import', icon: Upload, roles: ['analyst', 'manager'] }],
+    items: [
+      {
+        title: 'Арендаторы и источники',
+        to: '/data-sources',
+        icon: Plug,
+        roles: ['marketer', 'manager', 'analyst'],
+      },
+      { title: 'Импорт', to: '/import', icon: Upload, roles: ['analyst', 'manager'] },
+    ],
   },
   {
     label: 'Администрирование',
