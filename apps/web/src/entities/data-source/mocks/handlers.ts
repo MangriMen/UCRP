@@ -103,7 +103,7 @@ export const dataSourceHandlers = [
     const index = sources.findIndex((s) => s.id === params.id)
     if (index === -1) return apiError(404, 'not_found', 'Источник не найден')
     if (params.id === DATA_SOURCE_WITH_IMPORTS_ID) {
-      return apiError(409, 'conflict', 'У источника есть импорты, удаление невозможно')
+      return apiError(409, 'conflict', 'У источника есть загрузки, удаление невозможно')
     }
     sources.splice(index, 1)
     return new HttpResponse(null, { status: 204 })

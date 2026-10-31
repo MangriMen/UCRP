@@ -43,7 +43,7 @@ export function DashboardPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Дашборд"
-        description="Ключевые показатели потока данных, дедупликации и перехода гостей между арендаторами"
+        description="Ключевые показатели потока данных, объединения профилей и перехода гостей между арендаторами"
       />
       <PeriodFilter
         value={period}

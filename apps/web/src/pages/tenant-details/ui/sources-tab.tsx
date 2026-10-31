@@ -19,12 +19,12 @@ export function SourcesTab({ tenantId }: { tenantId: string }) {
     { id: 'type', header: 'Тип', cell: (s) => typeById.get(s.typeId)?.name ?? s.typeCode },
     {
       id: 'lastImportAt',
-      header: 'Последний импорт',
+      header: 'Последняя загрузка',
       cell: (s) => (s.lastImportAt ? formatDateTime(s.lastImportAt) : '—'),
     },
     {
       id: 'status',
-      header: 'Статус импорта',
+      header: 'Статус загрузки',
       cell: (s) => {
         return s.lastImport ? <ImportStatusBadge status={s.lastImport.status} /> : '—'
       },

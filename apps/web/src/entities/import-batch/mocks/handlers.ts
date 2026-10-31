@@ -90,14 +90,14 @@ export const importHandlers = [
 
   http.get(`${API}/imports/:id`, ({ params }) => {
     const batch = batches.find((b) => b.id === params.id)
-    if (!batch) return apiError(404, 'not_found', 'Импорт не найден')
+    if (!batch) return apiError(404, 'not_found', 'Загрузка не найдена')
     advance(batch)
     return HttpResponse.json(batch)
   }),
 
   http.get(`${API}/imports/:id/rejected-rows`, ({ params, request }) => {
     const batch = batches.find((b) => b.id === params.id)
-    if (!batch) return apiError(404, 'not_found', 'Импорт не найден')
+    if (!batch) return apiError(404, 'not_found', 'Загрузка не найдена')
     return HttpResponse.json(paged(request, mockRejectedRows(batch)))
   }),
 ]
