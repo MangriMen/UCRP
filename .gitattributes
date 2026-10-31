@@ -18,5 +18,4 @@
 *.sqlite binary
 *.sqlite3 binary
 
-# Языковая статистика на GitHub
 docs/** linguist-documentation
