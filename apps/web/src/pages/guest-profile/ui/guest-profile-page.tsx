@@ -32,7 +32,7 @@ export function GuestProfilePage() {
   const title = profile.displayName ?? 'Без имени'
   const isActive = profile.status === 'active'
   const canSeeEvents = can('guest.event.read')
-  const canSeeAmount = can('field.event.amount.read')
+  const canSeeAmount = can('field.guest.total_amount.read')
 
   return (
     <div className="flex flex-col gap-6">

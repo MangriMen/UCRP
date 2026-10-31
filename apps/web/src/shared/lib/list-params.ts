@@ -48,6 +48,8 @@ export function applyParamChanges(
   return next
 }
 
+export type ListParams = ReturnType<typeof useListParams>
+
 export function useListParams() {
   const [searchParams, setSearchParams] = useSearchParams()
 

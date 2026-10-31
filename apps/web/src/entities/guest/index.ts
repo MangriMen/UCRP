@@ -17,6 +17,7 @@ export type {
   GuestEventSort,
   GuestIdentifier,
   GuestMovementStep,
+  GuestListSort,
   GuestProfile,
   GuestSegmentSummary,
   GuestStatus,

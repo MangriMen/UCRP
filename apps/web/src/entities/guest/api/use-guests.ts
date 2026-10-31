@@ -8,7 +8,7 @@ import {
   type GuestEventFilters,
   type GuestSearchFilters,
 } from '../model/keys'
-import type { GuestEventSort, GuestProfile } from '../model/types'
+import type { GuestEventSort, GuestListSort, GuestProfile } from '../model/types'
 
 export function useGuestSearch(filters: GuestSearchFilters) {
   return useQuery({
@@ -21,6 +21,12 @@ export function useGuestSearch(filters: GuestSearchFilters) {
           tenant_id: filters.tenantId,
           period_from: filters.periodFrom,
           period_to: filters.periodTo,
+          status: filters.status,
+          segment_id: filters.segmentId,
+          has_purchases: filters.hasPurchases,
+          first_seen_from: filters.firstSeenFrom,
+          last_seen_to: filters.lastSeenTo,
+          sort: filters.sort as GuestListSort | undefined,
           page: filters.page,
           page_size: filters.pageSize,
         },

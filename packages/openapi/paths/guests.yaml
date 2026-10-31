@@ -5,7 +5,7 @@ paths:
         - Guests
       operationId: searchGuests
       summary: Search guests
-      description: Lists and searches guests. All filters are optional and combined with AND; `q` is no longer mandatory when any filter is given, and an empty request lists all guests. Filters `period_from`/`period_to` select guests with activity in the period (both bounds inclusive). Search by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Merged profiles (`status=merged`) are excluded from results.
+      description: Lists and searches guests. All filters are optional and combined with AND; `q` is no longer mandatory when any filter is given, and an empty request lists all guests. Filters `period_from`/`period_to` select guests with activity in the period (both bounds inclusive). Search by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Only active profiles are returned unless `status` is given. Items carry event statistics; `totalAmountMinor` and `currency` are returned only to users with the `field.guest.total_amount.read` permission, and sorting by `totalAmountMinor` without it is rejected with 403. `total` in `meta` is the exact number of matching guests.
       x-roles:
         - R-1
         - R-4
@@ -48,6 +48,55 @@ paths:
           schema:
             type: string
             format: date
+        - name: status
+          in: query
+          required: false
+          description: Profile status. Defaults to `active`.
+          schema:
+            $ref: ../components/schemas/guests.yaml#/GuestStatus
+        - name: segment_id
+          in: query
+          required: false
+          description: Only members of the current version of this segment.
+          schema:
+            type: string
+        - name: has_purchases
+          in: query
+          required: false
+          description: '`true` keeps guests with at least one `purchase` event, `false` keeps guests without any.'
+          schema:
+            type: boolean
+        - name: first_seen_from
+          in: query
+          required: false
+          description: Only guests whose first event is on or after this date.
+          schema:
+            type: string
+            format: date
+        - name: last_seen_to
+          in: query
+          required: false
+          description: Only guests whose last event is on or before this date. Guests without events are excluded.
+          schema:
+            type: string
+            format: date
+        - name: sort
+          in: query
+          required: false
+          description: Sort field; prefix `-` for descending. Default `-createdAt`. Guests without events go last when sorting by `firstSeenAt` or `lastSeenAt`.
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - -createdAt
+              - eventCount
+              - -eventCount
+              - totalAmountMinor
+              - -totalAmountMinor
+              - firstSeenAt
+              - -firstSeenAt
+              - lastSeenAt
+              - -lastSeenAt
         - $ref: ../components/parameters.yaml#/Page
         - $ref: ../components/parameters.yaml#/PageSize
       responses:

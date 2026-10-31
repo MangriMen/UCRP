@@ -1,9 +1,17 @@
+import type { GuestStatus } from './types'
+
 export interface GuestSearchFilters {
   query?: string
   sourceId?: string
   tenantId?: string
   periodFrom?: string
   periodTo?: string
+  status?: GuestStatus
+  segmentId?: string
+  hasPurchases?: boolean
+  firstSeenFrom?: string
+  lastSeenTo?: string
+  sort?: string
   page?: number
   pageSize?: number
 }

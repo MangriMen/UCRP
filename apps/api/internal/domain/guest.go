@@ -120,9 +120,29 @@ type GuestStats struct {
 	Currency      string
 }
 
+type GuestFilter struct {
+	Query         string
+	Status        GuestStatus
+	SourceID      string
+	TenantID      string
+	SegmentID     string
+	PeriodFrom    *time.Time
+	PeriodTo      *time.Time
+	FirstSeenFrom *time.Time
+	LastSeenTo    *time.Time
+	HasPurchases  *bool
+	Sort          string
+}
+
+type GuestListEntry struct {
+	Guest
+	TenantCount int
+	Stats       GuestStats
+}
+
 type GuestRepo interface {
 	GetByID(ctx context.Context, id string) (*Guest, error)
-	Search(ctx context.Context, q string, limit, offset int) ([]Guest, error)
+	Search(ctx context.Context, filter GuestFilter, limit, offset int) ([]GuestListEntry, int, error)
 	Insert(ctx context.Context, g *Guest) error
 	TenantCount(ctx context.Context, guestID string) (int, error)
 	TenantNames(ctx context.Context, guestID string) ([]string, error)

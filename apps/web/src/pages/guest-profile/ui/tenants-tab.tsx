@@ -17,7 +17,7 @@ export function TenantsTab({ profile }: { profile: GuestProfile }) {
       cell: (t) => t.purchaseCount ?? 0,
       className: 'text-right',
     },
-    ...(can('field.event.amount.read')
+    ...(can('field.guest.total_amount.read')
       ? [
           {
             id: 'amount',

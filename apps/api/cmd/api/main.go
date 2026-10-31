@@ -102,13 +102,13 @@ func run(log *slog.Logger, cfg config.Config) error {
 	events := repository.NewEventSQL(store.DB)
 	contacts := repository.NewContactLogSQL(store.DB)
 	profileSvc := service.NewProfileService(guests, identifiers, events, contacts)
-	guestHandler := handler.NewGuestHandler(profileSvc)
+	guestHandler := handler.NewGuestHandler(profileSvc, accessSvc)
 	tenantGuestSvc := service.NewTenantGuestService(repository.NewTenantGuestSQL(store.DB), accessSvc)
 	tenantGuestHandler := handler.NewTenantGuestHandler(tenantGuestSvc, guestHandler)
 	mergeSQL := repository.NewMergeSQL(store.DB)
 	blocks := repository.NewMergeBlockSQL(store.DB)
 	identitySvc := service.NewIdentityService(mergeSQL, blocks, mergeSQL, q)
-	identityHandler := handler.NewIdentityHandler(identitySvc, profileSvc)
+	identityHandler := handler.NewIdentityHandler(identitySvc, profileSvc, accessSvc)
 	segmentRepo := repository.NewSegmentSQL(store.DB)
 	if err := segmentRepo.EnsureTemplates(ctx, clock, idg); err != nil {
 		return err
