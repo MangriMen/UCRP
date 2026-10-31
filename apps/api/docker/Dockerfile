@@ -5,7 +5,7 @@
 #   docker build -f docker/Dockerfile --build-arg APP=worker -t ucrp-worker:local .
 
 # ---------- build ----------
-FROM golang:1.24-alpine AS build
+FROM golang:1.26-alpine AS build
 
 RUN apk add --no-cache ca-certificates git
 
@@ -25,14 +25,14 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 # ---------- runtime ----------
 FROM alpine:3.21 AS runtime
 
-RUN apk add --no-cache ca-certificates tzdata \
-    && addgroup -S ucrp && adduser -S -G ucrp -u 10001 ucrp
+RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
-# Один бинарь /app/server; содержимое зависит от ARG APP при сборке образа
 COPY --from=build /out/server /app/server
 COPY migrations /app/migrations
+
+RUN mkdir -p /data /data/uploads
 
 ENV UCRP_HTTP_ADDR=:8080 \
     UCRP_DATABASE_URL=sqlite:///data/ucrp.db \
@@ -40,7 +40,6 @@ ENV UCRP_HTTP_ADDR=:8080 \
     UCRP_LOG_LEVEL=info \
     TZ=UTC
 
-USER ucrp
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

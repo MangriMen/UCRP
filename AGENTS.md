@@ -17,6 +17,7 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 - Open questions are in `docs/00-open-questions.md`. Don't silently pick answers; ask.
 - Don't add dependencies, change CI, hooks, or tooling versions unasked.
 - Never commit, push, or open a PR unless asked.
+- Commits (only when the user asks): message in Russian, single line, no body/description, author = the user (`git commit` without agent attribution tricks).
 
 ## Repo facts
 
@@ -28,6 +29,13 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 - Commits: Conventional Commits (enforced by lefthook). Don't bypass hooks with `--no-verify`.
 - PR text: English, see `.agents/skills/pr-description/SKILL.md`.
 - Skills live in `.agents/skills/` (`.claude/skills` is a symlink to it).
+
+## Code style (anti-neuroslop)
+
+- **No code comments.** Do not leave explanatory comments, TODOs-as-noise, «scaffold only», or step narration. The code must read without them. Package doc files (`doc.go`) are bare `package x` only.
+- **Write via [code-simplification](.agents/skills/code-simplification/SKILL.md).** Clarity over cleverness; preserve behavior; no wrappers-for-wrappers, no speculative abstractions, no renaming for taste.
+- Prefer guard clauses over deep nesting; named helpers over repeated conditionals; full words in names (`userID`, not `uid2`).
+- Do not batch unrelated “cleanup” into feature changes. Stay in scope.
 
 ## Finishing
 
