@@ -1,0 +1,174 @@
+ErrorResponse:
+  type: object
+  required:
+    - error
+  properties:
+    error:
+      type: object
+      required:
+        - code
+        - message
+        - request_id
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - validation_error
+            - invalid_credentials
+            - unauthorized
+            - forbidden_role
+            - forbidden_permission
+            - forbidden_scope
+            - forbidden_tenant
+            - forbidden_field
+            - metric_not_granted
+            - privilege_escalation
+            - grant_not_grantable
+            - grant_expired
+            - invitation_unavailable
+            - not_found
+            - conflict
+            - duplicate
+            - contact_limit_exceeded
+            - segment_not_ready
+            - export_not_ready
+            - sync_in_progress
+            - recompute_in_progress
+            - merge_blocked
+            - already_resolved
+            - tenant_has_events
+            - project_has_events
+            - event_type_in_use
+            - category_in_use
+            - campaign_locked
+            - campaign_has_exports
+            - segment_in_active_campaign
+            - connector_not_registered
+            - file_too_large
+            - bad_format
+            - rate_limited
+            - timeout
+            - internal_error
+        message:
+          type: string
+          description: Human-readable message
+        details:
+          type: array
+          description: Field-level details (for 400 and 422)
+          items:
+            $ref: ./common.yaml#/ErrorDetail
+        request_id:
+          type: string
+          description: Request identifier for tracing and support
+          example: 01J9Z6Q2X8V4M3K7T1R5N0B2CD
+ErrorDetail:
+  type: object
+  required:
+    - field
+    - reason
+  properties:
+    field:
+      type: string
+      description: Path to the request body field or the query parameter name
+      example: rule.wasNot
+    reason:
+      type: string
+      description: Reason
+      example: Tenant listed in both "was" and "wasNot"
+PageMeta:
+  type: object
+  required:
+    - page
+    - pageSize
+    - total
+    - totalPages
+  properties:
+    page:
+      type: integer
+      minimum: 1
+      example: 1
+    pageSize:
+      type: integer
+      minimum: 1
+      maximum: 200
+      example: 50
+    total:
+      type: integer
+      minimum: 0
+      example: 128
+    totalPages:
+      type: integer
+      minimum: 0
+      example: 3
+UserRole:
+  type: string
+  description: User role. `marketer` = R-1, `manager` = R-2, `tenant` = R-3, `analyst` = R-4, `system` = R-6.
+  enum:
+    - marketer
+    - manager
+    - tenant
+    - analyst
+    - system
+Granularity:
+  type: string
+  enum:
+    - day
+    - week
+    - month
+  default: month
+JobAccepted:
+  type: object
+  required:
+    - jobId
+    - jobType
+    - status
+  properties:
+    jobId:
+      type: string
+    jobType:
+      type: string
+      enum:
+        - import.process
+        - connector.pull
+        - identity.resolve
+        - identity.rematch
+        - segment.recompute
+        - recommend.refresh
+        - export.build
+    status:
+      type: string
+      enum:
+        - queued
+        - running
+    dedupKey:
+      type: string
+HealthResponse:
+  type: object
+  required:
+    - status
+    - version
+    - time
+  properties:
+    status:
+      type: string
+      enum:
+        - ok
+        - degraded
+        - down
+    version:
+      type: string
+      example: a1b2c3d
+    buildTime:
+      type: string
+      example: 2026-10-31T12:00:00Z
+    time:
+      type: string
+      format: date-time
+    checks:
+      type: object
+      additionalProperties:
+        type: string
+      example:
+        database: ok
+        queue: ok

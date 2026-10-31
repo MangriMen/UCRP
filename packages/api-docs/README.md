@@ -1,6 +1,6 @@
 # @ucrp/api-docs
 
-Swagger UI for the OpenAPI contract. The source of truth is `docs/openapi.json` with `docs/openapi/`; the bundle is generated and never committed.
+Swagger UI for the OpenAPI contract. The source of truth is `packages/openapi`; the bundle is generated and never committed.
 
 ```bash
 bun run docs

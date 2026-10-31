@@ -8,7 +8,6 @@
     "**/node_modules",
     ".turbo",
     "bun.lock",
-    "docs/openapi.json",
     "apps/web/public/mockServiceWorker.js",
     "apps/web/src/shared/api/schema.d.ts"
   ]

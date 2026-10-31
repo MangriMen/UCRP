@@ -1,0 +1,107 @@
+paths:
+  /api/v1/contact-limits:
+    get:
+      tags:
+        - Exports
+      operationId: listContactLimits
+      summary: Contact limit rules
+      description: '`channel = null` — a general rule for all channels. When several rules apply, the strictest one wins.'
+      x-roles:
+        - R-1
+        - R-2
+        - R-4
+      x-uc:
+        - UC-10
+      responses:
+        '200':
+          description: Rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../components/schemas/export-members.yaml#/ContactLimit
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+    post:
+      tags:
+        - Exports
+      operationId: createContactLimit
+      summary: Create a contact limit rule
+      description: '`maxContacts >= 1`, `periodDays >= 1`, otherwise 400.'
+      x-roles:
+        - R-1
+      x-uc:
+        - UC-10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/export-members.yaml#/ContactLimitCreateRequest
+      responses:
+        '201':
+          description: Rule created
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/export-members.yaml#/ContactLimit
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+  /api/v1/contact-limits/{id}:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    patch:
+      tags:
+        - Exports
+      operationId: updateContactLimit
+      summary: Update a contact limit rule
+      x-roles:
+        - R-1
+      x-uc:
+        - UC-10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/export-members.yaml#/ContactLimitUpdateRequest
+      responses:
+        '200':
+          description: Updated rule
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/export-members.yaml#/ContactLimit
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+    delete:
+      tags:
+        - Exports
+      operationId: deleteContactLimit
+      summary: Delete a contact limit rule
+      x-roles:
+        - R-1
+      x-uc:
+        - UC-10
+      responses:
+        '204':
+          $ref: ../components/responses.yaml#/NoContent
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound

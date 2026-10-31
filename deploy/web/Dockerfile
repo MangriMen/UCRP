@@ -9,8 +9,7 @@ RUN bun install --frozen-lockfile --ignore-scripts
 
 FROM deps AS builder
 COPY tsconfig.base.json ./
-COPY docs/openapi.json docs/openapi.json
-COPY docs/openapi docs/openapi
+COPY packages/openapi packages/openapi
 COPY packages/api-types packages/api-types
 COPY apps/web apps/web
 ARG VERSION=dev
@@ -19,8 +18,7 @@ ENV VITE_APP_VERSION=${VERSION} VITE_BUILD_TIME=${BUILD_TIME}
 RUN bun run --filter=@ucrp/web build
 
 FROM deps AS docs
-COPY docs/openapi.json docs/openapi.json
-COPY docs/openapi docs/openapi
+COPY packages/openapi packages/openapi
 COPY packages/api-docs packages/api-docs
 RUN bun run --filter=@ucrp/api-docs build
 

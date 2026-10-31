@@ -1,0 +1,149 @@
+RecommendationFactor:
+  type: object
+  required:
+    - factorCode
+    - rawValue
+    - weight
+    - contribution
+  properties:
+    factorCode:
+      type: string
+      enum:
+        - similar_guests
+        - category_adjacency
+        - recency
+        - distance
+        - tenant_priority
+        - popularity
+        - competitor_penalty
+        - low_data
+    rawValue:
+      type: number
+      format: double
+      minimum: 0
+      maximum: 1
+    weight:
+      type: number
+      format: double
+      minimum: 0
+      maximum: 1
+    contribution:
+      type: number
+      format: double
+Recommendation:
+  type: object
+  required:
+    - id
+    - guestId
+    - tenantId
+    - rank
+    - score
+    - explanation
+    - computedAt
+  properties:
+    id:
+      type: string
+    guestId:
+      type: string
+    tenantId:
+      type: string
+    tenantName:
+      type: string
+      readOnly: true
+    categoryName:
+      type: string
+      nullable: true
+      readOnly: true
+    floor:
+      type: integer
+      nullable: true
+      readOnly: true
+    rank:
+      type: integer
+      minimum: 1
+      maximum: 3
+    score:
+      type: number
+      format: double
+      example: 0.78
+    explanation:
+      type: string
+      description: Snapshot of the explanation text at computation time
+      example: Similar guests visit Cinema; Sports and Entertainment are adjacent categories; floor 2 → floor 3
+    algorithmVersion:
+      type: string
+      example: v1
+    factors:
+      type: array
+      items:
+        $ref: ./recommendations.yaml#/RecommendationFactor
+    computedAt:
+      type: string
+      format: date-time
+RecommendationList:
+  type: object
+  required:
+    - guestId
+    - items
+  properties:
+    guestId:
+      type: string
+    computedAt:
+      type: string
+      format: date-time
+      nullable: true
+    items:
+      type: array
+      maxItems: 3
+      items:
+        $ref: ./recommendations.yaml#/Recommendation
+SegmentRecommendation:
+  type: object
+  required:
+    - tenantId
+    - tenantName
+    - guests
+    - suppressed
+  properties:
+    tenantId:
+      type: string
+    tenantName:
+      type: string
+    categoryId:
+      type: string
+      nullable: true
+    guests:
+      type: integer
+      nullable: true
+      minimum: 0
+      description: How many segment guests were recommended this tenant
+    score:
+      type: number
+      format: double
+      nullable: true
+    averageScore:
+      type: number
+      format: double
+      nullable: true
+    eligibleCount:
+      type: integer
+      nullable: true
+    segmentCount:
+      type: integer
+      nullable: true
+    incompleteCount:
+      type: integer
+      nullable: true
+    suppressed:
+      type: boolean
+SegmentRecommendationList:
+  type: object
+  required:
+    - items
+  properties:
+    segmentId:
+      type: string
+    items:
+      type: array
+      items:
+        $ref: ./recommendations.yaml#/SegmentRecommendation

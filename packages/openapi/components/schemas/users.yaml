@@ -1,0 +1,166 @@
+LoginRequest:
+  type: object
+  required:
+    - email
+    - password
+  properties:
+    email:
+      type: string
+      format: email
+      maxLength: 320
+    password:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 128
+TokenResponse:
+  type: object
+  required:
+    - accessToken
+    - tokenType
+    - expiresIn
+  properties:
+    accessToken:
+      type: string
+      description: JWT access token
+    tokenType:
+      type: string
+      enum:
+        - Bearer
+      default: Bearer
+    expiresIn:
+      type: integer
+      description: Access token lifetime in seconds
+      example: 900
+LoginResponse:
+  allOf:
+    - $ref: ./users.yaml#/TokenResponse
+    - type: object
+      required:
+        - user
+      properties:
+        user:
+          $ref: ./users.yaml#/MeResponse
+MeResponse:
+  type: object
+  required:
+    - userId
+    - email
+    - role
+    - displayName
+    - permissions
+    - policyVersion
+  properties:
+    userId:
+      type: string
+    email:
+      type: string
+      format: email
+    displayName:
+      type: string
+    role:
+      $ref: ./common.yaml#/UserRole
+    tenantId:
+      type: string
+      nullable: true
+      description: User tenant. Required for the `tenant` role, otherwise null.
+    policyVersion:
+      type: integer
+      format: int64
+    permissions:
+      type: array
+      description: Effective permission codes for building the SPA menu
+      items:
+        type: string
+      example:
+        - guests:read
+        - segments:write
+        - exports:write
+User:
+  type: object
+  required:
+    - id
+    - email
+    - displayName
+    - role
+    - isActive
+    - createdAt
+    - updatedAt
+  properties:
+    id:
+      type: string
+    email:
+      type: string
+      format: email
+    displayName:
+      type: string
+    role:
+      $ref: ./common.yaml#/UserRole
+    tenantId:
+      type: string
+      nullable: true
+    isActive:
+      type: boolean
+    lastLoginAt:
+      type: string
+      format: date-time
+      nullable: true
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+UserCreateRequest:
+  type: object
+  required:
+    - email
+    - displayName
+    - role
+  properties:
+    email:
+      type: string
+      format: email
+      maxLength: 320
+    displayName:
+      type: string
+      minLength: 1
+      maxLength: 200
+    role:
+      $ref: ./common.yaml#/UserRole
+    tenantId:
+      type: string
+      nullable: true
+      description: Required when role = `tenant`
+    isActive:
+      type: boolean
+      default: true
+UserUpdateRequest:
+  type: object
+  properties:
+    displayName:
+      type: string
+      minLength: 1
+      maxLength: 200
+    role:
+      $ref: ./common.yaml#/UserRole
+    tenantId:
+      type: string
+      nullable: true
+    isActive:
+      type: boolean
+    resetPassword:
+      type: boolean
+      description: Trigger a password reset and revoke the user refresh tokens
+UserPage:
+  type: object
+  required:
+    - items
+    - meta
+  properties:
+    items:
+      type: array
+      items:
+        $ref: ./users.yaml#/User
+    meta:
+      $ref: ./common.yaml#/PageMeta

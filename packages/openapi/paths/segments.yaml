@@ -1,0 +1,125 @@
+paths:
+  /api/v1/segment-templates:
+    get:
+      tags:
+        - Segments
+      operationId: listSegmentTemplates
+      summary: Five built-in segment templates
+      description: '"Sleeping neighbor", "Single store", "Churn risk", "Newcomer", "High value". A template is the same segment with `isTemplate=true` and a ready-made rule.'
+      x-roles:
+        - R-1
+        - R-4
+      x-uc:
+        - UC-3
+      responses:
+        '200':
+          description: Templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../components/schemas/segment-requests.yaml#/SegmentTemplate
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+  /api/v1/segments:
+    get:
+      tags:
+        - Segments
+      operationId: listSegments
+      summary: List segments with size and computedAt
+      x-roles:
+        - R-1
+        - R-2
+        - R-4
+      x-uc:
+        - UC-3
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: ../components/schemas/segments.yaml#/SegmentStatus
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
+      responses:
+        '200':
+          description: Segment page
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/segment-requests.yaml#/SegmentPage
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+    post:
+      tags:
+        - Segments
+      operationId: createSegment
+      summary: Create a segment
+      description: Creates the segment and rule version 1 with status `pending`, writes an audit record, and enqueues `segment.recompute` (`dedupKey = segment:{id}:{versionNo}`). The 201 response returns immediately; membership is computed by the worker.
+      x-roles:
+        - R-1
+        - R-4
+      x-uc:
+        - UC-3
+        - UC-13
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/segment-requests.yaml#/SegmentCreateRequest
+      responses:
+        '201':
+          description: Segment created
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/segments.yaml#/Segment
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+  /api/v1/segments/preview:
+    post:
+      tags:
+        - Segments
+      operationId: previewSegment
+      summary: Size and 20 examples for an unsaved rule
+      description: Does not write to the database. The result is cached by rule hash (TTL 60 s). Deadline 10 s; on timeout — 504 `timeout` suggesting a narrower period. A tenant listed in both `was` and `wasNot` → 400 with the field indicated.
+      x-roles:
+        - R-1
+        - R-4
+      x-uc:
+        - UC-3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/segment-requests.yaml#/SegmentPreviewRequest
+      responses:
+        '200':
+          description: Size and examples
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/segment-requests.yaml#/SegmentPreviewResponse
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '504':
+          $ref: ../components/responses.yaml#/GatewayTimeout

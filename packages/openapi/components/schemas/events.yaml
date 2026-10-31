@@ -1,0 +1,103 @@
+Event:
+  type: object
+  required:
+    - id
+    - tenantId
+    - eventTypeId
+    - occurredAt
+  properties:
+    id:
+      type: string
+    guestId:
+      type: string
+      nullable: true
+      description: null — the event is not yet linked to a guest (match rate denominator)
+    originGuestId:
+      type: string
+      nullable: true
+    tenantId:
+      type: string
+    tenantName:
+      type: string
+      readOnly: true
+    projectId:
+      type: string
+      nullable: true
+    projectName:
+      type: string
+      nullable: true
+      readOnly: true
+    eventTypeId:
+      type: string
+    eventTypeCode:
+      type: string
+      readOnly: true
+      example: purchase
+    dataSourceId:
+      type: string
+      nullable: true
+    importBatchId:
+      type: string
+      nullable: true
+    externalId:
+      type: string
+      nullable: true
+    occurredAt:
+      type: string
+      format: date-time
+    amountMinor:
+      type: integer
+      format: int64
+      nullable: true
+      description: Amount in minor units (35000 = 350.00 RUB)
+    currency:
+      type: string
+      nullable: true
+      example: RUB
+    createdAt:
+      type: string
+      format: date-time
+EventPage:
+  type: object
+  required:
+    - items
+    - meta
+  properties:
+    items:
+      type: array
+      items:
+        $ref: ./events.yaml#/Event
+    meta:
+      $ref: ./common.yaml#/PageMeta
+ContactLog:
+  type: object
+  required:
+    - id
+    - guestId
+    - exportId
+    - channel
+    - contactedAt
+  properties:
+    id:
+      type: string
+    guestId:
+      type: string
+    exportId:
+      type: string
+    channel:
+      $ref: ./exports.yaml#/ExportChannel
+    contactedAt:
+      type: string
+      format: date-time
+ContactLogPage:
+  type: object
+  required:
+    - items
+    - meta
+  properties:
+    items:
+      type: array
+      items:
+        $ref: ./events.yaml#/ContactLog
+    meta:
+      $ref: ./common.yaml#/PageMeta

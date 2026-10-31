@@ -1,0 +1,168 @@
+GrantItem:
+  type: object
+  required:
+    - permission
+    - effect
+  properties:
+    permission:
+      type: string
+    effect:
+      type: string
+      enum:
+        - allow
+        - deny
+GrantScope:
+  type: object
+  required:
+    - type
+    - value
+  properties:
+    type:
+      type: string
+      enum:
+        - tenant
+        - category
+        - period_days
+        - channel
+        - k_threshold
+        - row_limit
+        - field_mask
+        - metric
+    value:
+      type: string
+GrantRequest:
+  type: object
+  required:
+    - subjectType
+    - subjectId
+    - status
+    - validFrom
+    - reason
+    - items
+    - scopes
+  description: 'For a tenant, tenant user or tenant role, a matching tenant scope is required. A user subject may also be another active manager: only personal-data permissions in the manager ceiling can be granted, with no public scopes or preset. The issuer must hold unrestricted access to each permission for the entire grant lifetime. Specify either validTo or indefinite=true. The internal principal_role scope is added automatically.'
+  properties:
+    subjectType:
+      type: string
+      enum:
+        - user
+        - tenant
+        - role
+    subjectId:
+      type: string
+    presetCode:
+      type: string
+    status:
+      type: string
+      enum:
+        - draft
+        - active
+    validFrom:
+      type: string
+      format: date-time
+    validTo:
+      type: string
+      format: date-time
+      nullable: true
+    indefinite:
+      type: boolean
+    reason:
+      type: string
+    items:
+      type: array
+      items:
+        $ref: ./access.yaml#/GrantItem
+    scopes:
+      type: array
+      items:
+        $ref: ./access.yaml#/GrantScope
+GrantPatch:
+  type: object
+  properties:
+    presetCode:
+      type: string
+    validFrom:
+      type: string
+      format: date-time
+    validTo:
+      type: string
+      format: date-time
+      nullable: true
+    indefinite:
+      type: boolean
+    reason:
+      type: string
+    items:
+      type: array
+      items:
+        $ref: ./access.yaml#/GrantItem
+    scopes:
+      type: array
+      items:
+        $ref: ./access.yaml#/GrantScope
+  description: Manager personal grants may only contain personal-data permissions; their manager role restriction is maintained internally. A grant cannot outlive the issuer’s unrestricted permission.
+Grant:
+  type: object
+  required:
+    - id
+    - subjectType
+    - subjectId
+    - status
+    - validFrom
+    - validTo
+    - createdBy
+    - reason
+    - policyVersion
+    - createdAt
+    - updatedAt
+    - items
+    - scopes
+  properties:
+    subjectType:
+      type: string
+      enum:
+        - user
+        - tenant
+        - role
+    subjectId:
+      type: string
+    presetCode:
+      type: string
+    status:
+      type: string
+      enum:
+        - draft
+        - active
+        - suspended
+        - revoked
+        - expired
+    validFrom:
+      type: string
+      format: date-time
+    validTo:
+      type: string
+      format: date-time
+      nullable: true
+    reason:
+      type: string
+    items:
+      type: array
+      items:
+        $ref: ./access.yaml#/GrantItem
+    scopes:
+      type: array
+      items:
+        $ref: ./access.yaml#/GrantScope
+    id:
+      type: string
+    createdBy:
+      type: string
+    policyVersion:
+      type: integer
+      format: int64
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time

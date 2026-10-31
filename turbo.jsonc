@@ -18,7 +18,7 @@
       "env": ["NODE_ENV", "VITE_*"],
     },
     "@ucrp/api-types#build": {
-      "inputs": ["package.json", "$TURBO_ROOT$/docs/openapi.json", "$TURBO_ROOT$/docs/openapi/**"],
+      "inputs": ["package.json", "$TURBO_ROOT$/packages/openapi/**"],
       "outputs": ["dist/**"],
     },
     "lint": {

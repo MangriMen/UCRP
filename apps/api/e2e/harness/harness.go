@@ -312,7 +312,7 @@ func loadConfig() Config {
 		DatabaseURL:    os.Getenv("UCRP_E2E_DATABASE_URL"),
 		AdminEmail:     os.Getenv("UCRP_E2E_ADMIN_EMAIL"),
 		AdminPassword:  os.Getenv("UCRP_E2E_ADMIN_PASSWORD"),
-		OpenAPIPath:    getenv("UCRP_E2E_OPENAPI", "../../../docs/openapi.json"),
+		OpenAPIPath:    getenv("UCRP_E2E_OPENAPI", "../../../packages/api-docs/dist/openapi.json"),
 		RunID:          getenv("UCRP_E2E_RUN_ID", randomRunID()),
 		RequestTimeout: 30 * time.Second,
 		ImportTimeout:  60 * time.Second,

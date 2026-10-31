@@ -33,11 +33,11 @@ pre-push:
       run: bun scripts/run-on-tree.ts head go run scripts/go-check.go build
 
     - name: web:test
-      glob: '{apps/web/**,packages/**,docs/openapi.json,docs/openapi/**,package.json,bun.lock,turbo.jsonc,tsconfig.base.json}'
+      glob: '{apps/web/**,packages/**,package.json,bun.lock,turbo.jsonc,tsconfig.base.json}'
       run: bun scripts/run-on-tree.ts head bun run test
 
     - name: web:build
-      glob: '{apps/web/**,packages/**,docs/openapi.json,docs/openapi/**,package.json,bun.lock,turbo.jsonc,tsconfig.base.json}'
+      glob: '{apps/web/**,packages/**,package.json,bun.lock,turbo.jsonc,tsconfig.base.json}'
       run: bun scripts/run-on-tree.ts head bun run build
 
 commit-msg:

@@ -17,11 +17,12 @@ function Set-DefaultEnv([string]$Name, [string]$Value) {
     }
 }
 
+$bundleSpec = -not $env:UCRP_E2E_OPENAPI
 Set-DefaultEnv 'UCRP_E2E_BASE_URL' 'http://127.0.0.1:8080'
 Set-DefaultEnv 'UCRP_E2E_DATABASE_URL' 'postgres://ucrp:ucrp@127.0.0.1:5543/ucrp?sslmode=disable'
 Set-DefaultEnv 'UCRP_E2E_ADMIN_EMAIL' '[EMAIL]'
 Set-DefaultEnv 'UCRP_E2E_ADMIN_PASSWORD' 'admin12345'
-Set-DefaultEnv 'UCRP_E2E_OPENAPI' (Join-Path $repoRoot 'docs/openapi.json')
+Set-DefaultEnv 'UCRP_E2E_OPENAPI' (Join-Path $repoRoot 'packages/api-docs/dist/openapi.json')
 Set-DefaultEnv 'UCRP_E2E_JUNIT' (Join-Path $apiRoot 'e2e-report.xml')
 Set-DefaultEnv 'UCRP_E2E_DRIFT_REPORT' (Join-Path $apiRoot 'e2e-contract-drift.md')
 
@@ -29,6 +30,10 @@ if ($ReportOnly) {
     $env:UCRP_E2E_STRICT_CONTRACT = '0'
 } else {
     $env:UCRP_E2E_STRICT_CONTRACT = '1'
+}
+
+if ($bundleSpec) {
+    bun run --cwd (Join-Path $repoRoot 'packages/api-docs') bundle:json
 }
 
 Push-Location $apiRoot

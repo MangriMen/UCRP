@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "redocly bundle ../../docs/openapi.json --output dist/openapi.yaml --ext yaml && node scripts/copy-ui.mjs",
+    "build": "redocly bundle ../openapi/openapi.yaml --output dist/openapi.yaml --ext yaml && node scripts/copy-ui.mjs",
     "docs": "bun run build && serve dist -l 8080",
-    "lint": "redocly lint ../../docs/openapi.json"
+    "bundle:json": "redocly bundle ../openapi/openapi.yaml --output dist/openapi.json --ext json",
+    "lint": "redocly lint ../openapi/openapi.yaml"
   },
   "dependencies": {
     "swagger-ui-dist": "^5.34.1"

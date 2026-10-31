@@ -14,11 +14,16 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
 api_root="$repo_root/apps/api"
 
+bundle_spec=0
+if [ -z "${UCRP_E2E_OPENAPI:-}" ]; then
+    bundle_spec=1
+fi
+
 export UCRP_E2E_BASE_URL="${UCRP_E2E_BASE_URL:-http://127.0.0.1:8080}"
 export UCRP_E2E_DATABASE_URL="${UCRP_E2E_DATABASE_URL:-postgres://ucrp:ucrp@127.0.0.1:5543/ucrp?sslmode=disable}"
 export UCRP_E2E_ADMIN_EMAIL="${UCRP_E2E_ADMIN_EMAIL:-admin@ucrp.local}"
 export UCRP_E2E_ADMIN_PASSWORD="${UCRP_E2E_ADMIN_PASSWORD:-admin12345}"
-export UCRP_E2E_OPENAPI="${UCRP_E2E_OPENAPI:-$repo_root/docs/openapi.json}"
+export UCRP_E2E_OPENAPI="${UCRP_E2E_OPENAPI:-$repo_root/packages/api-docs/dist/openapi.json}"
 export UCRP_E2E_JUNIT="${UCRP_E2E_JUNIT:-$api_root/e2e-report.xml}"
 export UCRP_E2E_DRIFT_REPORT="${UCRP_E2E_DRIFT_REPORT:-$api_root/e2e-contract-drift.md}"
 
@@ -26,6 +31,10 @@ if [ "$report_only" -eq 1 ]; then
     export UCRP_E2E_STRICT_CONTRACT=0
 else
     export UCRP_E2E_STRICT_CONTRACT=1
+fi
+
+if [ "$bundle_spec" -eq 1 ]; then
+    bun run --cwd "$repo_root/packages/api-docs" bundle:json
 fi
 
 cd "$api_root"

@@ -1,0 +1,200 @@
+ExportChannel:
+  type: string
+  description: Communication channel. `sms` and `push` require a phone, `email` requires an email.
+  enum:
+    - sms
+    - push
+    - email
+ExportFormat:
+  type: string
+  enum:
+    - csv
+    - api
+ExportStatus:
+  type: string
+  enum:
+    - queued
+    - building
+    - ready
+    - failed
+ExportPreviewRequest:
+  type: object
+  required:
+    - segmentId
+    - channel
+  properties:
+    segmentId:
+      type: string
+    channel:
+      $ref: ./exports.yaml#/ExportChannel
+    controlPercent:
+      type: integer
+      minimum: 0
+      maximum: 50
+      default: 0
+    campaignId:
+      type: string
+      nullable: true
+ExportPreviewResponse:
+  type: object
+  required:
+    - inSegment
+    - withContact
+    - blockedByLimit
+    - control
+    - toSend
+    - suppressed
+  properties:
+    inSegment:
+      type: integer
+      nullable: true
+      minimum: 0
+      description: Total in segment
+    withContact:
+      type: integer
+      nullable: true
+      minimum: 0
+      description: With a contact for the channel
+    blockedByLimit:
+      type: integer
+      nullable: true
+      minimum: 0
+      description: Excluded by contact limit
+    control:
+      type: integer
+      nullable: true
+      minimum: 0
+      description: In control group
+    toSend:
+      type: integer
+      nullable: true
+      minimum: 0
+      description: To send
+    suppressed:
+      type: boolean
+      description: True when the entire group of related counts is hidden because at least one underlying count is below five.
+    appliedLimits:
+      type: array
+      description: Which limit rules applied
+      items:
+        $ref: ./export-members.yaml#/ContactLimit
+ExportCreateRequest:
+  type: object
+  required:
+    - segmentId
+    - channel
+    - format
+  properties:
+    segmentId:
+      type: string
+    channel:
+      $ref: ./exports.yaml#/ExportChannel
+    format:
+      $ref: ./exports.yaml#/ExportFormat
+    controlPercent:
+      type: integer
+      minimum: 0
+      maximum: 50
+      default: 0
+    campaignId:
+      type: string
+      nullable: true
+Export:
+  type: object
+  required:
+    - id
+    - segmentId
+    - segmentVersionId
+    - channel
+    - format
+    - status
+    - totalInSegment
+    - exportedCount
+    - suppressed
+    - createdAt
+  properties:
+    id:
+      type: string
+    segmentId:
+      type: string
+    segmentName:
+      type: string
+      readOnly: true
+    segmentVersionId:
+      type: string
+    segmentVersionNo:
+      type: integer
+      readOnly: true
+    campaignId:
+      type: string
+      nullable: true
+    channel:
+      $ref: ./exports.yaml#/ExportChannel
+    format:
+      $ref: ./exports.yaml#/ExportFormat
+    status:
+      $ref: ./exports.yaml#/ExportStatus
+    controlPercent:
+      type: integer
+      minimum: 0
+      maximum: 50
+    controlSeed:
+      type: integer
+      format: int64
+      description: Seed for deterministic control group selection
+    totalInSegment:
+      type: integer
+      nullable: true
+      minimum: 0
+    withContactCount:
+      type: integer
+      nullable: true
+      minimum: 0
+    noContactCount:
+      type: integer
+      nullable: true
+      minimum: 0
+    blockedByLimitCount:
+      type: integer
+      nullable: true
+      minimum: 0
+    controlCount:
+      type: integer
+      nullable: true
+      minimum: 0
+    exportedCount:
+      type: integer
+      nullable: true
+      minimum: 0
+    suppressed:
+      type: boolean
+      description: True when the entire group of related counts is hidden because at least one underlying count is below five.
+    idempotencyKey:
+      type: string
+    createdBy:
+      type: string
+      nullable: true
+    createdAt:
+      type: string
+      format: date-time
+    finishedAt:
+      type: string
+      format: date-time
+      nullable: true
+    downloadUrl:
+      type: string
+      nullable: true
+      description: Relative CSV path when the export is ready
+      example: /api/v1/exports/x-1/download
+ExportPage:
+  type: object
+  required:
+    - items
+    - meta
+  properties:
+    items:
+      type: array
+      items:
+        $ref: ./exports.yaml#/Export
+    meta:
+      $ref: ./common.yaml#/PageMeta

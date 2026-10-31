@@ -1,0 +1,145 @@
+paths:
+  /api/v1/merge-candidates:
+    get:
+      tags:
+        - Identity
+      operationId: listMergeCandidates
+      summary: Disputed merge queue
+      description: Sorted by `createdAt` ascending. R-1 has read-only access; resolution operations are available to R-4.
+      x-roles:
+        - R-4
+        - R-1 (read-only)
+      x-uc:
+        - UC-11
+      parameters:
+        - name: resolution
+          in: query
+          schema:
+            $ref: ../components/schemas/identity.yaml#/MergeResolution
+        - name: reason_code
+          in: query
+          schema:
+            type: string
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
+      responses:
+        '200':
+          description: Candidate page
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/identity.yaml#/MergeCandidatePage
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+  /api/v1/merge-candidates/{id}:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Identity
+      operationId: getMergeCandidate
+      summary: Two profiles side by side with the match reason
+      x-roles:
+        - R-4
+        - R-1
+      x-uc:
+        - UC-11
+      responses:
+        '200':
+          description: Candidate with both side profiles
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/identity.yaml#/MergeCandidateDetail
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+  /api/v1/merge-candidates/{id}/confirm:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Identity
+      operationId: confirmMergeCandidate
+      summary: Confirm a merge
+      description: 'Executed in a single transaction: events and identifiers move to the winner while `originGuestId` is preserved, the loser gets `status=merged` and `mergedIntoId`, and `merge_candidate.resolution=confirmed` plus an audit record are written. On success, segment and recommendation recomputes are enqueued for both guests.'
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-11
+      responses:
+        '200':
+          description: Candidate resolved
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/identity.yaml#/MergeCandidate
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+  /api/v1/merge-candidates/{id}/reject:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Identity
+      operationId: rejectMergeCandidate
+      summary: Reject a merge
+      description: Sets `resolution=rejected` and creates a merge block (`unmerge_block`), so automatic merging will not repeat this pair.
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-11
+      responses:
+        '200':
+          description: Candidate rejected
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/identity.yaml#/MergeCandidate
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+  /api/v1/merge-candidates/{id}/revert:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Identity
+      operationId: revertMergeCandidate
+      summary: Split previously merged profiles
+      description: Also works for automatic merges (`auto_merged`). Rows with `originGuestId = loser` are returned to the loser, the profile becomes `active` again, `resolution=reverted`, and an `unmerge_block` plus an audit record are created — all in one transaction. If the resolution is neither `confirmed` nor `auto_merged` — 409.
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-11
+      responses:
+        '200':
+          description: Split completed
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/identity.yaml#/MergeCandidate
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
