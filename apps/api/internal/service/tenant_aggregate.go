@@ -83,6 +83,13 @@ func (r *aggregateReveal) count(value, guests int) *int {
 	return &value
 }
 
+func repeatVisitGuests(repeatGuests, firstVisits int) int {
+	if firstVisits == 0 {
+		return repeatGuests
+	}
+	return min(repeatGuests, firstVisits)
+}
+
 func (r *aggregateReveal) amount(value int64, guests int) *int64 {
 	if guests < r.threshold {
 		r.suppressed = true
@@ -136,7 +143,7 @@ func (s *AnalyticsService) TenantAggregate(ctx context.Context, q TenantAggregat
 		if err != nil {
 			return nil, err
 		}
-		report.RepeatVisitsCount = reveal.count(repeats, repeatGuests)
+		report.RepeatVisitsCount = reveal.count(repeats, repeatVisitGuests(repeatGuests, visits-repeats))
 	}
 	if q.Metrics.Revenue || q.Metrics.AvgCheck {
 		revenue, purchases, buyers, err := s.sumPurchases(ctx, q)
@@ -270,7 +277,7 @@ func (s *AnalyticsService) tenantSeries(ctx context.Context, q TenantAggregateQu
 			point.NewGuestsCount = reveal.count(fresh, fresh)
 		}
 		if q.Metrics.RepeatVisits {
-			point.RepeatVisitsCount = reveal.count(repeatVisits, repeatGuests)
+			point.RepeatVisitsCount = reveal.count(repeatVisits, repeatVisitGuests(repeatGuests, visits-repeatVisits))
 		}
 		if q.Metrics.Revenue {
 			point.RevenueTotalMinor = reveal.amount(revenue, revenueBuyers)

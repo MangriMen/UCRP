@@ -123,7 +123,7 @@ TenantAggregateDay:
     repeatVisitsCount:
       type: integer
       nullable: true
-      description: Requires metric.repeat_visits.read; null without it or when fewer than k distinct guests made a repeat visit that day
+      description: Requires metric.repeat_visits.read; null without it, when fewer than k distinct guests made a repeat visit that day, or when fewer than k guests made their first visit that day (unless none did)
     revenueTotalMinor:
       type: integer
       format: int64
@@ -158,7 +158,7 @@ ManagementTenantAggregate:
     repeatVisitsCount:
       type: integer
       nullable: true
-      description: Requires metric.repeat_visits.read. Presence events in the period by guests who already had an earlier presence event at this tenant; k applies to the distinct guests behind them
+      description: Requires metric.repeat_visits.read. Presence events in the period by guests who already had an earlier presence event at this tenant; k applies to the distinct guests behind them and to the guests whose first visit falls in the period (visits minus repeat visits), unless there are none; the same rule holds per day in `series`
     revenueTotalMinor:
       type: integer
       format: int64
