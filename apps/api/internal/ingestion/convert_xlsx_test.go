@@ -119,3 +119,23 @@ func TestIsXLSX_ReturnsFalse_WhenFileIsCSV(t *testing.T) {
 		t.Fatal("csv must not be detected as xlsx")
 	}
 }
+
+func TestXLSXToCSV_KeepsRawNumber_WhenFormatHasEscapedLiteral(t *testing.T) {
+	book := excelize.NewFile()
+	format := `0.0\ \h`
+	style, err := book.NewStyle(&excelize.Style{CustomNumFmt: &format})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = book.SetCellValue("Sheet1", "A1", "hours")
+	_ = book.SetCellValue("Sheet1", "A2", 2)
+	_ = book.SetCellStyle("Sheet1", "A2", "A2", style)
+
+	csvData, err := XLSXToCSV(writeBook(t, book), 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(csvData), "hours\n2\n"; got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+}

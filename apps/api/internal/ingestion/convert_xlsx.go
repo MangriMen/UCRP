@@ -43,7 +43,7 @@ func XLSXToCSV(data []byte, maxRows int) ([]byte, error) {
 	}
 	defer func() { _ = rows.Close() }()
 
-	dates := dateStyles{book: book, cache: map[int]bool{}}
+	dates := dateStyles{book: book, cache: map[int]bool{}, date1904: usesDate1904(book)}
 	var out bytes.Buffer
 	writer := csv.NewWriter(&out)
 	written := 0
@@ -88,8 +88,14 @@ func isBlankRow(cells []string) bool {
 }
 
 type dateStyles struct {
-	book  *excelize.File
-	cache map[int]bool
+	book     *excelize.File
+	cache    map[int]bool
+	date1904 bool
+}
+
+func usesDate1904(book *excelize.File) bool {
+	properties := book.WorkBook.WorkbookPr
+	return properties != nil && properties.Date1904
 }
 
 func (d dateStyles) normalize(sheet string, column, row int, raw string) string {
@@ -105,7 +111,7 @@ func (d dateStyles) normalize(sheet string, column, row int, raw string) string 
 	if err != nil || !d.isDate(styleID) {
 		return raw
 	}
-	moment, err := excelize.ExcelDateToTime(serial, false)
+	moment, err := excelize.ExcelDateToTime(serial, d.date1904)
 	if err != nil {
 		return raw
 	}
@@ -126,14 +132,19 @@ func isDateFormat(style *excelize.Style) bool {
 	if style.CustomNumFmt != nil {
 		return looksLikeDateFormat(*style.CustomNumFmt)
 	}
-	return (style.NumFmt >= 14 && style.NumFmt <= 22) || (style.NumFmt >= 45 && style.NumFmt <= 47)
+	id := style.NumFmt
+	return (id >= 14 && id <= 22) || (id >= 27 && id <= 36) || (id >= 45 && id <= 47) || (id >= 50 && id <= 58)
 }
 
 func looksLikeDateFormat(format string) bool {
 	var plain strings.Builder
-	quoted, bracketed := false, false
+	quoted, bracketed, skipNext := false, false, false
 	for _, r := range strings.ToLower(format) {
 		switch {
+		case skipNext:
+			skipNext = false
+		case !quoted && !bracketed && (r == '\\' || r == '_' || r == '*'):
+			skipNext = true
 		case r == '"':
 			quoted = !quoted
 		case r == '[':
