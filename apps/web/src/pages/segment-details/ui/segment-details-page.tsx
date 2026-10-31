@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router'
-import { SegmentStatusBadge, useSegment } from '@/entities/segment'
+import { SegmentTopTenants } from '@/entities/recommendation'
+import { isSegmentComputing, SegmentStatusBadge, useSegment } from '@/entities/segment'
 import { useAuth } from '@/entities/user'
 import { RecomputeSegmentButton } from '@/features/recompute-segment'
 import { formatDateTime } from '@/shared/lib/format'
@@ -78,6 +79,10 @@ export function SegmentDetailsPage() {
       )}
       {canManage && (
         <>
+          <SegmentTopTenants
+            segmentId={segment.id}
+            isSegmentComputing={isSegmentComputing(segment.status)}
+          />
           <section className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Участники</h2>
             <MemberTable key={segment.id} segmentId={segment.id} />

@@ -1,7 +1,9 @@
 import { Link, useNavigate, useParams } from 'react-router'
 import { useGuest } from '@/entities/guest'
+import { RecommendationList } from '@/entities/recommendation'
 import { useAuth } from '@/entities/user'
 import { MergeGuestsDialog } from '@/features/merge-guests'
+import { RefreshRecommendationsButton } from '@/features/refresh-recommendations'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { EmptyState } from '@/shared/ui/empty-state'
@@ -22,6 +24,8 @@ export function GuestProfilePage() {
   if (error) return <ErrorBanner error={error} />
   if (!profile) return <EmptyState title="Гость не найден" />
 
+  const canSeeRecommendations = role === 'marketer' || role === 'analyst'
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -41,14 +45,17 @@ export function GuestProfilePage() {
         }
       />
       <ProfileCard profile={profile} />
-      <Card>
-        <CardHeader>
-          <CardTitle>Следующий шаг</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Персональные рекомендации появятся здесь
-        </CardContent>
-      </Card>
+      {canSeeRecommendations && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Следующий шаг</CardTitle>
+            <RefreshRecommendationsButton guestId={profile.id} />
+          </CardHeader>
+          <CardContent>
+            <RecommendationList guestId={profile.id} />
+          </CardContent>
+        </Card>
+      )}
       <EventFeed guestId={profile.id} />
       <ContactHistory guestId={profile.id} />
     </div>

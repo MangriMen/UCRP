@@ -10,3 +10,5 @@ export function pollWhile<TData>(isActive: (data: TData) => boolean, intervalMs:
 }
 
 export const SEGMENT_POLL_MS = 5000
+
+export const RECOMMENDATION_POLL_MS = 5000
