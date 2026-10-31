@@ -53,6 +53,7 @@ func (r *GuestSQL) Search(ctx context.Context, q string, limit, offset int) ([]d
 			ORDER BY created_at DESC
 			LIMIT $1 OFFSET $2`, limit, offset)
 	} else {
+		like := strings.ReplaceAll(strings.ReplaceAll(q, "%", `\%`), "_", `\_`)
 		rows, err = r.db.QueryContext(ctx, `
 			SELECT DISTINCT g.id, COALESCE(g.display_name, ''), g.status, COALESCE(g.merged_into_id, ''), g.created_at, g.updated_at, g.deleted_at
 			FROM guest g
@@ -63,7 +64,7 @@ func (r *GuestSQL) Search(ctx context.Context, q string, limit, offset int) ([]d
 				OR i.value_normalized LIKE '%' || $1 || '%'
 			)
 			ORDER BY g.created_at DESC
-			LIMIT $2 OFFSET $3`, q, limit, offset)
+			LIMIT $2 OFFSET $3`, like, limit, offset)
 	}
 	if err != nil {
 		return nil, err

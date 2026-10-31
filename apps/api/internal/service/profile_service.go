@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/MangriMen/UCRP/internal/domain"
+	"github.com/MangriMen/UCRP/internal/identity/normalize"
 )
 
 type ProfileService struct {
@@ -57,7 +59,7 @@ type EventDTO struct {
 }
 
 func (s *ProfileService) Search(ctx context.Context, q string, limit, offset int) ([]GuestListItem, error) {
-	guests, err := s.guests.Search(ctx, q, limit, offset)
+	guests, err := s.guests.Search(ctx, normalizeQuery(q), limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +68,28 @@ func (s *ProfileService) Search(ctx context.Context, q string, limit, offset int
 		out = append(out, GuestListItem{ID: g.ID, DisplayName: g.DisplayName, Status: string(g.Status)})
 	}
 	return out, nil
+}
+
+func normalizeQuery(q string) string {
+	q = strings.TrimSpace(q)
+	if q == "" {
+		return q
+	}
+	digits := 0
+	for _, r := range q {
+		if r >= '0' && r <= '9' {
+			digits++
+		}
+	}
+	if digits >= 7 && !strings.Contains(q, "@") {
+		if p := normalize.Phone(q); p != "" {
+			return p
+		}
+	}
+	if strings.Contains(q, "@") {
+		return normalize.Email(q)
+	}
+	return q
 }
 
 func (s *ProfileService) Get(ctx context.Context, id string) (*GuestProfile, error) {
