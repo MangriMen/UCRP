@@ -3,42 +3,42 @@ pre-commit:
 
   jobs:
     - name: go:fmt
-      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.sh}'
-      run: scripts/run-on-tree.sh index scripts/go-check.sh fmt
+      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.go}'
+      run: bun scripts/run-on-tree.ts index go run scripts/go-check.go fmt
 
     - name: go:vet
-      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.sh}'
-      run: scripts/run-on-tree.sh index scripts/go-check.sh vet
+      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.go}'
+      run: bun scripts/run-on-tree.ts index go run scripts/go-check.go vet
 
     - name: go:lint
-      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.sh}'
-      run: scripts/run-on-tree.sh index scripts/go-check.sh lint
+      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.go}'
+      run: bun scripts/run-on-tree.ts index go run scripts/go-check.go lint
 
     - name: fmt
       glob: '**/*.{js,jsx,ts,tsx,json,jsonc,css,md,yml,yaml}'
-      run: scripts/run-on-tree.sh index bun x oxfmt --check --no-error-on-unmatched-pattern {staged_files}
+      run: bun scripts/run-on-tree.ts index bun x oxfmt --check --no-error-on-unmatched-pattern {staged_files}
 
     - name: js:lint
       glob: '**/*.{js,jsx,ts,tsx,json,jsonc,css}'
-      run: scripts/run-on-tree.sh index bun run lint
+      run: bun scripts/run-on-tree.ts index bun run lint
 
 pre-push:
   jobs:
     - name: go:test
-      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.sh}'
-      run: scripts/run-on-tree.sh head scripts/go-check.sh test
+      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.go}'
+      run: bun scripts/run-on-tree.ts head go run scripts/go-check.go test
 
     - name: go:build
-      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.sh}'
-      run: scripts/run-on-tree.sh head scripts/go-check.sh build
+      glob: '{apps/api/**/*.go,apps/api/go.mod,apps/api/go.sum,.golangci.yml,scripts/go-check.go}'
+      run: bun scripts/run-on-tree.ts head go run scripts/go-check.go build
 
     - name: web:test
       glob: '{apps/web/**,packages/**,docs/openapi.json,docs/openapi/**,package.json,bun.lock,turbo.jsonc,tsconfig.base.json}'
-      run: scripts/run-on-tree.sh head bun run test
+      run: bun scripts/run-on-tree.ts head bun run test
 
     - name: web:build
       glob: '{apps/web/**,packages/**,docs/openapi.json,docs/openapi/**,package.json,bun.lock,turbo.jsonc,tsconfig.base.json}'
-      run: scripts/run-on-tree.sh head bun run build
+      run: bun scripts/run-on-tree.ts head bun run build
 
 commit-msg:
   jobs:
