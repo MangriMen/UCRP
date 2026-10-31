@@ -1,1 +1,1 @@
-<!-- Что меняется и зачем, 2–5 строк. -->
+<!-- What changes and why, 2-5 lines. Write in English. -->

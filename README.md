@@ -72,6 +72,12 @@ bun run test         # тесты всех пакетов
 bun run clean        # очистка артефактов сборки
 ```
 
+### Соглашения
+
+- Коммиты — [Conventional Commits](https://www.conventionalcommits.org/), сообщение на английском, одна строка без тела.
+- Заголовок и описание PR — на английском, см. [`.agents/skills/pr-description/SKILL.md`](.agents/skills/pr-description/SKILL.md).
+- Формат коммита и язык проверяет `lefthook` (`commit-msg`); не обходите хуки через `--no-verify`.
+
 ### Документация
 
 Проектная документация лежит в [`docs/`](docs/). Точка входа — [`docs/README.md`](docs/README.md).
@@ -110,6 +116,12 @@ bun run dev
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module boundaries and dependency rules.
+
+### Conventions
+
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/); the message is English, one line, no body.
+- PR titles and bodies are English, see [`.agents/skills/pr-description/SKILL.md`](.agents/skills/pr-description/SKILL.md).
+- `lefthook` (`commit-msg`) checks both the format and the language; do not bypass hooks with `--no-verify`.
 
 ### Status
 
