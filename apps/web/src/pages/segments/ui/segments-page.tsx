@@ -7,6 +7,8 @@ import {
   type Segment,
   type SegmentStatus,
 } from '@/entities/segment'
+import { useAuth } from '@/entities/user'
+import { BuildSegmentButton } from '@/features/build-segment'
 import { formatDateTime } from '@/shared/lib/format'
 import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
 import { DataTable, type Column } from '@/shared/ui/data-table'
@@ -42,6 +44,7 @@ const parsePage = (value: string | null) => {
 
 export function SegmentsPage() {
   const navigate = useNavigate()
+  const { role } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const urlQuery = searchParams.get('q') ?? ''
   const status = searchParams.get('status') ?? ALL
@@ -75,7 +78,11 @@ export function SegmentsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Сегменты" description="Группы гостей и размер аудитории" />
+      <PageHeader
+        title="Сегменты"
+        description="Группы гостей и размер аудитории"
+        actions={(role === 'marketer' || role === 'analyst') && <BuildSegmentButton />}
+      />
       <div className="flex flex-wrap gap-2">
         <Input
           value={input}

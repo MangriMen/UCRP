@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router'
 import { SegmentTopTenants } from '@/entities/recommendation'
 import { isSegmentComputing, SegmentStatusBadge, useSegment } from '@/entities/segment'
 import { useAuth } from '@/entities/user'
+import { BuildSegmentButton } from '@/features/build-segment'
 import { CreateExportButton } from '@/features/create-export'
 import { RecomputeSegmentButton } from '@/features/recompute-segment'
 import { formatDateTime } from '@/shared/lib/format'
@@ -34,6 +35,7 @@ export function SegmentDetailsPage() {
         actions={
           <>
             <SegmentStatusBadge status={segment.status} />
+            {canManage && <BuildSegmentButton segment={segment} />}
             {canManage && <RecomputeSegmentButton segmentId={segment.id} status={segment.status} />}
             {role === 'marketer' && (
               <CreateExportButton segmentId={segment.id} disabled={segment.status !== 'ready'} />
