@@ -16,6 +16,6 @@ export function useUploadImport() {
       body.set('file', file)
       return api.post('/imports', { body })
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: importKeys.all }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: importKeys.lists() }),
   })
 }

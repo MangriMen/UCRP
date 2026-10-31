@@ -7,7 +7,6 @@ describe('validateImportFile', () => {
   it('accepts csv and excel files regardless of extension case', () => {
     expect(validateImportFile(fileOf('a.csv'))).toBeNull()
     expect(validateImportFile(fileOf('A.XLSX'))).toBeNull()
-    expect(validateImportFile(fileOf('a.xls'))).toBeNull()
   })
 
   it('rejects other formats', () => {

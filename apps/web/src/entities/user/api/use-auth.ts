@@ -5,7 +5,6 @@ export function useAuth() {
   return {
     user: data ?? null,
     role: data?.role ?? null,
-    tenantId: data?.tenantId ?? null,
     isLoading: isPending,
   }
 }

@@ -1,7 +1,6 @@
 import type { Query } from '@tanstack/react-query'
 
 export const IMPORT_POLL_MS = 2000
-export const RECOMPUTE_POLL_MS = 5000
 
 export function pollWhile<TData>(isActive: (data: TData) => boolean, intervalMs: number) {
   return (query: Query<TData, Error, TData>) => {
