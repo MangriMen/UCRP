@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { roleLabels, useMe, useUsers, type Role, type User } from '@/entities/user'
 import { formatDateTime } from '@/shared/lib/format'
+import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
+import { ALL_OPTION } from '@/shared/lib/search-params'
 import { ActiveBadge } from '@/shared/ui/active-badge'
 import { Button } from '@/shared/ui/button'
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
@@ -12,12 +14,12 @@ import { assignableRoles } from '../model/schema'
 import { useDeleteUser } from '../api/use-user-mutations'
 import { UserFormDialog } from './user-form-dialog'
 
-const ALL = 'all'
-
 const roleFilterItems = [
-  { value: ALL, label: 'Все роли' },
+  { value: ALL_OPTION, label: 'Все роли' },
   ...assignableRoles.map((role) => ({ value: role, label: roleLabels[role] })),
 ]
+
+const SEARCH_DEBOUNCE_MS = 300
 
 const isRole = (value: string): value is Role => value in roleLabels
 
@@ -28,9 +30,10 @@ interface FormState {
 export function UsersManager() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState(ALL)
+  const [roleFilter, setRoleFilter] = useState(ALL_OPTION)
+  const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS)
   const users = useUsers({
-    q: search.trim() || undefined,
+    q: debouncedSearch || undefined,
     role: isRole(roleFilter) ? roleFilter : undefined,
     page,
   })

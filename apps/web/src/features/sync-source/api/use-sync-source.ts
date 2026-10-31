@@ -10,7 +10,7 @@ export function useSyncSource() {
       api.post('/data-sources/{id}/sync', { params: { id: sourceId } }),
     onSettled: () =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: importKeys.all }),
+        queryClient.invalidateQueries({ queryKey: importKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: dataSourceKeys.all }),
       ]),
   })
