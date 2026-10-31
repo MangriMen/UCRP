@@ -81,18 +81,26 @@ type memberCandidate struct {
 }
 
 func (s *ExportService) Preview(ctx context.Context, req ExportPreviewRequest) (*ExportPreviewResponse, error) {
+	if err := validateChannel(req.Channel); err != nil {
+		return nil, err
+	}
+	if req.SegmentID == "" || req.ControlPercent < 0 || req.ControlPercent > 50 {
+		return nil, domain.ErrValidation
+	}
 	all, withContact, err := s.memberLists(ctx, req.SegmentID, req.Channel)
 	if err != nil {
 		return nil, err
 	}
-	blocked, err := s.blockedGuests(ctx, withContact)
+	withContact = dedupeByGuest(withContact)
+	blocked, err := s.blockedForChannel(ctx, withContact, req.Channel)
 	if err != nil {
 		return nil, err
 	}
 	allowed := withoutIDs(withContact, blocked)
 	control := pickControl(allowed, req.ControlPercent, hashSeed(req.IdempotencyKey))
+	totalGuests := len(dedupeByGuest(all))
 	return &ExportPreviewResponse{
-		InSegment:      len(all),
+		InSegment:      totalGuests,
 		WithContact:    len(withContact),
 		BlockedByLimit: len(blocked),
 		Control:        len(control),
@@ -101,8 +109,8 @@ func (s *ExportService) Preview(ctx context.Context, req ExportPreviewRequest) (
 }
 
 func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, actorUserID string) (*ExportDTO, error) {
-	if req.IdempotencyKey == "" {
-		return nil, domain.ErrValidation
+	if err := validateExportRequest(req.SegmentID, req.Channel, req.Format, req.ControlPercent, req.IdempotencyKey); err != nil {
+		return nil, err
 	}
 	if existing, err := s.exports.FindByKey(ctx, actorUserID, req.IdempotencyKey); err == nil {
 		return toExportDTO(*existing), nil
@@ -118,7 +126,8 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 	if err != nil {
 		return nil, err
 	}
-	blocked, err := s.blockedGuests(ctx, withContact)
+	withContact = dedupeByGuest(withContact)
+	blocked, err := s.blockedForChannel(ctx, withContact, req.Channel)
 	if err != nil {
 		return nil, err
 	}
@@ -130,6 +139,7 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 	}
 
 	now := s.clock.Now()
+	totalGuests := len(dedupeByGuest(all))
 	job := domain.ExportJob{
 		ID:                  s.idGen.NewID(ctx),
 		SegmentID:           req.SegmentID,
@@ -141,8 +151,8 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 		ControlSeed:         hashSeed(req.IdempotencyKey),
 		IdempotencyKey:      req.IdempotencyKey,
 		Status:              domain.ExportReady,
-		TotalInSegment:      len(all),
-		NoContactCount:      len(all) - len(withContact),
+		TotalInSegment:      totalGuests,
+		NoContactCount:      totalGuests - len(withContact),
 		BlockedByLimitCount: len(blocked),
 		ControlCount:        len(controlSet),
 		ExportedCount:       len(allowed) - len(controlSet),
@@ -239,11 +249,18 @@ func (s *ExportService) memberLists(ctx context.Context, segmentID, channel stri
 	return all, withContact, nil
 }
 
-func (s *ExportService) blockedGuests(ctx context.Context, candidates []memberCandidate) ([]string, error) {
+func (s *ExportService) blockedForChannel(ctx context.Context, candidates []memberCandidate, channel string) ([]string, error) {
 	limits, err := s.limits.ListActive(ctx)
 	if err != nil {
 		return nil, err
 	}
+	applicable := make([]domain.ContactLimit, 0, len(limits))
+	for _, l := range limits {
+		if l.Channel == "" || l.Channel == channel {
+			applicable = append(applicable, l)
+		}
+	}
+	limits = applicable
 	if len(limits) == 0 || len(candidates) == 0 {
 		return nil, nil
 	}
@@ -262,7 +279,7 @@ func (s *ExportService) blockedGuests(ctx context.Context, candidates []memberCa
 		}
 	}
 	since := s.clock.Now().UTC().AddDate(0, 0, -period)
-	counts, err := s.contacts.CountSince(ctx, ids, since)
+	counts, err := s.contacts.CountSinceChannel(ctx, ids, since, channel)
 	if err != nil {
 		return nil, err
 	}
@@ -334,8 +351,8 @@ func pickControl(in []memberCandidate, percent int, seed int64) []memberCandidat
 	for i := range indexes {
 		indexes[i] = i
 	}
-	for i := range indexes {
-		j := int(hash64(in[i].guestID, seed) % uint64(len(indexes)))
+	for i := len(indexes) - 1; i > 0; i-- {
+		j := int(hash64(in[i].guestID, seed+int64(i)) % uint64(i+1))
 		indexes[i], indexes[j] = indexes[j], indexes[i]
 	}
 	out := make([]memberCandidate, 0, n)
@@ -377,4 +394,45 @@ func orDefault(v, def string) string {
 		return def
 	}
 	return v
+}
+
+func validateChannel(channel string) error {
+	switch channel {
+	case string(domain.ChannelSMS), string(domain.ChannelPush), string(domain.ChannelEmail):
+		return nil
+	default:
+		return domain.ErrValidation
+	}
+}
+
+func validateExportRequest(segmentID, channel, format string, percent int, idemKey string) error {
+	if segmentID == "" {
+		return domain.ErrValidation
+	}
+	if err := validateChannel(channel); err != nil {
+		return err
+	}
+	if format != "" && format != string(domain.FormatCSV) && format != string(domain.FormatAPI) {
+		return domain.ErrValidation
+	}
+	if percent < 0 || percent > 50 {
+		return domain.ErrValidation
+	}
+	if idemKey == "" || len(idemKey) > 64 {
+		return domain.ErrValidation
+	}
+	return nil
+}
+
+func dedupeByGuest(in []memberCandidate) []memberCandidate {
+	seen := map[string]bool{}
+	out := make([]memberCandidate, 0, len(in))
+	for _, c := range in {
+		if seen[c.guestID] {
+			continue
+		}
+		seen[c.guestID] = true
+		out = append(out, c)
+	}
+	return out
 }

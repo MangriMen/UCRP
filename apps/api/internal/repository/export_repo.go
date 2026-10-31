@@ -37,8 +37,11 @@ func (r *ExportSQL) GetByID(ctx context.Context, id string) (*domain.ExportJob, 
 
 func (r *ExportSQL) ListMembers(ctx context.Context, exportID string) ([]domain.ExportMember, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT export_id, guest_id, identifier_id, is_control
-		FROM export_member WHERE export_id = $1 ORDER BY is_control, guest_id`, exportID)
+		SELECT m.export_id, m.guest_id, m.identifier_id, m.is_control, COALESCE(i.value_normalized, '')
+		FROM export_member m
+		LEFT JOIN guest_identifier i ON i.id = m.identifier_id
+		WHERE m.export_id = $1
+		ORDER BY m.is_control, m.guest_id`, exportID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +49,7 @@ func (r *ExportSQL) ListMembers(ctx context.Context, exportID string) ([]domain.
 	out := make([]domain.ExportMember, 0)
 	for rows.Next() {
 		var m domain.ExportMember
-		if err := rows.Scan(&m.ExportID, &m.GuestID, &m.IdentifierID, &m.IsControl); err != nil {
+		if err := rows.Scan(&m.ExportID, &m.GuestID, &m.IdentifierID, &m.IsControl, &m.Contact); err != nil {
 			return nil, err
 		}
 		out = append(out, m)
@@ -201,21 +204,39 @@ func NewContactLogSQL(db *sql.DB) *ContactLogSQL {
 }
 
 func (r *ContactLogSQL) CountSince(ctx context.Context, guestIDs []string, since time.Time) (map[string]int, error) {
+	return r.count(ctx, guestIDs, since, "", false)
+}
+
+func (r *ContactLogSQL) CountSinceChannel(ctx context.Context, guestIDs []string, since time.Time, channel string) (map[string]int, error) {
+	return r.count(ctx, guestIDs, since, channel, channel != "")
+}
+
+func (r *ContactLogSQL) count(ctx context.Context, guestIDs []string, since time.Time, channel string, byChannel bool) (map[string]int, error) {
 	out := map[string]int{}
 	if len(guestIDs) == 0 {
 		return out, nil
 	}
 	ph := make([]string, len(guestIDs))
-	args := make([]any, 0, len(guestIDs)+1)
+	args := make([]any, 0, len(guestIDs)+3)
 	for i, id := range guestIDs {
 		ph[i] = "$" + strconv.Itoa(i+1)
 		args = append(args, id)
 	}
+	sinceIdx := len(guestIDs) + 1
 	args = append(args, since)
-	rows, err := r.db.QueryContext(ctx, `
-		SELECT guest_id, COUNT(*) FROM contact_log
-		WHERE guest_id IN (`+strings.Join(ph, ",")+`) AND contacted_at >= $`+strconv.Itoa(len(guestIDs)+1)+`
-		GROUP BY guest_id`, args...)
+	query := `
+		SELECT cl.guest_id, COUNT(*)
+		FROM contact_log cl
+		JOIN export_job j ON j.id = cl.export_id
+		WHERE cl.guest_id IN (` + strings.Join(ph, ",") + `)
+		  AND cl.contacted_at >= $` + strconv.Itoa(sinceIdx)
+	if byChannel {
+		args = append(args, channel)
+		query += ` AND j.channel = $` + strconv.Itoa(sinceIdx+1)
+	}
+	query += ` GROUP BY cl.guest_id`
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

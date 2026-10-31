@@ -18,7 +18,6 @@ type Recommendation struct {
 
 type RecommendationRepo interface {
 	ListByGuest(ctx context.Context, guestID string) ([]Recommendation, error)
-	ReplaceForGuest(ctx context.Context, guestID string, items []Recommendation) error
 }
 
 type Recommender interface {

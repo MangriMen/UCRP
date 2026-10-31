@@ -46,6 +46,7 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 		WITH was AS (
 			SELECT DISTINCT e.guest_id
 			FROM event e
+			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
 			WHERE e.guest_id IS NOT NULL
 				AND e.tenant_id IN (` + inPlaceholders(1, len(rule.Was)) + `)
 				AND e.occurred_at >= $` + strconv.Itoa(sinceIdx) + `
@@ -53,6 +54,7 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 		was_not AS (
 			SELECT DISTINCT e.guest_id
 			FROM event e
+			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
 			WHERE e.guest_id IS NOT NULL
 				AND e.tenant_id IN (` + inPlaceholders(notStart, len(rule.WasNot)) + `)
 				AND e.occurred_at >= $` + strconv.Itoa(notSinceIdx) + `

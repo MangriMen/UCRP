@@ -44,17 +44,12 @@ type UnmergeBlock struct {
 type MergeCandidateRepo interface {
 	GetByID(ctx context.Context, id string) (*MergeCandidate, error)
 	List(ctx context.Context, resolution MergeResolution, limit, offset int) ([]MergeCandidate, error)
-	Insert(ctx context.Context, c *MergeCandidate) error
-	UpdateDecision(ctx context.Context, c *MergeCandidate) error
+	Confirm(ctx context.Context, id, actorUserID string, now time.Time) (*MergeCandidate, error)
+	Reject(ctx context.Context, id, actorUserID string, now time.Time) (*MergeCandidate, error)
+	Revert(ctx context.Context, id, actorUserID string, now time.Time) (*MergeCandidate, error)
 }
 
 type UnmergeBlockRepo interface {
 	HasBlock(ctx context.Context, guestA, guestB string) (bool, error)
 	Insert(ctx context.Context, b *UnmergeBlock) error
-}
-
-type MergeExecutor interface {
-	Confirm(ctx context.Context, candidateID, actorUserID string) (*MergeCandidate, error)
-	Reject(ctx context.Context, candidateID, actorUserID string) (*MergeCandidate, error)
-	Revert(ctx context.Context, candidateID, actorUserID string) (*MergeCandidate, error)
 }

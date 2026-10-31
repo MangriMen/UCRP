@@ -73,7 +73,7 @@ func (s *SegmentService) Create(ctx context.Context, req SegmentCreateRequest, a
 	rule := domain.SegmentRule{Was: req.Was, WasNot: req.WasNot, PeriodDays: req.PeriodDays}
 	members, err := s.evaluator.Evaluate(ctx, rule)
 	if err != nil {
-		return nil, domain.ErrValidation
+		return nil, err
 	}
 	ruleJSON, _ := json.Marshal(rule)
 	now := s.clock.Now()
