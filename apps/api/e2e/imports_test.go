@@ -55,7 +55,7 @@ func TestImportUploadAccepted(t *testing.T) {
 	if duplicate, ok := obj["duplicate"].(bool); !ok || duplicate {
 		t.Fatalf("import duplicate flag: expected false, got %v", obj["duplicate"])
 	}
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 }
 
 func TestImportCountersInvariant(t *testing.T) {
@@ -75,7 +75,7 @@ func TestImportCountersInvariant(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "import batch to finish", func(ctx context.Context) (bool, error) {
 		r, err := s.API.Get(ctx, "/api/v1/imports/"+batchID, nil)
@@ -143,7 +143,7 @@ func TestImportRejectedRowCodes(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "import batch to finish", func(ctx context.Context) (bool, error) {
 		r, err := s.API.Get(ctx, "/api/v1/imports/"+batchID, nil)
@@ -206,7 +206,7 @@ func TestImportRejectedRowsCSV(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "import batch to finish", func(ctx context.Context) (bool, error) {
 		r, err := s.API.Get(ctx, "/api/v1/imports/"+batchID, nil)
@@ -258,7 +258,7 @@ func TestImportUploadIsIdempotent(t *testing.T) {
 	}
 	firstObj, _ := firstBody.(map[string]any)
 	firstID := harness.StringField(firstObj, "batch_id", "batchId")
-	trackImport(ctx, s, firstID)
+	trackImport(s, firstID)
 
 	second, err := uploadImport(ctx, s, iw.source.ID, "same.csv", content)
 	if err != nil {
@@ -356,7 +356,7 @@ func TestImportListFilters(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	list, err := s.API.Get(ctx, "/api/v1/imports", map[string][]string{"data_source_id": {iw.source.ID}})
 	if err != nil {
@@ -413,7 +413,7 @@ func TestImportDuplicateExternalIDCountedAsDuplicate(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "import batch to finish", func(ctx context.Context) (bool, error) {
 		r, err := s.API.Get(ctx, "/api/v1/imports/"+batchID, nil)
@@ -451,7 +451,7 @@ func TestImportDuplicateExternalIDCountedAsDuplicate(t *testing.T) {
 	}
 }
 
-func trackImport(ctx context.Context, s *harness.Suite, batchID string) {
+func trackImport(s *harness.Suite, batchID string) {
 	s.T.Helper()
 	if batchID == "" {
 		return

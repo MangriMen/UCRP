@@ -88,7 +88,7 @@ func TestDataSourceCreate(t *testing.T) {
 	if sourceID == "" {
 		t.Fatalf("created data source has no id: %s", resp.Snippet())
 	}
-	trackDataSource(ctx, s, sourceID)
+	trackDataSource(s, sourceID)
 
 	if active, ok := obj["is_active"].(bool); !ok || !active {
 		t.Fatalf("created data source must be active, got %v", obj["is_active"])
@@ -191,7 +191,7 @@ func TestDataSourceListContainsFixture(t *testing.T) {
 	}
 }
 
-func trackDataSource(ctx context.Context, s *harness.Suite, sourceID string) {
+func trackDataSource(s *harness.Suite, sourceID string) {
 	s.T.Helper()
 	if sourceID == "" {
 		return

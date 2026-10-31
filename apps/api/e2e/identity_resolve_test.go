@@ -29,7 +29,7 @@ func TestIdentityResolveCreatesGuestFromImport(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "identity resolution to attach events", func(ctx context.Context) (bool, error) {
 		attached, err := s.DB.Count(ctx, `SELECT COUNT(*) FROM event WHERE import_batch_id = $1 AND guest_id IS NOT NULL`, batchID)
@@ -87,7 +87,7 @@ func TestIdentityResolveAttachesToExistingGuest(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "event to attach to the existing guest", func(ctx context.Context) (bool, error) {
 		n, err := s.DB.Count(ctx, `SELECT COUNT(*) FROM event WHERE import_batch_id = $1 AND guest_id = $2`, batchID, existing.ID)
@@ -133,7 +133,7 @@ func TestIdentityAutoMergeOnSharedPhone(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "auto-merge candidate for the shared phone", func(ctx context.Context) (bool, error) {
 		n, err := s.DB.Count(ctx, `
@@ -194,7 +194,7 @@ func TestIdentityPendingCandidateOnSharedEmail(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "pending candidate for the shared email", func(ctx context.Context) (bool, error) {
 		n, err := s.DB.Count(ctx, `
