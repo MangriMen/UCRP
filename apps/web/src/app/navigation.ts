@@ -5,6 +5,7 @@ import {
   FileDown,
   GitMerge,
   History,
+  KeyRound,
   Layers,
   Megaphone,
   Plug,
@@ -57,7 +58,7 @@ const navigation: NavGroup[] = [
     ],
   },
   {
-    label: 'Данные',
+    label: 'Арендаторы',
     items: [
       { title: 'Арендаторы', to: '/tenants', icon: Store, permission: 'reference.read' },
       {
@@ -66,7 +67,7 @@ const navigation: NavGroup[] = [
         icon: Plug,
         permission: 'data_source.read',
       },
-      { title: 'Импорт', to: '/import', icon: Upload, permission: 'import.read' },
+      { title: 'Импорт данных', to: '/import', icon: Upload, permission: 'import.read' },
     ],
   },
   {
@@ -91,16 +92,16 @@ const navigation: NavGroup[] = [
     label: 'Коммуникации',
     items: [
       {
-        title: 'Выгрузки',
-        to: '/exports',
-        icon: FileDown,
-        permission: 'export.read',
-      },
-      {
         title: 'Кампании',
         to: '/campaigns',
         icon: Megaphone,
         permission: 'campaign.read',
+      },
+      {
+        title: 'Выгрузки',
+        to: '/exports',
+        icon: FileDown,
+        permission: 'export.read',
       },
       {
         title: 'Лимиты контактов',
@@ -126,6 +127,7 @@ const navigation: NavGroup[] = [
         icon: Ban,
         permission: 'identity.queue.read',
       },
+      { title: 'Доступы', to: '/access', icon: KeyRound, permission: 'access.grant.read' },
       { title: 'Журнал аудита', to: '/admin/audit', icon: History, permission: 'audit.read' },
     ],
   },

@@ -19,20 +19,20 @@ func NewExportSQL(db *sql.DB) *ExportSQL {
 	return &ExportSQL{db: db}
 }
 
+const exportSelect = `
+	SELECT e.id, e.segment_id, e.segment_version_id, COALESCE(e.campaign_id, ''), e.channel, e.format, e.control_percent, e.control_seed,
+		e.idempotency_key, e.status, e.total_in_segment, e.no_contact_count, e.blocked_by_limit_count, e.control_count, e.exported_count,
+		e.created_by, e.created_at, e.finished_at, COALESCE(s.name, ''), COALESCE(v.version_no, 0)
+	FROM export_job e
+	LEFT JOIN segment s ON s.id = e.segment_id
+	LEFT JOIN segment_version v ON v.id = e.segment_version_id`
+
 func (r *ExportSQL) FindByKey(ctx context.Context, userID, key string) (*domain.ExportJob, error) {
-	return r.one(ctx, `
-		SELECT id, segment_id, segment_version_id, COALESCE(campaign_id, ''), channel, format, control_percent, control_seed,
-			idempotency_key, status, total_in_segment, no_contact_count, blocked_by_limit_count, control_count, exported_count,
-			created_by, created_at, finished_at
-		FROM export_job WHERE created_by = $1 AND idempotency_key = $2`, userID, key)
+	return r.one(ctx, exportSelect+` WHERE e.created_by = $1 AND e.idempotency_key = $2`, userID, key)
 }
 
 func (r *ExportSQL) GetByID(ctx context.Context, id string) (*domain.ExportJob, error) {
-	return r.one(ctx, `
-		SELECT id, segment_id, segment_version_id, COALESCE(campaign_id, ''), channel, format, control_percent, control_seed,
-			idempotency_key, status, total_in_segment, no_contact_count, blocked_by_limit_count, control_count, exported_count,
-			created_by, created_at, finished_at
-		FROM export_job WHERE id = $1`, id)
+	return r.one(ctx, exportSelect+` WHERE e.id = $1`, id)
 }
 
 func (r *ExportSQL) ListMembers(ctx context.Context, exportID string) ([]domain.ExportMember, error) {
@@ -55,6 +55,40 @@ func (r *ExportSQL) ListMembers(ctx context.Context, exportID string) ([]domain.
 		out = append(out, m)
 	}
 	return out, rows.Err()
+}
+
+func (r *ExportSQL) ListMemberPage(ctx context.Context, exportID string, isControl *bool, limit, offset int) ([]domain.ExportMember, int, error) {
+	limit, offset = clampPage(limit, offset)
+	where := ` WHERE m.export_id = $1`
+	args := []any{exportID}
+	if isControl != nil {
+		args = append(args, *isControl)
+		where += ` AND m.is_control = $2`
+	}
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM export_member m`+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	args = append(args, limit, offset)
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT m.export_id, m.guest_id, m.identifier_id, m.is_control, COALESCE(i.value_normalized, ''), COALESCE(i.id_type, '')
+		FROM export_member m
+		LEFT JOIN guest_identifier i ON i.id = m.identifier_id`+where+`
+		ORDER BY m.is_control, m.guest_id
+		LIMIT $`+strconv.Itoa(len(args)-1)+` OFFSET $`+strconv.Itoa(len(args)), args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]domain.ExportMember, 0)
+	for rows.Next() {
+		var m domain.ExportMember
+		if err := rows.Scan(&m.ExportID, &m.GuestID, &m.IdentifierID, &m.IsControl, &m.Contact, &m.ContactType); err != nil {
+			return nil, 0, err
+		}
+		out = append(out, m)
+	}
+	return out, total, rows.Err()
 }
 
 func (r *ExportSQL) Insert(ctx context.Context, job *domain.ExportJob, members []domain.ExportMember) error {
@@ -87,63 +121,70 @@ func (r *ExportSQL) Insert(ctx context.Context, job *domain.ExportJob, members [
 	return tx.Commit()
 }
 
-func (r *ExportSQL) List(ctx context.Context, limit, offset int) ([]domain.ExportJob, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
+func (r *ExportSQL) List(ctx context.Context, filter domain.ExportFilter, limit, offset int) ([]domain.ExportJob, int, error) {
+	limit, offset = clampPage(limit, offset)
+	var conditions []string
+	var args []any
+	for _, condition := range []struct {
+		column string
+		value  string
+	}{
+		{"e.segment_id", filter.SegmentID},
+		{"e.campaign_id", filter.CampaignID},
+		{"e.channel", filter.Channel},
+		{"e.status", filter.Status},
+	} {
+		if condition.value == "" {
+			continue
+		}
+		args = append(args, condition.value)
+		conditions = append(conditions, condition.column+" = $"+strconv.Itoa(len(args)))
 	}
-	if offset < 0 {
-		offset = 0
+	where := ""
+	if len(conditions) > 0 {
+		where = " WHERE " + strings.Join(conditions, " AND ")
 	}
-	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, segment_id, segment_version_id, COALESCE(campaign_id, ''), channel, format, control_percent, control_seed,
-			idempotency_key, status, total_in_segment, no_contact_count, blocked_by_limit_count, control_count, exported_count,
-			created_by, created_at, finished_at
-		FROM export_job ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM export_job e`+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	args = append(args, limit, offset)
+	rows, err := r.db.QueryContext(ctx, exportSelect+where+
+		` ORDER BY e.created_at DESC, e.id LIMIT $`+strconv.Itoa(len(args)-1)+` OFFSET $`+strconv.Itoa(len(args)), args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.ExportJob, 0)
 	for rows.Next() {
 		j, err := scanExport(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		out = append(out, *j)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
+}
+
+func clampPage(limit, offset int) (int, int) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	return limit, max(offset, 0)
 }
 
 func (r *ExportSQL) one(ctx context.Context, query string, args ...any) (*domain.ExportJob, error) {
-	var j domain.ExportJob
-	var (
-		channel string
-		format  string
-		status  string
-		fin     sql.NullTime
-	)
-	err := r.db.QueryRowContext(ctx, query, args...).Scan(
-		&j.ID, &j.SegmentID, &j.SegmentVersionID, &j.CampaignID, &channel, &format, &j.ControlPercent, &j.ControlSeed,
-		&j.IdempotencyKey, &status, &j.TotalInSegment, &j.NoContactCount, &j.BlockedByLimitCount, &j.ControlCount, &j.ExportedCount,
-		&j.CreatedBy, &j.CreatedAt, &fin,
-	)
+	j, err := scanExport(r.db.QueryRowContext(ctx, query, args...))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
-	if err != nil {
-		return nil, err
-	}
-	j.Channel = domain.ExportChannel(channel)
-	j.Format = domain.ExportFormat(format)
-	j.Status = domain.ExportStatus(status)
-	if fin.Valid {
-		t := fin.Time
-		j.FinishedAt = &t
-	}
-	return &j, nil
+	return j, err
 }
 
-func scanExport(rows *sql.Rows) (*domain.ExportJob, error) {
+func scanExport(row interface{ Scan(dest ...any) error }) (*domain.ExportJob, error) {
 	var (
 		j       domain.ExportJob
 		channel string
@@ -151,10 +192,10 @@ func scanExport(rows *sql.Rows) (*domain.ExportJob, error) {
 		status  string
 		fin     sql.NullTime
 	)
-	if err := rows.Scan(
+	if err := row.Scan(
 		&j.ID, &j.SegmentID, &j.SegmentVersionID, &j.CampaignID, &channel, &format, &j.ControlPercent, &j.ControlSeed,
 		&j.IdempotencyKey, &status, &j.TotalInSegment, &j.NoContactCount, &j.BlockedByLimitCount, &j.ControlCount, &j.ExportedCount,
-		&j.CreatedBy, &j.CreatedAt, &fin,
+		&j.CreatedBy, &j.CreatedAt, &fin, &j.SegmentName, &j.SegmentVersionNo,
 	); err != nil {
 		return nil, err
 	}

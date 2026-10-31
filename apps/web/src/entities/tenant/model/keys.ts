@@ -1,5 +1,6 @@
 export interface TenantListFilters {
   q?: string
+  mallId?: string
   categoryId?: string
   floor?: number
   isActive?: boolean

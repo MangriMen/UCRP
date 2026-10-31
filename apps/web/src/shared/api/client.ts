@@ -69,7 +69,7 @@ function toTransportError(e: unknown): unknown {
   return e
 }
 
-const NO_REFRESH_PATHS = new Set(['/auth/login', '/auth/refresh'])
+const NO_REFRESH_PATHS = new Set(['/auth/login', '/auth/refresh', '/auth/invitations/accept'])
 
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown
@@ -120,7 +120,9 @@ async function requestResponse(path: string, options: RequestOptions = {}): Prom
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const res = await requestResponse(path, options)
-  return res.status === 204 ? (undefined as T) : ((await res.json()) as T)
+  if (res.status === 204) return undefined as T
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
 
 export async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {

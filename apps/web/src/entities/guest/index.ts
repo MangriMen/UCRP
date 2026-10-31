@@ -7,6 +7,7 @@ export {
   useTenantGuests,
 } from './api/use-guests'
 export { GuestStatusBadge } from './ui/guest-status-badge'
+export { MaskedIdentifierList } from './ui/masked-identifier-list'
 export { guestKeys, MIN_SEARCH_LENGTH } from './model/keys'
 export type { GuestContactFilters, GuestEventFilters, GuestSearchFilters } from './model/keys'
 export { contactChannelLabels, guestStatusLabels, identifierTypeLabels } from './model/labels'
@@ -17,6 +18,7 @@ export type {
   GuestEvent,
   GuestEventSort,
   GuestIdentifier,
+  GuestListItem,
   GuestMovementStep,
   GuestListSort,
   GuestProfile,
@@ -24,4 +26,5 @@ export type {
   GuestStatus,
   GuestTenantSummary,
   IdentifierType,
+  MaskedGuestIdentifier,
 } from './model/types'

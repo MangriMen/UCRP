@@ -48,6 +48,20 @@ describe('request', () => {
     await expect(request('/a')).rejects.toMatchObject({ status: 401 })
   })
 
+  it('returns undefined for a successful response with an empty body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 202 })))
+    await expect(request('/x', { method: 'POST' })).resolves.toBeUndefined()
+  })
+
+  it('does not refresh the token when invitation acceptance gets 401', async () => {
+    const fetchMock = vi.fn(async () => json(401))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(request('/auth/invitations/accept', { method: 'POST' })).rejects.toMatchObject({
+      status: 401,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('returns the response body as a blob with the bearer token', async () => {
     setAccessToken('token')
     const fetchMock = vi.fn().mockResolvedValue(new Response('id,phone\n1,+7'))

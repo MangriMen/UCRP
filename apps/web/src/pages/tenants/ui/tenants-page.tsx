@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useTenants, type TenantListItem } from '@/entities/tenant'
+import {
+  TENANT_NEW_GUESTS_PERMISSION,
+  TENANT_SUPPRESSION_THRESHOLD,
+  TENANT_VISITS_PERMISSION,
+  useTenants,
+  type TenantListItem,
+} from '@/entities/tenant'
 import { formatAggregateCell } from '@/entities/tenant-aggregates'
 import { useAuth } from '@/entities/user'
 import { TenantFormDialog } from '@/features/manage-tenants'
@@ -13,12 +19,8 @@ import { StatusBadge } from '@/shared/ui/status-badge'
 import { TENANT_FILTER_KEYS } from '../model/filter-keys'
 import { TenantFilters } from './tenant-filters'
 
-const VISITS_PERMISSION = 'metric.visits_count.read'
-const NEW_GUESTS_PERMISSION = 'metric.new_guests_via_mall.read'
-const SUPPRESSION_THRESHOLD = 5
-
 const statCell = (value: number | null | undefined) =>
-  formatAggregateCell(value, SUPPRESSION_THRESHOLD)
+  formatAggregateCell(value, TENANT_SUPPRESSION_THRESHOLD)
 
 const sourcesCell = (tenant: TenantListItem) => (
   <div className="flex flex-wrap items-center gap-2">
@@ -86,8 +88,8 @@ export function TenantsPage() {
   const params = useListParams()
   const { get, page, pageSize, setPage, setPageSize, setSort, reset } = params
   const [creating, setCreating] = useState(false)
-  const canSeeVisits = can(VISITS_PERMISSION)
-  const canSeeNewGuests = can(NEW_GUESTS_PERMISSION)
+  const canSeeVisits = can(TENANT_VISITS_PERMISSION)
+  const canSeeNewGuests = can(TENANT_NEW_GUESTS_PERMISSION)
 
   const columns = useMemo(
     () => [
@@ -110,6 +112,7 @@ export function TenantsPage() {
 
   const tenants = useTenants({
     q: get('q') || undefined,
+    mallId: get('mall_id') || undefined,
     categoryId: get('category_id') || undefined,
     floor: floor === '' ? undefined : Number(floor),
     isActive: isActive ? isActive === 'true' : undefined,

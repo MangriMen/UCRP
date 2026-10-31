@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -162,8 +163,28 @@ type GuestRepo interface {
 	SoftDelete(ctx context.Context, id string, now time.Time) error
 }
 
+const (
+	maskedPart       = "***"
+	maskedVisibleEnd = 4
+)
+
+func MaskIdentifierValue(idType, value string) string {
+	if idType == "email" {
+		local, host, found := strings.Cut(value, "@")
+		if found && local != "" {
+			return string([]rune(local)[:1]) + maskedPart + "@" + host
+		}
+	}
+	runes := []rune(value)
+	if len(runes) < 2*maskedVisibleEnd {
+		return maskedPart
+	}
+	return maskedPart + string(runes[len(runes)-maskedVisibleEnd:])
+}
+
 type GuestIdentifierRepo interface {
 	ListByGuest(ctx context.Context, guestID string) ([]GuestIdentifier, error)
+	ListByGuests(ctx context.Context, guestIDs []string) ([]GuestIdentifier, error)
 	FindByValue(ctx context.Context, idType, value string) ([]GuestIdentifier, error)
 	Insert(ctx context.Context, gi *GuestIdentifier) error
 	MoveToGuest(ctx context.Context, fromGuestID, toGuestID string) error

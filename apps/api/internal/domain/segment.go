@@ -53,8 +53,8 @@ type ZoneRef struct {
 }
 
 type SegmentRule struct {
-	VisitedTenantIDs  []string      `json:"visitedTenantIds"`
-	ExcludedTenantIDs []string      `json:"excludedTenantIds"`
+	VisitedTenantIDs  []string      `json:"visitedTenantIds,omitempty"`
+	ExcludedTenantIDs []string      `json:"excludedTenantIds,omitempty"`
 	PurchasedZones    []ZoneRef     `json:"purchasedZones,omitempty"`
 	PeriodDays        int           `json:"periodDays"`
 	RequireContact    string        `json:"requireContact,omitempty"`

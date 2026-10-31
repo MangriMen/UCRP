@@ -9,7 +9,7 @@ export const mergeResolutionLabels: Record<MergeResolution, string> = {
 }
 
 export const mergeConflictMessages: Record<string, string> = {
-  already_resolved: 'Заявка уже обработана. Обновите данные и проверьте текущий статус.',
+  already_resolved: 'Пара уже обработана. Обновите данные и проверьте текущий статус.',
   merge_blocked:
     'Для этой пары действует запрет объединения. Снимите запрет в разделе «Запреты объединения» и повторите.',
   conflict: 'Состояние профилей изменилось. Обновите данные и повторите попытку.',

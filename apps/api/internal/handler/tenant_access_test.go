@@ -29,6 +29,12 @@ func TestTenantAccessMetricPermissions(t *testing.T) {
 		{"repeated requested denied metric", "?metrics=visits_count&metrics=visits_count", "metric.visits_count.read", http.StatusForbidden, "metric_not_granted"},
 		{"repeated metric with unknown", "?metrics=visits_count&metrics=other", "", http.StatusForbidden, "metric_not_granted"},
 		{"comma separated unknown", "?metrics=visits_count,other", "", http.StatusForbidden, "metric_not_granted"},
+		{"explicit revenue denied", "?metrics=revenue_total", "metric.revenue_total.read", http.StatusForbidden, "metric_not_granted"},
+		{"explicit average check code denied", "?metrics=visits_count,metric.avg_check.read", "metric.avg_check.read", http.StatusForbidden, "metric_not_granted"},
+		{"explicit repeat visits denied", "?metrics=repeat_visits", "metric.repeat_visits.read", http.StatusForbidden, "metric_not_granted"},
+		{"explicit first purchases denied", "?metrics=first_purchase_new_tenant", "metric.first_purchase_new_tenant.read", http.StatusForbidden, "metric_not_granted"},
+		{"optional metric without visits", "?metrics=revenue_total", "metric.visits_count.read", http.StatusForbidden, "metric_not_granted"},
+		{"cross tenant rate is not a tenant aggregate", "?metrics=cross_tenant_rate", "", http.StatusForbidden, "metric_not_granted"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -487,6 +487,88 @@ func TestRecommendationsRefreshReplacesSet(t *testing.T) {
 	}
 }
 
+func TestRecommendationsReadReturnsTenantAndFactors(t *testing.T) {
+	s := harness.New(t).WithAdmin().WithDB()
+	w := buildWorld(t, s, "reco-factors")
+
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	guest, err := s.Reg.Guest(ctx, "reco-factors")
+	if err != nil {
+		t.Fatalf("fixture guest: %v", err)
+	}
+	w.visit(t, s, guest.ID, w.tenantA.ID, "reco-factors-a", 2)
+
+	refresh, err := s.API.Post(ctx, "/api/v1/guests/"+guest.ID+"/recommendations/refresh", nil)
+	if err != nil {
+		t.Fatalf("POST refresh recommendations: %v", err)
+	}
+	s.RequireStatus(refresh, 200, "POST /api/v1/guests/{id}/recommendations/refresh")
+
+	resp, err := s.API.Get(ctx, "/api/v1/guests/"+guest.ID+"/recommendations", nil)
+	if err != nil {
+		t.Fatalf("GET recommendations: %v", err)
+	}
+	s.RequireStatus(resp, 200, "GET /api/v1/guests/{id}/recommendations")
+	s.RequireSchema("GET", "/api/v1/guests/{id}/recommendations", resp)
+	decoded, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode recommendations: %v", err)
+	}
+	items, _ := harness.Items(decoded)
+	if len(items) == 0 {
+		t.Fatalf("refresh with an unvisited active tenant must produce recommendations: %s", resp.Snippet())
+	}
+	list, _ := decoded.(map[string]any)
+	if harness.StringField(list, "computedAt") == "" {
+		t.Fatalf("a computed set must carry computedAt: %s", resp.Snippet())
+	}
+	for _, item := range items {
+		obj, _ := item.(map[string]any)
+		if harness.StringField(obj, "tenantName") == "" {
+			t.Fatalf("recommendation %s has no tenantName", harness.StringField(obj, "id"))
+		}
+		factors, _ := obj["factors"].([]any)
+		if len(factors) == 0 {
+			t.Fatalf("recommendation %s has no stored factors", harness.StringField(obj, "id"))
+		}
+	}
+}
+
+func TestRecommendationsSegmentRespectsLimit(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	w := buildWorld(t, s, "reco-segment-limit")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	guest, err := s.Reg.Guest(ctx, "reco-segment-limit")
+	if err != nil {
+		t.Fatalf("fixture guest: %v", err)
+	}
+	w.visit(t, s, guest.ID, w.tenantA.ID, "reco-segment-limit", 4)
+	segment := createSegmentViaAPI(t, s, w.tenantA.ID)
+
+	resp, err := s.API.Get(ctx, "/api/v1/segments/"+segment.ID+"/recommendations", map[string][]string{"limit": {"1"}})
+	if err != nil {
+		t.Fatalf("GET /api/v1/segments/{id}/recommendations: %v", err)
+	}
+	s.RequireStatus(resp, 200, "GET /api/v1/segments/{id}/recommendations")
+	s.RequireSchema("GET", "/api/v1/segments/{id}/recommendations", resp)
+	decoded, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode segment recommendations: %v", err)
+	}
+	items, _ := harness.Items(decoded)
+	if len(items) > 1 {
+		t.Fatalf("limit=1 must return at most one tenant, got %d", len(items))
+	}
+	list, _ := decoded.(map[string]any)
+	if harness.StringField(list, "segmentId") != segment.ID {
+		t.Fatalf("segmentId: expected %s: %s", segment.ID, resp.Snippet())
+	}
+}
+
 func TestRecommendationsUnknownGuestReturns404(t *testing.T) {
 	s := harness.New(t).WithAdmin()
 	ctx, cancel := s.Ctx()

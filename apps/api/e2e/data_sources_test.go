@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"net/url"
 	"testing"
 	"time"
 
@@ -190,6 +191,10 @@ func TestDataSourceListContainsFixture(t *testing.T) {
 	if !found {
 		t.Fatalf("data source list must contain fixture source %s", w.source.ID)
 	}
+	meta, _ := body.(map[string]any)["meta"].(map[string]any)
+	if pageSize, ok := harness.IntField(meta, "pageSize"); !ok || pageSize != 50 {
+		t.Fatalf("default page size = %v, want the contract default 50: %s", meta["pageSize"], resp.Snippet())
+	}
 }
 
 func trackDataSource(s *harness.Suite, sourceID string) {
@@ -202,4 +207,55 @@ func trackDataSource(s *harness.Suite, sourceID string) {
 		defer cancel()
 		_ = s.DB.Exec(cleanupCtx, `DELETE FROM data_source WHERE id = $1`, sourceID)
 	})
+}
+
+func TestDataSourceListFiltersAndTotal(t *testing.T) {
+	s := harness.New(t).WithAdmin().WithDB()
+	w := buildWorld(t, s, "source-list")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	list := func(query url.Values) (int, []any) {
+		t.Helper()
+		resp, err := s.API.Get(ctx, "/api/v1/data-sources", query)
+		if err != nil {
+			t.Fatalf("GET /api/v1/data-sources: %v", err)
+		}
+		s.RequireStatus(resp, 200, "GET /api/v1/data-sources")
+		s.RequireSchema("GET", "/api/v1/data-sources", resp)
+		body, err := resp.JSON()
+		if err != nil {
+			t.Fatalf("decode sources: %v", err)
+		}
+		page, _ := body.(map[string]any)
+		meta, _ := page["meta"].(map[string]any)
+		total, _ := harness.IntField(meta, "total")
+		items, _ := page["items"].([]any)
+		return total, items
+	}
+
+	total, items := list(url.Values{"tenant_id": {w.tenantA.ID}, "page_size": {"1"}})
+	if total != 1 || len(items) != 1 {
+		t.Fatalf("tenant filter: expected total 1 and 1 item, got total %d, %d items", total, len(items))
+	}
+	source, _ := items[0].(map[string]any)
+	if harness.StringField(source, "id") != w.source.ID || harness.StringField(source, "tenantName") != w.tenantA.Name {
+		t.Fatalf("tenant filter returned the wrong source: %v", source)
+	}
+
+	if total, _ := list(url.Values{"tenant_id": {w.tenantA.ID}, "import_status": {"none"}}); total != 1 {
+		t.Fatalf("import_status=none: expected the source without imports, got total %d", total)
+	}
+	if total, _ := list(url.Values{"tenant_id": {w.tenantA.ID}, "import_status": {"failed"}}); total != 0 {
+		t.Fatalf("import_status=failed: expected no sources, got total %d", total)
+	}
+	if total, _ := list(url.Values{"tenant_id": {w.tenantA.ID}, "is_active": {"false"}}); total != 0 {
+		t.Fatalf("is_active=false: expected no sources, got total %d", total)
+	}
+
+	resp, err := s.API.Get(ctx, "/api/v1/data-sources", url.Values{"sort": {"bogus"}})
+	if err != nil {
+		t.Fatalf("GET /api/v1/data-sources with a bad sort: %v", err)
+	}
+	s.RequireStatus(resp, 400, "GET /api/v1/data-sources with a bad sort")
 }

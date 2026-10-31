@@ -1,23 +1,98 @@
 import { useSearchParams } from 'react-router'
 import {
   formatAggregateCell,
+  formatAggregateMoney,
   isVisitAggregate,
   useTenantAggregates,
+  type TenantAggregateDay,
+  type TenantVisitAggregate,
 } from '@/entities/tenant-aggregates'
+import {
+  TENANT_AVG_CHECK_PERMISSION,
+  TENANT_FIRST_PURCHASES_PERMISSION,
+  TENANT_NEW_GUESTS_PERMISSION,
+  TENANT_REPEAT_VISITS_PERMISSION,
+  TENANT_REVENUE_PERMISSION,
+} from '@/entities/tenant'
 import { useAuth } from '@/entities/user'
-import { daysAgo, isPeriodValid, type Period } from '@/shared/lib/period'
+import { daysAgo, type Period } from '@/shared/lib/period'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { PeriodFilter } from '@/shared/ui/period-filter'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { StatCard, StatGrid } from '@/shared/ui/stat-card'
-import { ActivityChart } from './activity-chart'
+import { ActivityChart, type ActivityMetric, type ActivityPoint } from './activity-chart'
 import { SmallCellNotice } from './small-cell-notice'
 
-const NEW_GUESTS_METRIC = 'metric.new_guests_via_mall.read'
 const DEFAULT_PERIOD_DAYS = 29
 const MAX_PERIOD_DAYS = 366
 const DAY_MS = 86_400_000
+
+type AggregateValue = (data: TenantVisitAggregate) => number | null | undefined
+
+interface OverviewCard {
+  id: string
+  label: string
+  hint?: string
+  permission?: string
+  format: (data: TenantVisitAggregate) => string
+}
+
+const count =
+  (value: AggregateValue) =>
+  (data: TenantVisitAggregate): string =>
+    formatAggregateCell(value(data), data.suppressionThreshold)
+
+const money =
+  (value: AggregateValue) =>
+  (data: TenantVisitAggregate): string =>
+    formatAggregateMoney(value(data), data.suppressionThreshold)
+
+const overviewCards: OverviewCard[] = [
+  { id: 'visits-count', label: 'Визиты', format: count((data) => data.visitsCount) },
+  { id: 'guests-count', label: 'Гостей', format: count((data) => data.guestsCount) },
+  {
+    id: 'new-guests-count',
+    label: 'Новые гости',
+    permission: TENANT_NEW_GUESTS_PERMISSION,
+    format: count((data) => data.newGuestsCount),
+  },
+  {
+    id: 'repeat-visits-count',
+    label: 'Повторные визиты',
+    hint: 'Визиты гостей, которые уже бывали у арендатора',
+    permission: TENANT_REPEAT_VISITS_PERMISSION,
+    format: count((data) => data.repeatVisitsCount),
+  },
+  {
+    id: 'first-purchases-count',
+    label: 'Первые покупки',
+    hint: 'Гости, чья первая покупка у арендатора пришлась на период',
+    permission: TENANT_FIRST_PURCHASES_PERMISSION,
+    format: count((data) => data.firstPurchasesCount),
+  },
+  {
+    id: 'revenue-total',
+    label: 'Выручка',
+    permission: TENANT_REVENUE_PERMISSION,
+    format: money((data) => data.revenueTotalMinor),
+  },
+  {
+    id: 'avg-check',
+    label: 'Средний чек',
+    permission: TENANT_AVG_CHECK_PERMISSION,
+    format: money((data) => data.avgCheckMinor),
+  },
+]
+
+const revenuePoints = (series: TenantAggregateDay[]): ActivityPoint[] =>
+  series.map((day) => ({
+    date: day.date,
+    revenue:
+      day.revenueTotalMinor === null || day.revenueTotalMinor === undefined
+        ? null
+        : day.revenueTotalMinor / 100,
+  }))
 
 const periodLength = ({ from, to }: Period) => (Date.parse(to) - Date.parse(from)) / DAY_MS + 1
 
@@ -40,9 +115,16 @@ export function TenantOverview({ tenantId }: TenantOverviewProps) {
     to: searchParams.get('to') ?? daysAgo(0),
   }
   const error = periodError(period)
-  const isValid = error === undefined && isPeriodValid(period)
+  const isValid = error === undefined
   const aggregates = useTenantAggregates(isValid ? tenantId : null, isValid ? period : undefined)
-  const showNewGuests = can(NEW_GUESTS_METRIC)
+
+  const cards = overviewCards.filter((card) => !card.permission || can(card.permission))
+  const activityMetrics: ActivityMetric[] = [
+    'visitsCount',
+    ...(can(TENANT_NEW_GUESTS_PERMISSION) ? (['newGuestsCount'] as const) : []),
+    ...(can(TENANT_REPEAT_VISITS_PERMISSION) ? (['repeatVisitsCount'] as const) : []),
+  ]
+  const showRevenueChart = can(TENANT_REVENUE_PERMISSION)
 
   const changePeriod = ({ from, to }: Period) =>
     setSearchParams(
@@ -68,35 +150,28 @@ export function TenantOverview({ tenantId }: TenantOverviewProps) {
         <>
           {data.suppressed && <SmallCellNotice threshold={data.suppressionThreshold} />}
           <StatGrid>
-            <StatCard
-              label="Визиты"
-              value={
-                <span data-testid="visits-count">
-                  {formatAggregateCell(data.visitsCount, data.suppressionThreshold)}
-                </span>
-              }
-            />
-            <StatCard
-              label="Гостей"
-              value={
-                <span data-testid="guests-count">
-                  {formatAggregateCell(data.guestsCount, data.suppressionThreshold)}
-                </span>
-              }
-            />
-            {showNewGuests && (
+            {cards.map((card) => (
               <StatCard
-                label="Новые гости"
-                value={
-                  <span data-testid="new-guests-count">
-                    {formatAggregateCell(data.newGuestsCount, data.suppressionThreshold)}
-                  </span>
-                }
+                key={card.id}
+                label={card.label}
+                hint={card.hint}
+                value={<span data-testid={card.id}>{card.format(data)}</span>}
               />
-            )}
+            ))}
           </StatGrid>
           {data.series.length > 0 && (
-            <ActivityChart series={data.series} showNewGuests={showNewGuests} />
+            <ActivityChart
+              title="Динамика по дням"
+              points={data.series}
+              metrics={activityMetrics}
+            />
+          )}
+          {data.series.length > 0 && showRevenueChart && (
+            <ActivityChart
+              title="Выручка по дням"
+              points={revenuePoints(data.series)}
+              metrics={['revenue']}
+            />
           )}
         </>
       )}

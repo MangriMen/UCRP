@@ -273,20 +273,6 @@ func (h *AnalyticsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, dashboardMetricsResponse(res))
 }
 
-func (h *AnalyticsHandler) TenantAggregates(w http.ResponseWriter, r *http.Request) {
-	p, ok := auth.PrincipalFrom(r.Context())
-	if !ok {
-		httpx.WriteError(w, r, http.StatusUnauthorized, "unauthorized", "Нет пользователя")
-		return
-	}
-	res, err := h.analytics.TenantAggregates(r.Context(), chi.URLParam(r, "id"), p.TenantID, p.Role)
-	if err != nil {
-		httpx.WriteDomainError(w, r, err)
-		return
-	}
-	httpx.WriteJSON(w, http.StatusOK, res)
-}
-
 func (h *AnalyticsHandler) DataQuality(w http.ResponseWriter, r *http.Request) {
 	items, err := h.analytics.DataQuality(r.Context())
 	if err != nil {

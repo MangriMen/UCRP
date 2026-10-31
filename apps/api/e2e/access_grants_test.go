@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -137,6 +138,34 @@ func TestAccessGrantLifecycle(t *testing.T) {
 	getStatus(ownReferencePath, 403)
 
 	grantID := createGrant(grantBody(now.Add(-time.Minute), now.Add(time.Hour)))
+	page, err := managerClient.Get(ctx, grantPath, url.Values{"subject_type": {"tenant"}, "subject_id": {w.tenantA.ID}, "page": {"2"}, "page_size": {"1"}})
+	if err != nil {
+		t.Fatalf("list grants: %v", err)
+	}
+	s.RequireStatus(page, 200, "manager lists tenant grants")
+	var pageBody struct {
+		Items []struct {
+			ID string `json:"id"`
+		} `json:"items"`
+		Meta struct {
+			Page  int `json:"page"`
+			Total int `json:"total"`
+		} `json:"meta"`
+	}
+	if err := page.Decode(&pageBody); err != nil {
+		t.Fatalf("decode grant page: %v", err)
+	}
+	if len(pageBody.Items) != 1 || pageBody.Meta.Page != 2 || pageBody.Meta.Total != 2 {
+		t.Fatalf("grant page must report the honest total: %s", page.Snippet())
+	}
+	unknownTenant := grantBody(now.Add(-time.Minute), now.Add(time.Hour))
+	unknownTenant["subjectId"] = s.Reg.NewID()
+	unknownTenant["scopes"] = []map[string]string{{"type": "tenant", "value": unknownTenant["subjectId"].(string)}}
+	missing, err := managerClient.Post(ctx, grantPath, unknownTenant)
+	if err != nil {
+		t.Fatalf("grant for unknown tenant: %v", err)
+	}
+	s.RequireStatus(missing, 404, "grant for unknown tenant")
 	own := getStatus(ownPath, 200)
 	getStatus(ownPath+"?metrics=visits_count", 200)
 	getStatus(ownPath+"?metrics=metric.cross_tenant_distribution.read", 403)
@@ -227,5 +256,38 @@ func assertNoGuestData(t *testing.T, value any, privateValues []string) {
 				t.Fatal("tenant aggregates contain a guest identifier")
 			}
 		}
+	}
+}
+
+func TestAccessGrantStaffRoleGrantCannotBeChanged(t *testing.T) {
+	s := harness.New(t).WithDB()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	manager, err := s.Reg.User(ctx, "access-role-grant-manager", "manager", "")
+	if err != nil {
+		t.Fatalf("fixture manager: %v", err)
+	}
+	managerClient := s.As(manager.Email, manager.Password)
+	for _, action := range []string{"suspend", "revoke"} {
+		resp, err := managerClient.Post(ctx, "/api/v1/access/grants/bootstrap-role-marketer/"+action, map[string]string{"reason": "E2E staff role grant"})
+		if err != nil {
+			t.Fatalf("%s staff role grant: %v", action, err)
+		}
+		s.RequireStatus(resp, 403, "manager cannot "+action+" a staff role grant")
+	}
+	grant, err := managerClient.Get(ctx, "/api/v1/access/grants/bootstrap-role-marketer", nil)
+	if err != nil {
+		t.Fatalf("get staff role grant: %v", err)
+	}
+	s.RequireStatus(grant, 200, "manager reads staff role grant")
+	var body struct {
+		Status string `json:"status"`
+	}
+	if err := grant.Decode(&body); err != nil {
+		t.Fatalf("decode staff role grant: %v", err)
+	}
+	if body.Status != "active" {
+		t.Fatalf("staff role grant status = %q, want active", body.Status)
 	}
 }

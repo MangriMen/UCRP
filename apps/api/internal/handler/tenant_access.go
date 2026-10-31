@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -40,7 +41,7 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	resource := access.Resource{TenantID: tenantID, Metric: "metric.visits_count.read"}
+	resource := access.Resource{TenantID: tenantID, Metric: visitsMetric}
 	permission := "tenant.aggregates.read"
 	if principal.Role == domain.RoleTenant {
 		permission = "tenant.aggregates.own"
@@ -59,49 +60,52 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", problem)
 		return
 	}
-	requestedMetrics := r.URL.Query()["metrics"]
-	for _, requested := range requestedMetrics {
-		for _, name := range strings.Split(requested, ",") {
-			name = strings.TrimSpace(name)
-			if name != "visits_count" && name != "metric.visits_count.read" {
-				httpx.WriteError(w, r, http.StatusForbidden, "metric_not_granted", "Нет доступа к метрике")
-				return
-			}
-		}
+	requested, known := requestedTenantMetrics(r)
+	if !known {
+		httpx.WriteError(w, r, http.StatusForbidden, "metric_not_granted", "Нет доступа к метрике")
+		return
 	}
-	metric, err := h.authorizer.Authorize(r.Context(), principal, "metric.visits_count.read", resource)
+	visits, err := authorizeMetric(r.Context(), h.authorizer, principal, visitsMetric, tenantID)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	if !metric.Allowed {
-		if len(requestedMetrics) > 0 {
+	if !visits.Allowed {
+		if len(requested) > 0 {
 			httpx.WriteError(w, r, http.StatusForbidden, "metric_not_granted", "Нет доступа к метрике")
 			return
 		}
 		httpx.WriteJSON(w, http.StatusOK, map[string]any{})
 		return
 	}
-	newGuests, err := authorizeMetric(r.Context(), h.authorizer, principal, newGuestsMetric, tenantID)
-	if err != nil {
-		httpx.WriteDomainError(w, r, err)
-		return
+	scopes := []metricScope{
+		{Allowed: true, PeriodDays: action.PeriodDays, Threshold: max(action.KThreshold, minSuppressionK)},
+		visits,
 	}
-	period := action.PeriodDays
-	if period == 0 || (metric.PeriodDays > 0 && metric.PeriodDays < period) {
-		period = metric.PeriodDays
-	}
-	k := max(action.KThreshold, metric.KThreshold)
-	if newGuests.Allowed {
-		scopeDays, scopeK := combineMetricScopes(newGuests)
-		k = max(k, scopeK)
-		if scopeDays > 0 && (period == 0 || scopeDays < period) {
-			period = scopeDays
+	allowed := map[string]bool{}
+	for _, metric := range optionalTenantMetrics {
+		scope, err := authorizeMetric(r.Context(), h.authorizer, principal, metric, tenantID)
+		if err != nil {
+			httpx.WriteDomainError(w, r, err)
+			return
 		}
+		if requested[metric] && !scope.Allowed {
+			httpx.WriteError(w, r, http.StatusForbidden, "metric_not_granted", "Нет доступа к метрике")
+			return
+		}
+		allowed[metric] = scope.Allowed
+		scopes = append(scopes, scope)
 	}
-	query.Threshold = k
-	query.ShowNewGuests = newGuests.Allowed
-	query.From = clampPeriodStart(query.From, period, time.Now().UTC())
+	periodDays, threshold := combineMetricScopes(scopes...)
+	query.Threshold = threshold
+	query.Metrics = service.TenantAggregateMetrics{
+		NewGuests:      allowed[newGuestsMetric],
+		RepeatVisits:   allowed[repeatVisitsMetric],
+		Revenue:        allowed[revenueMetric],
+		AvgCheck:       allowed[avgCheckMetric],
+		FirstPurchases: allowed[firstPurchaseMetric],
+	}
+	query.From = clampPeriodStart(query.From, periodDays, time.Now().UTC())
 	result, err := h.analytics.TenantAggregate(r.Context(), query)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
@@ -120,6 +124,25 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 }
 
 const maxAggregatePeriodDays = 366
+
+var optionalTenantMetrics = []string{newGuestsMetric, repeatVisitsMetric, revenueMetric, avgCheckMetric, firstPurchaseMetric}
+
+func requestedTenantMetrics(r *http.Request) (map[string]bool, bool) {
+	requested := map[string]bool{}
+	for _, value := range r.URL.Query()["metrics"] {
+		for _, name := range strings.Split(value, ",") {
+			permission := strings.TrimSpace(name)
+			if !strings.HasPrefix(permission, "metric.") {
+				permission = "metric." + permission + ".read"
+			}
+			if permission != visitsMetric && !slices.Contains(optionalTenantMetrics, permission) {
+				return nil, false
+			}
+			requested[permission] = true
+		}
+	}
+	return requested, true
+}
 
 func parseAggregateQuery(r *http.Request, tenantID string) (service.TenantAggregateQuery, string) {
 	query := service.TenantAggregateQuery{TenantID: tenantID}

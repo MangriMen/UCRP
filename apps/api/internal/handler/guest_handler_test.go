@@ -34,7 +34,7 @@ func requestAsManager(t *testing.T, target string, handle http.HandlerFunc) *htt
 	return response
 }
 
-func TestCanReadGuestAmount(t *testing.T) {
+func TestCanReadGuestField(t *testing.T) {
 	cases := []struct {
 		name     string
 		decision access.Decision
@@ -49,7 +49,7 @@ func TestCanReadGuestAmount(t *testing.T) {
 			var got bool
 			requestAsManager(t, "/api/v1/guests", func(_ http.ResponseWriter, r *http.Request) {
 				var err error
-				got, err = canReadGuestAmount(r, amountTestAuthorizer{decision: tc.decision})
+				got, err = canReadGuestField(r, amountTestAuthorizer{decision: tc.decision}, guestAmountPermission)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -62,7 +62,7 @@ func TestCanReadGuestAmount(t *testing.T) {
 
 	t.Run("no principal", func(t *testing.T) {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/guests", nil)
-		got, err := canReadGuestAmount(req, amountTestAuthorizer{decision: access.Decision{Allowed: true}})
+		got, err := canReadGuestField(req, amountTestAuthorizer{decision: access.Decision{Allowed: true}}, guestIdentifiersPermission)
 		if err != nil || got {
 			t.Fatalf("got %v, %v, want false, nil", got, err)
 		}

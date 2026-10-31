@@ -1,6 +1,7 @@
 import type { Me, User } from '../model/types'
 
 export const MOCK_PASSWORD = 'password'
+export const MOCK_INVITATION_TOKEN = 'mock-invitation-token'
 
 export const rolePermissions: Record<Me['role'], string[]> = {
   marketer: [
@@ -11,6 +12,7 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'guest.contact_history.read',
     'field.event.amount.read',
     'field.guest.total_amount.read',
+    'field.guest.identifiers.read',
     'segment.read',
     'segment.preview',
     'segment.write',
@@ -34,6 +36,10 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'tenant.aggregates.read',
     'metric.visits_count.read',
     'metric.new_guests_via_mall.read',
+    'metric.repeat_visits.read',
+    'metric.revenue_total.read',
+    'metric.avg_check.read',
+    'metric.first_purchase_new_tenant.read',
   ],
   manager: [
     'guest.profile.read',
@@ -43,6 +49,7 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'guest.contact_history.read',
     'field.event.amount.read',
     'field.guest.total_amount.read',
+    'field.guest.identifiers.read',
     'segment.read',
     'import.read',
     'data_source.read',
@@ -62,6 +69,10 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'tenant.aggregates.read',
     'metric.visits_count.read',
     'metric.new_guests_via_mall.read',
+    'metric.repeat_visits.read',
+    'metric.revenue_total.read',
+    'metric.avg_check.read',
+    'metric.first_purchase_new_tenant.read',
   ],
   analyst: [
     'guest.profile.read',
@@ -72,6 +83,7 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'guest.contact_history.read',
     'field.event.amount.read',
     'field.guest.total_amount.read',
+    'field.guest.identifiers.read',
     'segment.read',
     'segment.preview',
     'segment.write',
@@ -97,12 +109,17 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'tenant.aggregates.read',
     'metric.visits_count.read',
     'metric.new_guests_via_mall.read',
+    'metric.repeat_visits.read',
+    'metric.revenue_total.read',
+    'metric.avg_check.read',
+    'metric.first_purchase_new_tenant.read',
   ],
   tenant: [
     'reference.read',
     'tenant.aggregates.own',
     'metric.visits_count.read',
     'metric.new_guests_via_mall.read',
+    'metric.repeat_visits.read',
     'guest.profile.read',
     'guest.event.read',
     'guest.identifier.read',

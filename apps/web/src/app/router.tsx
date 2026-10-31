@@ -1,5 +1,11 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router'
 import { AccessGuard } from '@/entities/user'
+import { AcceptInvitationPage } from '@/pages/accept-invitation'
+import { AccessAuditPage } from '@/pages/access-audit'
+import { AccessEffectivePage } from '@/pages/access-effective'
+import { AccessGrantDetailsPage } from '@/pages/access-grant-details'
+import { AccessGrantCreatePage, AccessGrantEditPage } from '@/pages/access-grant-form'
+import { AccessGrantsPage } from '@/pages/access-grants'
 import { AdminDictionariesPage } from '@/pages/admin-dictionaries'
 import { AdminUsersPage } from '@/pages/admin-users'
 import { AuditLogPage } from '@/pages/audit-log'
@@ -9,6 +15,7 @@ import { ContactLimitsPage } from '@/pages/contact-limits'
 import { DashboardPage } from '@/pages/dashboard'
 import { DataQualityPage } from '@/pages/data-quality'
 import { DataSourcesPage } from '@/pages/data-sources'
+import { ExportDetailsPage } from '@/pages/export-details'
 import { ExportsPage } from '@/pages/exports'
 import { GuestProfilePage } from '@/pages/guest-profile'
 import { GuestsPage } from '@/pages/guests'
@@ -33,6 +40,7 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { path: '/login', element: <LoginPage /> },
+      { path: '/invite/accept', element: <AcceptInvitationPage /> },
       {
         element: (
           <AccessGuard>
@@ -77,7 +85,10 @@ export const router = createBrowserRouter([
           },
           {
             element: <AccessGuard permission="export.read" />,
-            children: [{ path: 'exports', element: <ExportsPage /> }],
+            children: [
+              { path: 'exports', element: <ExportsPage /> },
+              { path: 'exports/:id', element: <ExportDetailsPage /> },
+            ],
           },
           {
             element: <AccessGuard permission="campaign.read" />,
@@ -109,6 +120,26 @@ export const router = createBrowserRouter([
           {
             element: <AccessGuard permission="audit.read" />,
             children: [{ path: 'admin/audit', element: <AuditLogPage /> }],
+          },
+          {
+            element: <AccessGuard permission="access.grant.read" />,
+            children: [
+              { path: 'access', element: <Navigate to="/access/grants" replace /> },
+              { path: 'access/grants', element: <AccessGrantsPage /> },
+              { path: 'access/grants/:id', element: <AccessGrantDetailsPage /> },
+              { path: 'access/effective', element: <AccessEffectivePage /> },
+              {
+                element: <AccessGuard permission="access.grant.write" />,
+                children: [
+                  { path: 'access/grants/new', element: <AccessGrantCreatePage /> },
+                  { path: 'access/grants/:id/edit', element: <AccessGrantEditPage /> },
+                ],
+              },
+            ],
+          },
+          {
+            element: <AccessGuard permission="audit.read" />,
+            children: [{ path: 'access/audit', element: <AccessAuditPage /> }],
           },
           {
             element: <AccessGuard permission="data_quality.read" />,

@@ -70,13 +70,14 @@ type GrantResponse struct {
 }
 
 type PermissionResponse struct {
-	Code        string `json:"code"`
-	Domain      string `json:"domain"`
-	Kind        string `json:"kind"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	IsSensitive bool   `json:"isSensitive"`
-	MinK        *int   `json:"minK"`
+	Code        string   `json:"code"`
+	Domain      string   `json:"domain"`
+	Kind        string   `json:"kind"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	IsSensitive bool     `json:"isSensitive"`
+	MinK        *int     `json:"minK"`
+	GrantableTo []string `json:"grantableTo"`
 }
 
 type grantActorPolicy struct {
@@ -186,6 +187,24 @@ func (s *AccessGrantService) subjectTenant(ctx context.Context, subjectType, sub
 		return "", domain.ErrForbidden
 	default:
 		return "", domain.ErrValidation
+	}
+}
+
+func (s *AccessGrantService) grantTenant(ctx context.Context, grant domain.AccessGrant) (string, error) {
+	switch grant.SubjectType {
+	case "tenant":
+		return grant.SubjectID, nil
+	case "user":
+		if s.users == nil {
+			return "", domain.ErrForbidden
+		}
+		user, err := s.users.GetByID(ctx, grant.SubjectID)
+		if err != nil {
+			return "", err
+		}
+		return user.TenantID, nil
+	default:
+		return "", nil
 	}
 }
 
@@ -299,32 +318,56 @@ func (s *AccessGrantService) Permissions(ctx context.Context, actor domain.Princ
 	if err != nil {
 		return nil, err
 	}
+	tenantCeiling, err := s.repo.RolePermissions(ctx, domain.RoleTenant)
+	if err != nil {
+		return nil, err
+	}
+	canGrant := policy.delegates(actor, "access.grant.write")
 	result := make([]PermissionResponse, 0, len(permissions))
 	for _, p := range permissions {
-		if p.IsActive {
-			result = append(result, PermissionResponse{p.Code, p.Domain, p.Kind, p.Title, p.Description, p.IsSensitive, p.MinK})
+		if !p.IsActive {
+			continue
 		}
+		grantableTo := make([]string, 0, 2)
+		if canGrant && policy.delegates(actor, p.Code) {
+			if ceilingAllows(tenantCeiling, p.Code) {
+				grantableTo = append(grantableTo, string(domain.RoleTenant))
+			}
+			if managerPersonalPermission(p.Code) && ceilingAllows(policy.ceiling, p.Code) {
+				grantableTo = append(grantableTo, string(domain.RoleManager))
+			}
+		}
+		result = append(result, PermissionResponse{p.Code, p.Domain, p.Kind, p.Title, p.Description, p.IsSensitive, p.MinK, grantableTo})
 	}
 	return result, nil
 }
 
-func (s *AccessGrantService) List(ctx context.Context, actor domain.Principal, filter domain.AccessGrantFilter) ([]GrantResponse, error) {
+func ceilingAllows(ceiling []domain.AccessRolePermission, code string) bool {
+	for _, permission := range ceiling {
+		if permission.PermissionCode == code {
+			return permission.Effect == "allow"
+		}
+	}
+	return false
+}
+
+func (s *AccessGrantService) List(ctx context.Context, actor domain.Principal, filter domain.AccessGrantFilter) ([]GrantResponse, int, error) {
 	policy, err := s.actorPolicy(ctx, actor)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if !policy.delegates(actor, "access.grant.read") {
-		return nil, domain.ErrForbidden
+		return nil, 0, domain.ErrForbidden
 	}
-	grants, err := s.repo.ListGrants(ctx, filter)
+	grants, total, err := s.repo.ListGrants(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	result := make([]GrantResponse, 0, len(grants))
 	for _, grant := range grants {
 		result = append(result, grantResponse(grant))
 	}
-	return result, nil
+	return result, total, nil
 }
 
 func (s *AccessGrantService) Get(ctx context.Context, actor domain.Principal, id string) (*GrantResponse, error) {
@@ -339,12 +382,9 @@ func (s *AccessGrantService) Get(ctx context.Context, actor domain.Principal, id
 	if err != nil {
 		return nil, err
 	}
-	tenantID, err := s.subjectTenant(ctx, grant.SubjectType, grant.SubjectID)
+	tenantID, err := s.grantTenant(ctx, *grant)
 	if err != nil {
 		return nil, err
-	}
-	if tenantID == "self" {
-		tenantID = ""
 	}
 	if !policy.permits(actor, "access.grant.read", tenantID) {
 		return nil, domain.ErrForbidden
@@ -364,6 +404,11 @@ func (s *AccessGrantService) Create(ctx context.Context, actor domain.Principal,
 	tenantID, err := s.subjectTenant(ctx, request.SubjectType, request.SubjectID)
 	if err != nil {
 		return nil, err
+	}
+	if request.SubjectType == "tenant" {
+		if err := s.requireTenant(ctx, tenantID); err != nil {
+			return nil, err
+		}
 	}
 	if tenantID == "self" {
 		tenantID = ""
@@ -499,6 +544,9 @@ func (s *AccessGrantService) change(ctx context.Context, actor domain.Principal,
 	if err != nil {
 		return nil, err
 	}
+	if isStaffRoleGrant(*grant) {
+		return nil, domain.ErrForbidden
+	}
 	tenantID := ""
 	if grantChangeNeedsValidation(action, *grant) {
 		tenantID, err = s.subjectTenant(ctx, grant.SubjectType, grant.SubjectID)
@@ -537,6 +585,10 @@ func (s *AccessGrantService) change(ctx context.Context, actor domain.Principal,
 	}
 	result := grantResponse(*grant)
 	return &result, nil
+}
+
+func isStaffRoleGrant(grant domain.AccessGrant) bool {
+	return grant.SubjectType == "role" && grant.SubjectID != string(domain.RoleTenant)
 }
 
 func grantChangeNeedsValidation(action string, grant domain.AccessGrant) bool {

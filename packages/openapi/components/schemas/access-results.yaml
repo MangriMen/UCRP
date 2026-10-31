@@ -8,6 +8,7 @@ Permission:
     - description
     - isSensitive
     - minK
+    - grantableTo
   properties:
     code:
       type: string
@@ -28,6 +29,14 @@ Permission:
     minK:
       type: integer
       nullable: true
+    grantableTo:
+      type: array
+      description: Subject roles the current issuer may grant this permission to without restrictions; empty when the issuer cannot delegate it.
+      items:
+        type: string
+        enum:
+          - tenant
+          - manager
 Preset:
   type: object
   required:
@@ -88,8 +97,7 @@ AuditEntry:
     entityId:
       type: string
     details:
-      type: string
-      nullable: true
+      description: Audit details as stored JSON (grant before/after, simulated grant, denied request); a plain string when the stored value is not JSON, null when empty.
     requestId:
       type: string
     createdAt:

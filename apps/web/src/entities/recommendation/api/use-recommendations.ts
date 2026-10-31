@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/api/api'
 import { pollWhile, DEFAULT_POLL_MS } from '@/shared/api/polling'
 import { recommendationKeys, SEGMENT_TOP_TENANTS_LIMIT } from '../model/keys'
@@ -15,12 +15,13 @@ export function useGuestRecommendations(guestId: string) {
 export function useSegmentRecommendations(
   segmentId: string,
   isSegmentComputing: boolean,
-  limit = SEGMENT_TOP_TENANTS_LIMIT,
+  limit: number = SEGMENT_TOP_TENANTS_LIMIT,
 ) {
   return useQuery<SegmentRecommendationList>({
     queryKey: recommendationKeys.segment(segmentId, limit),
     queryFn: () =>
       api.get('/segments/{id}/recommendations', { params: { id: segmentId }, query: { limit } }),
+    placeholderData: keepPreviousData,
     refetchInterval: pollWhile(() => isSegmentComputing, DEFAULT_POLL_MS),
   })
 }

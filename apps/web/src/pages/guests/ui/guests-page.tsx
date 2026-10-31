@@ -1,6 +1,12 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { GuestStatusBadge, useGuestSearch, type Guest, type GuestStatus } from '@/entities/guest'
+import {
+  GuestStatusBadge,
+  MaskedIdentifierList,
+  useGuestSearch,
+  type GuestListItem,
+  type GuestStatus,
+} from '@/entities/guest'
 import { useAuth } from '@/entities/user'
 import { GUEST_FILTER_KEYS, GuestFiltersPanel } from '@/features/filter-guests'
 import { formatDateTime, formatMoney } from '@/shared/lib/format'
@@ -10,13 +16,23 @@ import { DataTable, type Column } from '@/shared/ui/data-table'
 import { PageHeader } from '@/shared/ui/page-header'
 
 const AMOUNT_PERMISSION = 'field.guest.total_amount.read'
+const IDENTIFIERS_PERMISSION = 'field.guest.identifiers.read'
 const SORTABLE_FIELDS = ['eventCount', 'totalAmountMinor', 'firstSeenAt', 'lastSeenAt']
 
 const formatDate = (value?: string | null) => (value ? formatDateTime(value) : '—')
 
-const baseColumns: Column<Guest>[] = [
+const identityColumns: Column<GuestListItem>[] = [
   { id: 'name', header: 'Гость', cell: (g) => g.displayName ?? 'Без имени' },
   { id: 'status', header: 'Статус', cell: (g) => <GuestStatusBadge status={g.status} /> },
+]
+
+const identifiersColumn: Column<GuestListItem> = {
+  id: 'identifiers',
+  header: 'Идентификаторы',
+  cell: (g) => <MaskedIdentifierList identifiers={g.maskedIdentifiers} />,
+}
+
+const countColumns: Column<GuestListItem>[] = [
   { id: 'tenants', header: 'Арендаторов', cell: (g) => g.tenantCount, className: 'text-right' },
   {
     id: 'eventCount',
@@ -27,7 +43,7 @@ const baseColumns: Column<Guest>[] = [
   },
 ]
 
-const amountColumn: Column<Guest> = {
+const amountColumn: Column<GuestListItem> = {
   id: 'totalAmountMinor',
   header: 'Сумма покупок',
   cell: (g) => (g.totalAmountMinor ? formatMoney(g.totalAmountMinor) : '—'),
@@ -35,7 +51,7 @@ const amountColumn: Column<Guest> = {
   sortable: true,
 }
 
-const activityColumns: Column<Guest>[] = [
+const activityColumns: Column<GuestListItem>[] = [
   {
     id: 'firstSeenAt',
     header: 'Первое появление',
@@ -56,14 +72,21 @@ export function GuestsPage() {
   const params = useListParams()
   const { get, page, pageSize, setPage, setPageSize, setSort, reset } = params
   const canSeeAmount = can(AMOUNT_PERMISSION)
+  const canSeeIdentifiers = can(IDENTIFIERS_PERMISSION)
 
   const sort = params.sort && SORTABLE_FIELDS.includes(params.sort.field) ? params.sort : undefined
   const hasPurchases = get('has_purchases')
   const isFiltered = GUEST_FILTER_KEYS.some((key) => get(key) !== '')
 
   const columns = useMemo(
-    () => [...baseColumns, ...(canSeeAmount ? [amountColumn] : []), ...activityColumns],
-    [canSeeAmount],
+    () => [
+      ...identityColumns,
+      ...(canSeeIdentifiers ? [identifiersColumn] : []),
+      ...countColumns,
+      ...(canSeeAmount ? [amountColumn] : []),
+      ...activityColumns,
+    ],
+    [canSeeAmount, canSeeIdentifiers],
   )
 
   const guests = useGuestSearch({

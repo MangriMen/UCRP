@@ -120,9 +120,18 @@ TenantAggregateDay:
       type: integer
       nullable: true
       description: Requires metric.new_guests_via_mall.read; null without it or when below k
+    repeatVisitsCount:
+      type: integer
+      nullable: true
+      description: Requires metric.repeat_visits.read; null without it, when fewer than k distinct guests made a repeat visit that day, or when fewer than k guests made their first visit that day (unless none did)
+    revenueTotalMinor:
+      type: integer
+      format: int64
+      nullable: true
+      description: Requires metric.revenue_total.read; null without it or when fewer than k distinct guests made a purchase that day
 ManagementTenantAggregate:
   type: object
-  description: Tenant aggregates. `visitsCount` requires metric.visits_count.read; `guestsCount` follows `visitsCount`; `newGuestsCount` and the per-day `newGuestsCount` require metric.new_guests_via_mall.read and are null without it. A value is null when fewer than k distinct guests stand behind it. `series` covers the requested period day by day and is empty when no period is requested.
+  description: Tenant aggregates. `visitsCount` requires metric.visits_count.read; `guestsCount` follows `visitsCount`; every other value requires its own metric permission (named in the field description) and is null without it, including its per-day value in `series`. A value is null when fewer than k distinct guests stand behind it; money amounts are suppressed the same way. A purchase is an event of type `purchase` with an amount; amounts are in minor units. `series` covers the requested period day by day and is empty when no period is requested.
   required:
     - visitsCount
     - suppressed
@@ -146,6 +155,24 @@ ManagementTenantAggregate:
       type: integer
       nullable: true
       description: Guests whose first presence event at this tenant falls in the period
+    repeatVisitsCount:
+      type: integer
+      nullable: true
+      description: Requires metric.repeat_visits.read. Presence events in the period by guests who already had an earlier presence event at this tenant; k applies to the distinct guests behind them and to the guests whose first visit falls in the period (visits minus repeat visits), unless there are none; the same rule holds per day in `series`
+    revenueTotalMinor:
+      type: integer
+      format: int64
+      nullable: true
+      description: Requires metric.revenue_total.read. Sum of purchase amounts in the period; k applies to the distinct purchasing guests
+    avgCheckMinor:
+      type: integer
+      format: int64
+      nullable: true
+      description: Requires metric.avg_check.read. Revenue divided by the number of purchases in the period, rounded; k applies to the distinct purchasing guests
+    firstPurchasesCount:
+      type: integer
+      nullable: true
+      description: Requires metric.first_purchase_new_tenant.read. Guests whose first purchase at this tenant falls in the period and who had no earlier event of any type at this tenant
     suppressed:
       type: boolean
     suppressionThreshold:

@@ -6,44 +6,55 @@ import { DataTable, type Column } from '@/shared/ui/data-table'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { useDeleteTenantCategory } from '../api/use-tenant-category-mutations'
 import { TenantCategoryFormDialog } from './tenant-category-form-dialog'
+import { TenantCategoryRelationsDialog } from './tenant-category-relations-dialog'
 
 interface TenantCategoriesManagerProps {
   canEdit: boolean
+  relationsCategoryId: string | null
+  onRelationsCategoryChange: (categoryId: string | null) => void
 }
 
 interface FormState {
   category: TenantCategory | null
 }
 
-export function TenantCategoriesManager({ canEdit }: TenantCategoriesManagerProps) {
+export function TenantCategoriesManager({
+  canEdit,
+  relationsCategoryId,
+  onRelationsCategoryChange,
+}: TenantCategoriesManagerProps) {
   const categories = useTenantCategories()
   const remove = useDeleteTenantCategory()
   const [form, setForm] = useState<FormState | null>(null)
   const [deleting, setDeleting] = useState<TenantCategory | null>(null)
+  const relationsCategory = categories.data?.find((c) => c.id === relationsCategoryId)
 
   const columns: Column<TenantCategory>[] = [
     { id: 'code', header: 'Код', cell: (c) => c.code },
     { id: 'name', header: 'Название', cell: (c) => c.name },
     { id: 'description', header: 'Описание', cell: (c) => c.description ?? '—' },
-    ...(canEdit
-      ? [
-          {
-            id: 'actions',
-            header: '',
-            className: 'text-right',
-            cell: (c: TenantCategory) => (
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setForm({ category: c })}>
-                  Изменить
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setDeleting(c)}>
-                  Удалить
-                </Button>
-              </div>
-            ),
-          },
-        ]
-      : []),
+    {
+      id: 'actions',
+      header: '',
+      className: 'text-right',
+      cell: (c) => (
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => onRelationsCategoryChange(c.id)}>
+            Связи
+          </Button>
+          {canEdit && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setForm({ category: c })}>
+                Изменить
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setDeleting(c)}>
+                Удалить
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -69,11 +80,19 @@ export function TenantCategoriesManager({ canEdit }: TenantCategoriesManagerProp
           onOpenChange={(open) => !open && setForm(null)}
         />
       )}
+      {relationsCategory && (
+        <TenantCategoryRelationsDialog
+          key={relationsCategory.id}
+          category={relationsCategory}
+          canEdit={canEdit}
+          onOpenChange={(open) => !open && onRelationsCategoryChange(null)}
+        />
+      )}
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title="Удалить категорию?"
-        description={`Категория «${deleting?.name ?? ''}» будет удалена. Если она назначена арендаторам, удаление будет отклонено.`}
+        description={`Категория «${deleting?.name ?? ''}» будет удалена. Если она назначена арендаторам или связана с другими категориями, удаление будет отклонено.`}
         confirmLabel="Удалить"
         destructive
         isPending={remove.isPending}

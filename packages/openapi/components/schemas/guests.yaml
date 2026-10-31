@@ -167,6 +167,28 @@ GuestProfile:
           type: array
           items:
             $ref: ./guests.yaml#/GuestSegmentSummary
+MaskedGuestIdentifier:
+  type: object
+  required:
+    - idType
+    - valueMasked
+  properties:
+    idType:
+      $ref: ./guests.yaml#/IdentifierType
+    valueMasked:
+      type: string
+      description: 'Value masked on the server; the raw value is never returned in lists. Email keeps the first character of the local part and the domain, other types keep the last 4 characters, values shorter than 8 characters are fully hidden.'
+      example: '***4567'
+GuestListItem:
+  allOf:
+    - $ref: ./guests.yaml#/Guest
+    - type: object
+      properties:
+        maskedIdentifiers:
+          type: array
+          description: All guest identifiers, oldest first, with masked values. Returned only to users with the `field.guest.identifiers.read` permission; an empty array means the guest has no identifiers.
+          items:
+            $ref: ./guests.yaml#/MaskedGuestIdentifier
 GuestPage:
   type: object
   required:
@@ -176,6 +198,6 @@ GuestPage:
     items:
       type: array
       items:
-        $ref: ./guests.yaml#/Guest
+        $ref: ./guests.yaml#/GuestListItem
     meta:
       $ref: ./common.yaml#/PageMeta

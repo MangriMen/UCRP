@@ -24,7 +24,7 @@ const resolveHandler = (action: Action) =>
     const candidate = findCandidate(params.id)
     if (!candidate) return apiError(404, 'not_found', 'Кандидат не найден')
     if (!resolvableFrom[action].includes(candidate.resolution)) {
-      return apiError(409, 'already_resolved', 'Заявка уже обработана')
+      return apiError(409, 'already_resolved', 'Пара уже обработана')
     }
     return HttpResponse.json({ ...candidate, resolution: resolutionByAction[action] })
   })

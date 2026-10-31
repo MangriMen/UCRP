@@ -1,4 +1,5 @@
 import type { RequestHandler } from 'msw'
+import { accessHandlers } from '@/entities/access/mocks'
 import { auditLogHandlers } from '@/entities/audit-log/mocks'
 import { contactLimitHandlers } from '@/entities/contact-limit/mocks'
 import { dashboardHandlers } from '@/entities/dashboard/mocks'
@@ -43,4 +44,5 @@ export const handlers: RequestHandler[] = [
   ...dashboardHandlers,
   ...tenantAggregatesHandlers,
   ...dataQualityHandlers,
+  ...accessHandlers,
 ]

@@ -11,6 +11,7 @@ export function useTenants(filters: TenantListFilters = {}) {
       api.get('/tenants', {
         query: {
           q: filters.q,
+          mall_id: filters.mallId,
           category_id: filters.categoryId,
           floor: filters.floor,
           is_active: filters.isActive,

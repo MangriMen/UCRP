@@ -62,7 +62,7 @@ func (h *IdentityHandler) Get(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	showAmount, err := canReadGuestAmount(r, h.authorizer)
+	showAmount, err := canReadGuestField(r, h.authorizer, guestAmountPermission)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

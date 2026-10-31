@@ -22,6 +22,11 @@ paths:
           schema:
             type: string
             maxLength: 200
+        - name: mall_id
+          in: query
+          description: Only tenants of this mall.
+          schema:
+            type: string
         - name: category_id
           in: query
           schema:

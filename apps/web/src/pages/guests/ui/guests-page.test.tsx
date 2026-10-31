@@ -97,6 +97,25 @@ describe('GuestsPage', () => {
     expect(screen.queryByRole('button', { name: 'Сумма покупок' })).not.toBeInTheDocument()
   })
 
+  it('shows the first two masked identifiers and the count of the rest', async () => {
+    renderPage()
+    expect(await screen.findByRole('columnheader', { name: 'Идентификаторы' })).toBeInTheDocument()
+    const row = screen.getByText('Иван Петров').closest('tr')
+    expect(row).toHaveTextContent('Телефон: ***4567')
+    expect(row).toHaveTextContent('Email: i***@example.com')
+    expect(row).not.toHaveTextContent('***1234')
+    expect(row).toHaveTextContent('ещё 1')
+    expect(screen.queryByText(/79001234567/)).not.toBeInTheDocument()
+  })
+
+  it('hides the identifiers column without the identifiers permission', async () => {
+    localStorage.setItem(SESSION_KEY, tenant.userId)
+    renderPage()
+    expect(await screen.findByText('Иван Петров')).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Идентификаторы' })).not.toBeInTheDocument()
+    expect(screen.queryByText('***4567')).not.toBeInTheDocument()
+  })
+
   it('keeps only guests with purchases', async () => {
     renderPage('/guests?has_purchases=true')
     expect(await screen.findByText('Иван Петров')).toBeInTheDocument()

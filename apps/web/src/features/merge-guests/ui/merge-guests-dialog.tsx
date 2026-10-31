@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from 'react'
+import { GuestStatusBadge, MIN_SEARCH_LENGTH, useGuestSearch, type Guest } from '@/entities/guest'
 import { MergeErrorAlert, type MergeResult } from '@/entities/merge-candidate'
+import { formatDateTime } from '@/shared/lib/format'
+import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
+import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import {
   Dialog,
@@ -10,9 +14,88 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/shared/ui/dialog'
+import { ErrorBanner } from '@/shared/ui/error-banner'
 import { FormField } from '@/shared/ui/form-field'
 import { Input } from '@/shared/ui/input'
+import { Skeleton } from '@/shared/ui/skeleton'
 import { useMergeGuests } from '../api/use-merge-guests'
+
+const SEARCH_DEBOUNCE_MS = 300
+const RESULTS_PAGE_SIZE = 20
+
+interface GuestPickerProps {
+  excludedGuestId: string
+  selectedGuestId?: string
+  onSelect: (guest: Guest) => void
+}
+
+function GuestPicker({ excludedGuestId, selectedGuestId, onSelect }: GuestPickerProps) {
+  const [query, setQuery] = useState('')
+  const debouncedQuery = useDebouncedValue(query.trim(), SEARCH_DEBOUNCE_MS)
+  const guests = useGuestSearch({
+    query: debouncedQuery,
+    status: 'active',
+    pageSize: RESULTS_PAGE_SIZE,
+  })
+  const isSearchable = debouncedQuery.length >= MIN_SEARCH_LENGTH
+  const candidates = guests.data?.items.filter((item) => item.id !== excludedGuestId) ?? []
+
+  const renderResults = () => {
+    if (!isSearchable) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          Введите не меньше {MIN_SEARCH_LENGTH} символов
+        </p>
+      )
+    }
+    if (guests.isLoading || guests.isPlaceholderData) return <Skeleton className="h-16 w-full" />
+    if (guests.error) return <ErrorBanner error={guests.error} />
+    if (candidates.length === 0) {
+      return <p className="text-sm text-muted-foreground">Гости не найдены</p>
+    }
+    return (
+      <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
+        {candidates.map((guest) => (
+          <button
+            key={guest.id}
+            type="button"
+            aria-pressed={guest.id === selectedGuestId}
+            onClick={() => onSelect(guest)}
+            className={cn(
+              'flex flex-col gap-1 rounded-md border p-3 text-left',
+              guest.id === selectedGuestId ? 'border-primary bg-muted' : 'hover:bg-muted/50',
+            )}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              {guest.displayName ?? 'Без имени'}
+              <GuestStatusBadge status={guest.status} />
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Арендаторов: {guest.tenantCount} · Событий: {guest.eventCount ?? 0} · Последняя
+              активность: {guest.lastSeenAt ? formatDateTime(guest.lastSeenAt) : '—'}
+            </span>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <FormField label="Поиск гостя">
+        {(field) => (
+          <Input
+            {...field}
+            value={query}
+            placeholder="Телефон, email, карта или имя"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        )}
+      </FormField>
+      {renderResults()}
+    </div>
+  )
+}
 
 interface MergeGuestsDialogProps {
   guestId: string
@@ -21,16 +104,14 @@ interface MergeGuestsDialogProps {
 
 export function MergeGuestsDialog({ guestId, onMerged }: MergeGuestsDialogProps) {
   const [open, setOpen] = useState(false)
-  const [targetGuestId, setTargetGuestId] = useState('')
+  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null)
   const mutation = useMergeGuests()
-  const target = targetGuestId.trim()
-  const isSelf = target === guestId
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (!target || isSelf) return
+    if (!selectedGuest) return
     mutation.mutate(
-      { guestId, targetGuestId: target },
+      { guestId, targetGuestId: selectedGuest.id },
       {
         onSuccess: (result) => {
           setOpen(false)
@@ -46,7 +127,7 @@ export function MergeGuestsDialog({ guestId, onMerged }: MergeGuestsDialogProps)
       onOpenChange={(next) => {
         setOpen(next)
         if (!next) {
-          setTargetGuestId('')
+          setSelectedGuest(null)
           mutation.reset()
         }
       }}
@@ -63,20 +144,13 @@ export function MergeGuestsDialog({ guestId, onMerged }: MergeGuestsDialogProps)
             </DialogDescription>
           </DialogHeader>
           {mutation.error && <MergeErrorAlert error={mutation.error} />}
-          <FormField
-            label="ID основного профиля"
-            error={isSelf ? 'Нельзя объединить профиль с самим собой' : undefined}
-          >
-            {(field) => (
-              <Input
-                {...field}
-                value={targetGuestId}
-                onChange={(event) => setTargetGuestId(event.target.value)}
-              />
-            )}
-          </FormField>
+          <GuestPicker
+            excludedGuestId={guestId}
+            selectedGuestId={selectedGuest?.id}
+            onSelect={setSelectedGuest}
+          />
           <DialogFooter>
-            <Button type="submit" disabled={!target || isSelf || mutation.isPending}>
+            <Button type="submit" disabled={!selectedGuest || mutation.isPending}>
               Объединить
             </Button>
           </DialogFooter>

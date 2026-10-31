@@ -19,9 +19,9 @@ type accessAuditTestRepository struct {
 	offset  int
 }
 
-func (r *accessAuditTestRepository) ListAccessAudit(_ context.Context, grantID, actorID string, from, to *time.Time, limit, offset int) ([]domain.AuditLog, error) {
+func (r *accessAuditTestRepository) ListAccessAudit(_ context.Context, grantID, actorID string, from, to *time.Time, limit, offset int) ([]domain.AuditLog, int, error) {
 	r.grantID, r.actorID, r.from, r.to, r.limit, r.offset = grantID, actorID, from, to, limit, offset
-	return r.logs, nil
+	return r.logs, len(r.logs), nil
 }
 
 type accessAuditPolicyRepo struct{ domain.AccessRepository }
@@ -44,9 +44,12 @@ func TestAccessAuditPassesFiltersAndReturnsDeniedEntries(t *testing.T) {
 	}}
 	svc := NewAccessGrantService(accessAuditPolicyRepo{}, grantTestClock{now}, grantTestIDs{})
 	svc.SetAuditRepository(audit)
-	result, err := svc.Audit(context.Background(), domain.Principal{UserID: "manager", Role: domain.RoleManager}, "", "actor", &from, &to, 10, 3)
+	result, total, err := svc.Audit(context.Background(), domain.Principal{UserID: "manager", Role: domain.RoleManager}, "", "actor", &from, &to, 10, 3)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if total != 2 {
+		t.Fatalf("audit total = %d, want 2", total)
 	}
 	if audit.grantID != "" || audit.actorID != "actor" || audit.from != &from || audit.to != &to || audit.limit != 10 || audit.offset != 3 {
 		t.Fatalf("incorrect audit filters: %+v", audit)
@@ -57,7 +60,7 @@ func TestAccessAuditPassesFiltersAndReturnsDeniedEntries(t *testing.T) {
 	if _, ok := result[0].Details.(map[string]any); !ok {
 		t.Fatalf("audit details are not decoded: %+v", result[0].Details)
 	}
-	_, err = svc.Audit(context.Background(), domain.Principal{UserID: "manager", Role: domain.RoleManager}, "grant-1", "", nil, nil, 5, 0)
+	_, _, err = svc.Audit(context.Background(), domain.Principal{UserID: "manager", Role: domain.RoleManager}, "grant-1", "", nil, nil, 5, 0)
 	if err != nil || audit.grantID != "grant-1" {
 		t.Fatalf("grant filter not forwarded: grant=%q err=%v", audit.grantID, err)
 	}

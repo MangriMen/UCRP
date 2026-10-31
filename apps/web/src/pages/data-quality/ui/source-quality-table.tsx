@@ -18,7 +18,7 @@ export function SourceQualityTable({ rows, isLoading, error, onSelect }: SourceQ
     { id: 'source', header: 'Источник', cell: (s) => s.name },
     {
       id: 'lastImport',
-      header: 'Последний импорт',
+      header: 'Последняя загрузка',
       cell: (s) => (s.lastImportAt ? formatDateTime(s.lastImportAt) : '—'),
     },
     {

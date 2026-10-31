@@ -67,7 +67,9 @@ type ExportCreateRequest struct {
 type ExportDTO struct {
 	ID                  string     `json:"id"`
 	SegmentID           string     `json:"segmentId"`
+	SegmentName         string     `json:"segmentName,omitempty"`
 	SegmentVersionID    string     `json:"segmentVersionId"`
+	SegmentVersionNo    int        `json:"segmentVersionNo,omitempty"`
 	CampaignID          string     `json:"campaignId,omitempty"`
 	Channel             string     `json:"channel"`
 	Format              string     `json:"format"`
@@ -75,6 +77,7 @@ type ExportDTO struct {
 	ControlPercent      int        `json:"controlPercent,omitempty"`
 	ControlSeed         int64      `json:"controlSeed,omitempty"`
 	TotalInSegment      *int       `json:"totalInSegment"`
+	WithContactCount    *int       `json:"withContactCount"`
 	NoContactCount      *int       `json:"noContactCount"`
 	BlockedByLimitCount *int       `json:"blockedByLimitCount"`
 	ControlCount        *int       `json:"controlCount"`
@@ -84,6 +87,7 @@ type ExportDTO struct {
 	CreatedBy           string     `json:"createdBy,omitempty"`
 	CreatedAt           time.Time  `json:"createdAt"`
 	FinishedAt          *time.Time `json:"finishedAt"`
+	DownloadURL         *string    `json:"downloadUrl"`
 }
 
 type memberCandidate struct {
@@ -132,7 +136,7 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 		return nil, err
 	}
 
-	_, ver, err := s.segments.GetByID(ctx, req.SegmentID)
+	segment, ver, err := s.segments.GetByID(ctx, req.SegmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -165,6 +169,8 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 		ID:                  s.idGen.NewID(ctx),
 		SegmentID:           req.SegmentID,
 		SegmentVersionID:    ver.ID,
+		SegmentName:         segment.Name,
+		SegmentVersionNo:    ver.VersionNo,
 		CampaignID:          req.CampaignID,
 		Channel:             domain.ExportChannel(req.Channel),
 		Format:              domain.ExportFormat(orDefault(req.Format, string(domain.FormatCSV))),
@@ -251,16 +257,16 @@ func (s *ExportService) Download(ctx context.Context, exportID string) (*ExportF
 	return &ExportFile{Data: data, ContentType: "text/csv; charset=utf-8", Extension: "csv"}, nil
 }
 
-func (s *ExportService) List(ctx context.Context, limit, offset int) ([]ExportDTO, error) {
-	items, err := s.exports.List(ctx, limit, offset)
+func (s *ExportService) List(ctx context.Context, filter domain.ExportFilter, limit, offset int) ([]ExportDTO, int, error) {
+	items, total, err := s.exports.List(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]ExportDTO, 0, len(items))
 	for _, j := range items {
 		out = append(out, *toExportDTO(j))
 	}
-	return out, nil
+	return out, total, nil
 }
 
 func (s *ExportService) Get(ctx context.Context, id string) (*ExportDTO, error) {
@@ -427,10 +433,18 @@ func toExportDTO(j domain.ExportJob) *ExportDTO {
 	blocked := j.BlockedByLimitCount
 	control := j.ControlCount
 	exported := j.ExportedCount
+	withContact := j.TotalInSegment - j.NoContactCount
+	var downloadURL *string
+	if j.Status == domain.ExportReady {
+		url := "/api/v1/exports/" + j.ID + "/download"
+		downloadURL = &url
+	}
 	return &ExportDTO{
 		ID:                  j.ID,
 		SegmentID:           j.SegmentID,
+		SegmentName:         j.SegmentName,
 		SegmentVersionID:    j.SegmentVersionID,
+		SegmentVersionNo:    j.SegmentVersionNo,
 		CampaignID:          j.CampaignID,
 		Channel:             string(j.Channel),
 		Format:              string(j.Format),
@@ -438,6 +452,7 @@ func toExportDTO(j domain.ExportJob) *ExportDTO {
 		ControlPercent:      j.ControlPercent,
 		ControlSeed:         j.ControlSeed,
 		TotalInSegment:      &total,
+		WithContactCount:    &withContact,
 		NoContactCount:      &noContact,
 		BlockedByLimitCount: &blocked,
 		ControlCount:        &control,
@@ -447,6 +462,7 @@ func toExportDTO(j domain.ExportJob) *ExportDTO {
 		CreatedBy:           j.CreatedBy,
 		CreatedAt:           j.CreatedAt,
 		FinishedAt:          j.FinishedAt,
+		DownloadURL:         downloadURL,
 	}
 }
 

@@ -54,6 +54,8 @@ security:
 paths:
   /api/v1/users/invitations:
     $ref: ./paths/invitations.yaml#/paths/~1api~1v1~1users~1invitations
+  /api/v1/users/{id}/recovery:
+    $ref: ./paths/invitations.yaml#/paths/~1api~1v1~1users~1{id}~1recovery
   /api/v1/auth/invitations/accept:
     $ref: ./paths/invitations.yaml#/paths/~1api~1v1~1auth~1invitations~1accept
   /api/v1/access/permissions:
@@ -373,6 +375,10 @@ components:
       $ref: ./components/schemas/guests.yaml#/GuestSegmentSummary
     GuestProfile:
       $ref: ./components/schemas/guests.yaml#/GuestProfile
+    MaskedGuestIdentifier:
+      $ref: ./components/schemas/guests.yaml#/MaskedGuestIdentifier
+    GuestListItem:
+      $ref: ./components/schemas/guests.yaml#/GuestListItem
     GuestPage:
       $ref: ./components/schemas/guests.yaml#/GuestPage
     Event:
@@ -527,5 +533,9 @@ components:
       $ref: ./components/schemas/users.yaml#/UserCreateRequest
     UserUpdateRequest:
       $ref: ./components/schemas/users.yaml#/UserUpdateRequest
+    UserInvitationRequest:
+      $ref: ./components/schemas/users.yaml#/UserInvitationRequest
+    InvitationAcceptRequest:
+      $ref: ./components/schemas/users.yaml#/InvitationAcceptRequest
     UserPage:
       $ref: ./components/schemas/users.yaml#/UserPage

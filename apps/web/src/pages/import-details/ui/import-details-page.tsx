@@ -18,14 +18,14 @@ export function ImportDetailsPage() {
 
   if (isLoading) return <Skeleton className="h-40 w-full" />
   if (error) return <ErrorBanner error={error} />
-  if (!batch) return <EmptyState title="Импорт не найден" />
+  if (!batch) return <EmptyState title="Загрузка не найдена" />
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={batch.fileName ?? 'Синхронизация источника'}
         breadcrumbs={[
-          { label: 'Импорт', to: '/import' },
+          { label: 'Импорт данных', to: '/import' },
           { label: batch.fileName ?? 'Синхронизация источника' },
         ]}
         description={`${batch.dataSourceName ?? batch.dataSourceId} · ${formatDateTime(batch.createdAt)}`}
@@ -34,7 +34,7 @@ export function ImportDetailsPage() {
       {location.state?.isDuplicate && (
         <Alert>
           <AlertDescription>
-            Такой файл уже загружали для этого источника, показан существующий импорт.
+            Такой файл уже загружали для этого источника, показана существующая загрузка.
           </AlertDescription>
         </Alert>
       )}

@@ -120,12 +120,39 @@ DataSource:
       type: string
       format: date-time
       nullable: true
+    lastImport:
+      $ref: ./reference-data-sources.yaml#/DataSourceLastImport
     createdAt:
       type: string
       format: date-time
     updatedAt:
       type: string
       format: date-time
+DataSourceLastImport:
+  type: object
+  nullable: true
+  readOnly: true
+  description: Latest import batch of the source; filled only in the `GET /data-sources` list, absent when the source has no imports
+  required:
+    - batchId
+    - status
+    - createdAt
+    - rejectedRows
+  properties:
+    batchId:
+      type: string
+    status:
+      $ref: ./imports.yaml#/ImportStatus
+    createdAt:
+      type: string
+      format: date-time
+    finishedAt:
+      type: string
+      format: date-time
+      nullable: true
+    rejectedRows:
+      type: integer
+      minimum: 0
 DataSourceCreateRequest:
   type: object
   required:

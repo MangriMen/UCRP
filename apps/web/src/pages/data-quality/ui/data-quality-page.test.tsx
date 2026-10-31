@@ -31,12 +31,12 @@ describe('DataQualityPage', () => {
     renderPage()
     await screen.findByText('Касса «Зара»')
     await userEvent.click(within(rowOf('Касса «Зара»')).getByRole('button', { name: 'Подробнее' }))
-    expect(await screen.findByRole('link', { name: 'Открыть импорт' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Открыть загрузку' })).toHaveAttribute(
       'href',
       '/import/batch-0002',
     )
     await userEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
-    expect(screen.queryByRole('link', { name: 'Открыть импорт' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Открыть загрузку' })).not.toBeInTheDocument()
   })
 
   it('treats a source without imports as an empty state', async () => {
@@ -45,6 +45,6 @@ describe('DataQualityPage', () => {
     await userEvent.click(
       within(rowOf('API «Спортмастер»')).getByRole('button', { name: 'Подробнее' }),
     )
-    expect(await screen.findByText('Импортов пока не было')).toBeInTheDocument()
+    expect(await screen.findByText('Загрузок пока не было')).toBeInTheDocument()
   })
 })

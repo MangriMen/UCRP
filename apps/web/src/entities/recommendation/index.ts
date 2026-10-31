@@ -2,7 +2,11 @@ export { useGuestRecommendations, useSegmentRecommendations } from './api/use-re
 export { RecommendationList } from './ui/recommendation-list'
 export { SegmentTopTenants } from './ui/segment-top-tenants'
 export { WhyPopover } from './ui/why-popover'
-export { recommendationKeys, SEGMENT_TOP_TENANTS_LIMIT } from './model/keys'
+export {
+  parseSegmentTopTenantsLimit,
+  recommendationKeys,
+  SEGMENT_TOP_TENANTS_LIMIT,
+} from './model/keys'
 export { factorLabels } from './model/labels'
 export type {
   Recommendation,

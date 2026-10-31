@@ -64,10 +64,11 @@ type TenantCategory struct {
 }
 
 type CategoryRelation struct {
-	CategoryID        string
-	RelatedCategoryID string
-	RelationType      string
-	WeightPct         int
+	CategoryID          string
+	RelatedCategoryID   string
+	RelatedCategoryName string
+	RelationType        string
+	WeightPct           int
 }
 
 type Project struct {
@@ -89,6 +90,7 @@ type EventType struct {
 
 type TenantFilter struct {
 	Query      string
+	MallID     string
 	CategoryID string
 	Floor      *int
 	IsActive   *bool

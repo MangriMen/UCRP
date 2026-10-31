@@ -1,10 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { server } from '@/app/mocks/server'
+import { mockDataSources } from '@/entities/data-source/mocks'
 import { mockUsers } from '@/entities/user/mocks'
 import { setAccessToken } from '@/shared/api/client'
+import { API } from '@/shared/api/mocks/helpers'
 import { TenantDetailsPage } from './tenant-details-page'
 
 const SESSION_KEY = 'ucrp-mock-session'
@@ -80,6 +84,25 @@ describe('TenantDetailsPage', () => {
     renderPage('/tenants/tenant-0001?tab=sources')
     expect(await screen.findByRole('link', { name: 'Все источники данных' })).toBeInTheDocument()
     expect(await screen.findAllByRole('row')).not.toHaveLength(0)
+  })
+
+  it('pages the sources on the server and keeps the tab in the URL', async () => {
+    const requestedPages: (string | null)[] = []
+    server.use(
+      http.get(`${API}/data-sources`, ({ request }) => {
+        const params = new URL(request.url).searchParams
+        requestedPages.push(params.get('page'))
+        return HttpResponse.json({
+          items: mockDataSources.slice(0, 1),
+          meta: { page: Number(params.get('page') ?? 1), pageSize: 50, total: 120, totalPages: 3 },
+        })
+      }),
+    )
+    renderPage('/tenants/tenant-0001?tab=sources')
+    await userEvent.click(await screen.findByRole('button', { name: 'Вперёд' }))
+    await waitFor(() => expect(requestedPages).toContain('2'))
+    expect(screen.getByTestId('search')).toHaveTextContent('tab=sources')
+    expect(screen.getByTestId('search')).toHaveTextContent('page=2')
   })
 
   it('hides editing from a role without reference.write', async () => {

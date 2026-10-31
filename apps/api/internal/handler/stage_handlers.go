@@ -228,12 +228,13 @@ func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
 		b := v == "true" || v == "1"
 		isControl = &b
 	}
-	items, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl)
+	limit, offset := pageParams(withDefaultPageSize(r))
+	items, total, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *GuestHandler) Contacts(w http.ResponseWriter, r *http.Request) {
@@ -355,6 +356,10 @@ func (h *ReferenceHandler) UpdateCategory(w http.ResponseWriter, r *http.Request
 
 func (h *ReferenceHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	if err := h.ref.DeleteCategory(r.Context(), chi.URLParam(r, "id")); err != nil {
+		if errors.Is(err, domain.ErrConflict) {
+			httpx.WriteError(w, r, http.StatusConflict, "category_in_use", "Категория используется арендаторами или связями")
+			return
+		}
 		httpx.WriteDomainError(w, r, err)
 		return
 	}

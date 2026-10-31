@@ -1,6 +1,5 @@
 import { http, HttpResponse } from 'msw'
 import { API, apiError, mockId, paged } from '@/shared/api/mocks/helpers'
-import { isImportActive } from '../model/status'
 import type { ImportBatch } from '../model/types'
 import { mockBatches, mockDataSources, mockRejectedRows } from './fixtures'
 
@@ -91,26 +90,14 @@ export const importHandlers = [
 
   http.get(`${API}/imports/:id`, ({ params }) => {
     const batch = batches.find((b) => b.id === params.id)
-    if (!batch) return apiError(404, 'not_found', 'Импорт не найден')
+    if (!batch) return apiError(404, 'not_found', 'Загрузка не найдена')
     advance(batch)
     return HttpResponse.json(batch)
   }),
 
   http.get(`${API}/imports/:id/rejected-rows`, ({ params, request }) => {
     const batch = batches.find((b) => b.id === params.id)
-    if (!batch) return apiError(404, 'not_found', 'Импорт не найден')
+    if (!batch) return apiError(404, 'not_found', 'Загрузка не найдена')
     return HttpResponse.json(paged(request, mockRejectedRows(batch)))
-  }),
-
-  http.post(`${API}/data-sources/:id/sync`, ({ params }) => {
-    const sourceId = String(params.id)
-    if (!mockDataSources.some((s) => s.id === sourceId)) {
-      return apiError(404, 'not_found', 'Источник не найден')
-    }
-    if (batches.some((b) => b.dataSourceId === sourceId && isImportActive(b.status))) {
-      return apiError(409, 'sync_in_progress', 'Синхронизация уже выполняется')
-    }
-    const batch = enqueue(sourceId, { mode: 'pull' })
-    return HttpResponse.json({ batchId: batch.id, status: batch.status }, { status: 202 })
   }),
 ]

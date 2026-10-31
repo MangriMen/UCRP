@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/auth"
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/service"
@@ -73,13 +74,20 @@ func (h *ExportHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ExportHandler) List(w http.ResponseWriter, r *http.Request) {
-	limit, offset := pageParams(r)
-	items, err := h.exports.List(r.Context(), limit, offset)
+	limit, offset := pageParams(withDefaultPageSize(r))
+	query := r.URL.Query()
+	filter := domain.ExportFilter{
+		SegmentID:  query.Get("segment_id"),
+		CampaignID: query.Get("campaign_id"),
+		Channel:    query.Get("channel"),
+		Status:     query.Get("status"),
+	}
+	items, total, err := h.exports.List(r.Context(), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *ExportHandler) Download(w http.ResponseWriter, r *http.Request) {

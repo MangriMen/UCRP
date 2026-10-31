@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -79,6 +80,34 @@ func TestManagerDelegatesPersonalAccess(t *testing.T) {
 	}
 	if permissions(recipientClient)["guest.profile.read"] {
 		t.Fatal("new manager has personal access before delegation")
+	}
+	grantable := func(c *client.Client) map[string][]string {
+		t.Helper()
+		resp, err := c.Get(ctx, "/api/v1/access/permissions", nil)
+		if err != nil {
+			t.Fatalf("GET access/permissions: %v", err)
+		}
+		s.RequireStatus(resp, 200, "GET access/permissions")
+		var body struct {
+			Items []struct {
+				Code        string   `json:"code"`
+				GrantableTo []string `json:"grantableTo"`
+			} `json:"items"`
+		}
+		if err := resp.Decode(&body); err != nil {
+			t.Fatalf("decode permissions catalog: %v", err)
+		}
+		result := make(map[string][]string, len(body.Items))
+		for _, item := range body.Items {
+			result[item.Code] = item.GrantableTo
+		}
+		return result
+	}
+	if got := grantable(issuerClient)["guest.profile.read"]; !slices.Contains(got, "manager") {
+		t.Fatalf("issuer with personal access cannot delegate it to a manager: %v", got)
+	}
+	if got := grantable(recipientClient)["guest.profile.read"]; len(got) != 0 {
+		t.Fatalf("manager without personal access is offered to delegate it: %v", got)
 	}
 	request := map[string]any{
 		"subjectType": "user", "subjectId": issuer.ID, "status": "active",

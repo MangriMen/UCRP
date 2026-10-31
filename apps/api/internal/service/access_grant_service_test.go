@@ -115,8 +115,8 @@ func (r *grantTestRepository) GetGrant(context.Context, string) (*domain.AccessG
 	return &grant, nil
 }
 
-func (r *grantTestRepository) ListGrants(context.Context, domain.AccessGrantFilter) ([]domain.AccessGrant, error) {
-	return nil, nil
+func (r *grantTestRepository) ListGrants(context.Context, domain.AccessGrantFilter) ([]domain.AccessGrant, int, error) {
+	return nil, 0, nil
 }
 
 func (r *grantTestRepository) CreateGrant(context.Context, *domain.AccessGrant, int64, *domain.AuditLog) error {
@@ -141,6 +141,27 @@ func TestManagerCanRemoveAllowAfterLosingDelegatedPermission(t *testing.T) {
 			svc := NewAccessGrantService(repo, grantTestClock{now}, grantTestIDs{})
 			if _, err := svc.Transition(context.Background(), actor, "grant-1", action, "withdraw access", "request-1"); err != nil {
 				t.Fatalf("%s allow grant: %v", action, err)
+			}
+		})
+	}
+}
+
+func TestManagerCannotChangeStaffRoleGrant(t *testing.T) {
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	actor := domain.Principal{UserID: "manager-1", Role: domain.RoleManager}
+	for _, action := range []string{"suspend", "revoke"} {
+		t.Run(action, func(t *testing.T) {
+			repo := &grantTestRepository{grant: domain.AccessGrant{
+				ID: "bootstrap-role-marketer", SubjectType: "role", SubjectID: "marketer", Status: "active", ValidFrom: now,
+				Reason: "role ceiling", Items: []domain.AccessGrantItem{{PermissionCode: "guest.profile.read", Effect: "allow"}},
+			}}
+			svc := NewAccessGrantService(repo, grantTestClock{now}, grantTestIDs{})
+			_, err := svc.Transition(context.Background(), actor, "bootstrap-role-marketer", action, "withdraw access", "request-1")
+			if !errors.Is(err, domain.ErrForbidden) {
+				t.Fatalf("%s staff role grant: got %v, want forbidden", action, err)
+			}
+			if repo.grant.Status != "active" {
+				t.Fatalf("%s staff role grant changed status to %q", action, repo.grant.Status)
 			}
 		})
 	}

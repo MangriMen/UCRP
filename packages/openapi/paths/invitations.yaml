@@ -5,32 +5,17 @@ paths:
         - Users
       operationId: createUserInvitation
       summary: Invite an employee
-      description: The one-time token is delivered directly to the employee and never returned in the response. Until a delivery provider is configured, the endpoint returns 503 and creates no invitation.
+      description: The one-time token is delivered directly to the employee and never returned in the response. The issuing manager must hold every permission of the invited role permanently. Until a delivery provider is configured, the endpoint returns 503 and creates no invitation.
       x-roles:
         - R-2
+      x-uc:
+        - UC-18
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - email
-                - displayName
-                - role
-              properties:
-                email:
-                  type: string
-                  format: email
-                displayName:
-                  type: string
-                role:
-                  type: string
-                  enum:
-                    - manager
-                    - tenant
-                tenantId:
-                  type: string
+              $ref: ../components/schemas/users.yaml#/UserInvitationRequest
       responses:
         '202':
           description: Invitation sent
@@ -40,39 +25,64 @@ paths:
           $ref: ../components/responses.yaml#/Unauthorized
         '403':
           $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
         '503':
           description: Invitation delivery is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/common.yaml#/ErrorResponse
+  /api/v1/users/{id}/recovery:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Users
+      operationId: createUserRecovery
+      summary: Send an access recovery link to an employee
+      description: The one-time token is delivered to the user email and never returned in the response. The user must be active, and the issuing manager must hold every permission of the user role permanently. Accepting the token sets a new password and invalidates the old one. Until a delivery provider is configured, the endpoint returns 503 and creates no token.
+      x-roles:
+        - R-2
+      x-uc:
+        - UC-18
+      responses:
+        '202':
+          description: Recovery link sent
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+        '503':
+          description: Invitation delivery is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/common.yaml#/ErrorResponse
   /api/v1/auth/invitations/accept:
     post:
       tags:
         - Auth
       operationId: acceptUserInvitation
-      summary: Accept an invitation and choose a password
-      description: Tokens expire after 24 hours, are single-use and become invalid after a policy change. Account recovery is not supported by this endpoint.
+      summary: Accept an invitation or a recovery link and choose a password
+      description: Accepts both invitation and recovery tokens. Tokens expire after 24 hours, are single-use and become invalid after a policy change or when the issuing manager is deactivated. Expired, used and unknown tokens are indistinguishable and return 401.
       security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - token
-                - password
-              properties:
-                token:
-                  type: string
-                password:
-                  type: string
-                  minLength: 8
-                  maxLength: 72
-                  format: password
+              $ref: ../components/schemas/users.yaml#/InvitationAcceptRequest
       responses:
         '204':
-          description: Account created
+          description: Password set
         '400':
           $ref: ../components/responses.yaml#/BadRequest
         '401':
           $ref: ../components/responses.yaml#/Unauthorized
-        '503':
-          description: Invitation delivery is unavailable

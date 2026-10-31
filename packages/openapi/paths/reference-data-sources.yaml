@@ -26,11 +26,44 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: q
+          in: query
+          description: Case-insensitive search by source name or tenant name
+          schema:
+            type: string
+        - name: import_status
+          in: query
+          description: Status of the latest import batch of the source; `none` — the source has no imports yet
+          schema:
+            type: string
+            enum:
+              - queued
+              - running
+              - completed
+              - completed_with_errors
+              - failed
+              - none
+        - name: sort
+          in: query
+          description: Sort field, `-` prefix for descending. Default `-createdAt`.
+          schema:
+            type: string
+            enum:
+              - name
+              - tenantName
+              - typeName
+              - lastImportAt
+              - createdAt
+              - -name
+              - -tenantName
+              - -typeName
+              - -lastImportAt
+              - -createdAt
         - $ref: ../components/parameters.yaml#/Page
         - $ref: ../components/parameters.yaml#/PageSize
       responses:
         '200':
-          description: Source page
+          description: Source page. `meta.total` is the number of sources matching the filters.
           content:
             application/json:
               schema:

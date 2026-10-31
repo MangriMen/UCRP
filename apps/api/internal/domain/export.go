@@ -49,6 +49,8 @@ type ExportJob struct {
 	CreatedBy           string
 	CreatedAt           time.Time
 	FinishedAt          *time.Time
+	SegmentName         string
+	SegmentVersionNo    int
 }
 
 type ExportMember struct {
@@ -57,6 +59,14 @@ type ExportMember struct {
 	IdentifierID string
 	IsControl    bool
 	Contact      string
+	ContactType  string
+}
+
+type ExportFilter struct {
+	SegmentID  string
+	CampaignID string
+	Channel    string
+	Status     string
 }
 
 type ContactLimit struct {
@@ -82,8 +92,9 @@ type ExportRepo interface {
 	FindByKey(ctx context.Context, userID, key string) (*ExportJob, error)
 	GetByID(ctx context.Context, id string) (*ExportJob, error)
 	ListMembers(ctx context.Context, exportID string) ([]ExportMember, error)
+	ListMemberPage(ctx context.Context, exportID string, isControl *bool, limit, offset int) ([]ExportMember, int, error)
 	Insert(ctx context.Context, job *ExportJob, members []ExportMember) error
-	List(ctx context.Context, limit, offset int) ([]ExportJob, error)
+	List(ctx context.Context, filter ExportFilter, limit, offset int) ([]ExportJob, int, error)
 }
 
 type ContactLimitRepo interface {

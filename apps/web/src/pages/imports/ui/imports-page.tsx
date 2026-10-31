@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router'
-import { useDataSources } from '@/entities/data-source'
+import { useDataSourceOptions } from '@/entities/data-source'
 import {
   ImportStatusBadge,
   importStatusLabels,
@@ -17,7 +17,7 @@ import { OptionSelect } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
 
 const columns: Column<ImportBatch>[] = [
-  { id: 'createdAt', header: 'Создан', cell: (b) => formatDateTime(b.createdAt) },
+  { id: 'createdAt', header: 'Создана', cell: (b) => formatDateTime(b.createdAt) },
   { id: 'source', header: 'Источник', cell: (b) => b.dataSourceName ?? b.dataSourceId },
   { id: 'file', header: 'Файл', cell: (b) => b.fileName ?? 'Синхронизация' },
   { id: 'status', header: 'Статус', cell: (b) => <ImportStatusBadge status={b.status} /> },
@@ -40,7 +40,7 @@ export function ImportsPage() {
   const page = parsePage(searchParams.get('page'))
 
   const { can } = useAuth()
-  const sources = useDataSources()
+  const sources = useDataSourceOptions()
   const imports = useImports({
     dataSourceId: dataSourceId === ALL_OPTION ? undefined : dataSourceId,
     status: isImportStatus(status) ? status : undefined,
@@ -64,7 +64,7 @@ export function ImportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Импорт данных" description="Загрузка файлов и история импортов" />
+      <PageHeader title="Импорт данных" description="Загрузка файлов и журнал загрузок" />
 
       {can('import.create') && (
         <Card>
@@ -104,7 +104,7 @@ export function ImportsPage() {
           getRowId={(b) => b.id}
           isLoading={imports.isLoading}
           error={imports.error}
-          emptyTitle="Импортов пока нет"
+          emptyTitle="Загрузок пока нет"
           meta={imports.data?.meta}
           onPageChange={(next) => updateParams({ page: String(next) })}
           onRowClick={(b) => navigate(`/import/${b.id}`)}

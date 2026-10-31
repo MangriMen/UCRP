@@ -152,6 +152,42 @@ UserUpdateRequest:
     resetPassword:
       type: boolean
       description: Trigger a password reset and revoke the user refresh tokens
+UserInvitationRequest:
+  type: object
+  required:
+    - email
+    - displayName
+    - role
+  properties:
+    email:
+      type: string
+      format: email
+      maxLength: 320
+    displayName:
+      type: string
+      minLength: 1
+      maxLength: 200
+    role:
+      type: string
+      enum:
+        - manager
+        - tenant
+    tenantId:
+      type: string
+      description: Required when role = `tenant`, must be absent for `manager`
+InvitationAcceptRequest:
+  type: object
+  required:
+    - token
+    - password
+  properties:
+    token:
+      type: string
+    password:
+      type: string
+      minLength: 8
+      maxLength: 72
+      format: password
 UserPage:
   type: object
   required:

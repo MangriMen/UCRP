@@ -212,6 +212,14 @@ func (r *TenantCategorySQL) Delete(ctx context.Context, id string) error {
 	if tenants > 0 {
 		return domain.ErrConflict
 	}
+	var relations int
+	if err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM tenant_category_relation WHERE category_id = $1 OR related_category_id = $1`, id).Scan(&relations); err != nil {
+		return err
+	}
+	if relations > 0 {
+		return domain.ErrConflict
+	}
 	res, err := r.db.ExecContext(ctx, `DELETE FROM tenant_category WHERE id = $1`, id)
 	if err != nil {
 		return err
@@ -224,16 +232,25 @@ func (r *TenantCategorySQL) Delete(ctx context.Context, id string) error {
 
 func (r *TenantCategorySQL) ListRelations(ctx context.Context, categoryID string) ([]domain.CategoryRelation, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT category_id, related_category_id, relation_type, weight_pct
-		FROM tenant_category_relation WHERE category_id = $1`, categoryID)
+		SELECT rel.related_id, c.name, rel.relation_type, MAX(rel.weight_pct)
+		FROM (
+			SELECT related_category_id AS related_id, relation_type, weight_pct
+			FROM tenant_category_relation WHERE category_id = $1
+			UNION ALL
+			SELECT category_id, relation_type, weight_pct
+			FROM tenant_category_relation WHERE related_category_id = $1
+		) rel
+		JOIN tenant_category c ON c.id = rel.related_id
+		GROUP BY rel.related_id, c.name, rel.relation_type
+		ORDER BY c.name, rel.relation_type`, categoryID)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.CategoryRelation, 0)
 	for rows.Next() {
-		var rel domain.CategoryRelation
-		if err := rows.Scan(&rel.CategoryID, &rel.RelatedCategoryID, &rel.RelationType, &rel.WeightPct); err != nil {
+		rel := domain.CategoryRelation{CategoryID: categoryID}
+		if err := rows.Scan(&rel.RelatedCategoryID, &rel.RelatedCategoryName, &rel.RelationType, &rel.WeightPct); err != nil {
 			return nil, err
 		}
 		out = append(out, rel)
@@ -247,17 +264,14 @@ func (r *TenantCategorySQL) ReplaceRelations(ctx context.Context, categoryID str
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.ExecContext(ctx, `DELETE FROM tenant_category_relation WHERE category_id = $1`, categoryID); err != nil {
+	if _, err := tx.ExecContext(ctx, `
+		DELETE FROM tenant_category_relation WHERE category_id = $1 OR related_category_id = $1`, categoryID); err != nil {
 		return err
 	}
 	for _, rel := range rels {
-		weight := rel.WeightPct
-		if weight <= 0 {
-			weight = 100
-		}
 		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO tenant_category_relation (category_id, related_category_id, relation_type, weight_pct)
-			VALUES ($1,$2,$3,$4)`, categoryID, rel.RelatedCategoryID, rel.RelationType, weight); err != nil {
+			VALUES ($1,$2,$3,$4)`, categoryID, rel.RelatedCategoryID, rel.RelationType, rel.WeightPct); err != nil {
 			return err
 		}
 	}

@@ -9,6 +9,9 @@ type Recommendation struct {
 	ID               string
 	GuestID          string
 	TenantID         string
+	TenantName       string
+	CategoryName     string
+	Floor            *int
 	Rank             int
 	Score            float64
 	Explanation      string

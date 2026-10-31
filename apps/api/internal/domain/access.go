@@ -63,7 +63,7 @@ type AccessRepository interface {
 	PolicyVersion(ctx context.Context) (int64, error)
 	ActiveGrants(ctx context.Context, principal Principal, now time.Time) ([]AccessGrant, error)
 	GetGrant(ctx context.Context, id string) (*AccessGrant, error)
-	ListGrants(ctx context.Context, filter AccessGrantFilter) ([]AccessGrant, error)
+	ListGrants(ctx context.Context, filter AccessGrantFilter) ([]AccessGrant, int, error)
 	CreateGrant(ctx context.Context, grant *AccessGrant, expectedVersion int64, audit *AuditLog) error
 	UpdateGrant(ctx context.Context, grant *AccessGrant, expectedVersion int64, audit *AuditLog) error
 }

@@ -11,7 +11,8 @@ export function SmallCellNotice({ threshold }: SmallCellNoticeProps) {
       <Info />
       <AlertTitle>Часть значений скрыта</AlertTitle>
       <AlertDescription>
-        Значения меньше {threshold} не показываются, чтобы нельзя было определить отдельного гостя.
+        Значения, за которыми меньше {threshold} гостей, не показываются, чтобы нельзя было
+        определить отдельного гостя.
       </AlertDescription>
     </Alert>
   )

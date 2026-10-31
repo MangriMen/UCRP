@@ -48,48 +48,6 @@ func (r *DataSourceSQL) GetByID(ctx context.Context, id string) (*domain.DataSou
 	return &ds, nil
 }
 
-func (r *DataSourceSQL) List(ctx context.Context, limit, offset int) ([]domain.DataSource, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
-	}
-	rows, err := r.db.QueryContext(ctx, `
-		SELECT d.id, d.tenant_id, d.type_id, t.code, d.name, COALESCE(d.config, ''), COALESCE(d.field_mapping, ''),
-			COALESCE(d.schedule_cron, ''), d.is_active, t.supports_file, t.supports_pull, d.last_import_at, d.created_at, d.updated_at
-		FROM data_source d
-		JOIN data_source_type t ON t.id = d.type_id
-		ORDER BY d.created_at DESC
-		LIMIT $1 OFFSET $2`, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	out := make([]domain.DataSource, 0)
-	for rows.Next() {
-		var (
-			ds       domain.DataSource
-			tenantID sql.NullString
-			lastImp  sql.NullTime
-		)
-		if err := rows.Scan(
-			&ds.ID, &tenantID, &ds.TypeID, &ds.TypeCode, &ds.Name, &ds.Config, &ds.FieldMapping,
-			&ds.ScheduleCron, &ds.IsActive, &ds.SupportsFile, &ds.SupportsPull, &lastImp, &ds.CreatedAt, &ds.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		if tenantID.Valid {
-			ds.TenantID = tenantID.String
-		}
-		if lastImp.Valid {
-			ds.LastImportAt = &lastImp.Time
-		}
-		out = append(out, ds)
-	}
-	return out, rows.Err()
-}
-
 func (r *DataSourceSQL) Insert(ctx context.Context, ds *domain.DataSource) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO data_source (id, tenant_id, type_id, name, config, field_mapping, schedule_cron, is_active, created_at, updated_at)

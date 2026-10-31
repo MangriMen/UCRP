@@ -38,12 +38,12 @@ func (r *delegationRepository) ListPermissions(context.Context) ([]domain.Permis
 }
 
 func (r *delegationRepository) RolePermissions(context.Context, domain.Role) ([]domain.AccessRolePermission, error) {
-	return []domain.AccessRolePermission{{PermissionCode: "access.grant.write", Effect: "allow"}, {PermissionCode: "guest.profile.read", Effect: "allow"}}, nil
+	return []domain.AccessRolePermission{{PermissionCode: "access.grant.read", Effect: "allow"}, {PermissionCode: "access.grant.write", Effect: "allow"}, {PermissionCode: "guest.profile.read", Effect: "allow"}}, nil
 }
 
 func (r *delegationRepository) ActiveGrants(_ context.Context, p domain.Principal, _ time.Time) ([]domain.AccessGrant, error) {
 	return []domain.AccessGrant{
-		{SubjectType: "role", SubjectID: string(p.Role), Status: "active", ValidFrom: r.now.Add(-time.Hour), Items: []domain.AccessGrantItem{{PermissionCode: "access.grant.write", Effect: "allow"}}},
+		{SubjectType: "role", SubjectID: string(p.Role), Status: "active", ValidFrom: r.now.Add(-time.Hour), Items: []domain.AccessGrantItem{{PermissionCode: "access.grant.read", Effect: "allow"}, {PermissionCode: "access.grant.write", Effect: "allow"}}},
 		{SubjectType: "user", SubjectID: p.UserID, Status: "active", ValidFrom: r.now.Add(-time.Hour), ValidTo: r.expires,
 			Items: []domain.AccessGrantItem{{PermissionCode: "guest.profile.read", Effect: "allow"}}, Scopes: []domain.AccessGrantScope{{Type: "principal_role", Value: "manager"}}},
 	}, nil
@@ -123,5 +123,39 @@ func TestDelegatedPermissionCannotOutliveIssuer(t *testing.T) {
 			ValidTo: &expires, Items: []domain.AccessGrantItem{{PermissionCode: "guest.profile.read", Effect: "allow"}}}}}
 	if !policy.delegatesForPeriod(actor, "guest.profile.read", &expires) || policy.delegatesForPeriod(actor, "guest.profile.read", &later) || policy.delegatesForPeriod(actor, "guest.profile.read", nil) {
 		t.Fatal("delegated time window exceeds issuer's permission")
+	}
+}
+
+func TestGetGrant_ReturnsGrant_WhenSubjectUserIsDeactivated(t *testing.T) {
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	actor := domain.Principal{UserID: "manager-a", Role: domain.RoleManager}
+	users := delegationUsers{users: map[string]domain.User{
+		"manager-b": {ID: "manager-b", Role: domain.RoleManager, IsActive: false},
+	}}
+	repo := &delegationRepository{now: now, grant: &domain.AccessGrant{ID: "grant-1", SubjectType: "user", SubjectID: "manager-b", Status: "active", ValidFrom: now}}
+	svc := NewAccessGrantService(repo, grantTestClock{now}, grantTestIDs{}, users)
+	grant, err := svc.Get(context.Background(), actor, "grant-1")
+	if err != nil || grant.ID != "grant-1" {
+		t.Fatalf("Get returned %+v, %v", grant, err)
+	}
+}
+
+func TestPermissions_MarksGrantableSubjects_ByIssuerAuthority(t *testing.T) {
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	actor := domain.Principal{UserID: "manager-a", Role: domain.RoleManager}
+	svc := NewAccessGrantService(&delegationRepository{now: now}, grantTestClock{now}, grantTestIDs{})
+	items, err := svc.Permissions(context.Background(), actor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	grantable := make(map[string][]string, len(items))
+	for _, item := range items {
+		grantable[item.Code] = item.GrantableTo
+	}
+	if got := grantable["guest.profile.read"]; len(got) != 2 || got[0] != "tenant" || got[1] != "manager" {
+		t.Fatalf("guest.profile.read grantable to %v, want tenant and manager", got)
+	}
+	if got := grantable["access.grant.write"]; len(got) != 1 || got[0] != "tenant" {
+		t.Fatalf("access.grant.write grantable to %v, want tenant only", got)
 	}
 }

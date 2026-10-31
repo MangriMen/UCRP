@@ -1,2 +1,2 @@
 export { userHandlers } from './handlers'
-export { MOCK_PASSWORD, mockUsers } from './fixtures'
+export { MOCK_INVITATION_TOKEN, MOCK_PASSWORD, mockUserRecords, mockUsers } from './fixtures'

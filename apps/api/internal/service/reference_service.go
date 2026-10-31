@@ -349,11 +349,14 @@ func (s *ReferenceService) DeleteCategory(ctx context.Context, id string) error 
 	return s.categories.Delete(ctx, id)
 }
 
+const defaultRelationWeightPct = 100
+
 type RelationDTO struct {
-	CategoryID        string `json:"categoryId"`
-	RelatedCategoryID string `json:"relatedCategoryId"`
-	RelationType      string `json:"relationType"`
-	WeightPct         int    `json:"weightPct"`
+	CategoryID          string `json:"categoryId"`
+	RelatedCategoryID   string `json:"relatedCategoryId"`
+	RelatedCategoryName string `json:"relatedCategoryName,omitempty"`
+	RelationType        string `json:"relationType"`
+	WeightPct           *int   `json:"weightPct"`
 }
 
 func (s *ReferenceService) ListRelations(ctx context.Context, categoryID string) ([]RelationDTO, error) {
@@ -366,7 +369,14 @@ func (s *ReferenceService) ListRelations(ctx context.Context, categoryID string)
 	}
 	out := make([]RelationDTO, 0, len(items))
 	for _, r := range items {
-		out = append(out, RelationDTO{CategoryID: categoryID, RelatedCategoryID: r.RelatedCategoryID, RelationType: r.RelationType, WeightPct: r.WeightPct})
+		weight := r.WeightPct
+		out = append(out, RelationDTO{
+			CategoryID:          categoryID,
+			RelatedCategoryID:   r.RelatedCategoryID,
+			RelatedCategoryName: r.RelatedCategoryName,
+			RelationType:        r.RelationType,
+			WeightPct:           &weight,
+		})
 	}
 	return out, nil
 }
@@ -375,28 +385,64 @@ func (s *ReferenceService) ReplaceRelations(ctx context.Context, categoryID stri
 	if _, err := s.categories.GetByID(ctx, categoryID); err != nil {
 		return nil, err
 	}
+	current, err := s.categories.ListRelations(ctx, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	alreadyRelated := make(map[string]bool, len(current))
+	for _, r := range current {
+		alreadyRelated[r.RelatedCategoryID] = true
+	}
+	seen := make(map[string]bool, len(rels))
 	converted := make([]domain.CategoryRelation, 0, len(rels))
 	for _, r := range rels {
-		if r.RelationType != "adjacent" && r.RelationType != "competitor" {
+		rel, err := s.validateRelation(ctx, categoryID, r, alreadyRelated)
+		if err != nil {
+			return nil, err
+		}
+		if seen[rel.RelatedCategoryID] {
 			return nil, domain.ErrValidation
 		}
-		if strings.TrimSpace(r.CategoryID) == "" || strings.TrimSpace(r.RelatedCategoryID) == "" {
-			return nil, domain.ErrValidation
-		}
-		if r.CategoryID != categoryID {
-			return nil, domain.ErrValidation
-		}
-		converted = append(converted, domain.CategoryRelation{
-			CategoryID:        categoryID,
-			RelatedCategoryID: r.RelatedCategoryID,
-			RelationType:      r.RelationType,
-			WeightPct:         r.WeightPct,
-		})
+		seen[rel.RelatedCategoryID] = true
+		converted = append(converted, rel)
 	}
 	if err := s.categories.ReplaceRelations(ctx, categoryID, converted); err != nil {
 		return nil, err
 	}
 	return s.ListRelations(ctx, categoryID)
+}
+
+func (s *ReferenceService) validateRelation(ctx context.Context, categoryID string, r RelationDTO, alreadyRelated map[string]bool) (domain.CategoryRelation, error) {
+	if r.RelationType != "adjacent" && r.RelationType != "competitor" {
+		return domain.CategoryRelation{}, domain.ErrValidation
+	}
+	relatedID := strings.TrimSpace(r.RelatedCategoryID)
+	if r.CategoryID != categoryID || relatedID == "" || relatedID == categoryID {
+		return domain.CategoryRelation{}, domain.ErrValidation
+	}
+	weight := defaultRelationWeightPct
+	if r.WeightPct != nil {
+		weight = *r.WeightPct
+	}
+	if weight < 0 || weight > 100 {
+		return domain.CategoryRelation{}, domain.ErrValidation
+	}
+	related, err := s.categories.GetByID(ctx, relatedID)
+	if errors.Is(err, domain.ErrNotFound) {
+		return domain.CategoryRelation{}, domain.ErrValidation
+	}
+	if err != nil {
+		return domain.CategoryRelation{}, err
+	}
+	if !related.IsActive && !alreadyRelated[relatedID] {
+		return domain.CategoryRelation{}, domain.ErrValidation
+	}
+	return domain.CategoryRelation{
+		CategoryID:        categoryID,
+		RelatedCategoryID: relatedID,
+		RelationType:      r.RelationType,
+		WeightPct:         weight,
+	}, nil
 }
 
 type ProjectDTO struct {

@@ -8,6 +8,19 @@ import (
 	"github.com/MangriMen/UCRP/internal/service"
 )
 
+const defaultPageSize = 50
+
+func withDefaultPageSize(r *http.Request) *http.Request {
+	query := r.URL.Query()
+	if query.Get("limit") != "" || query.Get("page_size") != "" {
+		return r
+	}
+	query.Set("page_size", strconv.Itoa(defaultPageSize))
+	clone := r.Clone(r.Context())
+	clone.URL.RawQuery = query.Encode()
+	return clone
+}
+
 func pageParams(r *http.Request) (int, int) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 {

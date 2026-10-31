@@ -1,9 +1,23 @@
 import { http, HttpResponse } from 'msw'
 import { API, apiError, mockId, paged } from '@/shared/api/mocks/helpers'
-import type { User, UserCreateRequest, UserUpdateRequest } from '../model/types'
-import { MOCK_PASSWORD, mockUserRecords, mockUsers, SELF_USER_ID } from './fixtures'
+import type {
+  InvitationAcceptRequest,
+  User,
+  UserCreateRequest,
+  UserInvitationRequest,
+  UserUpdateRequest,
+} from '../model/types'
+import {
+  MOCK_INVITATION_TOKEN,
+  MOCK_PASSWORD,
+  mockUserRecords,
+  mockUsers,
+  SELF_USER_ID,
+} from './fixtures'
 
 const records: User[] = structuredClone(mockUserRecords)
+
+const usedInvitationTokens = new Set<string>()
 
 const SESSION_KEY = 'ucrp-mock-session'
 const tokenFor = (userId: string) => `mock-token-${userId}`
@@ -35,6 +49,18 @@ export const userHandlers = [
 
   http.post(`${API}/auth/logout`, () => {
     localStorage.removeItem(SESSION_KEY)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.post(`${API}/auth/invitations/accept`, async ({ request }) => {
+    const { token, password } = (await request.json()) as InvitationAcceptRequest
+    if (token !== MOCK_INVITATION_TOKEN || usedInvitationTokens.has(token)) {
+      return apiError(401, 'unauthorized', 'Приглашение недействительно')
+    }
+    if (password.length < 8 || password.length > 72) {
+      return apiError(400, 'validation_error', 'Пароль должен быть от 8 до 72 символов')
+    }
+    usedInvitationTokens.add(token)
     return new HttpResponse(null, { status: 204 })
   }),
 
@@ -80,6 +106,24 @@ export const userHandlers = [
     }
     records.push(user)
     return HttpResponse.json(user, { status: 201 })
+  }),
+
+  http.post(`${API}/users/invitations`, async ({ request }) => {
+    const body = (await request.json()) as UserInvitationRequest
+    if ((body.role === 'tenant') !== Boolean(body.tenantId)) {
+      return apiError(400, 'validation_error', 'Арендатор указывается только для роли «Арендатор»')
+    }
+    if (records.some((u) => u.email === body.email)) {
+      return apiError(409, 'conflict', 'Конфликт состояния')
+    }
+    return new HttpResponse(null, { status: 202 })
+  }),
+
+  http.post(`${API}/users/:id/recovery`, ({ params }) => {
+    const user = records.find((u) => u.id === params.id)
+    if (!user) return apiError(404, 'not_found', 'Пользователь не найден')
+    if (!user.isActive) return apiError(403, 'forbidden_role', 'Нет прав')
+    return new HttpResponse(null, { status: 202 })
   }),
 
   http.patch(`${API}/users/:id`, async ({ params, request }) => {

@@ -7,5 +7,14 @@ export { endSession, startSession } from './model/session'
 export { roleLabels } from './model/role-labels'
 export { hasAnyPermission, hasPermission } from './model/permissions'
 export type { PermissionCode } from './model/permissions'
-export type { Me, Role, User, UserCreateRequest, UserUpdateRequest } from './model/types'
+export type {
+  InvitableRole,
+  InvitationAcceptRequest,
+  Me,
+  Role,
+  User,
+  UserCreateRequest,
+  UserInvitationRequest,
+  UserUpdateRequest,
+} from './model/types'
 export { AccessGuard } from './ui/access-guard'

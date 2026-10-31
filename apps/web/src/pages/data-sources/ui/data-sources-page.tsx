@@ -1,29 +1,22 @@
-import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useState } from 'react'
+import { Link } from 'react-router'
 import { useDataSources, type DataSource } from '@/entities/data-source'
 import { useDataSourceTypes } from '@/entities/data-source-type'
-import {
-  ImportStatusBadge,
-  importStatusLabels,
-  isImportActive,
-  latestBatchBySource,
-  useImports,
-} from '@/entities/import-batch'
+import { ImportStatusBadge, isImportActive } from '@/entities/import-batch'
 import { useAuth } from '@/entities/user'
 import { DataSourceFormDialog, DeleteDataSourceDialog } from '@/features/manage-data-sources'
 import { SyncSourceButton } from '@/features/sync-source'
 import { formatDateTime } from '@/shared/lib/format'
-import { ALL_OPTION } from '@/shared/lib/search-params'
+import { formatSort, useListParams } from '@/shared/lib/list-params'
 import { ActiveBadge } from '@/shared/ui/active-badge'
 import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
-import { Input } from '@/shared/ui/input'
-import { OptionSelect } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
 import { sourceKindLabel } from '../lib/source-kind'
+import { DATA_SOURCE_FILTER_KEYS } from '../model/filter-keys'
+import { SourceFilters } from './source-filters'
 
-const NO_IMPORTS = 'none'
-const IMPORTS_PAGE_SIZE = 200
+const SORTABLE_FIELDS = ['tenantName', 'name', 'typeName', 'lastImportAt']
 
 interface FormState {
   source: DataSource | null
@@ -33,76 +26,52 @@ export function DataSourcesPage() {
   const { can } = useAuth()
   const canEdit = can('data_source.write')
   const canImport = can('import.create')
-  const [searchParams, setSearchParams] = useSearchParams()
-  const typeId = searchParams.get('type') ?? ALL_OPTION
-  const status = searchParams.get('status') ?? ALL_OPTION
-  const query = searchParams.get('q') ?? ''
+  const params = useListParams()
+  const { get, page, pageSize, setPage, setPageSize, setSort, reset } = params
+  const isActive = get('is_active')
+  const isFiltered = DATA_SOURCE_FILTER_KEYS.some((key) => get(key) !== '')
+  const sort = params.sort && SORTABLE_FIELDS.includes(params.sort.field) ? params.sort : undefined
 
-  const sources = useDataSources()
+  const sources = useDataSources({
+    q: get('q') || undefined,
+    typeId: get('type_id') || undefined,
+    importStatus: get('import_status') || undefined,
+    isActive: isActive ? isActive === 'true' : undefined,
+    sort: formatSort(sort),
+    page,
+    pageSize,
+  })
   const types = useDataSourceTypes()
-  const imports = useImports({ pageSize: IMPORTS_PAGE_SIZE })
   const [form, setForm] = useState<FormState | null>(null)
   const [deleting, setDeleting] = useState<DataSource | null>(null)
 
-  const updateParams = (changes: Record<string, string>) =>
-    setSearchParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        for (const [key, value] of Object.entries(changes)) {
-          if (value === '' || value === ALL_OPTION) next.delete(key)
-          else next.set(key, value)
-        }
-        return next
-      },
-      { replace: true },
-    )
-
   const typeById = new Map((types.data ?? []).map((t) => [t.id, t]))
-  const latest = useMemo(() => latestBatchBySource(imports.data?.items ?? []), [imports.data])
-  const search = query.trim().toLowerCase()
-
-  const rows = useMemo(
-    () =>
-      (sources.data ?? []).filter((source) => {
-        const batchStatus = latest.get(source.id)?.status ?? NO_IMPORTS
-        return (
-          (typeId === ALL_OPTION || source.typeId === typeId) &&
-          (status === ALL_OPTION || batchStatus === status) &&
-          (search === '' || (source.tenantName ?? '').toLowerCase().includes(search))
-        )
-      }),
-    [sources.data, latest, typeId, status, search],
-  )
-
-  const typeItems = [
-    { value: ALL_OPTION, label: 'Все типы' },
-    ...(types.data ?? []).map((t) => ({ value: t.id, label: t.name })),
-  ]
-  const statusItems = [
-    { value: ALL_OPTION, label: 'Все статусы' },
-    ...Object.entries(importStatusLabels).map(([value, label]) => ({ value, label })),
-    { value: NO_IMPORTS, label: 'Нет импортов' },
-  ]
 
   const columns: Column<DataSource>[] = [
-    { id: 'tenant', header: 'Арендатор', cell: (s) => s.tenantName ?? 'Общий источник' },
-    { id: 'name', header: 'Источник', cell: (s) => s.name },
     {
-      id: 'type',
+      id: 'tenantName',
+      header: 'Арендатор',
+      cell: (s) => s.tenantName ?? 'Общий источник',
+      sortable: true,
+    },
+    { id: 'name', header: 'Источник', cell: (s) => s.name, sortable: true },
+    {
+      id: 'typeName',
       header: 'Тип',
+      sortable: true,
       cell: (s) => sourceKindLabel(s.typeCode, typeById.get(s.typeId)?.name),
     },
     {
       id: 'lastImportAt',
-      header: 'Последний импорт',
+      header: 'Последняя загрузка',
       cell: (s) => (s.lastImportAt ? formatDateTime(s.lastImportAt) : '—'),
+      sortable: true,
     },
     {
       id: 'status',
-      header: 'Статус импорта',
+      header: 'Статус загрузки',
       cell: (s) => {
-        const batch = latest.get(s.id)
-        return batch ? <ImportStatusBadge status={batch.status} /> : '—'
+        return s.lastImport ? <ImportStatusBadge status={s.lastImport.status} /> : '—'
       },
     },
     { id: 'active', header: 'Активность', cell: (s) => <ActiveBadge isActive={s.isActive} /> },
@@ -112,13 +81,12 @@ export function DataSourcesPage() {
       className: 'text-right',
       cell: (s) => {
         const type = typeById.get(s.typeId)
-        const batch = latest.get(s.id)
         return (
           <div className="flex items-start justify-end gap-2">
             {canEdit && type?.supportsPull && s.isActive && (
               <SyncSourceButton
                 sourceId={s.id}
-                isRunning={batch !== undefined && isImportActive(batch.status)}
+                isRunning={s.lastImport != null && isImportActive(s.lastImport.status)}
               />
             )}
             {canImport && type?.supportsFile && (
@@ -146,41 +114,31 @@ export function DataSourcesPage() {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Источники данных"
-        description="Источники данных арендаторов и статус их последней синхронизации"
+        description="Источники данных арендаторов и статус их последней загрузки"
         actions={
           canEdit && <Button onClick={() => setForm({ source: null })}>Добавить источник</Button>
         }
       />
-      <div className="flex flex-wrap gap-2">
-        <Input
-          className="w-56"
-          aria-label="Поиск по арендатору"
-          placeholder="Поиск по арендатору"
-          value={query}
-          onChange={(event) => updateParams({ q: event.target.value })}
-        />
-        <OptionSelect
-          className="w-56"
-          ariaLabel="Тип источника"
-          items={typeItems}
-          value={typeId}
-          onValueChange={(value) => updateParams({ type: value })}
-        />
-        <OptionSelect
-          className="w-56"
-          ariaLabel="Статус импорта"
-          items={statusItems}
-          value={status}
-          onValueChange={(value) => updateParams({ status: value })}
-        />
-      </div>
+      <SourceFilters params={params} isFiltered={isFiltered} onReset={reset} />
       <DataTable
         columns={columns}
-        rows={rows}
+        rows={sources.data?.items}
         getRowId={(s) => s.id}
         isLoading={sources.isLoading}
         error={sources.error}
-        emptyTitle="Источников не найдено"
+        emptyTitle={isFiltered ? 'Источники по фильтрам не найдены' : 'Источников пока нет'}
+        emptyAction={
+          isFiltered ? (
+            <Button type="button" variant="outline" onClick={reset}>
+              Сбросить фильтры
+            </Button>
+          ) : undefined
+        }
+        meta={sources.data?.meta}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        sort={sort}
+        onSortChange={setSort}
       />
       {form && (
         <DataSourceFormDialog

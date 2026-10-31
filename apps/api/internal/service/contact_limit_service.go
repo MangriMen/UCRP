@@ -117,37 +117,34 @@ func toLimitDTO(c domain.ContactLimit) ContactLimitDTO {
 }
 
 type ExportMemberDTO struct {
-	GuestID   string `json:"guestId"`
-	Contact   string `json:"contact"`
-	IDType    string `json:"idType"`
-	IsControl bool   `json:"isControl"`
+	GuestID      string                  `json:"guestId"`
+	IsControl    bool                    `json:"isControl"`
+	IdentifierID string                  `json:"identifierId,omitempty"`
+	Contact      *ExportMemberContactDTO `json:"contact,omitempty"`
 }
 
-func (s *ExportService) Members(ctx context.Context, exportID string, isControl *bool) ([]ExportMemberDTO, error) {
+type ExportMemberContactDTO struct {
+	IDType string `json:"idType"`
+	Value  string `json:"value"`
+}
+
+func (s *ExportService) Members(ctx context.Context, exportID string, isControl *bool, limit, offset int) ([]ExportMemberDTO, int, error) {
 	if _, err := s.exports.GetByID(ctx, exportID); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	items, err := s.exports.ListMembers(ctx, exportID)
+	items, total, err := s.exports.ListMemberPage(ctx, exportID, isControl, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]ExportMemberDTO, 0, len(items))
 	for _, m := range items {
-		if isControl != nil && m.IsControl != *isControl {
-			continue
+		member := ExportMemberDTO{GuestID: m.GuestID, IsControl: m.IsControl, IdentifierID: m.IdentifierID}
+		if m.Contact != "" {
+			member.Contact = &ExportMemberContactDTO{IDType: m.ContactType, Value: m.Contact}
 		}
-		idType := "phone"
-		if strings.Contains(m.Contact, "@") {
-			idType = "email"
-		}
-		out = append(out, ExportMemberDTO{
-			GuestID:   m.GuestID,
-			Contact:   m.Contact,
-			IDType:    idType,
-			IsControl: m.IsControl,
-		})
+		out = append(out, member)
 	}
-	return out, nil
+	return out, total, nil
 }
 
 func (s *ProfileService) Contacts(ctx context.Context, guestID string, limit, offset int) ([]ContactDTO, error) {
