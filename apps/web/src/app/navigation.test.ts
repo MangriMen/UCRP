@@ -18,4 +18,10 @@ describe('navigationFor', () => {
     expect(titles('analyst')).not.toContain('Пользователи')
     expect(titles('marketer')).not.toContain('Пользователи')
   })
+
+  it('lets only the analyst manage merge blocks', () => {
+    expect(titles('analyst')).toContain('Запреты склейки')
+    expect(titles('marketer')).toContain('Склейка профилей')
+    expect(titles('marketer')).not.toContain('Запреты склейки')
+  })
 })

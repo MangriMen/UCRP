@@ -4,8 +4,11 @@ import { GuestProfilePage } from '@/pages/guest-profile'
 import { GuestsPage } from '@/pages/guests'
 import { ImportDetailsPage } from '@/pages/import-details'
 import { ImportsPage } from '@/pages/imports'
+import { MergeCandidatePage } from '@/pages/merge-candidate'
+import { MergeQueuePage } from '@/pages/merge-queue'
 import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
+import { UnmergeBlocksPage } from '@/pages/unmerge-blocks'
 import { AppLayout } from './layout/app-layout'
 import { HomeRedirect } from './layout/home-redirect'
 import { RouteError } from './layout/route-error'
@@ -36,6 +39,17 @@ export const router = createBrowserRouter([
               { path: 'guests', element: <GuestsPage /> },
               { path: 'guests/:id', element: <GuestProfilePage /> },
             ],
+          },
+          {
+            element: <RoleGuard roles={['analyst', 'marketer']} />,
+            children: [
+              { path: 'identity/queue', element: <MergeQueuePage /> },
+              { path: 'identity/queue/:id', element: <MergeCandidatePage /> },
+            ],
+          },
+          {
+            element: <RoleGuard roles={['analyst']} />,
+            children: [{ path: 'identity/blocks', element: <UnmergeBlocksPage /> }],
           },
           { path: '*', element: <NotFoundPage /> },
         ],

@@ -1,4 +1,5 @@
 import {
+  Ban,
   BarChart3,
   Database,
   FileDown,
@@ -57,6 +58,7 @@ const navigation: NavGroup[] = [
         icon: GitMerge,
         roles: ['analyst', 'marketer'],
       },
+      { title: 'Запреты склейки', to: '/identity/blocks', icon: Ban, roles: ['analyst'] },
       {
         title: 'Сегменты',
         to: '/segments',

@@ -1,5 +1,7 @@
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { useGuest } from '@/entities/guest'
+import { useAuth } from '@/entities/user'
+import { MergeGuestsDialog } from '@/features/merge-guests'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { EmptyState } from '@/shared/ui/empty-state'
@@ -12,6 +14,8 @@ import { ProfileCard } from './profile-card'
 
 export function GuestProfilePage() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
+  const { role } = useAuth()
   const { data: profile, error, isLoading } = useGuest(id)
 
   if (isLoading) return <Skeleton className="h-40 w-full" />
@@ -23,9 +27,17 @@ export function GuestProfilePage() {
       <PageHeader
         title="Профиль гостя"
         actions={
-          <Button variant="outline" render={<Link to="/guests" />}>
-            К поиску
-          </Button>
+          <>
+            {role === 'analyst' && profile.status === 'active' && (
+              <MergeGuestsDialog
+                guestId={profile.id}
+                onMerged={(result) => navigate(`/guests/${result.winnerGuestId}`)}
+              />
+            )}
+            <Button variant="outline" render={<Link to="/guests" />}>
+              К поиску
+            </Button>
+          </>
         }
       />
       <ProfileCard profile={profile} />
