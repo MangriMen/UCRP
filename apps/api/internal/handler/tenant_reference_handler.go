@@ -27,10 +27,10 @@ type tenantOwnReference struct {
 	ID         string `json:"id"`
 	Code       string `json:"code"`
 	Name       string `json:"name"`
-	CategoryID string `json:"category_id"`
+	CategoryID string `json:"categoryId"`
 	Kind       string `json:"kind"`
 	Floor      int    `json:"floor"`
-	IsActive   bool   `json:"is_active"`
+	IsActive   bool   `json:"isActive"`
 }
 
 func NewTenantReferenceHandler(authorizer policyAuthorizer, reference tenantReferenceReader, legacy *ReferenceHandler) *TenantReferenceHandler {

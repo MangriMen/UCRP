@@ -5,7 +5,16 @@
     "properties": {
       "factorCode": {
         "type": "string",
-        "enum": ["similar_guests", "category_adjacency", "recency", "distance", "tenant_priority", "popularity", "competitor_penalty", "low_data"]
+        "enum": [
+          "similar_guests",
+          "category_adjacency",
+          "recency",
+          "distance",
+          "tenant_priority",
+          "popularity",
+          "competitor_penalty",
+          "low_data"
+        ]
       },
       "rawValue": {
         "type": "number",
@@ -106,15 +115,15 @@
   },
   "SegmentRecommendation": {
     "type": "object",
-    "required": ["tenant_id", "tenant_name", "guests", "suppressed"],
+    "required": ["tenantId", "tenantName", "guests", "suppressed"],
     "properties": {
-      "tenant_id": {
+      "tenantId": {
         "type": "string"
       },
-      "tenant_name": {
+      "tenantName": {
         "type": "string"
       },
-      "category_id": {
+      "categoryId": {
         "type": "string",
         "nullable": true
       },
@@ -129,20 +138,20 @@
         "format": "double",
         "nullable": true
       },
-      "average_score": {
+      "averageScore": {
         "type": "number",
         "format": "double",
         "nullable": true
       },
-      "eligible_count": {
+      "eligibleCount": {
         "type": "integer",
         "nullable": true
       },
-      "segment_count": {
+      "segmentCount": {
         "type": "integer",
         "nullable": true
       },
-      "incomplete_count": {
+      "incompleteCount": {
         "type": "integer",
         "nullable": true
       },
