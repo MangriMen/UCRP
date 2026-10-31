@@ -1,0 +1,11 @@
+external_id,occurred_at,event_type,amount,phone,email,tenant_code
+CHK-5001,2026-09-20T12:00:00Z,purchase,45000,79100000501,,food-plate
+,2026-09-20T12:10:00Z,purchase,45000,79100000502,,food-plate
+CHK-5003,2026-09-20T12:20:00Z,purchase,38000,79100000503,,food-plate
+CHK-5004,2026-09-20T12:30:00Z,purchase,52000,79100000504,,food-plate
+CHK-5005,20.09.2026 12:40,purchase,32000,79100000505,,food-plate
+CHK-5006,2026-09-20T12:50:00Z,purchase,41000,79100000506,,food-plate
+CHK-5007,2026-09-20T13:05:00Z,purchase,28000,79100000507,,food-unknown
+CHK-5008,2026-09-20T13:15:00Z,purchase,36000,79100000508,,food-plate
+CHK-5009,2026-09-20T13:45:00Z,purchase,двадцать,79100000509,,food-plate
+CHK-5010,2026-09-20T13:55:00Z,purchase,47000,79100000510,,food-plate
