@@ -9,3 +9,13 @@ afterEach(() => {
   server.resetHandlers()
 })
 afterAll(() => server.close())
+
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }),
+})
