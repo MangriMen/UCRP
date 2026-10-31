@@ -1,0 +1,65 @@
+package domain
+
+import (
+	"context"
+	"time"
+)
+
+type SegmentStatus string
+
+const (
+	SegmentActive   SegmentStatus = "active"
+	SegmentArchived SegmentStatus = "archived"
+)
+
+type SegmentVersionStatus string
+
+const (
+	VersionPending   SegmentVersionStatus = "pending"
+	VersionComputing SegmentVersionStatus = "computing"
+	VersionReady     SegmentVersionStatus = "ready"
+	VersionFailed    SegmentVersionStatus = "failed"
+)
+
+type Segment struct {
+	ID               string
+	Name             string
+	Description      string
+	TemplateCode     string
+	IsTemplate       bool
+	CurrentVersionNo int
+	Status           SegmentStatus
+	CreatedBy        string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type SegmentVersion struct {
+	ID          string
+	SegmentID   string
+	VersionNo   int
+	Rule        string
+	Status      SegmentVersionStatus
+	MemberCount *int
+	ComputedAt  *time.Time
+	CreatedBy   string
+	CreatedAt   time.Time
+}
+
+type SegmentRule struct {
+	Was        []string `json:"was"`
+	WasNot     []string `json:"was_not"`
+	PeriodDays int      `json:"period_days"`
+}
+
+type SegmentRepo interface {
+	Insert(ctx context.Context, s *Segment, v *SegmentVersion) error
+	GetByID(ctx context.Context, id string) (*Segment, *SegmentVersion, error)
+	List(ctx context.Context, limit, offset int) ([]Segment, error)
+	ReplaceMembers(ctx context.Context, versionID string, guestIDs []string, computedAt time.Time) error
+}
+
+type SegmentEvaluator interface {
+	Preview(ctx context.Context, rule SegmentRule) (size int, examples []string, err error)
+	Evaluate(ctx context.Context, rule SegmentRule) ([]string, error)
+}
