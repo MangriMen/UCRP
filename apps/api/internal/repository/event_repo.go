@@ -69,6 +69,27 @@ func (r *EventSQL) Insert(ctx context.Context, e *domain.Event) error {
 	return err
 }
 
+func (r *EventSQL) InsertIgnoreDuplicate(ctx context.Context, e *domain.Event) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `
+		INSERT INTO event (
+			id, guest_id, origin_guest_id, tenant_id, project_id, event_type_id, data_source_id,
+			import_batch_id, external_id, occurred_at, amount_minor, currency, match_keys, raw_payload, created_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		ON CONFLICT (data_source_id, event_type_id, external_id) DO NOTHING`,
+		e.ID, nullIfEmpty(e.GuestID), nullIfEmpty(e.OriginGuestID), e.TenantID, nullIfEmpty(e.ProjectID),
+		e.EventTypeID, e.DataSourceID, nullIfEmpty(e.ImportBatchID), e.ExternalID, e.OccurredAt,
+		e.AmountMinor, e.Currency, nullIfEmpty(e.MatchKeys), nullIfEmpty(e.RawPayload), e.CreatedAt,
+	)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
 func (r *EventSQL) MoveToGuest(ctx context.Context, fromGuestID, toGuestID string) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE event SET guest_id = $2

@@ -80,7 +80,7 @@ func (q *DBQueue) Take(ctx context.Context, jobTypes []string, workerID string) 
 	query := `
 		WITH next AS (
 			SELECT id FROM job_queue
-			WHERE status = 'queued' AND run_after <= $1 AND job_type IN (` + numberedPlaceholders(3, len(jobTypes)) + `)
+			WHERE status = 'queued' AND run_after <= $1 AND job_type IN (` + numberedPlaceholders(4, len(jobTypes)) + `)
 			ORDER BY run_after
 			FOR UPDATE SKIP LOCKED
 			LIMIT 1

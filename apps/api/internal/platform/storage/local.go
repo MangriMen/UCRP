@@ -27,8 +27,11 @@ func (l *Local) path(key string) (string, error) {
 	if key == "" {
 		return "", fmt.Errorf("empty key")
 	}
-	clean := filepath.Clean("/" + key)
-	full := filepath.Join(l.root, clean)
+	rel := filepath.Clean(filepath.FromSlash(key))
+	if rel == "." || filepath.IsAbs(rel) || hasDotDotPrefix(rel) || rel == ".." {
+		return "", fmt.Errorf("invalid key")
+	}
+	full := filepath.Join(l.root, rel)
 	if !isInside(l.root, full) {
 		return "", fmt.Errorf("invalid key")
 	}

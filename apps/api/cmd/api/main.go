@@ -19,6 +19,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
 	"github.com/MangriMen/UCRP/internal/platform/logging"
+	"github.com/MangriMen/UCRP/internal/platform/storage"
 	"github.com/MangriMen/UCRP/internal/recommend"
 	"github.com/MangriMen/UCRP/internal/repository"
 	"github.com/MangriMen/UCRP/internal/repository/sqlstore"
@@ -61,6 +62,18 @@ func run(log *slog.Logger, cfg config.Config) error {
 	if err := seedAdmin(ctx, users, clock, idg); err != nil {
 		return err
 	}
+	catalog := repository.NewImportCatalogSQL(store.DB)
+	if err := catalog.EnsureEventTypes(ctx, clock, idg); err != nil {
+		return err
+	}
+	sourceTypes := repository.NewDataSourceTypeSQL(store.DB)
+	if err := sourceTypes.EnsureDefaults(ctx, clock, idg); err != nil {
+		return err
+	}
+	blobs, err := storage.NewLocal(cfg.UploadDir)
+	if err != nil {
+		return err
+	}
 	authSvc := service.NewAuthService(users, tokens, clock, idg)
 	authHandler := handler.NewAuthHandler(authSvc)
 	guests := repository.NewGuestSQL(store.DB)
@@ -81,6 +94,18 @@ func run(log *slog.Logger, cfg config.Config) error {
 		repository.NewSegmentSQL(store.DB),
 	)
 	exportHandler := handler.NewExportHandler(exportSvc)
+	dataSources := repository.NewDataSourceSQL(store.DB)
+	imports := service.NewImportService(
+		repository.NewImportBatchSQL(store.DB),
+		repository.NewRejectedRowSQL(store.DB),
+		dataSources,
+		events,
+		catalog,
+		blobs,
+	)
+	dataSourceSvc := service.NewDataSourceService(dataSources, sourceTypes)
+	importHandler := handler.NewImportHandler(imports, dataSourceSvc)
+	dataSourceHandler := handler.NewDataSourceHandler(dataSourceSvc)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -120,6 +145,19 @@ func run(log *slog.Logger, cfg config.Config) error {
 				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/{id}", exportHandler.Get)
 				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/{id}/download", exportHandler.Download)
 			})
+			priv.Route("/imports", func(i chi.Router) {
+				i.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", importHandler.Create)
+				i.With(auth.RequireRole(domain.RoleAnalyst, domain.RoleManager)).Get("/", importHandler.List)
+				i.With(auth.RequireRole(domain.RoleAnalyst, domain.RoleManager)).Get("/{id}", importHandler.Get)
+				i.With(auth.RequireRole(domain.RoleAnalyst)).Get("/{id}/rejected-rows", importHandler.RejectedRows)
+			})
+			priv.Route("/data-sources", func(d chi.Router) {
+				d.With(auth.RequireRole(domain.RoleAnalyst, domain.RoleManager, domain.RoleMarketer)).Get("/", dataSourceHandler.List)
+				d.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", dataSourceHandler.Create)
+				d.With(auth.RequireRole(domain.RoleAnalyst, domain.RoleManager, domain.RoleMarketer)).Get("/{id}", dataSourceHandler.Get)
+				d.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/sync", importHandler.Sync)
+			})
+			priv.With(auth.RequireRole(domain.RoleAnalyst, domain.RoleManager, domain.RoleMarketer)).Get("/data-source-types", dataSourceHandler.ListTypes)
 		})
 	})
 

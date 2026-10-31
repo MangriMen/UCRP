@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -13,7 +14,10 @@ import (
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
 	"github.com/MangriMen/UCRP/internal/platform/logging"
 	"github.com/MangriMen/UCRP/internal/platform/queue"
+	"github.com/MangriMen/UCRP/internal/platform/storage"
+	"github.com/MangriMen/UCRP/internal/repository"
 	"github.com/MangriMen/UCRP/internal/repository/sqlstore"
+	"github.com/MangriMen/UCRP/internal/service"
 )
 
 func main() {
@@ -42,7 +46,22 @@ func run(log *slog.Logger, cfg config.Config) error {
 	clock := domain.SystemClock{}
 	q := queue.NewDBQueue(store.DB, clock, idgen.UUID{})
 	workerID := "worker-1"
-	jobTypes := []string{}
+	blobs, err := storage.NewLocal(cfg.UploadDir)
+	if err != nil {
+		return err
+	}
+	dataSources := repository.NewDataSourceSQL(store.DB)
+	catalog := repository.NewImportCatalogSQL(store.DB)
+	imports := service.NewImportService(
+		repository.NewImportBatchSQL(store.DB),
+		repository.NewRejectedRowSQL(store.DB),
+		dataSources,
+		repository.NewEventSQL(store.DB),
+		catalog,
+		blobs,
+	)
+	jobTypes := []string{"import.process", "connector.pull"}
+	maxAttempts := 3
 
 	log.Info("worker started")
 	for {
@@ -71,8 +90,35 @@ func run(log *slog.Logger, cfg config.Config) error {
 		}
 
 		log.Info("job taken", "id", job.ID, "type", job.JobType)
+		if err := handleJob(ctx, imports, job); err != nil {
+			log.Error("job failed", "id", job.ID, "type", job.JobType, "err", err)
+			if job.Attempts >= maxAttempts {
+				if failErr := q.Fail(ctx, job.ID, err.Error(), time.Time{}); failErr != nil {
+					log.Error("fail job", "id", job.ID, "err", failErr)
+				}
+				continue
+			}
+			retryAfter := time.Now().UTC().Add(time.Minute * time.Duration(job.Attempts))
+			if failErr := q.Fail(ctx, job.ID, err.Error(), retryAfter); failErr != nil {
+				log.Error("retry job", "id", job.ID, "err", failErr)
+			}
+			continue
+		}
 		if err := q.Complete(ctx, job.ID); err != nil {
 			log.Error("complete job", "id", job.ID, "err", err)
 		}
 	}
+}
+
+func handleJob(ctx context.Context, imports *service.ImportService, job *domain.Job) error {
+	var payload struct {
+		BatchID string `json:"batch_id"`
+	}
+	if err := json.Unmarshal([]byte(job.Payload), &payload); err != nil {
+		return err
+	}
+	if payload.BatchID == "" {
+		return domain.ErrValidation
+	}
+	return imports.ProcessBatch(ctx, payload.BatchID)
 }
