@@ -15,7 +15,7 @@ export function DataQualityPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Качество данных"
-        description="Доля отклонённых строк, свежесть импорта и спорные объединения по источникам"
+        description="Доля отклонённых строк, свежесть загрузок и спорные объединения по источникам"
       />
       <SourceQualityTable
         rows={sources.data?.items}

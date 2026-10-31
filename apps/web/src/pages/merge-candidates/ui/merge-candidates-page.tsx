@@ -76,7 +76,7 @@ export function MergeCandidatesPage() {
         getRowId={(c) => c.id}
         isLoading={candidates.isLoading}
         error={candidates.error}
-        emptyTitle="Заявок нет"
+        emptyTitle="Кандидатов на объединение нет"
         meta={candidates.data?.meta}
         onPageChange={(next) => updateParams({ page: String(next) })}
         onRowClick={(c) => navigate(`/identity/merge-candidates/${c.id}`)}

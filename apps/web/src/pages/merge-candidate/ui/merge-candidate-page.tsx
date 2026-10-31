@@ -23,17 +23,17 @@ export function MergeCandidatePage() {
 
   if (isLoading) return <Skeleton className="h-40 w-full" />
   if (error) return <ErrorBanner error={error} />
-  if (!detail) return <EmptyState title="Заявка не найдена" />
+  if (!detail) return <EmptyState title="Кандидат на объединение не найден" />
 
   const canResolve = can('identity.decide')
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Сравнение профилей"
+        title="Кандидат на объединение"
         breadcrumbs={[
           { label: 'Объединение профилей', to: '/identity/merge-candidates' },
-          { label: 'Сравнение профилей' },
+          { label: 'Кандидат на объединение' },
         ]}
         description={detail.reasonText ?? detail.reasonCode}
       />

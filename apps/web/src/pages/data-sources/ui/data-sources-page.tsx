@@ -63,13 +63,13 @@ export function DataSourcesPage() {
     },
     {
       id: 'lastImportAt',
-      header: 'Последний импорт',
+      header: 'Последняя загрузка',
       cell: (s) => (s.lastImportAt ? formatDateTime(s.lastImportAt) : '—'),
       sortable: true,
     },
     {
       id: 'status',
-      header: 'Статус импорта',
+      header: 'Статус загрузки',
       cell: (s) => {
         return s.lastImport ? <ImportStatusBadge status={s.lastImport.status} /> : '—'
       },
@@ -114,7 +114,7 @@ export function DataSourcesPage() {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Источники данных"
-        description="Источники данных арендаторов и статус их последней синхронизации"
+        description="Источники данных арендаторов и статус их последней загрузки"
         actions={
           canEdit && <Button onClick={() => setForm({ source: null })}>Добавить источник</Button>
         }

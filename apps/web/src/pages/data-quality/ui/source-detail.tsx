@@ -21,7 +21,7 @@ const seriesColumns: Column<DataQualityPoint>[] = [
 ]
 
 const batchColumns: Column<ImportBatch>[] = [
-  { id: 'createdAt', header: 'Создан', cell: (b) => formatDateTime(b.createdAt) },
+  { id: 'createdAt', header: 'Создана', cell: (b) => formatDateTime(b.createdAt) },
   { id: 'status', header: 'Статус', cell: (b) => <ImportStatusBadge status={b.status} /> },
   { id: 'rejected', header: 'Отклонено', cell: (b) => `${b.rejectedRows} из ${b.totalRows}` },
   {
@@ -30,7 +30,7 @@ const batchColumns: Column<ImportBatch>[] = [
     className: 'text-right',
     cell: (b) => (
       <Button variant="outline" size="sm" render={<Link to={`/import/${b.id}`} />}>
-        Открыть импорт
+        Открыть загрузку
       </Button>
     ),
   },
@@ -58,12 +58,12 @@ export function SourceDetail({ sourceId, onClose }: SourceDetailProps) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {series.length === 0 && recentBatches.length === 0 ? (
-          <EmptyState title="Импортов пока не было" />
+          <EmptyState title="Загрузок пока не было" />
         ) : (
           <>
             <h3 className="font-medium">Динамика отклонённых строк</h3>
             <DataTable columns={seriesColumns} rows={series} getRowId={(p) => p.date} />
-            <h3 className="font-medium">Последние импорты</h3>
+            <h3 className="font-medium">Последние загрузки</h3>
             <DataTable columns={batchColumns} rows={recentBatches} getRowId={(b) => b.id} />
           </>
         )}

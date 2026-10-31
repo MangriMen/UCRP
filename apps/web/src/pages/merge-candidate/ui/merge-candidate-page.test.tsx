@@ -26,6 +26,17 @@ describe('MergeCandidatePage', () => {
     expect(screen.getByText('Телефон: 79001234567', { selector: 'span' })).toBeInTheDocument()
   })
 
+  it('names the page after the merge candidate under the menu section', async () => {
+    renderPage('candidate-0001')
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Кандидат на объединение' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Объединение профилей' })).toHaveAttribute(
+      'href',
+      '/identity/merge-candidates',
+    )
+  })
+
   it('shows an error for an unknown candidate', async () => {
     renderPage('missing')
     expect(await screen.findByText('Кандидат не найден')).toBeInTheDocument()

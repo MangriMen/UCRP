@@ -22,7 +22,7 @@ export function RejectMergeButton({ candidateId }: RejectMergeButtonProps) {
         open={open}
         onOpenChange={setOpen}
         title="Отклонить объединение"
-        description="Пара будет отклонена, автоматически её больше не склеят."
+        description="Пара будет отклонена, автоматически её больше не объединят."
         confirmLabel="Отклонить"
         destructive={true}
         isPending={mutation.isPending}

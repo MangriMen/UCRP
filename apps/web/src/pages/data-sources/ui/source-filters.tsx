@@ -12,7 +12,7 @@ const SEARCH_DEBOUNCE_MS = 300
 const statusItems: Option[] = [
   { value: ALL_OPTION, label: 'Все статусы' },
   ...Object.entries(importStatusLabels).map(([value, label]) => ({ value, label })),
-  { value: 'none', label: 'Нет импортов' },
+  { value: 'none', label: 'Нет загрузок' },
 ]
 
 const activityItems: Option[] = [
@@ -73,7 +73,7 @@ export function SourceFilters({ params, isFiltered, onReset }: SourceFiltersProp
       />
       <OptionSelect
         className="w-56"
-        ariaLabel="Статус импорта"
+        ariaLabel="Статус загрузки"
         items={statusItems}
         value={selectValue('import_status')}
         onValueChange={changeSelect('import_status')}

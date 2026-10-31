@@ -18,7 +18,7 @@ export function DeleteDataSourceDialog({ source, onClose }: DeleteDataSourceDial
         open={source !== null}
         onOpenChange={(open) => !open && onClose()}
         title="Удалить источник?"
-        description={`Источник «${source?.name ?? ''}» будет деактивирован. Если у него есть импорты, удаление будет отклонено.`}
+        description={`Источник «${source?.name ?? ''}» будет деактивирован. Если у него есть загрузки, удаление будет отклонено.`}
         confirmLabel="Удалить"
         destructive
         isPending={remove.isPending}
