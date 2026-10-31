@@ -91,16 +91,16 @@ const navigation: NavGroup[] = [
     label: 'Коммуникации',
     items: [
       {
-        title: 'Выгрузки',
-        to: '/exports',
-        icon: FileDown,
-        permission: 'export.read',
-      },
-      {
         title: 'Кампании',
         to: '/campaigns',
         icon: Megaphone,
         permission: 'campaign.read',
+      },
+      {
+        title: 'Выгрузки',
+        to: '/exports',
+        icon: FileDown,
+        permission: 'export.read',
       },
       {
         title: 'Лимиты контактов',
