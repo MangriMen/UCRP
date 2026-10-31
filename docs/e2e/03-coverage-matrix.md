@@ -49,7 +49,7 @@
 | Удаление арендатора с событиями → 409    | UC-17 | —    | `DELETE /tenants/{id}`                  | `TestTenantDeleteWithEventsReturns409`                          | N,B | OK             |
 | R-3 видит только свой арендатор          | UC-8  | US-8 | `GET /tenants`, `GET /tenants/{id}`     | `tenants.r3.own-only`                                           | N,S | OK (дефект)    |
 | Смежность/конкуренция категорий          | UC-17 | US-4 | `PUT /tenant-categories/{id}/relations` | `TestCategoryRelationsReplace`                                  | P,B | OK             |
-| Типы событий: `top_up`/`usage` не визит  | UC-17 | —    | `POST /event-types`                     | `TestEventTypeCountsAsPresence`                                 | P,B | OK             |
+| Типы событий: `top_up`/`spend` не визит  | UC-17 | —    | `POST /event-types`                     | `TestEventTypeCountsAsPresence`                                 | P,B | OK             |
 | Источник с маппингом полей               | UC-17 | US-1 | `POST /data-sources`                    | `TestDataSourceCreate`, `TestDataSourceCreateRejectsBadMapping` | P,C | OK             |
 | Деактивация источника с загрузками → 409 | UC-17 | —    | `DELETE /data-sources/{id}`             | `data-sources.delete.with-imports`                              | N,B | OK (без теста) |
 | Типы источников данных                   | UC-17 | US-1 | `GET /data-source-types`                | `TestDataSourceTypesDefaults`                                   | P,C | OK             |
@@ -102,27 +102,27 @@ R-1 меняет только `priority` не выполняется: `PATCH /te
 
 ## 5. Сегменты (UC-3, UC-6, UC-13)
 
-| Требование                                  | UC    | US   | Endpoint                        | Тест                                                                         | Тип | Статус         |
-| ------------------------------------------- | ----- | ---- | ------------------------------- | ---------------------------------------------------------------------------- | --- | -------------- |
-| Preview: размер и примеры, без записи       | UC-3  | US-3 | `POST /segments/preview`        | `TestSegmentPreviewCountsMatchingGuests`, `TestSegmentPreviewDoesNotPersist` | P,B | OK             |
-| Preview: арендатор в `was` и `wasNot` → 400 | UC-3  | US-3 | `POST /segments/preview`        | `TestSegmentPreviewRejectsConflictingTenant`                                 | N,B | OK             |
-| Preview: пустой `was` → 400                 | UC-3  | US-3 | `POST /segments/preview`        | `TestSegmentPreviewRejectsEmptyWas`                                          | N   | OK             |
-| Preview: пустой `wasNot` допустим           | UC-3  | US-3 | `POST /segments/preview`        | `TestSegmentPreviewAcceptsEmptyWasNot`                                       | P   | OK             |
-| Preview: таймаут → 504                      | UC-3  | US-3 | `POST /segments/preview`        | `segments.preview.timeout`                                                   | N   | blocked (G10)  |
-| Создание сегмента, версия 1                 | UC-3  | US-3 | `POST /segments`                | `TestSegmentCreatePersistsMembership`                                        | P,C | OK             |
-| Создание без `name` → 400                   | UC-3  | US-3 | `POST /segments`                | `TestSegmentCreateRequiresName`                                              | N   | OK             |
-| Список сегментов                            | UC-3  | US-3 | `GET /segments`                 | `TestSegmentsListContract`                                                   | P,C | OK             |
-| Карточка сегмента с готовой версией         | UC-3  | US-3 | `GET /segments/{id}`            | `TestSegmentGetReportsReadyVersion`                                          | P,C | OK             |
-| Правка правила → версия 2                   | UC-3  | US-3 | `PUT /segments/{id}`            | `TestSegmentUpdateCreatesVersion`                                            | P,B | OK             |
-| История версий                              | UC-3  | US-3 | `GET /segments/{id}/versions`   | `TestSegmentUpdateCreatesVersion`                                            | P,C | OK             |
-| Состав сегмента постранично                 | UC-3  | US-3 | `GET /segments/{id}/members`    | `TestSegmentMembersPaged`                                                    | P,C | OK             |
-| 5 шаблонов                                  | UC-3  | US-3 | `GET /segment-templates`        | `TestSegmentTemplatesFive`                                                   | P,C | OK             |
-| Архив сегмента                              | UC-3  | US-3 | `DELETE /segments/{id}`         | `TestSegmentArchiveRemovesItFromActiveList`                                  | P   | OK             |
-| Архив при активной кампании → 409           | UC-3  | —    | `DELETE /segments/{id}`         | `segments.delete.active-campaign`                                            | N,B | OK (без теста) |
-| Пересчёт → 202                              | UC-13 | US-6 | `POST /segments/{id}/recompute` | `TestSegmentRecomputeAcceptsAndQueues`                                       | P   | OK             |
-| Повторный пересчёт → 409                    | UC-13 | —    | `POST /segments/{id}/recompute` | `segments.recompute.in-progress`                                             | N   | OK (без теста) |
-| `computedAt` обновляется после события      | UC-6  | US-6 | `GET /segments/{id}`            | `TestE2ENewEventChangesSegmentAndRecommendations`                            | E,B | OK             |
-| R-3 → 403                                   | UC-3  | US-3 | `/segments*`                    | `TestRoleTenantCannotReachPrivateAPI`                                        | N,S | OK             |
+| Требование                                                          | UC    | US   | Endpoint                        | Тест                                                                         | Тип | Статус         |
+| ------------------------------------------------------------------- | ----- | ---- | ------------------------------- | ---------------------------------------------------------------------------- | --- | -------------- |
+| Preview: размер и примеры, без записи                               | UC-3  | US-3 | `POST /segments/preview`        | `TestSegmentPreviewCountsMatchingGuests`, `TestSegmentPreviewDoesNotPersist` | P,B | OK             |
+| Preview: арендатор в `visitedTenantIds` и `excludedTenantIds` → 400 | UC-3  | US-3 | `POST /segments/preview`        | `TestSegmentPreviewRejectsConflictingTenant`                                 | N,B | OK             |
+| Preview: пустой `visitedTenantIds` → 400                            | UC-3  | US-3 | `POST /segments/preview`        | `TestSegmentPreviewRejectsEmptyWas`                                          | N   | OK             |
+| Preview: пустой `excludedTenantIds` допустим                        | UC-3  | US-3 | `POST /segments/preview`        | `TestSegmentPreviewAcceptsEmptyWasNot`                                       | P   | OK             |
+| Preview: таймаут → 504                                              | UC-3  | US-3 | `POST /segments/preview`        | `segments.preview.timeout`                                                   | N   | blocked (G10)  |
+| Создание сегмента, версия 1                                         | UC-3  | US-3 | `POST /segments`                | `TestSegmentCreatePersistsMembership`                                        | P,C | OK             |
+| Создание без `name` → 400                                           | UC-3  | US-3 | `POST /segments`                | `TestSegmentCreateRequiresName`                                              | N   | OK             |
+| Список сегментов                                                    | UC-3  | US-3 | `GET /segments`                 | `TestSegmentsListContract`                                                   | P,C | OK             |
+| Карточка сегмента с готовой версией                                 | UC-3  | US-3 | `GET /segments/{id}`            | `TestSegmentGetReportsReadyVersion`                                          | P,C | OK             |
+| Правка правила → версия 2                                           | UC-3  | US-3 | `PUT /segments/{id}`            | `TestSegmentUpdateCreatesVersion`                                            | P,B | OK             |
+| История версий                                                      | UC-3  | US-3 | `GET /segments/{id}/versions`   | `TestSegmentUpdateCreatesVersion`                                            | P,C | OK             |
+| Состав сегмента постранично                                         | UC-3  | US-3 | `GET /segments/{id}/members`    | `TestSegmentMembersPaged`                                                    | P,C | OK             |
+| 5 шаблонов                                                          | UC-3  | US-3 | `GET /segment-templates`        | `TestSegmentTemplatesFive`                                                   | P,C | OK             |
+| Архив сегмента                                                      | UC-3  | US-3 | `DELETE /segments/{id}`         | `TestSegmentArchiveRemovesItFromActiveList`                                  | P   | OK             |
+| Архив при активной кампании → 409                                   | UC-3  | —    | `DELETE /segments/{id}`         | `segments.delete.active-campaign`                                            | N,B | OK (без теста) |
+| Пересчёт → 202                                                      | UC-13 | US-6 | `POST /segments/{id}/recompute` | `TestSegmentRecomputeAcceptsAndQueues`                                       | P   | OK             |
+| Повторный пересчёт → 409                                            | UC-13 | —    | `POST /segments/{id}/recompute` | `segments.recompute.in-progress`                                             | N   | OK (без теста) |
+| `computedAt` обновляется после события                              | UC-6  | US-6 | `GET /segments/{id}`            | `TestE2ENewEventChangesSegmentAndRecommendations`                            | E,B | OK             |
+| R-3 → 403                                                           | UC-3  | US-3 | `/segments*`                    | `TestRoleTenantCannotReachPrivateAPI`                                        | N,S | OK             |
 
 ## 6. Рекомендации (UC-4, UC-15)
 
@@ -190,7 +190,7 @@ R-4 не читает правила лимитов: `GET /contact-limits` от�
 | Revert нерешённой пары → 409                | UC-11 | —     | `POST .../revert`                        | `TestMergeCandidateRevertPendingReturns409`          | N   | OK             |
 | Пара под запретом → 409                     | UC-11 | US-11 | `POST /guests/{id}/merge`                | `merge.manual.blocked`                               | N,B | OK (без теста) |
 | Ручное объединение с собой → 400            | UC-11 | —     | `POST /guests/{id}/merge`                | `merge.manual.self`                                  | N   | OK (без теста) |
-| Список запретов и снятие                    | UC-11 | US-11 | `/unmerge-blocks*`                       | `merge.blocks.list-delete`                           | P   | OK (без теста) |
+| Список запретов и снятие                    | UC-11 | US-11 | `/merge-blocks*`                         | `merge.blocks.list-delete`                           | P   | OK (без теста) |
 | Аудит решения                               | UC-11 | US-11 | `GET /audit-logs`                        | `merge.confirm.audit`                                | B   | OK (дефект)    |
 | R-1 только читает очередь                   | UC-11 | US-11 | `POST .../confirm`                       | `TestRoleMatrix`                                     | N,S | OK             |
 | Автосклейка: гость создаётся из импорта     | UC-12 | US-2  | наблюдение через `GET /guests`           | `TestIdentityResolveCreatesGuestFromImport`          | B   | OK             |
@@ -207,9 +207,9 @@ R-4 не читает правила лимитов: `GET /contact-limits` от�
 
 | Требование                        | UC   | US   | Endpoint                         | Тест                                      | Тип | Статус         |
 | --------------------------------- | ---- | ---- | -------------------------------- | ----------------------------------------- | --- | -------------- |
-| Распределение 1/2/3+              | UC-7 | US-7 | `GET /dashboard/penetration`     | `TestPenetrationBucketsContract`          | P,C | OK (дефект)    |
-| `from > to` → 400                 | UC-7 | US-7 | `GET /dashboard/penetration`     | `TestPenetrationRejectsInvertedPeriod`    | N,B | OK             |
-| Период > 24 мес → 400             | UC-7 | US-7 | `GET /dashboard/penetration`     | `TestPenetrationRejectsOversizedPeriod`   | N,B | OK             |
+| Распределение 1/2/3+              | UC-7 | US-7 | `GET /dashboard/cross-tenant`    | `TestCrossTenantDistributionsContract`    | P,C | OK (дефект)    |
+| `from > to` → 400                 | UC-7 | US-7 | `GET /dashboard/cross-tenant`    | `TestCrossTenantRejectsInvertedPeriod`    | N,B | OK             |
+| Период > 24 мес → 400             | UC-7 | US-7 | `GET /dashboard/cross-tenant`    | `TestCrossTenantRejectsOversizedPeriod`   | N,B | OK             |
 | Метрики: match rate и др.         | UC-7 | US-7 | `GET /dashboard/metrics`         | `TestDashboardMetricsFields`              | P,C | OK (дефект)    |
 | R-3 → 403                         | UC-7 | US-7 | `/dashboard/*`                   | `dashboard.forbidden-tenant-role`         | N,S | OK (без теста) |
 | Агрегаты своего арендатора        | UC-8 | US-8 | `GET /tenants/{id}/aggregates`   | `TestTenantAggregatesTenantRoleIsolation` | P,C | OK             |
@@ -222,7 +222,7 @@ R-4 не читает правила лимитов: `GET /contact-limits` от�
 | Детали и динамика по источнику    | UC-9 | US-9 | `GET /data-quality/sources/{id}` | `dq.source.detail`                        | P,C | MISS           |
 | R-1/R-3 → 403                     | UC-9 | US-9 | `/data-quality/*`                | `TestDataQualityForbiddenForMarketer`     | N,S | OK             |
 
-`GET /dashboard/penetration` и `GET /dashboard/metrics` отвечают 500, пока таблицы
+`GET /dashboard/cross-tenant` и `GET /dashboard/metrics` отвечают 500, пока таблицы
 `event`/`merge_candidate` пусты: `share` и `match_rate` приходят как `NULL`.
 Тесты фиксируют это записью в отчёте и пропускаются до исправления.
 

@@ -74,7 +74,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		repository.NewGuestIdentifierSQL(store.DB),
 		events,
 		repository.NewMergeSQL(store.DB),
-		repository.NewUnmergeBlockSQL(store.DB),
+		repository.NewMergeBlockSQL(store.DB),
 	)
 	segmentRepo := repository.NewSegmentSQL(store.DB)
 	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), q)

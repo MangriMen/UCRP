@@ -5,7 +5,7 @@ paths:
         - Reference
       operationId: listEventTypes
       summary: Event types
-      description: '`countsAsPresence=true` means the event participates in visit counting and cross-tenant penetration.'
+      description: '`countsAsPresence=true` means the event participates in visit counting and cross-tenant rate.'
       x-roles:
         - R-1
         - R-2

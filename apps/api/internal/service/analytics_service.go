@@ -16,28 +16,28 @@ func NewAnalyticsService(db *sql.DB) *AnalyticsService {
 	return &AnalyticsService{db: db}
 }
 
-type PenetrationBucket struct {
+type CrossTenantDistribution struct {
 	One       int `json:"one"`
 	Two       int `json:"two"`
 	ThreePlus int `json:"threePlus"`
 }
 
-type PenetrationPoint struct {
-	PenetrationBucket
+type CrossTenantPoint struct {
+	CrossTenantDistribution
 	Period          string  `json:"period"`
-	PenetrationRate float64 `json:"penetrationRate"`
+	CrossTenantRate float64 `json:"crossTenantRate"`
 }
 
-type PenetrationResponse struct {
-	From            string             `json:"from"`
-	To              string             `json:"to"`
-	Granularity     string             `json:"granularity"`
-	Distribution    PenetrationBucket  `json:"distribution"`
-	PenetrationRate float64            `json:"penetrationRate"`
-	Series          []PenetrationPoint `json:"series"`
+type CrossTenantResponse struct {
+	From            string                  `json:"from"`
+	To              string                  `json:"to"`
+	Granularity     string                  `json:"granularity"`
+	Distribution    CrossTenantDistribution `json:"distribution"`
+	CrossTenantRate float64                 `json:"crossTenantRate"`
+	Series          []CrossTenantPoint      `json:"series"`
 }
 
-func (s *AnalyticsService) Penetration(ctx context.Context, from, to time.Time, granularity string) (*PenetrationResponse, error) {
+func (s *AnalyticsService) CrossTenantReport(ctx context.Context, from, to time.Time, granularity string) (*CrossTenantResponse, error) {
 	if to.IsZero() {
 		to = time.Now().UTC()
 	}
@@ -59,7 +59,7 @@ func (s *AnalyticsService) Penetration(ctx context.Context, from, to time.Time, 
 		granularity = "month"
 	}
 
-	var dist PenetrationBucket
+	var dist CrossTenantDistribution
 	var rate float64
 	err := s.db.QueryRowContext(ctx, `
 		WITH guest_tenants AS (
@@ -79,21 +79,21 @@ func (s *AnalyticsService) Penetration(ctx context.Context, from, to time.Time, 
 		return nil, err
 	}
 
-	series, err := s.penetrationSeries(ctx, from, to, granularity)
+	series, err := s.crossTenantSeries(ctx, from, to, granularity)
 	if err != nil {
 		return nil, err
 	}
-	return &PenetrationResponse{
+	return &CrossTenantResponse{
 		From:            from.UTC().Format(time.RFC3339),
 		To:              to.UTC().Format(time.RFC3339),
 		Granularity:     granularity,
 		Distribution:    dist,
-		PenetrationRate: rate,
+		CrossTenantRate: rate,
 		Series:          series,
 	}, nil
 }
 
-func (s *AnalyticsService) penetrationSeries(ctx context.Context, from, to time.Time, granularity string) ([]PenetrationPoint, error) {
+func (s *AnalyticsService) crossTenantSeries(ctx context.Context, from, to time.Time, granularity string) ([]CrossTenantPoint, error) {
 	var bucketSQL string
 	switch granularity {
 	case "day":
@@ -127,15 +127,15 @@ func (s *AnalyticsService) penetrationSeries(ctx context.Context, from, to time.
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
-	out := make([]PenetrationPoint, 0)
+	out := make([]CrossTenantPoint, 0)
 	for rows.Next() {
-		var p PenetrationPoint
+		var p CrossTenantPoint
 		var rate sql.NullFloat64
 		if err := rows.Scan(&p.Period, &p.One, &p.Two, &p.ThreePlus, &rate); err != nil {
 			return nil, err
 		}
 		if rate.Valid {
-			p.PenetrationRate = rate.Float64
+			p.CrossTenantRate = rate.Float64
 		}
 		out = append(out, p)
 	}
@@ -143,14 +143,14 @@ func (s *AnalyticsService) penetrationSeries(ctx context.Context, from, to time.
 }
 
 type MetricsResponse struct {
-	From               string  `json:"from"`
-	To                 string  `json:"to"`
-	MatchRate          float64 `json:"matchRate"`
-	ContestedMergeRate float64 `json:"disputedMergeRate"`
-	AvgSegmentToExport float64 `json:"segmentToExportMedianSeconds"`
-	SegmentToExportP95 float64 `json:"segmentToExportP95Seconds"`
-	DisputedSafe       bool
-	ExportLatencySafe  bool
+	From                         string  `json:"from"`
+	To                           string  `json:"to"`
+	MatchRate                    float64 `json:"matchRate"`
+	DisputedMergeRate            float64 `json:"disputedMergeRate"`
+	SegmentToExportMedianSeconds float64 `json:"segmentToExportMedianSeconds"`
+	SegmentToExportP95Seconds    float64 `json:"segmentToExportP95Seconds"`
+	DisputedRateReliable         bool
+	ExportLatencyReliable        bool
 }
 
 func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*MetricsResponse, error) {
@@ -182,8 +182,8 @@ func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*Me
 		return nil, err
 	}
 	if mergeTotal > 0 {
-		out.ContestedMergeRate = float64(mergeRejected) / float64(mergeTotal)
-		out.DisputedSafe = mergeTotal >= 100
+		out.DisputedMergeRate = float64(mergeRejected) / float64(mergeTotal)
+		out.DisputedRateReliable = mergeTotal >= 100
 	}
 	err = s.db.QueryRowContext(ctx, `
 		SELECT
@@ -196,17 +196,17 @@ func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*Me
 			COUNT(*)
 		FROM export_job j
 		JOIN segment_version s ON s.id = j.segment_version_id
-		WHERE s.computed_at IS NOT NULL AND j.created_at >= s.computed_at`).Scan(&out.AvgSegmentToExport, &out.SegmentToExportP95, &mergeTotal)
+		WHERE s.computed_at IS NOT NULL AND j.created_at >= s.computed_at`).Scan(&out.SegmentToExportMedianSeconds, &out.SegmentToExportP95Seconds, &mergeTotal)
 	if err != nil {
 		return nil, err
 	}
-	out.ExportLatencySafe = mergeTotal >= 30
+	out.ExportLatencyReliable = mergeTotal >= 30
 	return out, nil
 }
 
 type TenantAggregateResponse struct {
-	NewGuests int  `json:"newGuests"`
-	Hidden    bool `json:"hidden"`
+	NewGuests  int  `json:"newGuests"`
+	Suppressed bool `json:"suppressed"`
 }
 
 func (s *AnalyticsService) TenantAggregates(ctx context.Context, tenantID string, claimTenantID string, role domain.Role) (*TenantAggregateResponse, error) {
@@ -226,18 +226,18 @@ func (s *AnalyticsService) TenantAggregates(ctx context.Context, tenantID string
 	}
 	const k = 5
 	if n < k {
-		return &TenantAggregateResponse{NewGuests: 0, Hidden: true}, nil
+		return &TenantAggregateResponse{NewGuests: 0, Suppressed: true}, nil
 	}
 	return &TenantAggregateResponse{NewGuests: n}, nil
 }
 
 type DataQualityItem struct {
-	DataSourceID  string  `json:"dataSourceId"`
-	Name          string  `json:"name"`
-	LastImportAt  string  `json:"lastImportAt,omitempty"`
-	RejectedRate  float64 `json:"rejectedRate"`
-	PendingMerges int     `json:"pendingMerges"`
-	Warning       bool    `json:"warning"`
+	DataSourceID           string  `json:"dataSourceId"`
+	Name                   string  `json:"name"`
+	LastImportAt           string  `json:"lastImportAt,omitempty"`
+	RejectedShare30d       float64 `json:"rejectedShare30d"`
+	PendingMergeCandidates int     `json:"pendingMergeCandidates"`
+	HasWarning             bool    `json:"hasWarning"`
 }
 
 func (s *AnalyticsService) DataQuality(ctx context.Context) ([]DataQualityItem, error) {
@@ -264,14 +264,14 @@ func (s *AnalyticsService) DataQuality(ctx context.Context) ([]DataQualityItem, 
 	for rows.Next() {
 		var it DataQualityItem
 		var last sql.NullTime
-		if err := rows.Scan(&it.DataSourceID, &it.Name, &last, &it.RejectedRate, &it.PendingMerges); err != nil {
+		if err := rows.Scan(&it.DataSourceID, &it.Name, &last, &it.RejectedShare30d, &it.PendingMergeCandidates); err != nil {
 			return nil, err
 		}
 		if last.Valid {
 			it.LastImportAt = last.Time.UTC().Format(time.RFC3339)
-			it.Warning = time.Since(last.Time) > 7*24*time.Hour || it.RejectedRate > 0.10
+			it.HasWarning = time.Since(last.Time) > 7*24*time.Hour || it.RejectedShare30d > 0.10
 		} else {
-			it.Warning = true
+			it.HasWarning = true
 		}
 		out = append(out, it)
 	}

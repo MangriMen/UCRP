@@ -15,7 +15,11 @@ const contactItems = [
   { value: 'email', label: 'Email' },
 ]
 
-type ChecklistField = 'was' | 'wasNot' | 'categoriesWas' | 'categoriesWasNot'
+type ChecklistField =
+  | 'visitedTenantIds'
+  | 'excludedTenantIds'
+  | 'visitedCategoryIds'
+  | 'excludedCategoryIds'
 
 interface LeafFieldsProps {
   path: string
@@ -41,7 +45,7 @@ export function LeafFields({ path }: LeafFieldsProps) {
       {() => (
         <Controller
           control={control}
-          name={fieldName(name) as 'conditions.0.was'}
+          name={fieldName(name) as 'conditions.0.visitedTenantIds'}
           render={({ field: { value, onChange } }) => (
             <EntityChecklist items={items} value={value} onChange={onChange} />
           )}
@@ -55,16 +59,26 @@ export function LeafFields({ path }: LeafFieldsProps) {
       <FormField label="Период анализа, дней" error={errorOf('periodDays')}>
         {(field) => <Input {...field} inputMode="numeric" {...register(fieldName('periodDays'))} />}
       </FormField>
-      {checklist('was', 'Был у арендаторов', tenantItems, 'Хотя бы у одного из выбранных')}
-      {checklist('wasNot', 'Не был у арендаторов', tenantItems, 'Ни у одного из выбранных')}
       {checklist(
-        'categoriesWas',
+        'visitedTenantIds',
+        'Был у арендаторов',
+        tenantItems,
+        'Хотя бы у одного из выбранных',
+      )}
+      {checklist(
+        'excludedTenantIds',
+        'Не был у арендаторов',
+        tenantItems,
+        'Ни у одного из выбранных',
+      )}
+      {checklist(
+        'visitedCategoryIds',
         'Был в категориях',
         categoryItems,
         'Хотя бы в одной из выбранных',
       )}
       {checklist(
-        'categoriesWasNot',
+        'excludedCategoryIds',
         'Не был в категориях',
         categoryItems,
         'Ни в одной из выбранных',

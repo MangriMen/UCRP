@@ -12,7 +12,7 @@ export const mockSegments: Segment[] = [
     status: 'ready',
     memberCount: 120,
     computedAt: '2026-10-30T06:00:00Z',
-    rule: { was: ['tenant-0001'], wasNot: ['tenant-0002'], periodDays: 90 },
+    rule: { visitedTenantIds: ['tenant-0001'], excludedTenantIds: ['tenant-0002'], periodDays: 90 },
     ruleText: 'Был в «Ленте» и не был в «Заре» за 90 дней',
     createdAt: '2026-09-01T09:00:00Z',
     updatedAt: '2026-10-30T06:00:00Z',

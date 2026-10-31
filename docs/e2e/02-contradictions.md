@@ -73,7 +73,7 @@
 
 ### D3. Причина запрета склейки: `manual_reject`/`auto_conflict` или `rejected` — **открыто**
 
-- **Что:** `docs/openapi/components/schemas/identity.json` → `UnmergeBlock.reason`
+- **Что:** `docs/openapi/components/schemas/identity.json` → `MergeBlock.reason`
   enum `manual_unmerge|manual_reject|auto_conflict`. DDL:
   `CHECK (reason IN ('manual_unmerge','rejected'))`. Код
   (`internal/repository/merge_tx.go`) пишет `"rejected"` при reject и
@@ -137,7 +137,7 @@
 | `Event`             | `guestId`, `tenantId`, `eventTypeId`, `eventTypeCode`, `tenantName`, `projectId`, `occurredAt`, `amountMinor`, `createdAt` | `eventTypeId`, `tenantId`, `projectId`, `externalId`, `occurredAt`, `amountMinor`, `currency`; нет `guestId`, `tenantName`, `eventTypeCode`, `createdAt` | ✗            |
 | `ContactLog`        | `id`, `guestId`, `exportId`, `channel`, `contactedAt`                                                                      | `id`, `export_id`, `contacted_at`; нет `guestId`, `channel`                                                                                              | ✗            |
 | `MergeCandidate`    | `guestAId`, `guestBId`, `reasonCode`, `score`, `resolution`, `createdAt`                                                   | `guest_a_id`, `guest_b_id`, `match_type`, `reason_code`, `reason_text`, `score`, `resolution`; нет `createdAt`                                           | ✗            |
-| `UnmergeBlock`      | `guestAId`, `guestBId`, `reason`, `createdAt`                                                                              | `guest_a_id`, `guest_b_id`, `reason`, `created_at`                                                                                                       | ✗            |
+| `MergeBlock`        | `guestAId`, `guestBId`, `reason`, `createdAt`                                                                              | `guest_a_id`, `guest_b_id`, `reason`, `created_at`                                                                                                       | ✗            |
 | `Recommendation`    | `id`, `guestId`, `tenantId`, `rank`, `score`, `explanation`, `computedAt`                                                  | `rank`, `tenant_id`, `score`, `explanation`, `algorithm_version`, `computed_at`; нет `id`, `guestId`                                                     | ✗            |
 | `Segment`           | `isTemplate`, `currentVersionNo`, `status`, `memberCount`, `createdAt`, `updatedAt`, `rule`, `ruleText`                    | те же поля, но `status` = `active` и есть лишнее `versionStatus`; `ruleText` нет                                                                         | частично     |
 | `SegmentVersion`    | `id`, `segmentId`, `versionNo`, `rule`, `status`, `memberCount`                                                            | `id`, `versionNo`, `rule`, `status`, `memberCount`, `computedAt`, `createdAt`; нет `segmentId`                                                           | частично     |
@@ -155,7 +155,7 @@
 | `User`              | `displayName`, `isActive`, `lastLoginAt`                                                                                   | `display_name`, `is_active`; нет `lastLoginAt`                                                                                                           | ✗            |
 | `AuditLog`          | `actorUserId`, `actorRole`, `entityType`, `entityId`, `requestId`, `createdAt`                                             | `actor_user_id`, `actor_role`, `entity_type`, `entity_id`, `created_at`; нет `requestId`, `ipAddress`                                                    | ✗            |
 | `Campaign`          | `targetTenantId`, `segmentId`, `attributionDays`                                                                           | `tenant_id`, `segment_id`, `attribution_days`                                                                                                            | ✗            |
-| `PenetrationReport` | `from`, `to`, `granularity`, `distribution`, `penetrationRate`, `series`                                                   | `one`, `two`, `three_plus`, `share`, `buckets`                                                                                                           | ✗            |
+| `CrossTenantReport` | `from`, `to`, `granularity`, `distribution`, `crossTenantRate`, `series`                                                   | `one`, `two`, `three_plus`, `share`, `buckets`                                                                                                           | ✗            |
 | `HealthResponse`    | `status`, `version`, `time`, `checks`                                                                                      | `status`, `version`, `time`; нет `checks`                                                                                                                | частично     |
 
 **Влияние:** проверка схемы по JSON Schema проходит только для `/auth/login`,
@@ -172,11 +172,11 @@
   без оболочки**.
 - Реализация: `pageParams` читает `limit`/`offset`; `page`/`page_size`
   игнорируются. Верхняя граница `limit` — 100 (`GuestSQL.Search`,
-  `SegmentSQL.List`) или 50 (`UnmergeBlockSQL.List`).
+  `SegmentSQL.List`) или 50 (`MergeBlockSQL.List`).
 - Оболочка `{items, meta}` есть только у `GET /guests` и `GET /segments`.
   `GET /merge-candidates`, `/imports`, `/exports`, `/users`, `/audit-logs`,
   `/tenants`, `/projects`, `/data-sources`, `/guests/{id}/events`,
-  `/guests/{id}/contacts`, `/segments/{id}/members`, `/unmerge-blocks` отдают
+  `/guests/{id}/contacts`, `/segments/{id}/members`, `/merge-blocks` отдают
   `{items}` без `meta` (проверено запросами, §2.10).
 - Обратное расхождение: `GET /tenant-categories`, `/event-types`,
   `/contact-limits`, `/segment-templates` по контракту — массив, реализация
@@ -210,16 +210,16 @@
 ### 2.4. Сегменты: структура запроса и ответа
 
 - **Создание.** Контракт `SegmentCreateRequest` = `{name, description?, templateCode?, rule: SegmentRuleNode}`.
-  Реализация принимает и `rule` (`SegmentRuleBody`), и плоские `was`/`was_not` в
+  Реализация принимает и `rule` (`SegmentRuleBody`), и плоские `visitedTenantIds`/`excluded_tenant_ids` в
   корне; `rule` обязателен на уровне хендлера. Ломающее расхождение «тело по
   контракту → 400» снято.
 - **Вложенные группы.** `SegmentRuleNode` в контракте — `oneOf [SegmentRule, SegmentRuleGroup]`,
   группы вкладываются произвольно. `domain.SegmentRule.UnmarshalJSON` понимает
-  только плоскую форму (`was`, `wasNot`, `periodDays`, `requireContact`);
+  только плоскую форму (`visitedTenantIds`, `excludedTenantIds`, `periodDays`, `requireContact`);
   `operator`/`conditions` молча игнорируются. Веб-форма (`apps/web`,
   `build-segment/model/schema.ts`, `MAX_GROUP_DEPTH = 1`) отправляет именно такую
   структуру — группы из UI теряются на бэкенде.
-- **Поля правила.** `categoriesWas`, `categoriesWasNot`, `minVisits`,
+- **Поля правила.** `visitedCategoryIds`, `excludedCategoryIds`, `minVisits`,
   `minAmountMinor` из контракта не поддерживаются: `domain.SegmentRule` их не
   содержит, `segments.SqlEvaluator` не читает. `periodDays` контрактом ограничен
   1..730, реализация подставляет 90 при `<= 0` и не ограничивает сверху.
@@ -323,7 +323,7 @@
 ### 2.9. Роли
 
 - `auth.RequireRole` подключён к каждому приватному маршруту, ролевая матрица
-  соблюдается: `/users*` — только `manager`, `/unmerge-blocks*` и `POST /imports` —
+  соблюдается: `/users*` — только `manager`, `/merge-blocks*` и `POST /imports` —
   только `analyst`, `/exports` (кроме чтения) — только `marketer`,
   `/data-quality/sources` — `manager`/`analyst`. Негативные проверки 403 (BR-22,
   BR-24, US-8 AC2/AC3, US-10 AC5, US-11 AC6) стали выполнимыми.
@@ -365,8 +365,8 @@ GET /api/v1/data-quality/sources/{id}   (UC-9,  x-roles R-4,R-2)
 | 1   | `UserRole`                              | enum включает `system`                             | `app_user.role CHECK IN ('marketer','manager','tenant','analyst')` | пользователя с ролью `system` нельзя создать; тест «создать системного пользователя» невыполним |
 | 2   | `ExportCreateRequest` `Idempotency-Key` | `maxLength: 128`                                   | `export_job.idempotency_key VARCHAR(64)`                           | ключ длиной 65..128 проходит валидацию контракта и падает на БД                                 |
 | 3   | `EventType.code`                        | `maxLength: 64`                                    | `event_type.code VARCHAR(32)`                                      | код длиной 33..64 валиден по контракту, невалиден в БД                                          |
-| 4   | `UnmergeBlock.reason`                   | `manual_unmerge`, `manual_reject`, `auto_conflict` | `manual_unmerge`, `rejected`                                       | см. D3                                                                                          |
-| 5   | `UnmergeBlock.createdBy`                | nullable                                           | `NOT NULL`                                                         | контракт допускает отсутствие автора, БД — нет                                                  |
+| 4   | `MergeBlock.reason`                     | `manual_unmerge`, `manual_reject`, `auto_conflict` | `manual_unmerge`, `rejected`                                       | см. D3                                                                                          |
+| 5   | `MergeBlock.createdBy`                  | nullable                                           | `NOT NULL`                                                         | контракт допускает отсутствие автора, БД — нет                                                  |
 | 6   | `AuditLog.actorRole`                    | nullable                                           | `NOT NULL`                                                         | системные записи (R-6) требуют значения, контракт допускает `null`                              |
 | 7   | `ContactLimit`                          | нет поля `isActive`                                | `contact_limit.is_active`                                          | контракт не описывает деактивацию правила, код отдаёт поле                                      |
 | 8   | `ContactLimit`                          | `maxContacts ≤ 100`, `periodDays ≤ 365`            | только `>= 1` и `SMALLINT`                                         | значения 101+/366+ проходят реализацию и нарушают контракт                                      |
@@ -396,7 +396,7 @@ GET /api/v1/data-quality/sources/{id}   (UC-9,  x-roles R-4,R-2)
 `imports`, `contact-limits`, `campaigns`, `segments`, `exports`, а также
 `POST /guests/{id}/merge`. E2E может готовить справочники и события через API
 (импорт CSV), не прибегая к `INSERT`. Прямые `INSERT` остаются нужны только для
-сущностей без `POST`: `guest`, `event`, `merge_candidate`, `unmerge_block`,
+сущностей без `POST`: `guest`, `event`, `merge_candidate`, `merge_block`,
 `segment_member`, `recommendation`, `contact_log`, `job_queue` — именно так
 работает `apps/api/e2e/fixtures`.
 
@@ -435,8 +435,8 @@ GET /api/v1/data-quality/sources/{id}   (UC-9,  x-roles R-4,R-2)
 `internal/ingestion` содержит конвейер (`pipeline.go`), CSV-коннектор
 (`connector_csv.go`), маппинг (`mapping.go`) и HTTP-коннектор для pull-источников.
 `POST /imports` принимает multipart, считает sha256, при повторе отдаёт 200 с
-`duplicate=true`, пишет `rejected_row` с кодами `bad_date`, `no_external_id`,
-`bad_amount`, `unknown_event_type`, `bad_phone`; `POST /data-sources/{id}/sync`
+`duplicate=true`, пишет `rejected_row` с кодами `invalid_date`, `no_external_id`,
+`invalid_amount`, `unknown_event_type`, `invalid_phone`; `POST /data-sources/{id}/sync`
 ставит `connector.pull`.
 
 ### G7. Выгрузка: закрыто
@@ -449,7 +449,7 @@ GET /api/v1/data-quality/sources/{id}   (UC-9,  x-roles R-4,R-2)
 
 ### G8. Аналитика: частично закрыто
 
-Реализованы `/dashboard/penetration`, `/dashboard/metrics`,
+Реализованы `/dashboard/cross-tenant`, `/dashboard/metrics`,
 `/tenants/{id}/aggregates` (с изоляцией R-3 и порогом k = 5) и
 `/data-quality/sources`. Отсутствуют `/campaigns/{id}/results` и
 `/data-quality/sources/{id}`. Период дашборда не валидируется (BR-25), агрегаты
@@ -504,7 +504,7 @@ markdown-отчёт о расхождениях). 129 тестов — 130 фу�
 
 | Категория      | Что можно тестировать сейчас                                                                              | Что нельзя                                                                                                                                                         |
 | -------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Контракт       | `POST /auth/login`, `GET /auth/me`, `GET /guests`, `GET /data-source-types`, `/segments` (кроме `status`) | схемы `GuestProfile`, `Event`, `MergeCandidate`, `Import*`, `Export*`, `ContactLimit`, `User`, `AuditLog`, `PenetrationReport`; `meta` вне `/guests` и `/segments` |
+| Контракт       | `POST /auth/login`, `GET /auth/me`, `GET /guests`, `GET /data-source-types`, `/segments` (кроме `status`) | схемы `GuestProfile`, `Event`, `MergeCandidate`, `Import*`, `Export*`, `ContactLimit`, `User`, `AuditLog`, `CrossTenantReport`; `meta` вне `/guests` и `/segments` |
 | Бизнес-правила | BR-1…BR-10, BR-12…BR-14, BR-17, BR-18, BR-19, BR-26, BR-27, BR-28                                         | BR-11 (fallback), BR-15 (частично), BR-20/BR-21 (коды), BR-22/BR-23 (форма), BR-25, BR-29, BR-30 (кроме склейки)                                                   |
 | E2E            | импорт → гости → сегмент → рекомендации → выгрузка; склейка и разъединение; лимиты контактов              | стадии, зависящие от `recommend.refresh` и `export.build`; `campaigns/{id}/results`; `data-quality/sources/{id}`                                                   |
 | Роли           | вся матрица 403, изоляция R-3 на `/tenants/{id}/aggregates`                                               | карточки арендатора для R-3 (`GET /tenants/{id}` возвращает 403) и `PATCH /tenants/{id}` для R-1                                                                   |
@@ -521,7 +521,7 @@ markdown-отчёт о расхождениях). 129 тестов — 130 фу�
    нет ни того, ни другого.
 3. **D2** — разделять ли `SegmentStatus` и `SegmentVersionStatus` в контракте?
    Без этого ни один контрактный тест сегмента не проходит.
-4. **D3** — какой enum `UnmergeBlock.reason` считать верным?
+4. **D3** — какой enum `MergeBlock.reason` считать верным?
 5. **`camelCase` или `snake_case`** — контракт объявляет `camelCase`, код отдаёт
    `snake_case` почти везде, кроме `/guests` и `/segments`. Массовая правка
    реализации — самый дорогой пункт списка; нужно решение, кто меняется.

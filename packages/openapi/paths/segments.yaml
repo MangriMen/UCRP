@@ -96,7 +96,7 @@ paths:
         - Segments
       operationId: previewSegment
       summary: Size and 20 examples for an unsaved rule
-      description: Does not write to the database. The result is cached by rule hash (TTL 60 s). Deadline 10 s; on timeout — 504 `timeout` suggesting a narrower period. A tenant listed in both `was` and `wasNot` → 400 with the field indicated.
+      description: Does not write to the database. The result is cached by rule hash (TTL 60 s). Deadline 10 s; on timeout — 504 `timeout` suggesting a narrower period. A tenant listed in both `visitedTenantIds` and `excludedTenantIds` → 400 with the field indicated.
       x-roles:
         - R-1
         - R-4

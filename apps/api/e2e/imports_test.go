@@ -182,7 +182,7 @@ func TestImportRejectedRowCodes(t *testing.T) {
 		obj, _ := item.(map[string]any)
 		codes[harness.StringField(obj, "errorCode")] = true
 	}
-	for _, want := range []string{"bad_date", "no_external_id", "bad_tenant"} {
+	for _, want := range []string{"invalid_date", "no_external_id", "invalid_tenant"} {
 		if !codes[want] {
 			t.Fatalf("rejected rows must contain error code %q, got %v", want, codes)
 		}

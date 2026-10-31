@@ -67,7 +67,7 @@ func (r *Registry) Cleanup(ctx context.Context) error {
 		note(r.db.Exec(ctx, `DELETE FROM export_member WHERE guest_id = $1`, guestID))
 		note(r.db.Exec(ctx, `DELETE FROM segment_member WHERE guest_id = $1`, guestID))
 		note(r.db.Exec(ctx, `DELETE FROM recommendation WHERE guest_id = $1`, guestID))
-		note(r.db.Exec(ctx, `DELETE FROM unmerge_block WHERE guest_a_id = $1 OR guest_b_id = $1`, guestID))
+		note(r.db.Exec(ctx, `DELETE FROM merge_block WHERE guest_a_id = $1 OR guest_b_id = $1`, guestID))
 		note(r.db.Exec(ctx, `DELETE FROM merge_candidate WHERE guest_a_id = $1 OR guest_b_id = $1`, guestID))
 		note(r.db.Exec(ctx, `DELETE FROM event WHERE guest_id = $1 OR origin_guest_id = $1`, guestID))
 		note(r.db.Exec(ctx, `DELETE FROM guest_identifier WHERE guest_id = $1 OR origin_guest_id = $1`, guestID))
@@ -97,7 +97,7 @@ func (r *Registry) Cleanup(ctx context.Context) error {
 		"segment_version",
 		"segment",
 		"recommendation",
-		"unmerge_block",
+		"merge_block",
 		"merge_candidate",
 		"event",
 		"guest_identifier",
@@ -414,5 +414,5 @@ func (r *Registry) SegmentWithContacts(ctx context.Context, suffix string, guest
 		}
 		memberIDs = append(memberIDs, g.ID)
 	}
-	return r.Segment(ctx, suffix, `{"was":[],"wasNot":[],"periodDays":90}`, memberIDs)
+	return r.Segment(ctx, suffix, `{"visitedTenantIds":[],"excludedTenantIds":[],"periodDays":90}`, memberIDs)
 }

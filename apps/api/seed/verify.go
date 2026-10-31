@@ -53,10 +53,10 @@ func (s *Seeder) verify(ctx context.Context) error {
 			Want: "0",
 		},
 		{
-			Name: "segment rules have was and was_not",
+			Name: "segment rules have visitedTenantIds and excluded_tenant_ids",
 			Query: `SELECT COUNT(*) FROM segment_version
 				WHERE segment_id = ANY($1)
-				  AND (rule LIKE '%"was":[]%' OR rule LIKE '%"was_not":[]%')`,
+				  AND (rule LIKE '%"visitedTenantIds":[]%' OR rule LIKE '%"excluded_tenant_ids":[]%')`,
 			Args: []any{segmentIDs},
 			Want: "0",
 		},
@@ -99,8 +99,8 @@ func (s *Seeder) verify(ctx context.Context) error {
 			Want:  "0",
 		},
 		{
-			Name:  "unmerge_block ordering",
-			Query: `SELECT COUNT(*) FROM unmerge_block WHERE guest_a_id >= guest_b_id`,
+			Name:  "merge_block ordering",
+			Query: `SELECT COUNT(*) FROM merge_block WHERE guest_a_id >= guest_b_id`,
 			Want:  "0",
 		},
 		{
@@ -217,7 +217,7 @@ func (s *Seeder) report(ctx context.Context) error {
 		{"rejected_row", `SELECT COUNT(*) FROM rejected_row WHERE import_batch_id IN (SELECT id FROM import_batch WHERE data_source_id = ANY($1))`, []any{sourceIDs}},
 		{"event", `SELECT COUNT(*) FROM event WHERE data_source_id = ANY($1)`, []any{sourceIDs}},
 		{"merge_candidate", `SELECT COUNT(*) FROM merge_candidate WHERE guest_a_id = ANY($1)`, []any{guestIDs}},
-		{"unmerge_block", `SELECT COUNT(*) FROM unmerge_block WHERE guest_a_id = ANY($1)`, []any{guestIDs}},
+		{"merge_block", `SELECT COUNT(*) FROM merge_block WHERE guest_a_id = ANY($1)`, []any{guestIDs}},
 		{"segment", `SELECT COUNT(*) FROM segment WHERE id = ANY($1)`, []any{segmentIDs}},
 		{"segment_version", `SELECT COUNT(*) FROM segment_version WHERE segment_id = ANY($1)`, []any{segmentIDs}},
 		{"segment_member", `SELECT COUNT(*) FROM segment_member WHERE segment_version_id IN (SELECT id FROM segment_version WHERE segment_id = ANY($1))`, []any{segmentIDs}},

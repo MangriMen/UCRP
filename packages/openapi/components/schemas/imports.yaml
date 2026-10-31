@@ -131,18 +131,17 @@ RejectedRow:
     errorCode:
       type: string
       enum:
-        - bad_date
+        - invalid_date
         - no_external_id
-        - bad_amount
+        - invalid_amount
         - unknown_event_type
-        - bad_phone
+        - invalid_phone
     errorMessage:
       type: string
       description: Reason
-    rawData:
-      type: object
-      nullable: true
-      additionalProperties: true
+    rawLine:
+      type: string
+      description: Source row as it appeared in the uploaded file; empty when unavailable
 RejectedRowPage:
   type: object
   required:

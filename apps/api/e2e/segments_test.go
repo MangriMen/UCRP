@@ -53,7 +53,7 @@ func TestSegmentUpdateCreatesVersion(t *testing.T) {
 
 	update, err := s.API.Put(ctx, "/api/v1/segments/"+segment.ID, map[string]any{
 		"name": segment.Name,
-		"rule": map[string]any{"was": []string{w.tenantB.ID}, "wasNot": []string{}, "periodDays": 90},
+		"rule": map[string]any{"visitedTenantIds": []string{w.tenantB.ID}, "excludedTenantIds": []string{}, "periodDays": 90},
 	})
 	if err != nil {
 		t.Fatalf("PUT /api/v1/segments/{id}: %v", err)
@@ -150,7 +150,7 @@ func TestSegmentArchiveRemovesItFromActiveList(t *testing.T) {
 
 	update, err := s.API.Put(ctx, "/api/v1/segments/"+segment.ID, map[string]any{
 		"name": segment.Name,
-		"rule": map[string]any{"was": []string{w.tenantA.ID}, "wasNot": []string{}, "periodDays": 30},
+		"rule": map[string]any{"visitedTenantIds": []string{w.tenantA.ID}, "excludedTenantIds": []string{}, "periodDays": 30},
 	})
 	if err != nil {
 		t.Fatalf("PUT /api/v1/segments/{id} after archiving: %v", err)
@@ -219,7 +219,7 @@ func createSegmentViaAPI(t *testing.T, s *harness.Suite, tenantID string) *segme
 	name := s.Reg.Name("api-segment")
 	resp, err := s.API.Post(ctx, "/api/v1/segments", map[string]any{
 		"name": name,
-		"rule": map[string]any{"was": []string{tenantID}, "wasNot": []string{}, "periodDays": 90},
+		"rule": map[string]any{"visitedTenantIds": []string{tenantID}, "excludedTenantIds": []string{}, "periodDays": 90},
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/segments: %v", err)

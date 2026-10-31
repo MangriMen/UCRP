@@ -30,7 +30,7 @@ func TestDataQualitySuppressesSmallGroups(t *testing.T) {
 		if !ok || harness.StringField(row, "dataSourceId") != w.source.ID {
 			continue
 		}
-		if row["suppressed"] != true || row["pendingMerges"] != nil || row["rejectedRate"] != nil || row["warning"] != nil {
+		if row["suppressed"] != true || row["pendingMergeCandidates"] != nil || row["rejectedShare30d"] != nil || row["hasWarning"] != nil {
 			t.Fatalf("small source metrics exposed: %s", response.Snippet())
 		}
 		return

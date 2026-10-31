@@ -16,15 +16,22 @@ const group = (overrides: Partial<ReturnType<typeof emptyGroupValues>> = {}) => 
 
 describe('segment rule form', () => {
   it('maps form values to a group node without empty conditions', () => {
-    const values = group({ conditions: [{ ...emptyLeafValues, was: ['t1'], minAmount: '50,5' }] })
+    const values = group({
+      conditions: [{ ...emptyLeafValues, visitedTenantIds: ['t1'], minAmount: '50,5' }],
+    })
     expect(toRule(values)).toEqual({
       operator: 'and',
-      conditions: [{ periodDays: 90, was: ['t1'], minAmountMinor: 5050 }],
+      conditions: [{ periodDays: 90, visitedTenantIds: ['t1'], minAmountMinor: 5050 }],
     })
   })
 
   it('loads a legacy flat rule as a root AND group with one leaf', () => {
-    const rule = { periodDays: 30, wasNot: ['t2'], requireContact: 'email' as const, minVisits: 3 }
+    const rule = {
+      periodDays: 30,
+      excludedTenantIds: ['t2'],
+      requireContact: 'email' as const,
+      minVisits: 3,
+    }
     const values = toRuleFormValues(rule)
     expect(values.operator).toBe('and')
     expect(values.conditions).toHaveLength(1)
@@ -41,7 +48,7 @@ describe('segment rule form', () => {
           operator: 'or' as const,
           conditions: [
             { periodDays: 30, minVisits: 2 },
-            { periodDays: 60, was: ['t1'] },
+            { periodDays: 60, visitedTenantIds: ['t1'] },
           ],
         },
       ],
@@ -73,11 +80,13 @@ describe('segment rule form', () => {
     expect(ruleFormSchema.safeParse(leaf('0')).success).toBe(false)
   })
 
-  it('rejects a tenant listed in both was and wasNot', () => {
+  it('rejects a tenant listed in both visitedTenantIds and excludedTenantIds', () => {
     const result = ruleFormSchema.safeParse(
-      group({ conditions: [{ ...emptyLeafValues, was: ['t1'], wasNot: ['t1'] }] }),
+      group({
+        conditions: [{ ...emptyLeafValues, visitedTenantIds: ['t1'], excludedTenantIds: ['t1'] }],
+      }),
     )
-    expect(result.error?.issues[0]?.path).toEqual(['conditions', 0, 'wasNot'])
+    expect(result.error?.issues[0]?.path).toEqual(['conditions', 0, 'excludedTenantIds'])
   })
 
   it('requires a name', () => {

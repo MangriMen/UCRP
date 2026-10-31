@@ -210,7 +210,7 @@ CREATE TABLE merge_candidate (
 );
 CREATE INDEX ix_merge_resolution ON merge_candidate(resolution, created_at);
 
-CREATE TABLE unmerge_block (
+CREATE TABLE merge_block (
   id           TEXT         PRIMARY KEY,
   guest_a_id   TEXT         NOT NULL REFERENCES guest(id),
   guest_b_id   TEXT         NOT NULL REFERENCES guest(id),
@@ -375,7 +375,7 @@ DROP TABLE IF EXISTS contact_limit;
 DROP TABLE IF EXISTS export_member;
 DROP TABLE IF EXISTS export_job;
 DROP TABLE IF EXISTS merge_candidate;
-DROP TABLE IF EXISTS unmerge_block;
+DROP TABLE IF EXISTS merge_block;
 DROP TABLE IF EXISTS event;
 DROP TABLE IF EXISTS rejected_row;
 DROP TABLE IF EXISTS import_batch;

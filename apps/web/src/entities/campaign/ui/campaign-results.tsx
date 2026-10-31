@@ -49,7 +49,7 @@ export function CampaignResults({ campaignId }: { campaignId: string }) {
         <Metric title="Конверсии" value={data.conversions} />
         <Metric
           title="Прирост конверсии"
-          value={data.incrementalRate != null ? formatPercent(data.incrementalRate) : '—'}
+          value={data.conversionLift != null ? formatPercent(data.conversionLift) : '—'}
         />
         <Metric title="Дополнительные визиты" value={data.incrementalVisits ?? '—'} />
       </div>

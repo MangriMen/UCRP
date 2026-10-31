@@ -17,7 +17,7 @@
 | E-9 Тип события          | `event_type`                                   |                                                                    |
 | E-10 Идентификатор гостя | `guest_identifier`                             |                                                                    |
 | E-11 Кандидат на склейку | `merge_candidate`                              | также журнал автосклеек                                            |
-| E-12 Запрет склейки      | `unmerge_block`                                |                                                                    |
+| E-12 Запрет склейки      | `merge_block`                                  |                                                                    |
 | E-13 Загрузка            | `import_batch`                                 |                                                                    |
 | E-14 Отклонённая строка  | `rejected_row`                                 |                                                                    |
 | E-15 Рекомендация        | `recommendation`, `recommendation_factor`      |                                                                    |
@@ -126,10 +126,10 @@ erDiagram
   app_user |o--o{ import_batch : "запустил"
   guest ||--o{ merge_candidate : "сторона A"
   guest ||--o{ merge_candidate : "сторона B"
-  merge_candidate |o--o| unmerge_block : "порождает"
+  merge_candidate |o--o| merge_block : "порождает"
   app_user |o--o{ merge_candidate : "решил"
-  app_user ||--o{ unmerge_block : "создал"
-  guest ||--o{ unmerge_block : "пара"
+  app_user ||--o{ merge_block : "создал"
+  guest ||--o{ merge_block : "пара"
   app_user ||--o{ audit_log : "действия"
 
   import_batch {
@@ -159,7 +159,7 @@ erDiagram
     varchar resolution
     text winner_guest_id FK
   }
-  unmerge_block {
+  merge_block {
     text id PK
     text guest_a_id FK
     text guest_b_id FK
@@ -180,7 +180,7 @@ erDiagram
   }
 ```
 
-Пояснение. Загрузка (`import_batch`) хранит хэш файла и счётчики с инвариантом `accepted + rejected + duplicate = total`; уникальность `(data_source_id, file_hash)` делает повторную загрузку идемпотентной, а `rejected_row` даёт построчные причины (US-1). `merge_candidate` одновременно служит очередью спорных пар, журналом автосклеек и историей решений, поэтому доля оспоренных склеек считается одним запросом. `unmerge_block` создаётся при разъединении и отклонении и проверяется резолвером перед каждым автослиянием. Пара хранится в каноническом порядке (`guest_a_id < guest_b_id`), чтобы исключить зеркальные дубли. Каждое решение дополнительно пишется в `audit_log` (он append-only).
+Пояснение. Загрузка (`import_batch`) хранит хэш файла и счётчики с инвариантом `accepted + rejected + duplicate = total`; уникальность `(data_source_id, file_hash)` делает повторную загрузку идемпотентной, а `rejected_row` даёт построчные причины (US-1). `merge_candidate` одновременно служит очередью спорных пар, журналом автосклеек и историей решений, поэтому доля оспоренных склеек считается одним запросом. `merge_block` создаётся при разъединении и отклонении и проверяется резолвером перед каждым автослиянием. Пара хранится в каноническом порядке (`guest_a_id < guest_b_id`), чтобы исключить зеркальные дубли. Каждое решение дополнительно пишется в `audit_log` (он append-only).
 
 ### 2.3. Сегменты и рекомендации
 
@@ -303,7 +303,7 @@ erDiagram
 | `tenant_category_relation` | (`category_id`, `related_category_id`, `relation_type`)       | Единственный неключевой атрибут `weight_pct` зависит от всего ключа                                                                                                                                                                                                                                         |
 | `tenant`                   | `id`                                                          | Категория — по FK, название категории не дублируется; `kind` (`mall`/`external`) отделяет арендатора комплекса от внешнего партнёра (A-22, D-38); `floor`, `x_m`, `y_m`, `priority` зависят от арендатора                                                                                                   |
 | `project`                  | `id`, `UNIQUE(tenant_id, code)`                               | Принадлежность арендатору по FK                                                                                                                                                                                                                                                                             |
-| `event_type`               | `id`                                                          | Свойства типа (`has_amount`, `counts_as_presence`, `reverses_event_type_id`) вынесены из события. Отдельные типы `top_up` и `usage` с `counts_as_presence=false` различают пополнение и посещение (A-20, D-36)                                                                                              |
+| `event_type`               | `id`                                                          | Свойства типа (`has_amount`, `counts_as_presence`, `reverses_event_type_id`) вынесены из события. Отдельные типы `top_up` и `spend` с `counts_as_presence=false` различают пополнение и посещение (A-20, D-36)                                                                                              |
 | `data_source_type`         | `id`                                                          | `connector_key` и возможности зависят от типа, а не от экземпляра                                                                                                                                                                                                                                           |
 | `data_source`              | `id`                                                          | Тип по FK. `tenant_id` — владелец источника (NULL = общий источник УК)                                                                                                                                                                                                                                      |
 | `app_user`                 | `id`                                                          | `tenant_id` зависит от пользователя; CHECK связывает роль и арендатора                                                                                                                                                                                                                                      |
@@ -314,7 +314,7 @@ erDiagram
 | `rejected_row`             | `id`, `UNIQUE(batch, row_number)`                             | Зависит от загрузки и номера строки                                                                                                                                                                                                                                                                         |
 | `event`                    | `id`, `UNIQUE(source, type, external_id)`                     | Сознательное решение: `tenant_id` хранится в событии, а не выводится из `data_source`, потому что один источник (касса УК, общий источник) может содержать события нескольких арендаторов — зависимость не транзитивная. `origin_guest_id` — история слияния. `amount_minor`, `currency` зависят от события |
 | `merge_candidate`          | `id`, `UNIQUE(a, b)`                                          | Каждая пара — одна строка; победитель/проигравший — факт решения                                                                                                                                                                                                                                            |
-| `unmerge_block`            | `id`, `UNIQUE(a, b)`                                          | Отдельный от кандидата факт: запрет может жить после снятия кандидата                                                                                                                                                                                                                                       |
+| `merge_block`              | `id`, `UNIQUE(a, b)`                                          | Отдельный от кандидата факт: запрет может жить после снятия кандидата                                                                                                                                                                                                                                       |
 | `segment`                  | `id`                                                          | Заголовок: имя, шаблон, статус                                                                                                                                                                                                                                                                              |
 | `segment_version`          | `id`, `UNIQUE(segment_id, version_no)`                        | Правило привязано к версии. `member_count` и `computed_at` — кэш производного значения (контролируемая денормализация; источник истины — `segment_member`)                                                                                                                                                  |
 | `segment_member`           | (`segment_version_id`, `guest_id`)                            | Чистая связь M:N без атрибутов, кроме `added_at`                                                                                                                                                                                                                                                            |
@@ -334,7 +334,7 @@ erDiagram
 | Изменение требований                                  | Что делаем                                                                                                                                                                                 | Что НЕ меняется                                 |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
 | Новый тип источника (например, iiko, 1С)              | `INSERT data_source_type (code, connector_key, supports_*, config_schema)`; новая реализация `SourceConnector` в `internal/ingestion/connectors`; `INSERT data_source` с `field_mapping`   | Схема БД, `event`, API                          |
-| Новый тип события (например, «парковка», «абонемент») | `INSERT event_type (code='parking', has_amount=false, counts_as_presence=true)`; в маппинге источника — соответствие значений. Так же добавлены `top_up`, `usage`, `reversal` (A-20, D-36) | Схема, сегменты, скоринг                        |
+| Новый тип события (например, «парковка», «абонемент») | `INSERT event_type (code='parking', has_amount=false, counts_as_presence=true)`; в маппинге источника — соответствие значений. Так же добавлены `top_up`, `spend`, `reversal` (A-20, D-36) | Схема, сегменты, скоринг                        |
 | Новая категория или связь смежности/конкуренции       | `INSERT tenant_category`, `tenant_category_relation`                                                                                                                                       | Код скоринга (читает связи)                     |
 | Новый шаблон сегмента                                 | `INSERT segment (is_template=TRUE, template_code=…)` + `segment_version` с JSON-правилом                                                                                                   | Схема; вычислитель читает DSL                   |
 | Новое условие правила (например, «сумма > X»)         | Новый оператор в DSL `rule` и в `SegmentEvaluator` (регистрация оператора)                                                                                                                 | Схема, версии старых правил (хранят старый DSL) |
@@ -344,7 +344,7 @@ erDiagram
 | Версионирование правил                                | Каждая правка — новая `segment_version`; выгрузки ссылаются на версию                                                                                                                      | Старые выгрузки                                 |
 | Soft-delete гостя и обратимость склейки               | `guest.status/deleted_at/merged_into_id`, `origin_guest_id` в `event` и `guest_identifier`, `merge_candidate.resolution`                                                                   | Физически данные не удаляются                   |
 
-Обратимость склейки. Слияние A в B: A получает `status='merged'`, `merged_into_id=B`; `event.guest_id` и `guest_identifier.guest_id` строк с `origin_guest_id=A` переписываются на B; `merge_candidate` получает `winner/merged_guest_id` и `resolution`. Разъединение возвращает строки с `origin_guest_id=A` обратно на A, ставит `A.status='active'`, `resolution='reverted'` и создаёт `unmerge_block`. События, поступившие после слияния, получают `origin_guest_id` текущего профиля; при revert они остаются у победителя, если их ключи принадлежат ему (правило фиксируется в D-5).
+Обратимость склейки. Слияние A в B: A получает `status='merged'`, `merged_into_id=B`; `event.guest_id` и `guest_identifier.guest_id` строк с `origin_guest_id=A` переписываются на B; `merge_candidate` получает `winner/merged_guest_id` и `resolution`. Разъединение возвращает строки с `origin_guest_id=A` обратно на A, ставит `A.status='active'`, `resolution='reverted'` и создаёт `merge_block`. События, поступившие после слияния, получают `origin_guest_id` текущего профиля; при revert они остаются у победителя, если их ключи принадлежат ему (правило фиксируется в D-5).
 
 ## 5. Отличия SQLite и PostgreSQL
 

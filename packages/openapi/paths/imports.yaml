@@ -125,7 +125,7 @@ paths:
         - Imports
       operationId: listRejectedRows
       summary: Rejected rows with reasons
-      description: 'Reason codes: `bad_date`, `no_external_id`, `bad_amount`, `unknown_event_type`, `bad_phone`. With `format=csv` a downloadable file is returned.'
+      description: 'Reason codes: `invalid_date`, `no_external_id`, `invalid_amount`, `unknown_event_type`, `invalid_phone`. With `format=csv` a downloadable file is returned.'
       x-roles:
         - R-4
       x-uc:

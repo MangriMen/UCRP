@@ -74,12 +74,28 @@ export const mockBatches: ImportBatch[] = [
   },
 ]
 
-const rejectedTemplates: Pick<RejectedRow, 'errorCode' | 'errorMessage' | 'rawData'>[] = [
-  { errorCode: 'bad_date', errorMessage: 'Дата не распознана', rawData: { date: '31.31.2026' } },
-  { errorCode: 'no_external_id', errorMessage: 'Пустой идентификатор', rawData: { id: '' } },
-  { errorCode: 'bad_amount', errorMessage: 'Сумма не число', rawData: { amount: 'abc' } },
-  { errorCode: 'unknown_event_type', errorMessage: 'Тип «refund2» неизвестен', rawData: null },
-  { errorCode: 'bad_phone', errorMessage: 'Телефон слишком короткий', rawData: { phone: '123' } },
+const rejectedTemplates: Pick<RejectedRow, 'errorCode' | 'errorMessage' | 'rawLine'>[] = [
+  {
+    errorCode: 'invalid_date',
+    errorMessage: 'Дата не распознана',
+    rawLine: 'CHK-1001,31.31.2026 12:00,purchase,3200',
+  },
+  {
+    errorCode: 'no_external_id',
+    errorMessage: 'Пустой идентификатор',
+    rawLine: ',2026-09-20T12:00:00Z,purchase,3200',
+  },
+  {
+    errorCode: 'invalid_amount',
+    errorMessage: 'Сумма не число',
+    rawLine: 'CHK-1003,2026-09-20T12:00:00Z,purchase,abc',
+  },
+  { errorCode: 'unknown_event_type', errorMessage: 'Тип «refund2» неизвестен', rawLine: '' },
+  {
+    errorCode: 'invalid_phone',
+    errorMessage: 'Телефон слишком короткий',
+    rawLine: 'CHK-1005,2026-09-20T12:00:00Z,visit,,123',
+  },
 ]
 
 export function mockRejectedRows(batch: ImportBatch): RejectedRow[] {

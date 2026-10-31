@@ -75,13 +75,13 @@ func (f *fakeBlocks) HasBlock(ctx context.Context, guestA, guestB string) (bool,
 	return false, nil
 }
 
-func (f *fakeBlocks) Insert(ctx context.Context, b *domain.UnmergeBlock) error { return nil }
+func (f *fakeBlocks) Insert(ctx context.Context, b *domain.MergeBlock) error { return nil }
 
-func (f *fakeBlocks) List(ctx context.Context, limit, offset int) ([]domain.UnmergeBlock, error) {
+func (f *fakeBlocks) List(ctx context.Context, limit, offset int) ([]domain.MergeBlock, error) {
 	return nil, nil
 }
 
-func (f *fakeBlocks) GetByID(ctx context.Context, id string) (*domain.UnmergeBlock, error) {
+func (f *fakeBlocks) GetByID(ctx context.Context, id string) (*domain.MergeBlock, error) {
 	return nil, domain.ErrNotFound
 }
 

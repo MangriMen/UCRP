@@ -12,22 +12,22 @@ SegmentRule:
   required:
     - periodDays
   properties:
-    was:
+    visitedTenantIds:
       type: array
       description: Guest had an event at any of these tenants
       items:
         type: string
-    wasNot:
+    excludedTenantIds:
       type: array
       description: Guest had no events at any of these tenants
       items:
         type: string
-    categoriesWas:
+    visitedCategoryIds:
       type: array
       description: Guest visited a tenant in the category
       items:
         type: string
-    categoriesWasNot:
+    excludedCategoryIds:
       type: array
       items:
         type: string

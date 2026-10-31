@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import {
   MetricsPanel,
-  PenetrationChart,
+  CrossTenantChart,
   granularityLabels,
   useDashboardMetrics,
-  usePenetration,
+  useCrossTenantReport,
   type Granularity,
 } from '@/entities/dashboard'
 import { defaultPeriod, isPeriodValid, periodQuery } from '@/shared/lib/period'
@@ -28,7 +28,7 @@ export function DashboardPage() {
   const query = periodQuery(period)
 
   const metrics = useDashboardMetrics(query, valid)
-  const penetration = usePenetration({ ...query, granularity }, valid)
+  const crossTenant = useCrossTenantReport({ ...query, granularity }, valid)
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,10 +63,10 @@ export function DashboardPage() {
           <CardTitle>Проникновение: гости по числу арендаторов</CardTitle>
         </CardHeader>
         <CardContent>
-          {penetration.error ? (
-            <ErrorBanner error={penetration.error} />
-          ) : penetration.data ? (
-            <PenetrationChart series={penetration.data.series} />
+          {crossTenant.error ? (
+            <ErrorBanner error={crossTenant.error} />
+          ) : crossTenant.data ? (
+            <CrossTenantChart series={crossTenant.data.series} />
           ) : (
             valid && <Skeleton className="h-40 w-full" />
           )}

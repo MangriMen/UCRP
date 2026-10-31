@@ -7,17 +7,17 @@ import (
 	"github.com/MangriMen/UCRP/e2e/harness"
 )
 
-func TestPenetrationBucketsContract(t *testing.T) {
+func TestCrossTenantDistributionsContract(t *testing.T) {
 	s := harness.New(t).WithDB().WithAdmin()
-	w := buildWorld(t, s, "penetration")
+	w := buildWorld(t, s, "cross-tenant")
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	single, err := s.Reg.Guest(ctx, "penetration-single")
+	single, err := s.Reg.Guest(ctx, "cross-tenant-single")
 	if err != nil {
 		t.Fatalf("fixture single-tenant guest: %v", err)
 	}
-	pair, err := s.Reg.Guest(ctx, "penetration-pair")
+	pair, err := s.Reg.Guest(ctx, "cross-tenant-pair")
 	if err != nil {
 		t.Fatalf("fixture two-tenant guest: %v", err)
 	}
@@ -25,21 +25,21 @@ func TestPenetrationBucketsContract(t *testing.T) {
 	w.visit(t, s, pair.ID, w.tenantA.ID, "pen-pair-a", 3)
 	w.visit(t, s, pair.ID, w.tenantB.ID, "pen-pair-b", 2)
 
-	resp, err := s.API.Get(ctx, "/api/v1/dashboard/penetration", nil)
+	resp, err := s.API.Get(ctx, "/api/v1/dashboard/cross-tenant", nil)
 	if err != nil {
-		t.Fatalf("GET /api/v1/dashboard/penetration: %v", err)
+		t.Fatalf("GET /api/v1/dashboard/cross-tenant: %v", err)
 	}
-	s.RequireStatusOrDrift(resp, 200, "GET /api/v1/dashboard/penetration")
-	s.RequireDeclaredStatus("GET", "/api/v1/dashboard/penetration", resp)
-	s.RequireSchema("GET", "/api/v1/dashboard/penetration", resp)
+	s.RequireStatusOrDrift(resp, 200, "GET /api/v1/dashboard/cross-tenant")
+	s.RequireDeclaredStatus("GET", "/api/v1/dashboard/cross-tenant", resp)
+	s.RequireSchema("GET", "/api/v1/dashboard/cross-tenant", resp)
 
-	report := jsonObject(t, resp, "penetration report")
+	report := jsonObject(t, resp, "cross-tenant report")
 	one, _ := harness.IntField(report, "one")
 	two, _ := harness.IntField(report, "two")
 	threePlus, _ := harness.IntField(report, "three_plus")
 	buckets, ok := report["buckets"].([]any)
 	if !ok || len(buckets) != 3 {
-		t.Fatalf("the penetration report must expose three buckets: %s", resp.Snippet())
+		t.Fatalf("the cross-tenant report must expose three buckets: %s", resp.Snippet())
 	}
 
 	var bucketTotal int
@@ -56,37 +56,37 @@ func TestPenetrationBucketsContract(t *testing.T) {
 	}
 }
 
-func TestPenetrationRejectsInvertedPeriod(t *testing.T) {
+func TestCrossTenantRejectsInvertedPeriod(t *testing.T) {
 	s := harness.New(t).WithDB().WithAdmin()
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := s.API.Get(ctx, "/api/v1/dashboard/penetration", map[string][]string{
+	resp, err := s.API.Get(ctx, "/api/v1/dashboard/cross-tenant", map[string][]string{
 		"from": {"2026-12-01T00:00:00Z"},
 		"to":   {"2026-10-01T00:00:00Z"},
 	})
 	if err != nil {
-		t.Fatalf("GET /api/v1/dashboard/penetration: %v", err)
+		t.Fatalf("GET /api/v1/dashboard/cross-tenant: %v", err)
 	}
-	s.RequireStatus(resp, 400, "GET /api/v1/dashboard/penetration with from > to")
-	s.RequireDeclaredStatus("GET", "/api/v1/dashboard/penetration", resp)
-	s.RequireSchema("GET", "/api/v1/dashboard/penetration", resp)
+	s.RequireStatus(resp, 400, "GET /api/v1/dashboard/cross-tenant with from > to")
+	s.RequireDeclaredStatus("GET", "/api/v1/dashboard/cross-tenant", resp)
+	s.RequireSchema("GET", "/api/v1/dashboard/cross-tenant", resp)
 }
 
-func TestPenetrationRejectsOversizedPeriod(t *testing.T) {
+func TestCrossTenantRejectsOversizedPeriod(t *testing.T) {
 	s := harness.New(t).WithDB().WithAdmin()
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := s.API.Get(ctx, "/api/v1/dashboard/penetration", map[string][]string{
+	resp, err := s.API.Get(ctx, "/api/v1/dashboard/cross-tenant", map[string][]string{
 		"from": {"2024-01-01T00:00:00Z"},
 		"to":   {"2026-10-01T00:00:00Z"},
 	})
 	if err != nil {
-		t.Fatalf("GET /api/v1/dashboard/penetration: %v", err)
+		t.Fatalf("GET /api/v1/dashboard/cross-tenant: %v", err)
 	}
-	s.RequireStatus(resp, 400, "GET /api/v1/dashboard/penetration with a period longer than 24 months")
-	s.RequireDeclaredStatus("GET", "/api/v1/dashboard/penetration", resp)
+	s.RequireStatus(resp, 400, "GET /api/v1/dashboard/cross-tenant with a period longer than 24 months")
+	s.RequireDeclaredStatus("GET", "/api/v1/dashboard/cross-tenant", resp)
 }
 
 func TestDashboardMetricsFields(t *testing.T) {
@@ -139,11 +139,11 @@ func TestTenantAggregatesRespectsKThreshold(t *testing.T) {
 	s.RequireSchema("GET", "/api/v1/tenants/{id}/aggregates", resp)
 
 	aggregate := jsonObject(t, resp, "tenant aggregate")
-	hidden, ok := aggregate["hidden"].(bool)
+	suppressed, ok := aggregate["suppressed"].(bool)
 	if !ok {
-		t.Fatalf("the aggregate must report a hidden flag: %s", resp.Snippet())
+		t.Fatalf("the aggregate must report a suppressed flag: %s", resp.Snippet())
 	}
-	if !hidden {
+	if !suppressed {
 		t.Fatalf("a single guest is below the k = 5 threshold and must be suppressed")
 	}
 	if value, exists := aggregate["newGuests"]; exists {
@@ -244,7 +244,7 @@ func TestDataQualitySourcesList(t *testing.T) {
 		t.Fatalf("the fixture data source %s is absent from the data quality list", iw.source.ID)
 	}
 	row, _ := items[sourceIndex].(map[string]any)
-	if _, exists := row["warning"]; !exists {
+	if _, exists := row["hasWarning"]; !exists {
 		t.Fatalf("a data quality row must carry a warning flag: %s", resp.Snippet())
 	}
 	if _, exists := row["rejected_rate"]; !exists {

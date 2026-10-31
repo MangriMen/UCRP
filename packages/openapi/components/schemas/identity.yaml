@@ -125,7 +125,7 @@ MergeResult:
       minimum: 0
     auditLogId:
       type: string
-UnmergeBlock:
+MergeBlock:
   type: object
   required:
     - id
@@ -156,7 +156,7 @@ UnmergeBlock:
     createdAt:
       type: string
       format: date-time
-UnmergeBlockPage:
+MergeBlockPage:
   type: object
   required:
     - items
@@ -165,6 +165,6 @@ UnmergeBlockPage:
     items:
       type: array
       items:
-        $ref: ./identity.yaml#/UnmergeBlock
+        $ref: ./identity.yaml#/MergeBlock
     meta:
       $ref: ./common.yaml#/PageMeta

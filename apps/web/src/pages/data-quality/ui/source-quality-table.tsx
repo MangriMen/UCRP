@@ -24,15 +24,15 @@ export function SourceQualityTable({ rows, isLoading, error, onSelect }: SourceQ
     {
       id: 'rejected',
       header: 'Отклонено за 30 дней',
-      cell: (s) => (s.rejectedRate === null ? hidden : formatPercent(s.rejectedRate)),
+      cell: (s) => (s.rejectedShare30d === null ? hidden : formatPercent(s.rejectedShare30d)),
     },
-    { id: 'pending', header: 'Спорные профили', cell: (s) => s.pendingMerges ?? hidden },
+    { id: 'pending', header: 'Спорные профили', cell: (s) => s.pendingMergeCandidates ?? hidden },
     {
       id: 'warning',
       header: 'Состояние',
       cell: (s) => {
         if (s.suppressed) return <Badge variant="outline">Мало данных</Badge>
-        return s.warning ? (
+        return s.hasWarning ? (
           <Badge variant="destructive">Требует внимания</Badge>
         ) : (
           <Badge variant="secondary">В норме</Badge>

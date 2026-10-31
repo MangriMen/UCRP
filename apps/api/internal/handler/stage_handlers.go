@@ -88,7 +88,7 @@ func (h *SegmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
-	if req.Rule == nil && len(req.Was) == 0 && req.PeriodDays == 0 {
+	if req.Rule == nil && len(req.VisitedTenantIDs) == 0 && req.PeriodDays == 0 {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}

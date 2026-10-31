@@ -17,7 +17,7 @@ import { projectHandlers } from '@/entities/project/mocks'
 import { tenantAggregatesHandlers } from '@/entities/tenant-aggregates/mocks'
 import { tenantHandlers } from '@/entities/tenant/mocks'
 import { tenantCategoryHandlers } from '@/entities/tenant-category/mocks'
-import { unmergeBlockHandlers } from '@/entities/unmerge-block/mocks'
+import { mergeBlockHandlers } from '@/entities/merge-block/mocks'
 import { userHandlers } from '@/entities/user/mocks'
 
 export const handlers: RequestHandler[] = [
@@ -26,7 +26,7 @@ export const handlers: RequestHandler[] = [
   ...importHandlers,
   ...guestHandlers,
   ...mergeCandidateHandlers,
-  ...unmergeBlockHandlers,
+  ...mergeBlockHandlers,
   ...segmentHandlers,
   ...recommendationHandlers,
   ...exportHandlers,

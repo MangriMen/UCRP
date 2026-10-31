@@ -43,7 +43,7 @@ func demoMergeCandidates() []candidateSpec {
 	}
 }
 
-func demoUnmergeBlocks() []blockSpec {
+func demoMergeBlocks() []blockSpec {
 	return []blockSpec{
 		{"ub-1", "bg-015", "g-merged-5", "manual_unmerge", "mc-merged-5", 44},
 		{"ub-2", "bg-012", "g-merged-4", "rejected", "mc-merged-4", 59},
@@ -82,10 +82,10 @@ func (s *Seeder) seedIdentity(ctx context.Context) error {
 			return err
 		}
 	}
-	for _, b := range demoUnmergeBlocks() {
+	for _, b := range demoMergeBlocks() {
 		a, other := s.guests[b.GuestA], s.guests[b.GuestB]
 		if a == "" || other == "" {
-			return fmt.Errorf("unmerge block %s: unknown guest", b.Key)
+			return fmt.Errorf("merge block %s: unknown guest", b.Key)
 		}
 		if a > other {
 			a, other = other, a
@@ -95,10 +95,10 @@ func (s *Seeder) seedIdentity(ctx context.Context) error {
 			candidateID = demoID("merge_candidate", b.Candidate)
 		}
 		if err := s.exec(ctx, `
-			INSERT INTO unmerge_block (id, guest_a_id, guest_b_id, reason, candidate_id, created_by, created_at)
+			INSERT INTO merge_block (id, guest_a_id, guest_b_id, reason, candidate_id, created_by, created_at)
 			VALUES ($1,$2,$3,$4,$5,$6,$7)
 			ON CONFLICT (id) DO NOTHING`,
-			demoID("unmerge_block", b.Key), a, other, b.Reason, candidateID, s.users["analyst"],
+			demoID("merge_block", b.Key), a, other, b.Reason, candidateID, s.users["analyst"],
 			s.now.AddDate(0, 0, -b.DaysAgo)); err != nil {
 			return err
 		}

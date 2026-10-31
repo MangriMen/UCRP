@@ -118,13 +118,13 @@
 
 **Acceptance Criteria**
 
-1. Given выбран период, When R-2 открывает сводку, Then показано распределение гостей по числу арендаторов (1 / 2 / 3+) и доля cross-tenant penetration (≥ 2 арендаторов).
+1. Given выбран период, When R-2 открывает сводку, Then показано распределение гостей по числу арендаторов (1 / 2 / 3+) и доля cross-tenant rate (≥ 2 арендаторов).
 2. Given выбран период с гранулярностью месяц, When построен график, Then видна динамика каждой доли за период.
 3. Given метрики успеха, When открыта вкладка «Метрики», Then первой показана главная метрика — первая покупка гостя у нового арендатора (A-17), а также match rate, доля оспоренных склеек, время сегмент → выгрузка, конверсия и инкремент (если есть данные).
 4. Негатив: Given `from > to` или период > 24 месяцев, Then 400; Given роль R-3, Then 403; Given нет данных, Then пустое состояние.
 
 **Экран React:** `/dashboard` (карточки, столбчатая диаграмма Recharts, график динамики).
-**Эндпоинты Go:** `GET /dashboard/penetration`, `GET /dashboard/metrics`; `handler.DashboardHandler` → `service.DashboardService` → `repository.AnalyticsRepo` (агрегирующие запросы по `event`, `merge_candidate`, `export_job`).
+**Эндпоинты Go:** `GET /dashboard/cross-tenant`, `GET /dashboard/metrics`; `handler.DashboardHandler` → `service.DashboardService` → `repository.AnalyticsRepo` (агрегирующие запросы по `event`, `merge_candidate`, `export_job`).
 
 ---
 
@@ -196,25 +196,25 @@
 3. Given R-4 отклоняет пару, When действие выполнено, Then пара получает запрет склейки (E-12) и больше не появляется в очереди.
 4. Given объединённый профиль (в том числе автосклейка), When R-4 нажимает «Разъединить», Then события и идентификаторы возвращаются прежним профилям (`origin_guest_id`), создаётся запрет склейки, запись в аудит.
 5. Given пара под запретом, When новая загрузка снова даёт общий телефон, Then автосклейка не происходит и в очередь пара не возвращается.
-6. Негатив: Given пара уже решена другим пользователем, When повторно подтверждают, Then 409; Given ручное объединение пары под запретом, Then 409 (запрет снимается отдельным `DELETE /unmerge-blocks/{id}`); Given роль R-3, Then 403.
+6. Негатив: Given пара уже решена другим пользователем, When повторно подтверждают, Then 409; Given ручное объединение пары под запретом, Then 409 (запрет снимается отдельным `DELETE /merge-blocks/{id}`); Given роль R-3, Then 403.
 
-**Экран React:** `/identity/queue` (очередь с фильтрами, сравнение двух профилей, кнопки «Объединить / Отклонить / Разъединить»), кнопка «Разъединить» в профиле.
-**Эндпоинты Go:** `GET /merge-candidates`, `GET /merge-candidates/{id}`, `POST /merge-candidates/{id}/confirm`, `/reject`, `/revert`, `POST /guests/{id}/merge`, `GET /unmerge-blocks`, `DELETE /unmerge-blocks/{id}`; `handler.IdentityHandler` → `service.IdentityService` → `internal/identity` (`IdentityResolver`, `MergeExecutor`) → `repository.MergeCandidateRepo`, `UnmergeBlockRepo`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `AuditRepo`.
+**Экран React:** `/identity/merge-candidates` (очередь с фильтрами, сравнение двух профилей, кнопки «Объединить / Отклонить / Разъединить»), кнопка «Разъединить» в профиле.
+**Эндпоинты Go:** `GET /merge-candidates`, `GET /merge-candidates/{id}`, `POST /merge-candidates/{id}/confirm`, `/reject`, `/revert`, `POST /guests/{id}/merge`, `GET /merge-blocks`, `DELETE /merge-blocks/{id}`; `handler.IdentityHandler` → `service.IdentityService` → `internal/identity` (`IdentityResolver`, `MergeExecutor`) → `repository.MergeCandidateRepo`, `MergeBlockRepo`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `AuditRepo`.
 
 ---
 
 ## Сводка US → экран → эндпоинты
 
-| US    | UC    | Экран (React)              | Основные эндпоинты                         | Роли              |
-| ----- | ----- | -------------------------- | ------------------------------------------ | ----------------- |
-| US-1  | UC-1  | `/import`, `/import/:id`   | `POST /imports`, `GET /imports/{id}`       | R-4               |
-| US-2  | UC-2  | `/guests`, `/guests/:id`   | `GET /guests/{id}`                         | R-1, R-4          |
-| US-3  | UC-3  | `/segments/:id`            | `POST /segments/preview`, `POST /segments` | R-1, R-4          |
-| US-4  | UC-4  | вкладка в профиле          | `GET /guests/{id}/recommendations`         | R-1, R-4          |
-| US-5  | UC-5  | `/exports`                 | `POST /exports`                            | R-1               |
-| US-6  | UC-6  | индикаторы                 | `GET /segments/{id}`                       | R-1, R-4 (чтение) |
-| US-7  | UC-7  | `/dashboard`               | `GET /dashboard/penetration`               | R-2 (R-1, R-4)    |
-| US-8  | UC-8  | `/tenant`                  | `GET /tenants/{id}/aggregates`             | R-3 (own)         |
-| US-9  | UC-9  | `/data-quality`            | `GET /data-quality/sources`                | R-4, R-2          |
-| US-10 | UC-10 | `/settings/contact-limits` | `/contact-limits`, `POST /exports`         | R-1               |
-| US-11 | UC-11 | `/identity/queue`          | `POST /merge-candidates/{id}/confirm`      | R-4               |
+| US    | UC    | Экран (React)                | Основные эндпоинты                         | Роли              |
+| ----- | ----- | ---------------------------- | ------------------------------------------ | ----------------- |
+| US-1  | UC-1  | `/import`, `/import/:id`     | `POST /imports`, `GET /imports/{id}`       | R-4               |
+| US-2  | UC-2  | `/guests`, `/guests/:id`     | `GET /guests/{id}`                         | R-1, R-4          |
+| US-3  | UC-3  | `/segments/:id`              | `POST /segments/preview`, `POST /segments` | R-1, R-4          |
+| US-4  | UC-4  | вкладка в профиле            | `GET /guests/{id}/recommendations`         | R-1, R-4          |
+| US-5  | UC-5  | `/exports`                   | `POST /exports`                            | R-1               |
+| US-6  | UC-6  | индикаторы                   | `GET /segments/{id}`                       | R-1, R-4 (чтение) |
+| US-7  | UC-7  | `/dashboard`                 | `GET /dashboard/cross-tenant`              | R-2 (R-1, R-4)    |
+| US-8  | UC-8  | `/tenant`                    | `GET /tenants/{id}/aggregates`             | R-3 (own)         |
+| US-9  | UC-9  | `/data-quality`              | `GET /data-quality/sources`                | R-4, R-2          |
+| US-10 | UC-10 | `/settings/contact-limits`   | `/contact-limits`, `POST /exports`         | R-1               |
+| US-11 | UC-11 | `/identity/merge-candidates` | `POST /merge-candidates/{id}/confirm`      | R-4               |

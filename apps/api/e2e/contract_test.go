@@ -233,15 +233,15 @@ func TestSegmentPreviewContract(t *testing.T) {
 
 	contractBody := map[string]any{
 		"rule": map[string]any{
-			"was":        []string{tenant.ID},
-			"wasNot":     []string{"00000000-0000-0000-0000-000000000000"},
-			"periodDays": 90,
+			"visitedTenantIds":  []string{tenant.ID},
+			"excludedTenantIds": []string{"00000000-0000-0000-0000-000000000000"},
+			"periodDays":        90,
 		},
 	}
 	implementationBody := map[string]any{
-		"was":        []string{tenant.ID},
-		"wasNot":     []string{"00000000-0000-0000-0000-000000000000"},
-		"periodDays": 90,
+		"visitedTenantIds":  []string{tenant.ID},
+		"excludedTenantIds": []string{"00000000-0000-0000-0000-000000000000"},
+		"periodDays":        90,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments/preview", contractBody, implementationBody)
 	if err != nil {
@@ -268,16 +268,16 @@ func TestSegmentPreviewRejectsConflictingTenant(t *testing.T) {
 
 	contractBody := map[string]any{
 		"rule": map[string]any{
-			"was":        []string{tenant.ID},
-			"wasNot":     []string{tenant.ID},
-			"periodDays": 90,
+			"visitedTenantIds":  []string{tenant.ID},
+			"excludedTenantIds": []string{tenant.ID},
+			"periodDays":        90,
 		},
 	}
 	resp, err := s.API.Post(ctx, "/api/v1/segments/preview", contractBody)
 	if err != nil {
 		t.Fatalf("POST /api/v1/segments/preview: %v", err)
 	}
-	s.RequireStatus(resp, 400, "POST /api/v1/segments/preview with a tenant in both was and wasNot")
+	s.RequireStatus(resp, 400, "POST /api/v1/segments/preview with a tenant in both visitedTenantIds and excludedTenantIds")
 	s.RequireDeclaredStatus("POST", "/api/v1/segments/preview", resp)
 	s.RequireSchema("POST", "/api/v1/segments/preview", resp)
 
@@ -287,14 +287,14 @@ func TestSegmentPreviewRejectsConflictingTenant(t *testing.T) {
 	}
 	if len(errorBody.Error.Details) == 0 {
 		report.Drifts.Record(t.Name(), "POST /api/v1/segments/preview",
-			"contract requires details[].field = rule.wasNot for a conflicting tenant; the response has no details")
-		t.Skipf("the contract requires details[].field = rule.wasNot for a conflicting tenant, got none: %s", resp.Snippet())
+			"contract requires details[].field = rule.excludedTenantIds for a conflicting tenant; the response has no details")
+		t.Skipf("the contract requires details[].field = rule.excludedTenantIds for a conflicting tenant, got none: %s", resp.Snippet())
 	}
 	field := errorBody.Error.Details[0].Field
-	if field != "rule.wasNot" {
+	if field != "rule.excludedTenantIds" {
 		report.Drifts.Record(t.Name(), "POST /api/v1/segments/preview",
-			"details[0].field: expected rule.wasNot, got "+field)
-		t.Fatalf("details[0].field: expected rule.wasNot, got %q", field)
+			"details[0].field: expected rule.excludedTenantIds, got "+field)
+		t.Fatalf("details[0].field: expected rule.excludedTenantIds, got %q", field)
 	}
 }
 
@@ -315,16 +315,16 @@ func TestSegmentCreateContract(t *testing.T) {
 	contractBody := map[string]any{
 		"name": s.Reg.Name("segment-contract"),
 		"rule": map[string]any{
-			"was":        []string{tenant.ID},
-			"wasNot":     []string{"00000000-0000-0000-0000-000000000000"},
-			"periodDays": 90,
+			"visitedTenantIds":  []string{tenant.ID},
+			"excludedTenantIds": []string{"00000000-0000-0000-0000-000000000000"},
+			"periodDays":        90,
 		},
 	}
 	implementationBody := map[string]any{
-		"name":       s.Reg.Name("segment-contract"),
-		"was":        []string{tenant.ID},
-		"wasNot":     []string{"00000000-0000-0000-0000-000000000000"},
-		"periodDays": 90,
+		"name":              s.Reg.Name("segment-contract"),
+		"visitedTenantIds":  []string{tenant.ID},
+		"excludedTenantIds": []string{"00000000-0000-0000-0000-000000000000"},
+		"periodDays":        90,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments", contractBody, implementationBody)
 	if err != nil {
@@ -354,7 +354,7 @@ func TestSegmentGetContract(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	segment, err := s.Reg.Segment(ctx, "contract-get", `{"was":[],"wasNot":[],"periodDays":90}`, nil)
+	segment, err := s.Reg.Segment(ctx, "contract-get", `{"visitedTenantIds":[],"excludedTenantIds":[],"periodDays":90}`, nil)
 	if err != nil {
 		t.Fatalf("fixture segment: %v", err)
 	}
@@ -462,7 +462,7 @@ func TestUnmountedOperationsAreReported(t *testing.T) {
 		{"GET", "/api/v1/tenants"},
 		{"GET", "/api/v1/audit-logs"},
 		{"GET", "/api/v1/segment-templates"},
-		{"GET", "/api/v1/unmerge-blocks"},
+		{"GET", "/api/v1/merge-blocks"},
 		{"GET", "/api/v1/users"},
 		{"GET", "/api/v1/data-sources"},
 		{"GET", "/api/v1/event-types"},

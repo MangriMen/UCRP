@@ -10,26 +10,26 @@ import (
 )
 
 type segmentSpec struct {
-	Key          string
-	Name         string
-	Description  string
-	TemplateCode string
-	IsTemplate   bool
-	Status       string
-	Was          []string
-	WasNot       []string
-	PeriodDays   int
-	Versions     []versionSpec
+	Key               string
+	Name              string
+	Description       string
+	TemplateCode      string
+	IsTemplate        bool
+	Status            string
+	VisitedTenantIDs  []string
+	ExcludedTenantIDs []string
+	PeriodDays        int
+	Versions          []versionSpec
 }
 
 type versionSpec struct {
-	No         int
-	Status     string
-	Was        []string
-	WasNot     []string
-	PeriodDays int
-	Members    bool
-	DaysAgo    int
+	No                int
+	Status            string
+	VisitedTenantIDs  []string
+	ExcludedTenantIDs []string
+	PeriodDays        int
+	Members           bool
+	DaysAgo           int
 }
 
 func demoSegments() []segmentSpec {
@@ -37,57 +37,57 @@ func demoSegments() []segmentSpec {
 		{
 			Key: "tpl-sleeping", Name: "Спящий сосед", Description: "Гости, которые были в одном арендаторе, но не заходили в соседний",
 			TemplateCode: "sleeping_neighbor", IsTemplate: true, Status: "active",
-			Was: []string{"cinema-sinema"}, WasNot: []string{"cafe-bean"}, PeriodDays: 90,
-			Versions: []versionSpec{{No: 1, Status: "ready", Was: []string{"cinema-sinema"}, WasNot: []string{"cafe-bean"}, PeriodDays: 90, Members: true, DaysAgo: 20}},
+			VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 90,
+			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 90, Members: true, DaysAgo: 20}},
 		},
 		{
 			Key: "tpl-single", Name: "Один магазин", Description: "Гости только одного арендатора за период",
 			TemplateCode: "single_store", IsTemplate: true, Status: "active",
-			Was: []string{"cafe-bean"}, WasNot: []string{"cinema-sinema"}, PeriodDays: 60,
-			Versions: []versionSpec{{No: 1, Status: "ready", Was: []string{"cafe-bean"}, WasNot: []string{"cinema-sinema"}, PeriodDays: 60, Members: true, DaysAgo: 18}},
+			VisitedTenantIDs: []string{"cafe-bean"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 60,
+			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"cafe-bean"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 60, Members: true, DaysAgo: 18}},
 		},
 		{
 			Key: "tpl-churn", Name: "Риск оттока", Description: "Гости без визитов дольше 45 дней",
 			TemplateCode: "churn_risk", IsTemplate: true, Status: "active",
-			Was: []string{"fit-zone"}, WasNot: []string{"food-plate"}, PeriodDays: 180,
-			Versions: []versionSpec{{No: 1, Status: "ready", Was: []string{"fit-zone"}, WasNot: []string{"food-plate"}, PeriodDays: 180, Members: true, DaysAgo: 15}},
+			VisitedTenantIDs: []string{"fit-zone"}, ExcludedTenantIDs: []string{"food-plate"}, PeriodDays: 180,
+			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"fit-zone"}, ExcludedTenantIDs: []string{"food-plate"}, PeriodDays: 180, Members: true, DaysAgo: 15}},
 		},
 		{
 			Key: "tpl-newcomer", Name: "Новичок", Description: "Гости с первым визитом в детский центр",
 			TemplateCode: "newcomer", IsTemplate: true, Status: "active",
-			Was: []string{"kids-cube"}, WasNot: []string{"cinema-sinema"}, PeriodDays: 30,
-			Versions: []versionSpec{{No: 1, Status: "ready", Was: []string{"kids-cube"}, WasNot: []string{"cinema-sinema"}, PeriodDays: 30, Members: true, DaysAgo: 12}},
+			VisitedTenantIDs: []string{"kids-cube"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 30,
+			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"kids-cube"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 30, Members: true, DaysAgo: 12}},
 		},
 		{
 			Key: "tpl-high-value", Name: "Высокая ценность", Description: "Гости с покупками в нескольких арендаторах",
 			TemplateCode: "high_value", IsTemplate: true, Status: "active",
-			Was: []string{"cinema-sinema"}, WasNot: []string{"pets-tail"}, PeriodDays: 120,
-			Versions: []versionSpec{{No: 1, Status: "ready", Was: []string{"cinema-sinema"}, WasNot: []string{"pets-tail"}, PeriodDays: 120, Members: true, DaysAgo: 10}},
+			VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"pets-tail"}, PeriodDays: 120,
+			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"pets-tail"}, PeriodDays: 120, Members: true, DaysAgo: 10}},
 		},
 		{
 			Key: "seg-sleep-cinema", Name: "Спящий сосед, кино", Description: "Кинотеатр без кофейни — кампания на кофе после сеанса",
 			TemplateCode: "sleeping_neighbor", Status: "active",
-			Was: []string{"cinema-sinema"}, WasNot: []string{"cafe-bean"}, PeriodDays: 90,
+			VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 90,
 			Versions: []versionSpec{
-				{No: 1, Status: "ready", Was: []string{"cinema-sinema"}, WasNot: []string{"cafe-bean"}, PeriodDays: 90, Members: true, DaysAgo: 25},
-				{No: 2, Status: "ready", Was: []string{"cinema-sinema"}, WasNot: []string{"cafe-bean"}, PeriodDays: 90, Members: true, DaysAgo: 5},
+				{No: 1, Status: "ready", VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 90, Members: true, DaysAgo: 25},
+				{No: 2, Status: "ready", VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 90, Members: true, DaysAgo: 5},
 			},
 		},
 		{
 			Key: "seg-single-archived", Name: "Один магазин (архив)", Description: "Архивная версия сегмента одного магазина",
 			TemplateCode: "single_store", Status: "archived",
-			Was: []string{"cafe-bean"}, WasNot: []string{"cinema-sinema"}, PeriodDays: 60,
+			VisitedTenantIDs: []string{"cafe-bean"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 60,
 			Versions: []versionSpec{
-				{No: 1, Status: "ready", Was: []string{"cafe-bean"}, WasNot: []string{"cinema-sinema"}, PeriodDays: 60, Members: true, DaysAgo: 40},
-				{No: 2, Status: "computing", Was: []string{"cafe-bean"}, WasNot: []string{"cinema-sinema"}, PeriodDays: 60, DaysAgo: 2},
+				{No: 1, Status: "ready", VisitedTenantIDs: []string{"cafe-bean"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 60, Members: true, DaysAgo: 40},
+				{No: 2, Status: "computing", VisitedTenantIDs: []string{"cafe-bean"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 60, DaysAgo: 2},
 			},
 		},
 		{
 			Key: "seg-failed", Name: "Экспериментальный сегмент", Description: "Сегмент с ошибкой расчёта",
 			TemplateCode: "", Status: "active",
-			Was: []string{"food-plate"}, WasNot: []string{"cafe-bean"}, PeriodDays: 45,
+			VisitedTenantIDs: []string{"food-plate"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 45,
 			Versions: []versionSpec{
-				{No: 1, Status: "failed", Was: []string{"food-plate"}, WasNot: []string{"cafe-bean"}, PeriodDays: 45, DaysAgo: 3},
+				{No: 1, Status: "failed", VisitedTenantIDs: []string{"food-plate"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 45, DaysAgo: 3},
 			},
 		},
 	}
@@ -119,9 +119,9 @@ func (s *Seeder) seedSegments(ctx context.Context) error {
 			versionID := demoID("segment_version", fmt.Sprintf("%s/%d", sg.Key, v.No))
 			s.versions[fmt.Sprintf("%s/%d", sg.Key, v.No)] = versionID
 			rule := domain.SegmentRule{
-				Was:        s.tenantIDs(v.Was),
-				WasNot:     s.tenantIDs(v.WasNot),
-				PeriodDays: v.PeriodDays,
+				VisitedTenantIDs:  s.tenantIDs(v.VisitedTenantIDs),
+				ExcludedTenantIDs: s.tenantIDs(v.ExcludedTenantIDs),
+				PeriodDays:        v.PeriodDays,
 			}
 			ruleJSON, err := json.Marshal(rule)
 			if err != nil {

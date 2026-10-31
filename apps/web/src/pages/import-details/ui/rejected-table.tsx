@@ -9,7 +9,7 @@ const columns: Column<RejectedRow>[] = [
   {
     id: 'raw',
     header: 'Данные',
-    cell: (r) => (r.rawData ? <code className="text-xs">{JSON.stringify(r.rawData)}</code> : '—'),
+    cell: (r) => (r.rawLine ? <code className="text-xs">{r.rawLine}</code> : '—'),
   },
 ]
 

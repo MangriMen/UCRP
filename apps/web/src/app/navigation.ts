@@ -55,7 +55,7 @@ const navigation: NavGroup[] = [
       { title: 'Гости', to: '/guests', icon: UserSearch, roles: ['marketer', 'analyst'] },
       {
         title: 'Склейка профилей',
-        to: '/identity/queue',
+        to: '/identity/merge-candidates',
         icon: GitMerge,
         roles: ['analyst', 'marketer'],
       },

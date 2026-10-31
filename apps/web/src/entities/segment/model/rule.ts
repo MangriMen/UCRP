@@ -13,10 +13,10 @@ const MINOR_PER_MAJOR = 100
 
 export function describeLeaf(rule: SegmentRule): string {
   const parts = [
-    countOf(rule.was, 'был у', 'арендаторов'),
-    countOf(rule.wasNot, 'не был у', 'арендаторов'),
-    countOf(rule.categoriesWas, 'был в', 'категориях'),
-    countOf(rule.categoriesWasNot, 'не был в', 'категориях'),
+    countOf(rule.visitedTenantIds, 'был у', 'арендаторов'),
+    countOf(rule.excludedTenantIds, 'не был у', 'арендаторов'),
+    countOf(rule.visitedCategoryIds, 'был в', 'категориях'),
+    countOf(rule.excludedCategoryIds, 'не был в', 'категориях'),
     rule.requireContact
       ? `контакт: ${rule.requireContact === 'phone' ? 'телефон' : 'email'}`
       : null,

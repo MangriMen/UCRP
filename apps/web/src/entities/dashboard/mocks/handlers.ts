@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { API, apiError } from '@/shared/api/mocks/helpers'
-import type { Granularity, PenetrationPoint } from '../model/types'
-import { mockMetrics, mockPenetrationPoints } from './fixtures'
+import type { Granularity, CrossTenantPoint } from '../model/types'
+import { mockMetrics, mockCrossTenantPoints } from './fixtures'
 
 const MAX_PERIOD_MS = 24 * 31 * 24 * 60 * 60 * 1000
 
@@ -32,7 +32,7 @@ export const dashboardHandlers = [
     return HttpResponse.json({ from: period.from, to: period.to, ...mockMetrics })
   }),
 
-  http.get(`${API}/dashboard/penetration`, ({ request }) => {
+  http.get(`${API}/dashboard/cross-tenant`, ({ request }) => {
     const period = readPeriod(request)
     if (
       !period ||
@@ -40,15 +40,15 @@ export const dashboardHandlers = [
     ) {
       return apiError(400, 'validation_error', 'Период не должен превышать 24 месяца')
     }
-    const series: PenetrationPoint[] = monthPeriods(period.from, period.to).map((name, index) => ({
+    const series: CrossTenantPoint[] = monthPeriods(period.from, period.to).map((name, index) => ({
       period: name,
-      ...mockPenetrationPoints[index % mockPenetrationPoints.length],
+      ...mockCrossTenantPoints[index % mockCrossTenantPoints.length],
     }))
-    const last = series.at(-1) ?? { period: '', ...mockPenetrationPoints[0] }
+    const last = series.at(-1) ?? { period: '', ...mockCrossTenantPoints[0] }
     return HttpResponse.json({
       ...period,
       distribution: { one: last.one, two: last.two, threePlus: last.threePlus },
-      penetrationRate: last.penetrationRate ?? 0,
+      crossTenantRate: last.crossTenantRate ?? 0,
       series,
     })
   }),

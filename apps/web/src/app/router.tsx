@@ -15,13 +15,13 @@ import { GuestsPage } from '@/pages/guests'
 import { ImportDetailsPage } from '@/pages/import-details'
 import { ImportsPage } from '@/pages/imports'
 import { MergeCandidatePage } from '@/pages/merge-candidate'
-import { MergeQueuePage } from '@/pages/merge-queue'
+import { MergeCandidatesPage } from '@/pages/merge-candidates'
 import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
 import { SegmentDetailsPage } from '@/pages/segment-details'
 import { SegmentsPage } from '@/pages/segments'
 import { TenantAggregatesPage } from '@/pages/tenant-aggregates'
-import { UnmergeBlocksPage } from '@/pages/unmerge-blocks'
+import { MergeBlocksPage } from '@/pages/merge-blocks'
 import { AppLayout } from './layout/app-layout'
 import { HomeRedirect } from './layout/home-redirect'
 import { RouteError } from './layout/route-error'
@@ -60,8 +60,8 @@ export const router = createBrowserRouter([
           {
             element: <RoleGuard roles={['analyst', 'marketer']} />,
             children: [
-              { path: 'identity/queue', element: <MergeQueuePage /> },
-              { path: 'identity/queue/:id', element: <MergeCandidatePage /> },
+              { path: 'identity/merge-candidates', element: <MergeCandidatesPage /> },
+              { path: 'identity/merge-candidates/:id', element: <MergeCandidatePage /> },
             ],
           },
           {
@@ -98,7 +98,7 @@ export const router = createBrowserRouter([
           },
           {
             element: <RoleGuard roles={['analyst']} />,
-            children: [{ path: 'identity/blocks', element: <UnmergeBlocksPage /> }],
+            children: [{ path: 'identity/blocks', element: <MergeBlocksPage /> }],
           },
           { path: '*', element: <NotFoundPage /> },
         ],

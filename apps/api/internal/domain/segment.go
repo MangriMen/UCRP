@@ -48,29 +48,29 @@ type SegmentVersion struct {
 }
 
 type SegmentRule struct {
-	Was            []string `json:"was"`
-	WasNot         []string `json:"wasNot"`
-	PeriodDays     int      `json:"periodDays"`
-	RequireContact string   `json:"requireContact,omitempty"`
+	VisitedTenantIDs  []string `json:"visitedTenantIds"`
+	ExcludedTenantIDs []string `json:"excludedTenantIds"`
+	PeriodDays        int      `json:"periodDays"`
+	RequireContact    string   `json:"requireContact,omitempty"`
 }
 
 func (r *SegmentRule) UnmarshalJSON(data []byte) error {
 	var raw struct {
-		Was            []string `json:"was"`
-		WasNot         []string `json:"wasNot"`
-		WasNotSnake    []string `json:"was_not"`
-		PeriodDays     int      `json:"periodDays"`
-		PeriodDaysSNAK int      `json:"period_days"`
-		RequireContact string   `json:"requireContact"`
-		RequireSnake   string   `json:"require_contact"`
+		VisitedTenantIDs       []string `json:"visitedTenantIds"`
+		ExcludedTenantIDs      []string `json:"excludedTenantIds"`
+		ExcludedTenantIDsSnake []string `json:"excluded_tenant_ids"`
+		PeriodDays             int      `json:"periodDays"`
+		PeriodDaysSNAK         int      `json:"period_days"`
+		RequireContact         string   `json:"requireContact"`
+		RequireSnake           string   `json:"require_contact"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
-	r.Was = raw.Was
-	r.WasNot = raw.WasNot
-	if len(r.WasNot) == 0 {
-		r.WasNot = raw.WasNotSnake
+	r.VisitedTenantIDs = raw.VisitedTenantIDs
+	r.ExcludedTenantIDs = raw.ExcludedTenantIDs
+	if len(r.ExcludedTenantIDs) == 0 {
+		r.ExcludedTenantIDs = raw.ExcludedTenantIDsSnake
 	}
 	r.PeriodDays = raw.PeriodDays
 	if r.PeriodDays == 0 {

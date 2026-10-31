@@ -9,13 +9,13 @@ import (
 
 type IdentityService struct {
 	candidates domain.MergeCandidateRepo
-	blocks     domain.UnmergeBlockRepo
+	blocks     domain.MergeBlockRepo
 	manual     domain.MergeManualRepo
 	queue      domain.Queue
 	clock      domain.Clock
 }
 
-func NewIdentityService(candidates domain.MergeCandidateRepo, blocks domain.UnmergeBlockRepo, manual domain.MergeManualRepo, queue domain.Queue) *IdentityService {
+func NewIdentityService(candidates domain.MergeCandidateRepo, blocks domain.MergeBlockRepo, manual domain.MergeManualRepo, queue domain.Queue) *IdentityService {
 	return &IdentityService{
 		candidates: candidates,
 		blocks:     blocks,
@@ -127,7 +127,7 @@ func (s *IdentityService) enqueueRecommendRefresh(ctx context.Context, guestIDs 
 	return nil
 }
 
-type UnmergeBlockDTO struct {
+type MergeBlockDTO struct {
 	ID        string `json:"id"`
 	GuestAID  string `json:"guestAId"`
 	GuestBID  string `json:"guestBId"`
@@ -135,14 +135,14 @@ type UnmergeBlockDTO struct {
 	CreatedAt string `json:"createdAt"`
 }
 
-func (s *IdentityService) ListBlocks(ctx context.Context, limit, offset int) ([]UnmergeBlockDTO, error) {
+func (s *IdentityService) ListBlocks(ctx context.Context, limit, offset int) ([]MergeBlockDTO, error) {
 	items, err := s.blocks.List(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]UnmergeBlockDTO, 0, len(items))
+	out := make([]MergeBlockDTO, 0, len(items))
 	for _, b := range items {
-		out = append(out, UnmergeBlockDTO{
+		out = append(out, MergeBlockDTO{
 			ID:        b.ID,
 			GuestAID:  b.GuestAID,
 			GuestBID:  b.GuestBID,

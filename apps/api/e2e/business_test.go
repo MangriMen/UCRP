@@ -205,15 +205,15 @@ func TestSegmentPreviewCountsMatchingGuests(t *testing.T) {
 
 	contractBody := map[string]any{
 		"rule": map[string]any{
-			"was":        []string{w.tenantA.ID, w.tenantB.ID},
-			"wasNot":     []string{w.tenantC.ID},
-			"periodDays": 90,
+			"visitedTenantIds":  []string{w.tenantA.ID, w.tenantB.ID},
+			"excludedTenantIds": []string{w.tenantC.ID},
+			"periodDays":        90,
 		},
 	}
 	implementationBody := map[string]any{
-		"was":        []string{w.tenantA.ID, w.tenantB.ID},
-		"wasNot":     []string{w.tenantC.ID},
-		"periodDays": 90,
+		"visitedTenantIds":  []string{w.tenantA.ID, w.tenantB.ID},
+		"excludedTenantIds": []string{w.tenantC.ID},
+		"periodDays":        90,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments/preview", contractBody, implementationBody)
 	if err != nil {
@@ -250,15 +250,15 @@ func TestSegmentPreviewDoesNotPersist(t *testing.T) {
 
 	contractBody := map[string]any{
 		"rule": map[string]any{
-			"was":        []string{w.tenantA.ID},
-			"wasNot":     []string{w.tenantC.ID},
-			"periodDays": 30,
+			"visitedTenantIds":  []string{w.tenantA.ID},
+			"excludedTenantIds": []string{w.tenantC.ID},
+			"periodDays":        30,
 		},
 	}
 	implementationBody := map[string]any{
-		"was":        []string{w.tenantA.ID},
-		"wasNot":     []string{w.tenantC.ID},
-		"periodDays": 30,
+		"visitedTenantIds":  []string{w.tenantA.ID},
+		"excludedTenantIds": []string{w.tenantC.ID},
+		"periodDays":        30,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments/preview", contractBody, implementationBody)
 	if err != nil {
@@ -291,16 +291,16 @@ func TestSegmentCreatePersistsMembership(t *testing.T) {
 	contractBody := map[string]any{
 		"name": s.Reg.Name("segment-members"),
 		"rule": map[string]any{
-			"was":        []string{w.tenantA.ID},
-			"wasNot":     []string{w.tenantC.ID},
-			"periodDays": 90,
+			"visitedTenantIds":  []string{w.tenantA.ID},
+			"excludedTenantIds": []string{w.tenantC.ID},
+			"periodDays":        90,
 		},
 	}
 	implementationBody := map[string]any{
-		"name":       s.Reg.Name("segment-members"),
-		"was":        []string{w.tenantA.ID},
-		"wasNot":     []string{w.tenantC.ID},
-		"periodDays": 90,
+		"name":              s.Reg.Name("segment-members"),
+		"visitedTenantIds":  []string{w.tenantA.ID},
+		"excludedTenantIds": []string{w.tenantC.ID},
+		"periodDays":        90,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments", contractBody, implementationBody)
 	if err != nil {
@@ -361,7 +361,7 @@ func TestSegmentGetReportsReadyVersion(t *testing.T) {
 	}
 	w.visit(t, s, guest.ID, w.tenantA.ID, "segment-ready-a", 1)
 
-	segment, err := s.Reg.Segment(ctx, "ready", `{"was":[],"wasNot":[],"periodDays":90}`, []string{guest.ID})
+	segment, err := s.Reg.Segment(ctx, "ready", `{"visitedTenantIds":[],"excludedTenantIds":[],"periodDays":90}`, []string{guest.ID})
 	if err != nil {
 		t.Fatalf("fixture segment: %v", err)
 	}
@@ -666,14 +666,14 @@ func TestMergeCandidateRejectCreatesBlock(t *testing.T) {
 	s.RequireSchema("POST", "/api/v1/merge-candidates/{id}/reject", resp)
 
 	blocks, err := s.DB.Count(ctx, `
-		SELECT COUNT(*) FROM unmerge_block
+		SELECT COUNT(*) FROM merge_block
 		WHERE (guest_a_id = $1 AND guest_b_id = $2) OR (guest_a_id = $2 AND guest_b_id = $1)`,
 		guestA.ID, guestB.ID)
 	if err != nil {
-		t.Fatalf("count unmerge blocks: %v", err)
+		t.Fatalf("count merge block: %v", err)
 	}
 	if blocks != 1 {
-		t.Fatalf("reject must create exactly one unmerge_block for the pair, got %d", blocks)
+		t.Fatalf("reject must create exactly one merge_block for the pair, got %d", blocks)
 	}
 }
 
@@ -733,14 +733,14 @@ func TestSegmentPreviewRejectsEmptyWas(t *testing.T) {
 	defer cancel()
 
 	resp, err := s.API.Post(ctx, "/api/v1/segments/preview", map[string]any{
-		"was":        []string{},
-		"wasNot":     []string{w.tenantC.ID},
-		"periodDays": 90,
+		"visitedTenantIds":  []string{},
+		"excludedTenantIds": []string{w.tenantC.ID},
+		"periodDays":        90,
 	})
 	if err != nil {
-		t.Fatalf("POST /api/v1/segments/preview with an empty was: %v", err)
+		t.Fatalf("POST /api/v1/segments/preview with an empty visitedTenantIds: %v", err)
 	}
-	s.RequireStatus(resp, 400, "POST /api/v1/segments/preview with an empty was")
+	s.RequireStatus(resp, 400, "POST /api/v1/segments/preview with an empty visitedTenantIds")
 	s.RequireDeclaredStatus("POST", "/api/v1/segments/preview", resp)
 	s.RequireSchema("POST", "/api/v1/segments/preview", resp)
 }
@@ -752,13 +752,13 @@ func TestSegmentPreviewAcceptsEmptyWasNot(t *testing.T) {
 	defer cancel()
 
 	resp, err := s.API.Post(ctx, "/api/v1/segments/preview", map[string]any{
-		"was":        []string{w.tenantA.ID},
-		"periodDays": 90,
+		"visitedTenantIds": []string{w.tenantA.ID},
+		"periodDays":       90,
 	})
 	if err != nil {
-		t.Fatalf("POST /api/v1/segments/preview without wasNot: %v", err)
+		t.Fatalf("POST /api/v1/segments/preview without excludedTenantIds: %v", err)
 	}
-	s.RequireStatusOrDrift(resp, 200, "POST /api/v1/segments/preview without wasNot")
+	s.RequireStatusOrDrift(resp, 200, "POST /api/v1/segments/preview without excludedTenantIds")
 	s.RequireSchema("POST", "/api/v1/segments/preview", resp)
 }
 

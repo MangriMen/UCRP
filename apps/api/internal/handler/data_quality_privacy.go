@@ -3,13 +3,13 @@ package handler
 import "github.com/MangriMen/UCRP/internal/service"
 
 type dataQualityItemView struct {
-	DataSourceID  string   `json:"dataSourceId"`
-	Name          string   `json:"name"`
-	LastImportAt  string   `json:"lastImportAt,omitempty"`
-	RejectedRate  *float64 `json:"rejectedRate"`
-	PendingMerges *int     `json:"pendingMerges"`
-	Warning       *bool    `json:"warning"`
-	Suppressed    bool     `json:"suppressed"`
+	DataSourceID           string   `json:"dataSourceId"`
+	Name                   string   `json:"name"`
+	LastImportAt           string   `json:"lastImportAt,omitempty"`
+	RejectedShare30d       *float64 `json:"rejectedShare30d"`
+	PendingMergeCandidates *int     `json:"pendingMergeCandidates"`
+	HasWarning             *bool    `json:"hasWarning"`
+	Suppressed             bool     `json:"suppressed"`
 }
 
 func dataQualityResponse(items []service.DataQualityItem) []dataQualityItemView {
@@ -21,9 +21,9 @@ func dataQualityResponse(items []service.DataQualityItem) []dataQualityItemView 
 			LastImportAt: item.LastImportAt,
 			Suppressed:   true,
 		}
-		if item.PendingMerges >= 5 {
-			n := item.PendingMerges
-			view.PendingMerges = &n
+		if item.PendingMergeCandidates >= 5 {
+			n := item.PendingMergeCandidates
+			view.PendingMergeCandidates = &n
 		}
 		result = append(result, view)
 	}

@@ -20,7 +20,7 @@ type Resolver struct {
 	identifiers domain.GuestIdentifierRepo
 	events      domain.EventRepo
 	candidates  domain.MergeCandidateRepo
-	blocks      domain.UnmergeBlockRepo
+	blocks      domain.MergeBlockRepo
 	clock       domain.Clock
 	idGen       domain.IDGen
 }
@@ -30,7 +30,7 @@ func NewResolver(
 	identifiers domain.GuestIdentifierRepo,
 	events domain.EventRepo,
 	candidates domain.MergeCandidateRepo,
-	blocks domain.UnmergeBlockRepo,
+	blocks domain.MergeBlockRepo,
 ) *Resolver {
 	return &Resolver{
 		guests:      guests,

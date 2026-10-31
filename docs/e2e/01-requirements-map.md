@@ -27,11 +27,11 @@
 | US-4  | UC-4  | Рекомендация гостю                | MVP         | `GET /guests/{id}/recommendations`, `POST .../refresh`           |
 | US-5  | UC-5  | Выгрузка сегмента в канал         | MVP         | `POST /exports/preview`, `POST /exports`, `/download`            |
 | US-6  | UC-6  | Обновление при новом событии      | MVP         | `GET /segments/{id}`, `POST /segments/{id}/recompute`            |
-| US-7  | UC-7  | Сводка управляющего               | 2-я очередь | `GET /dashboard/penetration`, `/dashboard/metrics`               |
+| US-7  | UC-7  | Сводка управляющего               | 2-я очередь | `GET /dashboard/cross-tenant`, `/dashboard/metrics`              |
 | US-8  | UC-8  | Агрегаты арендатора               | 2-я очередь | `GET /tenants/{id}/aggregates`                                   |
 | US-9  | UC-9  | Качество данных по источникам     | 2-я очередь | `GET /data-quality/sources`, `/{id}`                             |
 | US-10 | UC-10 | Лимит контактов                   | MVP         | `/contact-limits`, `POST /exports/preview`                       |
-| US-11 | UC-11 | Подтверждение/разъединение склеек | MVP         | `/merge-candidates*`, `/unmerge-blocks*`                         |
+| US-11 | UC-11 | Подтверждение/разъединение склеек | MVP         | `/merge-candidates*`, `/merge-blocks*`                           |
 
 Служебные: UC-12 автосклейка, UC-13 пересчёт сегментов, UC-14 pull из API,
 UC-15 расчёт рекомендаций, UC-16 вход, UC-17 справочники, UC-18 пользователи,
@@ -51,7 +51,7 @@ UC-19 аудит, UC-20 кампании.
 | BR-4  | Строка без `external_id` / с плохой датой → `rejected_row`                                       | US-1 AC3            | готово                                                                          |
 | BR-5  | Поиск гостя по нормализованному телефону (`+7 900…` = `8900…`)                                   | US-2 AC4            | готово                                                                          |
 | BR-6  | Поглощённый профиль отдаёт `mergedIntoId`                                                        | US-2 AC5            | готово                                                                          |
-| BR-7  | Сегмент: арендатор в `was` и `wasNot` одновременно → 400                                         | US-3 AC5            | готово                                                                          |
+| BR-7  | Сегмент: арендатор в `visitedTenantIds` и `excludedTenantIds` одновременно → 400                 | US-3 AC5            | готово                                                                          |
 | BR-8  | Preview не пишет в БД, возвращает размер и примеры                                               | US-3 AC1            | готово                                                                          |
 | BR-9  | Правка правила создаёт новую версию, старые доступны                                             | US-3 AC4, D-7       | готово                                                                          |
 | BR-10 | Рекомендации: ≤ 3, без посещённых арендаторов                                                    | US-4 AC1/AC2        | готово                                                                          |
@@ -106,7 +106,7 @@ UC-19 аудит, UC-20 кампании.
 | E-9  | Тип события         | `event_type`                                   | `code`, `counts_as_presence`, `reverses_event_type_id`                                            |
 | E-10 | Идентификатор гостя | `guest_identifier`                             | `id_type`, `value_normalized`, `origin_guest_id`                                                  |
 | E-11 | Кандидат на склейку | `merge_candidate`                              | `guest_a_id < guest_b_id`, `score`, `resolution`                                                  |
-| E-12 | Запрет склейки      | `unmerge_block`                                | `reason` (manual_unmerge/rejected), `candidate_id`                                                |
+| E-12 | Запрет склейки      | `merge_block`                                  | `reason` (manual_unmerge/rejected), `candidate_id`                                                |
 | E-13 | Загрузка            | `import_batch`                                 | `mode`, `status`, `total/accepted/rejected/duplicate_rows`, `file_hash`                           |
 | E-14 | Отклонённая строка  | `rejected_row`                                 | `row_number`, `error_code`, `error_message`                                                       |
 | E-15 | Рекомендация        | `recommendation`, `recommendation_factor`      | `rank` 1..3, `score`, `explanation`, `algorithm_version`                                          |
@@ -121,7 +121,7 @@ UC-19 аудит, UC-20 кампании.
 Связи, критичные для E2E: `guest 1—N event`, `guest 1—N guest_identifier`,
 `tenant 1—N event`, `segment 1—N segment_version 1—N segment_member`,
 `export_job 1—N export_member`, `merge_candidate N—1 guest` (дважды),
-`unmerge_block` ссылается на пару гостей и кандидата.
+`merge_block` ссылается на пару гостей и кандидата.
 
 Справочные данные: миграция `00001_init.sql` по-прежнему не содержит `INSERT`.
 Стартовые сиды в коде: администратор (`UCRP_ADMIN_EMAIL` / `UCRP_ADMIN_PASSWORD`,
@@ -230,8 +230,8 @@ UC-19 аудит, UC-20 кампании.
 | POST   | `/merge-candidates/{id}/reject`  | Отклонить + запрет                    | R-4     | U    | —               | 200, 404, 409      |
 | POST   | `/merge-candidates/{id}/revert`  | Разъединить + запрет                  | R-4     | U    | —               | 200, 404, 409      |
 | POST   | `/guests/{id}/merge`             | Ручное объединение                    | R-4     | C    | `targetGuestId` | 200, 400, 404, 409 |
-| GET    | `/unmerge-blocks`                | Список запретов                       | R-4     | R    | —               | 200                |
-| DELETE | `/unmerge-blocks/{id}`           | Снять запрет                          | R-4     | D    | —               | 204, 404           |
+| GET    | `/merge-blocks`                  | Список запретов                       | R-4     | R    | —               | 200                |
+| DELETE | `/merge-blocks/{id}`             | Снять запрет                          | R-4     | D    | —               | 204, 404           |
 
 ### 3.7. Сегменты (UC-3, UC-6, UC-13)
 
@@ -278,7 +278,7 @@ UC-19 аудит, UC-20 кампании.
 
 | M   | Путь                           | Назначение                       | Роли                 | CRUD | Ответы        |
 | --- | ------------------------------ | -------------------------------- | -------------------- | ---- | ------------- |
-| GET | `/dashboard/penetration`       | Распределение 1/2/3+ и динамика  | R-2,R-1,R-4          | A    | 200, 400      |
+| GET | `/dashboard/cross-tenant`      | Распределение 1/2/3+ и динамика  | R-2,R-1,R-4          | A    | 200, 400      |
 | GET | `/dashboard/metrics`           | Match rate, конверсия, инкремент | R-2,R-1,R-4          | A    | 200, 400      |
 | GET | `/tenants/{id}/aggregates`     | Агрегаты арендатора (k = 5)      | R-3 own; R-2,R-1,R-4 | A    | 200, 403, 404 |
 | GET | `/data-quality/sources`        | Качество по источникам           | R-4,R-2              | A    | 200           |
@@ -322,7 +322,7 @@ GET /api/v1/data-quality/sources/{id} (контракт: x-roles R-4,R-2, UC-9)
 пользователи, все справочники (`tenants`, `tenant-categories` + `relations`,
 `projects`, `event-types`, `data-source-types`, `data-sources` + `sync`), импорт,
 гости (профиль, события, контакты, рекомендации, ручная склейка, soft-delete),
-идентичность (`merge-candidates*`, `unmerge-blocks*`), сегменты (шаблоны, CRUD,
+идентичность (`merge-candidates*`, `merge-blocks*`), сегменты (шаблоны, CRUD,
 `members`, `versions`, `recompute`, `recommendations`), выгрузки (preview, создание,
 журнал, `members`, `download`), лимиты контактов, кампании, аналитика, аудит.
 

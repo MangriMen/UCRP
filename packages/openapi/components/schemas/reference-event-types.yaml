@@ -22,7 +22,7 @@ EventType:
       description: The event carries a monetary amount
     countsAsPresence:
       type: boolean
-      description: The event counts as a visit and participates in cross-tenant penetration
+      description: The event counts as a visit and participates in cross-tenant rate
     isActive:
       type: boolean
     createdAt:

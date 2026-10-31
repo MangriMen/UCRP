@@ -40,8 +40,8 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 	}
 	since := time.Now().UTC().AddDate(0, 0, -rule.PeriodDays)
 
-	args := make([]any, 0, len(rule.Was)+len(rule.WasNot)+2)
-	for _, id := range rule.Was {
+	args := make([]any, 0, len(rule.VisitedTenantIDs)+len(rule.ExcludedTenantIDs)+2)
+	for _, id := range rule.VisitedTenantIDs {
 		args = append(args, id)
 	}
 	args = append(args, since)
@@ -52,13 +52,13 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 			FROM event e
 			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
 			WHERE e.guest_id IS NOT NULL
-				AND e.tenant_id IN (` + inPlaceholders(1, len(rule.Was)) + `)
-				AND e.occurred_at >= $` + strconv.Itoa(len(rule.Was)+1) + `
+				AND e.tenant_id IN (` + inPlaceholders(1, len(rule.VisitedTenantIDs)) + `)
+				AND e.occurred_at >= $` + strconv.Itoa(len(rule.VisitedTenantIDs)+1) + `
 		) base`
 
-	if len(rule.WasNot) > 0 {
+	if len(rule.ExcludedTenantIDs) > 0 {
 		notStart := len(args) + 1
-		for _, id := range rule.WasNot {
+		for _, id := range rule.ExcludedTenantIDs {
 			args = append(args, id)
 		}
 		args = append(args, since)
@@ -67,8 +67,8 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 			SELECT 1 FROM event e2
 			JOIN event_type et2 ON et2.id = e2.event_type_id AND et2.counts_as_presence
 			WHERE e2.guest_id = base.guest_id
-				AND e2.tenant_id IN (` + inPlaceholders(notStart, len(rule.WasNot)) + `)
-				AND e2.occurred_at >= $` + strconv.Itoa(notStart+len(rule.WasNot)) + `
+				AND e2.tenant_id IN (` + inPlaceholders(notStart, len(rule.ExcludedTenantIDs)) + `)
+				AND e2.occurred_at >= $` + strconv.Itoa(notStart+len(rule.ExcludedTenantIDs)) + `
 		)`
 	} else if rule.RequireContact != "" {
 		query += `
@@ -103,11 +103,11 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 }
 
 func validateRule(rule domain.SegmentRule) error {
-	if len(rule.Was) == 0 {
+	if len(rule.VisitedTenantIDs) == 0 {
 		return domain.ErrValidation
 	}
-	for _, t := range rule.WasNot {
-		for _, w := range rule.Was {
+	for _, t := range rule.ExcludedTenantIDs {
+		for _, w := range rule.VisitedTenantIDs {
 			if t == w {
 				return domain.ErrValidation
 			}
