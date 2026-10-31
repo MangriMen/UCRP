@@ -32,6 +32,7 @@ func TestRequireActiveUser(t *testing.T) {
 		{"inactive", &domain.User{Role: domain.RoleTenant, TenantID: "tenant"}, nil, http.StatusUnauthorized},
 		{"changed role", &domain.User{IsActive: true, Role: domain.RoleManager}, nil, http.StatusUnauthorized},
 		{"changed tenant", &domain.User{IsActive: true, Role: domain.RoleTenant, TenantID: "other"}, nil, http.StatusUnauthorized},
+		{"password recovered", &domain.User{IsActive: true, Role: domain.RoleTenant, TenantID: "tenant", AuthVersion: 1}, nil, http.StatusUnauthorized},
 		{"repository error", nil, errors.New("unavailable"), http.StatusUnauthorized},
 	}
 	for _, test := range cases {

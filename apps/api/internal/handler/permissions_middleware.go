@@ -205,6 +205,7 @@ var protectedRoutes = []protectedRoute{
 	{http.MethodPatch, "/data-source-types/{id}", []string{"data_source.write"}},
 	{http.MethodGet, "/users", []string{"user.read"}},
 	{http.MethodPost, "/users/invitations", []string{"user.write"}},
+	{http.MethodPost, "/users/{id}/recovery", []string{"user.write"}},
 	{http.MethodGet, "/users/{id}", []string{"user.read"}},
 	{http.MethodPatch, "/users/{id}", []string{"user.write"}},
 	{http.MethodDelete, "/users/{id}", []string{"user.write"}},

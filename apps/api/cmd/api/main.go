@@ -89,7 +89,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 	authSvc.SetAccess(accessSvc)
 	authHandler := handler.NewAuthHandler(authSvc)
 	accessHandler := handler.NewAccessGrantHandler(accessSvc)
-	invitationHandler := handler.NewInvitationHandler(service.NewInvitationService(repository.NewInvitationSQL(store.DB), accessSvc, nil, clock, idg))
+	invitationHandler := handler.NewInvitationHandler(service.NewInvitationService(repository.NewInvitationSQL(store.DB), accessSvc, nil, clock, idg, users))
 	userHandler := handler.NewUserHandler(authSvc)
 	auditHandler := handler.NewAuditHandler(service.NewAuditService(repository.NewAuditSQL(store.DB)))
 	campaignHandler := handler.NewCampaignHandler(service.NewCampaignService(repository.NewCampaignSQL(store.DB)))
@@ -275,6 +275,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 			priv.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/data-source-types/{id}", dataSourceHandler.UpdateType)
 			priv.Route("/users", func(u chi.Router) {
 				u.With(auth.RequireRole(domain.RoleManager)).Post("/invitations", invitationHandler.Issue)
+				u.With(auth.RequireRole(domain.RoleManager)).Post("/{id}/recovery", invitationHandler.Recover)
 				u.With(auth.RequireRole(domain.RoleManager)).Get("/", userHandler.List)
 				u.With(auth.RequireRole(domain.RoleManager)).Post("/", userHandler.Create)
 				u.With(auth.RequireRole(domain.RoleManager)).Get("/{id}", userHandler.Get)
