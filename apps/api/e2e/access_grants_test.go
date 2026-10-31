@@ -258,3 +258,36 @@ func assertNoGuestData(t *testing.T, value any, privateValues []string) {
 		}
 	}
 }
+
+func TestAccessGrantStaffRoleGrantCannotBeChanged(t *testing.T) {
+	s := harness.New(t).WithDB()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	manager, err := s.Reg.User(ctx, "access-role-grant-manager", "manager", "")
+	if err != nil {
+		t.Fatalf("fixture manager: %v", err)
+	}
+	managerClient := s.As(manager.Email, manager.Password)
+	for _, action := range []string{"suspend", "revoke"} {
+		resp, err := managerClient.Post(ctx, "/api/v1/access/grants/bootstrap-role-marketer/"+action, map[string]string{"reason": "E2E staff role grant"})
+		if err != nil {
+			t.Fatalf("%s staff role grant: %v", action, err)
+		}
+		s.RequireStatus(resp, 403, "manager cannot "+action+" a staff role grant")
+	}
+	grant, err := managerClient.Get(ctx, "/api/v1/access/grants/bootstrap-role-marketer", nil)
+	if err != nil {
+		t.Fatalf("get staff role grant: %v", err)
+	}
+	s.RequireStatus(grant, 200, "manager reads staff role grant")
+	var body struct {
+		Status string `json:"status"`
+	}
+	if err := grant.Decode(&body); err != nil {
+		t.Fatalf("decode staff role grant: %v", err)
+	}
+	if body.Status != "active" {
+		t.Fatalf("staff role grant status = %q, want active", body.Status)
+	}
+}

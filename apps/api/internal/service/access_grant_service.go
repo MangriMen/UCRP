@@ -544,6 +544,9 @@ func (s *AccessGrantService) change(ctx context.Context, actor domain.Principal,
 	if err != nil {
 		return nil, err
 	}
+	if isStaffRoleGrant(*grant) {
+		return nil, domain.ErrForbidden
+	}
 	tenantID := ""
 	if grantChangeNeedsValidation(action, *grant) {
 		tenantID, err = s.subjectTenant(ctx, grant.SubjectType, grant.SubjectID)
@@ -582,6 +585,10 @@ func (s *AccessGrantService) change(ctx context.Context, actor domain.Principal,
 	}
 	result := grantResponse(*grant)
 	return &result, nil
+}
+
+func isStaffRoleGrant(grant domain.AccessGrant) bool {
+	return grant.SubjectType == "role" && grant.SubjectID != string(domain.RoleTenant)
 }
 
 func grantChangeNeedsValidation(action string, grant domain.AccessGrant) bool {
