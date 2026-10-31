@@ -189,6 +189,8 @@
       "DataSourcePage": { "$ref": "./openapi/components/schemas/reference-data-sources.json#/DataSourcePage" },
       "SegmentStatus": { "$ref": "./openapi/components/schemas/segments.json#/SegmentStatus" },
       "SegmentRule": { "$ref": "./openapi/components/schemas/segments.json#/SegmentRule" },
+      "SegmentRuleNode": { "$ref": "./openapi/components/schemas/segments.json#/SegmentRuleNode" },
+      "SegmentRuleGroup": { "$ref": "./openapi/components/schemas/segments.json#/SegmentRuleGroup" },
       "SegmentVersion": { "$ref": "./openapi/components/schemas/segments.json#/SegmentVersion" },
       "Segment": { "$ref": "./openapi/components/schemas/segments.json#/Segment" },
       "SegmentCreateRequest": { "$ref": "./openapi/components/schemas/segment-requests.json#/SegmentCreateRequest" },

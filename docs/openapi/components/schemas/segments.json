@@ -60,6 +60,35 @@
       }
     }
   },
+  "SegmentRuleNode": {
+    "description": "A rule tree node: either a flat `SegmentRule` or a `SegmentRuleGroup`. A node with `operator` and `conditions` is a group; otherwise it is a flat rule. Existing flat rules remain valid unchanged.",
+    "oneOf": [
+      {
+        "$ref": "./segments.json#/SegmentRule"
+      },
+      {
+        "$ref": "./segments.json#/SegmentRuleGroup"
+      }
+    ]
+  },
+  "SegmentRuleGroup": {
+    "type": "object",
+    "description": "Nested group of rule nodes combined with a logical operator. `and`: a guest must match every condition; `or`: a guest must match at least one. Groups may be nested to any depth the server accepts. Each flat condition keeps its own `periodDays` window.",
+    "required": ["operator", "conditions"],
+    "properties": {
+      "operator": {
+        "type": "string",
+        "enum": ["and", "or"]
+      },
+      "conditions": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "./segments.json#/SegmentRuleNode"
+        }
+      }
+    }
+  },
   "SegmentVersion": {
     "type": "object",
     "required": ["id", "segmentId", "versionNo", "rule", "status", "memberCount"],
@@ -75,7 +104,7 @@
         "minimum": 1
       },
       "rule": {
-        "$ref": "./segments.json#/SegmentRule"
+        "$ref": "./segments.json#/SegmentRuleNode"
       },
       "ruleText": {
         "type": "string",
@@ -152,7 +181,7 @@
         "nullable": true
       },
       "rule": {
-        "$ref": "./segments.json#/SegmentRule"
+        "$ref": "./segments.json#/SegmentRuleNode"
       },
       "ruleText": {
         "type": "string"
