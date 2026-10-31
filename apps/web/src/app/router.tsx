@@ -1,24 +1,27 @@
-import { createBrowserRouter, Outlet } from 'react-router'
-import { HomePage } from '@/pages/home'
+import { createBrowserRouter } from 'react-router'
+import { RoleGuard } from '@/entities/user'
+import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
-
-function Layout() {
-  return (
-    <div className="min-h-screen">
-      <header className="border-b px-4 py-3 font-semibold">UCRP</header>
-      <main className="p-4">
-        <Outlet />
-      </main>
-    </div>
-  )
-}
+import { AppLayout } from './layout/app-layout'
+import { HomeRedirect } from './layout/home-redirect'
+import { RouteError } from './layout/route-error'
 
 export const router = createBrowserRouter([
   {
-    element: <Layout />,
+    errorElement: <RouteError />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: '*', element: <NotFoundPage /> },
+      { path: '/login', element: <LoginPage /> },
+      {
+        element: (
+          <RoleGuard>
+            <AppLayout />
+          </RoleGuard>
+        ),
+        children: [
+          { index: true, element: <HomeRedirect /> },
+          { path: '*', element: <NotFoundPage /> },
+        ],
+      },
     ],
   },
 ])

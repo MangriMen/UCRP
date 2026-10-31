@@ -5,7 +5,7 @@ import '@/app/index.css'
 
 async function enableMocks() {
   if (import.meta.env.VITE_MOCKS !== '1') return
-  const { worker } = await import('@/shared/api/mocks/browser')
+  const { worker } = await import('@/app/mocks/browser')
   await worker.start({ onUnhandledFrame: 'bypass' })
 }
 
