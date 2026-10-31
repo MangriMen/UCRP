@@ -19,6 +19,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
 	"github.com/MangriMen/UCRP/internal/platform/logging"
+	"github.com/MangriMen/UCRP/internal/recommend"
 	"github.com/MangriMen/UCRP/internal/repository"
 	"github.com/MangriMen/UCRP/internal/repository/sqlstore"
 	"github.com/MangriMen/UCRP/internal/segments"
@@ -77,6 +78,8 @@ func run(log *slog.Logger, cfg config.Config) error {
 	identityHandler := handler.NewIdentityHandler(identitySvc)
 	segmentSvc := service.NewSegmentService(repository.NewSegmentSQL(store.DB), segments.NewSqlEvaluator(store.DB))
 	segmentHandler := handler.NewSegmentHandler(segmentSvc)
+	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), recommend.NewWeightedRecommender(store.DB))
+	recoHandler := handler.NewRecommendationHandler(recoSvc)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -107,6 +110,8 @@ func run(log *slog.Logger, cfg config.Config) error {
 				s.Post("/", segmentHandler.Create)
 				s.Get("/{id}", segmentHandler.Get)
 			})
+			priv.Get("/guests/{id}/recommendations", recoHandler.List)
+			priv.Post("/guests/{id}/recommendations/refresh", recoHandler.Refresh)
 		})
 	})
 
