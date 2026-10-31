@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import { AccessGuard } from '@/entities/user'
+import { AcceptInvitationPage } from '@/pages/accept-invitation'
 import { AdminDictionariesPage } from '@/pages/admin-dictionaries'
 import { AdminUsersPage } from '@/pages/admin-users'
 import { AuditLogPage } from '@/pages/audit-log'
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { path: '/login', element: <LoginPage /> },
+      { path: '/invite/accept', element: <AcceptInvitationPage /> },
       {
         element: (
           <AccessGuard>

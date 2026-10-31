@@ -160,9 +160,114 @@ func TestInvitationAcceptRejectsInvalidToken(t *testing.T) {
 		t.Fatalf("accept invalid token: %v", err)
 	}
 	s.RequireStatus(resp, 401, "accept invalid token")
+	s.RequireDeclaredStatus("POST", "/api/v1/auth/invitations/accept", resp)
+	s.RequireSchema("POST", "/api/v1/auth/invitations/accept", resp)
 }
 
-func TestRecoveryInvalidatesOldPassword(t *testing.T) {
+func TestInvitationAcceptRejectsShortPassword(t *testing.T) {
+	s := harness.New(t).WithDB()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	token, _ := generateToken(t)
+	resp, err := anonymousClient(s).Post(ctx, "/api/v1/auth/invitations/accept", map[string]string{
+		"token":    token,
+		"password": "short",
+	})
+	if err != nil {
+		t.Fatalf("accept with short password: %v", err)
+	}
+	s.RequireStatus(resp, 400, "accept with short password")
+	s.RequireDeclaredStatus("POST", "/api/v1/auth/invitations/accept", resp)
+	s.RequireSchema("POST", "/api/v1/auth/invitations/accept", resp)
+}
+
+func TestInvitationIssueUnavailableWithoutDelivery(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	email := "not-invited-" + s.Cfg.RunID + "@e2e.local"
+	cleanupInvitationArtifacts(t, s, email)
+	resp, err := actor(t, s, "manager").Post(ctx, "/api/v1/users/invitations", map[string]string{
+		"email":       email,
+		"displayName": "Not Invited",
+		"role":        "manager",
+	})
+	if err != nil {
+		t.Fatalf("issue invitation: %v", err)
+	}
+	s.RequireStatus(resp, 503, "issue invitation without delivery")
+	s.RequireDeclaredStatus("POST", "/api/v1/users/invitations", resp)
+	s.RequireSchema("POST", "/api/v1/users/invitations", resp)
+	if code := resp.ErrorCode(); code != "invitation_unavailable" {
+		t.Fatalf("issue invitation error code: expected invitation_unavailable, got %q", code)
+	}
+	var count int
+	if err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM user_invitation WHERE email = $1`, email).Scan(&count); err != nil {
+		t.Fatalf("count invitations: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("invitation stored without delivery: %d rows", count)
+	}
+}
+
+func TestInvitationRecoveryUnavailableWithoutDelivery(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	w := buildWorld(t, s, "invitation-recovery-unavailable")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	employee, err := s.Reg.User(ctx, "rec-unavailable", "tenant", w.tenantA.ID)
+	if err != nil {
+		t.Fatalf("fixture employee: %v", err)
+	}
+	cleanupInvitationArtifacts(t, s, employee.Email)
+	path := "/api/v1/users/" + employee.ID + "/recovery"
+	resp, err := actor(t, s, "manager").Post(ctx, path, nil)
+	if err != nil {
+		t.Fatalf("issue recovery: %v", err)
+	}
+	s.RequireStatus(resp, 503, "issue recovery without delivery")
+	s.RequireDeclaredStatus("POST", "/api/v1/users/{id}/recovery", resp)
+	s.RequireSchema("POST", "/api/v1/users/{id}/recovery", resp)
+	if code := resp.ErrorCode(); code != "invitation_unavailable" {
+		t.Fatalf("issue recovery error code: expected invitation_unavailable, got %q", code)
+	}
+}
+
+func TestInvitationEndpointsForbiddenForOtherRoles(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	target, err := s.Reg.User(ctx, "rec-target", "manager", "")
+	if err != nil {
+		t.Fatalf("fixture target: %v", err)
+	}
+	for _, role := range []string{"analyst", "marketer"} {
+		c := actor(t, s, role)
+		invite, err := c.Post(ctx, "/api/v1/users/invitations", map[string]string{
+			"email":       s.Reg.Name("forbidden-invite-"+role) + "@e2e.local",
+			"displayName": "Forbidden " + role,
+			"role":        "manager",
+		})
+		if err != nil {
+			t.Fatalf("issue invitation as %s: %v", role, err)
+		}
+		s.RequireStatus(invite, 403, "issue invitation as "+role)
+		s.RequireDeclaredStatus("POST", "/api/v1/users/invitations", invite)
+
+		recovery, err := c.Post(ctx, "/api/v1/users/"+target.ID+"/recovery", nil)
+		if err != nil {
+			t.Fatalf("issue recovery as %s: %v", role, err)
+		}
+		s.RequireStatus(recovery, 403, "issue recovery as "+role)
+		s.RequireDeclaredStatus("POST", "/api/v1/users/{id}/recovery", recovery)
+	}
+}
+
+func TestInvitationRecoveryInvalidatesOldPassword(t *testing.T) {
 	s := harness.New(t).WithDB().WithAdmin()
 	w := buildWorld(t, s, "invitation-recovery")
 	ctx, cancel := s.Ctx()

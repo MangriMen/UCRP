@@ -1,6 +1,7 @@
 import type { Me, User } from '../model/types'
 
 export const MOCK_PASSWORD = 'password'
+export const MOCK_INVITATION_TOKEN = 'mock-invitation-token'
 
 export const rolePermissions: Record<Me['role'], string[]> = {
   marketer: [
