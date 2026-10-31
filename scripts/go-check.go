@@ -52,7 +52,7 @@ func runStep(dir, step string) error {
 	case "lint":
 		return checkLint(dir)
 	case "test":
-		return command(dir, "go", "test", "-race", "./...")
+		return runTests(dir)
 	case "build":
 		return command(dir, "go", "build", "./...")
 	case "static":
@@ -62,6 +62,29 @@ func runStep(dir, step string) error {
 	default:
 		return fmt.Errorf("usage: go run scripts/go-check.go {fmt|vet|lint|test|build|static|all}...")
 	}
+}
+
+func runTests(dir string) error {
+	args := []string{"test"}
+	switch {
+	case os.Getenv("CI") != "" || hasCCompiler():
+		args = append(args, "-race")
+	default:
+		fmt.Fprintln(os.Stderr, "go-check: no C compiler found, running tests without -race (CI still runs them with it)")
+	}
+	return command(dir, "go", append(args, "./...")...)
+}
+
+func hasCCompiler() bool {
+	if os.Getenv("CGO_ENABLED") == "0" {
+		return false
+	}
+	for _, name := range []string{"gcc", "cc", "clang"} {
+		if _, err := exec.LookPath(name); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 func runAll(dir string, steps ...string) error {
