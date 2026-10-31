@@ -42,7 +42,7 @@ func TestTenantAccessMetricPermissions(t *testing.T) {
 			router := chi.NewRouter()
 			router.Use(auth.Middleware(tokens))
 			router.Get("/tenants/{id}/aggregates", handler.Aggregates)
-			request := httptest.NewRequest(http.MethodGet, "/tenants/own/aggregates"+tc.query, nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/tenants/own/aggregates"+tc.query, nil)
 			request.Header.Set("Authorization", "Bearer "+token.AccessToken)
 			response := httptest.NewRecorder()
 			router.ServeHTTP(response, request)

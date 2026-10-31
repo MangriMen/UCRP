@@ -20,7 +20,9 @@ func (r *InvitationSQL) CreateInvitation(ctx context.Context, invite domain.User
 	}
 	defer func() { _ = tx.Rollback() }()
 	var targetVersion any
-	if invite.Purpose == "recovery" { targetVersion = invite.TargetAuthVersion }
+	if invite.Purpose == "recovery" {
+		targetVersion = invite.TargetAuthVersion
+	}
 	result, err := tx.ExecContext(ctx, `
 		INSERT INTO user_invitation (id, email, display_name, role, tenant_id, token_hash, created_by, created_at, expires_at, policy_version, purpose, target_user_id, target_auth_version)
 		SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13 FROM access_policy_state
@@ -96,22 +98,31 @@ func (r *InvitationSQL) AcceptInvitation(ctx context.Context, hash []byte, userI
 	if err != nil {
 		return err
 	}
-	if purpose == "invite" {
+	switch {
+	case purpose == "invite":
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO app_user (id, email, password_hash, display_name, role, tenant_id, is_active, created_at)
 			VALUES ($1,$2,$3,$4,$5,$6,TRUE,$7)`, userID, email, passwordHash, name, role, tenantID, now)
-		if err != nil { return err }
-	} else if purpose == "recovery" && targetUserID.Valid && targetVersion.Valid {
+		if err != nil {
+			return err
+		}
+	case purpose == "recovery" && targetUserID.Valid && targetVersion.Valid:
 		userID = targetUserID.String
 		result, updateErr := tx.ExecContext(ctx, `
 			UPDATE app_user SET password_hash = $2, auth_version = auth_version + 1
 			WHERE id = $1 AND email = $3 AND role = $4 AND tenant_id IS NOT DISTINCT FROM $5 AND auth_version = $6 AND is_active`,
 			userID, passwordHash, email, role, tenantID, targetVersion.Int64)
-		if updateErr != nil { return updateErr }
+		if updateErr != nil {
+			return updateErr
+		}
 		count, countErr := result.RowsAffected()
-		if countErr != nil { return countErr }
-		if count != 1 { return domain.ErrUnauthorized }
-	} else {
+		if countErr != nil {
+			return countErr
+		}
+		if count != 1 {
+			return domain.ErrUnauthorized
+		}
+	default:
 		return domain.ErrUnauthorized
 	}
 	_, err = tx.ExecContext(ctx, `

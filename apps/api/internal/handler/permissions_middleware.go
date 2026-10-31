@@ -58,7 +58,7 @@ func PermissionMiddleware(authorizer policyAuthorizer) func(http.Handler) http.H
 				exportCount := len(parts) > 0 && len(parts) <= 2 && parts[0] == "exports"
 				dashboard := r.Method == http.MethodGet && len(parts) == 2 && parts[0] == "dashboard" && (parts[1] == "penetration" || parts[1] == "metrics")
 				dataQuality := r.Method == http.MethodGet && len(parts) == 2 && parts[0] == "data-quality" && parts[1] == "sources"
-				if strings.HasPrefix(permission, "metric.") && !segmentCount && !exportCount && !dashboard && !dataQuality && !(len(parts) == 3 && parts[0] == "tenants" && parts[2] == "aggregates") {
+				if strings.HasPrefix(permission, "metric.") && !segmentCount && !exportCount && !dashboard && !dataQuality && (len(parts) != 3 || parts[0] != "tenants" || parts[2] != "aggregates") {
 					httpx.WriteError(w, r, http.StatusForbidden, "forbidden_permission", "Нет доступа")
 					return
 				}

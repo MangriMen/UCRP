@@ -106,9 +106,9 @@ func (m *Manager) parse(token string, refresh bool) (domain.Principal, error) {
 		return domain.Principal{}, domain.ErrUnauthorized
 	}
 	return domain.Principal{
-		UserID:   sub,
-		Role:     domain.Role(role),
-		TenantID: tenantID,
+		UserID:      sub,
+		Role:        domain.Role(role),
+		TenantID:    tenantID,
 		AuthVersion: version,
 	}, nil
 }

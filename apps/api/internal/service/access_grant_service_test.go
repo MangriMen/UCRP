@@ -22,20 +22,20 @@ func TestGrantDelegationRequiresUnrestrictedAuthority(t *testing.T) {
 		grants []domain.AccessGrant
 		want   bool
 	}
-	cases := []delegationCase{
-		{"unrestricted", []domain.AccessGrant{grant}, true},
-		{"no grant", nil, false},
-	}
 	roleBound := grant
 	roleBound.Scopes = []domain.AccessGrantScope{{Type: "principal_role", Value: "manager"}}
-	cases = append(cases, delegationCase{"manager-bound", []domain.AccessGrant{roleBound}, true})
 	scoped := grant
 	scoped.Scopes = []domain.AccessGrantScope{{Type: "tenant", Value: "tenant-1"}}
-	cases = append(cases, delegationCase{"scoped authority", []domain.AccessGrant{grant, scoped}, false})
 	denied := grant
 	denied.Items = []domain.AccessGrantItem{{PermissionCode: "guest.profile.read", Effect: "deny"}}
 	denied.Scopes = []domain.AccessGrantScope{{Type: "tenant", Value: "tenant-1"}}
-	cases = append(cases, delegationCase{"scoped deny", []domain.AccessGrant{grant, denied}, false})
+	cases := []delegationCase{
+		{"unrestricted", []domain.AccessGrant{grant}, true},
+		{"no grant", nil, false},
+		{"manager-bound", []domain.AccessGrant{roleBound}, true},
+		{"scoped authority", []domain.AccessGrant{grant, scoped}, false},
+		{"scoped deny", []domain.AccessGrant{grant, denied}, false},
+	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			policy := grantActorPolicy{now: now, ceiling: ceiling, grants: tc.grants}

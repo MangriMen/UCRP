@@ -48,15 +48,23 @@ func TestAccessAuditFiltersAndPagination(t *testing.T) {
 	api := s.As(manager.Email, manager.Password)
 	get := func(query url.Values) []struct {
 		Action string `json:"action"`
-	} { t.Helper(); response, err := api.Get(ctx, "/api/v1/access/audit", query); if err != nil {
-		t.Fatalf("GET access/audit: %v", err)
-	}; s.RequireStatus(response, 200, "GET access/audit"); var body struct {
-		Items []struct {
-			Action string `json:"action"`
-		} `json:"items"`
-	}; if err := response.Decode(&body); err != nil {
-		t.Fatalf("decode audit: %v", err)
-	}; return body.Items }
+	} {
+		t.Helper()
+		response, err := api.Get(ctx, "/api/v1/access/audit", query)
+		if err != nil {
+			t.Fatalf("GET access/audit: %v", err)
+		}
+		s.RequireStatus(response, 200, "GET access/audit")
+		var body struct {
+			Items []struct {
+				Action string `json:"action"`
+			} `json:"items"`
+		}
+		if err := response.Decode(&body); err != nil {
+			t.Fatalf("decode audit: %v", err)
+		}
+		return body.Items
+	}
 	query := url.Values{"actor": {manager.ID}, "from": {now.Add(-3 * time.Minute).Format(time.RFC3339)},
 		"to": {now.Format(time.RFC3339)}, "limit": {"1"}, "offset": {"0"}}
 	items := get(query)

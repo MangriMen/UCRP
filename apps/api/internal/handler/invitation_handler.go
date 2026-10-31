@@ -61,8 +61,14 @@ func (h *InvitationHandler) Accept(w http.ResponseWriter, r *http.Request) {
 
 func (h *InvitationHandler) Recover(w http.ResponseWriter, r *http.Request) {
 	principal, ok := auth.PrincipalFrom(r.Context())
-	if !ok { httpx.WriteError(w, r, http.StatusUnauthorized, "unauthorized", "Нет пользователя"); return }
-	if err := h.invitations.IssueRecovery(r.Context(), principal, chi.URLParam(r, "id")); err != nil { invitationError(w, r, err); return }
+	if !ok {
+		httpx.WriteError(w, r, http.StatusUnauthorized, "unauthorized", "Нет пользователя")
+		return
+	}
+	if err := h.invitations.IssueRecovery(r.Context(), principal, chi.URLParam(r, "id")); err != nil {
+		invitationError(w, r, err)
+		return
+	}
 	w.WriteHeader(http.StatusAccepted)
 }
 

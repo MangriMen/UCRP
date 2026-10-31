@@ -124,7 +124,7 @@ func (s *AccessGrantService) CanInvite(ctx context.Context, actor domain.Princip
 		grants, err = s.repo.ActiveGrants(ctx, domain.Principal{Role: domain.RoleManager}, policy.now)
 		for _, grant := range grants {
 			for _, item := range grant.Items {
-				permissions = append(permissions, domain.AccessRolePermission{PermissionCode: item.PermissionCode, Effect: item.Effect})
+				permissions = append(permissions, domain.AccessRolePermission(item))
 			}
 		}
 	default:
@@ -797,7 +797,8 @@ func effectivePermissions(principal domain.Principal, ceiling []domain.AccessRol
 		if permission.Effect != "allow" {
 			continue
 		}
-		resources := []access.Resource{{TenantID: principal.TenantID}}
+		resources := make([]access.Resource, 0, 1+len(grants))
+		resources = append(resources, access.Resource{TenantID: principal.TenantID})
 		for _, grant := range grants {
 			resource := access.Resource{TenantID: principal.TenantID}
 			for _, scope := range grant.Scopes {

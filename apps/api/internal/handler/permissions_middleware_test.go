@@ -81,7 +81,7 @@ func TestPermissionMiddleware(t *testing.T) {
 			authorizer := &permissionTestAuthorizer{denied: tc.denied, changeVersion: tc.changeVersion}
 			next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
 			h := auth.Middleware(tokens)(PermissionMiddleware(authorizer)(next))
-			req := httptest.NewRequest(tc.method, tc.path, nil)
+			req := httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, nil)
 			req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 			response := httptest.NewRecorder()
 			h.ServeHTTP(response, req)

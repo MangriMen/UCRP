@@ -43,7 +43,7 @@ func (l *deniedAuditLimiter) reserve(key [32]byte, now time.Time) bool {
 func (l *deniedAuditLimiter) release(key [32]byte, now time.Time) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.entries[key] == now {
+	if l.entries[key].Equal(now) {
 		delete(l.entries, key)
 	}
 }
