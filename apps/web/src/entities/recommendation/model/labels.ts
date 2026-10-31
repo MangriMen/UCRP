@@ -6,4 +6,7 @@ export const factorLabels: Record<RecommendationFactor['factorCode'], string> = 
   recency: 'Давность визитов',
   distance: 'Расстояние',
   tenant_priority: 'Приоритет арендатора',
+  popularity: 'Популярность',
+  competitor_penalty: 'Штраф за конкурентов',
+  low_data: 'Мало данных',
 }

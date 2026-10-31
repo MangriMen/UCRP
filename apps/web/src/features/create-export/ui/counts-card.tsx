@@ -1,7 +1,7 @@
 import type { ExportPreview } from '@/entities/export'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 
-const rows = (preview: ExportPreview): [string, number][] => [
+const rows = (preview: ExportPreview): [string, number | null][] => [
   ['В сегменте', preview.inSegment],
   ['С контактом для канала', preview.withContact],
   ['Исключены лимитом', preview.blockedByLimit],
@@ -20,10 +20,15 @@ export function CountsCard({ preview }: { preview: ExportPreview }) {
           {rows(preview).map(([label, value]) => (
             <div key={label} className="contents">
               <dt className="text-muted-foreground">{label}</dt>
-              <dd className="text-right font-medium">{value}</dd>
+              <dd className="text-right font-medium">{value ?? '—'}</dd>
             </div>
           ))}
         </dl>
+        {preview.suppressed ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Малые значения скрыты, чтобы нельзя было определить отдельного гостя.
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   )

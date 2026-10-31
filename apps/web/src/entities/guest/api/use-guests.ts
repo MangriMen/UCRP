@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/api/api'
+import { hasKey, narrow } from '@/shared/api/narrow'
 import {
   guestKeys,
   MIN_SEARCH_LENGTH,
@@ -29,9 +30,10 @@ export function useGuestSearch(filters: GuestSearchFilters) {
 }
 
 export function useGuest(id: string) {
-  return useQuery<GuestProfile>({
+  return useQuery({
     queryKey: guestKeys.detail(id),
     queryFn: () => api.get('/guests/{id}', { params: { id } }),
+    select: (data): GuestProfile => narrow(data, hasKey('tenantCount')),
   })
 }
 
@@ -42,13 +44,12 @@ export function useGuestEvents(id: string, filters: GuestEventFilters = {}) {
       api.get('/guests/{id}/events', {
         params: { id },
         query: {
-          from: filters.from,
-          to: filters.to,
-          tenant_id: filters.tenantId,
-          page: filters.page,
-          page_size: filters.pageSize,
+          limit: filters.pageSize,
+          offset:
+            filters.page && filters.pageSize ? (filters.page - 1) * filters.pageSize : undefined,
         },
       }),
+    select: (data) => narrow(data, hasKey('meta')),
     placeholderData: keepPreviousData,
   })
 }

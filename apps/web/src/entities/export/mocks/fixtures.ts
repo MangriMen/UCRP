@@ -3,6 +3,7 @@ import type { Export } from '../model/types'
 export const mockExports: Export[] = [
   {
     id: 'export-0001',
+    suppressed: false,
     segmentId: 'segment-0001',
     segmentName: 'Спящий сосед',
     segmentVersionId: 'segment-0001-v2',
@@ -24,6 +25,7 @@ export const mockExports: Export[] = [
   },
   {
     id: 'export-0002',
+    suppressed: false,
     segmentId: 'segment-0002',
     segmentName: 'Высокий чек',
     segmentVersionId: 'segment-0002-v1',
@@ -40,6 +42,7 @@ export const mockExports: Export[] = [
   },
   {
     id: 'export-0003',
+    suppressed: false,
     segmentId: 'segment-0001',
     segmentName: 'Спящий сосед',
     segmentVersionId: 'segment-0001-v1',

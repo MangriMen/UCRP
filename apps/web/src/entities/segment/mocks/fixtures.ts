@@ -3,6 +3,7 @@ import type { Segment, SegmentRuleNode, SegmentTemplate, SegmentVersion } from '
 export const mockSegments: Segment[] = [
   {
     id: 'segment-0001',
+    suppressed: false,
     name: 'Спящий сосед',
     description: 'Гости, которые давно не заходили к соседям по этажу',
     templateCode: 'sleeping_neighbor',
@@ -18,6 +19,7 @@ export const mockSegments: Segment[] = [
   },
   {
     id: 'segment-0002',
+    suppressed: false,
     name: 'Высокий чек',
     description: null,
     templateCode: 'high_value',
@@ -33,6 +35,7 @@ export const mockSegments: Segment[] = [
   },
   {
     id: 'segment-0003',
+    suppressed: false,
     name: 'Риск оттока',
     description: 'Не возвращались более 60 дней',
     templateCode: 'churn_risk',
@@ -48,6 +51,7 @@ export const mockSegments: Segment[] = [
   },
   {
     id: 'segment-0004',
+    suppressed: false,
     name: 'Новички с телефоном',
     description: null,
     templateCode: null,
@@ -63,6 +67,7 @@ export const mockSegments: Segment[] = [
   },
   {
     id: 'segment-0005',
+    suppressed: false,
     name: 'Лояльные или крупные',
     description: 'Часто ходят к соседям либо тратят много',
     templateCode: null,
@@ -101,10 +106,11 @@ export function mockSegmentVersions(segment: Segment): SegmentVersion[] {
       id: `${segment.id}-v${versionNo}`,
       segmentId: segment.id,
       versionNo,
+      suppressed: false,
       rule,
       ruleText: isCurrent ? segment.ruleText : 'Предыдущая формулировка правила',
       status: isCurrent ? segment.status : 'ready',
-      memberCount: isCurrent ? segment.memberCount : Math.round(segment.memberCount * 0.8),
+      memberCount: isCurrent ? segment.memberCount : Math.round((segment.memberCount ?? 0) * 0.8),
       computedAt: isCurrent ? segment.computedAt : '2026-10-01T06:00:00Z',
       createdAt: isCurrent ? segment.updatedAt : segment.createdAt,
     }

@@ -1,5 +1,8 @@
 import type { Schema } from '@/shared/api/types'
 
-export type TenantAggregates = Schema<'TenantAggregates'>
-export type TenantAggregatePoint = Schema<'TenantAggregatePoint'>
-export type Granularity = Schema<'Granularity'>
+export type TenantVisitAggregate = Schema<'TenantVisitAggregate'>
+export type EmptyTenantAggregate = Schema<'EmptyTenantAggregate'>
+export type TenantAggregate = TenantVisitAggregate | EmptyTenantAggregate
+
+export const isVisitAggregate = (value: TenantAggregate): value is TenantVisitAggregate =>
+  'visitsCount' in value

@@ -18,7 +18,7 @@ export function DataQualityPage() {
         description="Доля отклонённых строк, свежесть импорта и спорные профили по источникам"
       />
       <SourceQualityTable
-        rows={sources.data}
+        rows={sources.data?.items}
         isLoading={sources.isLoading}
         error={sources.error}
         onSelect={select}

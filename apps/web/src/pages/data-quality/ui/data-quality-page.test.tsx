@@ -23,7 +23,7 @@ describe('DataQualityPage', () => {
   it('flags sources with warnings and explains the reasons', async () => {
     renderPage()
     await screen.findByText('Касса «Зара»')
-    expect(within(rowOf('Касса «Зара»')).getByText('Отклонено более 10% строк')).toBeInTheDocument()
+    expect(within(rowOf('Касса «Зара»')).getByText('Требует внимания')).toBeInTheDocument()
     expect(within(rowOf('CRM «Лента»')).getByText('В норме')).toBeInTheDocument()
   })
 

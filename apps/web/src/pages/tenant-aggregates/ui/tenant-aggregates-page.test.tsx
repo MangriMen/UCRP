@@ -20,13 +20,11 @@ function renderPage() {
 }
 
 describe('TenantAggregatesPage', () => {
-  it('requests the session tenant and explains suppressed cells', async () => {
+  it('requests the session tenant and explains a suppressed count', async () => {
     auth.tenantId = 'tenant-0001'
     renderPage()
     expect(await screen.findByText('Часть значений скрыта')).toBeInTheDocument()
-    expect(screen.getByTestId('new-guests')).toHaveTextContent('148')
-    expect(screen.getByTestId('repeat-visits')).toHaveTextContent('меньше 5')
-    expect(screen.getByText('Мой арендатор: Лента')).toBeInTheDocument()
+    expect(screen.getByTestId('visits-count')).toHaveTextContent('меньше 5')
   })
 
   it('does not query anything without a session tenant', () => {
