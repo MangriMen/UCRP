@@ -31,6 +31,7 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 - Commits: Conventional Commits (enforced by lefthook). Don't bypass hooks with `--no-verify`.
 - Commit messages and PR titles/bodies: **English only**. The `commit-message-language` lefthook job rejects non-ASCII commit subjects; PR text rules are in `.agents/skills/pr-description/SKILL.md`.
 - Skills live in `.agents/skills/` (`.claude/skills` is a symlink to it).
+- Architecture rules: `ARCHITECTURE.md`. Documentation layout and where new documents go: `docs/README.md`.
 
 ## Code style (anti-neuroslop)
 
