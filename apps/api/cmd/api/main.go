@@ -68,18 +68,19 @@ func run(log *slog.Logger, cfg config.Config) error {
 	events := repository.NewEventSQL(store.DB)
 	profileSvc := service.NewProfileService(guests, identifiers, events)
 	guestHandler := handler.NewGuestHandler(profileSvc)
-	identitySvc := service.NewIdentityService(
-		repository.NewMergeCandidateSQL(store.DB),
-		repository.NewUnmergeBlockSQL(store.DB),
-		guests,
-		identifiers,
-		events,
-	)
+	identitySvc := service.NewIdentityService(repository.NewMergeSQL(store.DB))
 	identityHandler := handler.NewIdentityHandler(identitySvc)
 	segmentSvc := service.NewSegmentService(repository.NewSegmentSQL(store.DB), segments.NewSqlEvaluator(store.DB))
 	segmentHandler := handler.NewSegmentHandler(segmentSvc)
 	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), recommend.NewWeightedRecommender(store.DB))
 	recoHandler := handler.NewRecommendationHandler(recoSvc)
+	exportSvc := service.NewExportService(
+		repository.NewExportSQL(store.DB),
+		repository.NewContactLimitSQL(store.DB),
+		repository.NewContactLogSQL(store.DB),
+		repository.NewSegmentSQL(store.DB),
+	)
+	exportHandler := handler.NewExportHandler(exportSvc)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -93,25 +94,32 @@ func run(log *slog.Logger, cfg config.Config) error {
 			priv.Use(auth.Middleware(tokens))
 			priv.Get("/auth/me", authHandler.Me)
 			priv.Route("/guests", func(g chi.Router) {
-				g.Get("/", guestHandler.Search)
-				g.Get("/{id}", guestHandler.Get)
-				g.Get("/{id}/events", guestHandler.Events)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/", guestHandler.Search)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}", guestHandler.Get)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/events", guestHandler.Events)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/recommendations", recoHandler.List)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/{id}/recommendations/refresh", recoHandler.Refresh)
 			})
 			priv.Route("/merge-candidates", func(m chi.Router) {
-				m.Get("/", identityHandler.List)
-				m.Get("/{id}", identityHandler.Get)
-				m.Post("/{id}/confirm", identityHandler.Confirm)
-				m.Post("/{id}/reject", identityHandler.Reject)
-				m.Post("/{id}/revert", identityHandler.Revert)
+				m.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/", identityHandler.List)
+				m.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}", identityHandler.Get)
+				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/confirm", identityHandler.Confirm)
+				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/reject", identityHandler.Reject)
+				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/revert", identityHandler.Revert)
 			})
 			priv.Route("/segments", func(s chi.Router) {
-				s.Get("/", segmentHandler.List)
-				s.Post("/preview", segmentHandler.Preview)
-				s.Post("/", segmentHandler.Create)
-				s.Get("/{id}", segmentHandler.Get)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/", segmentHandler.List)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/preview", segmentHandler.Preview)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/", segmentHandler.Create)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}", segmentHandler.Get)
 			})
-			priv.Get("/guests/{id}/recommendations", recoHandler.List)
-			priv.Post("/guests/{id}/recommendations/refresh", recoHandler.Refresh)
+			priv.Route("/exports", func(x chi.Router) {
+				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/", exportHandler.List)
+				x.With(auth.RequireRole(domain.RoleMarketer)).Post("/preview", exportHandler.Preview)
+				x.With(auth.RequireRole(domain.RoleMarketer)).Post("/", exportHandler.Create)
+				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/{id}", exportHandler.Get)
+				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/{id}/download", exportHandler.Download)
+			})
 		})
 	})
 

@@ -52,11 +52,19 @@ type SegmentRule struct {
 	PeriodDays int      `json:"period_days"`
 }
 
+type GuestContact struct {
+	GuestID      string
+	IdentifierID string
+	Contact      string
+	IDType       string
+}
+
 type SegmentRepo interface {
 	Insert(ctx context.Context, s *Segment, v *SegmentVersion) error
 	GetByID(ctx context.Context, id string) (*Segment, *SegmentVersion, error)
 	List(ctx context.Context, limit, offset int) ([]Segment, error)
 	ReplaceMembers(ctx context.Context, versionID string, guestIDs []string, computedAt time.Time) error
+	ListMemberContacts(ctx context.Context, versionID string) ([]GuestContact, error)
 }
 
 type SegmentEvaluator interface {

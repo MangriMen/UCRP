@@ -132,3 +132,25 @@ func (r *SegmentSQL) ReplaceMembers(ctx context.Context, versionID string, guest
 	}
 	return tx.Commit()
 }
+
+func (r *SegmentSQL) ListMemberContacts(ctx context.Context, versionID string) ([]domain.GuestContact, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT m.guest_id, i.id, i.value_normalized, i.id_type
+		FROM segment_member m
+		JOIN guest_identifier i ON i.guest_id = m.guest_id
+		WHERE m.segment_version_id = $1
+		ORDER BY m.guest_id`, versionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]domain.GuestContact, 0)
+	for rows.Next() {
+		var c domain.GuestContact
+		if err := rows.Scan(&c.GuestID, &c.IdentifierID, &c.Contact, &c.IDType); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
