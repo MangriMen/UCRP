@@ -41,6 +41,37 @@ func TestSegmentRule_GroupRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSegmentRule_MarshalOmitsEmptyTenantLists_WhenNoTenantsGiven(t *testing.T) {
+	cases := map[string]struct {
+		payload string
+		want    string
+	}{
+		"empty excluded list": {
+			payload: `{"visitedTenantIds":["t1"],"excludedTenantIds":[],"periodDays":90}`,
+			want:    `{"visitedTenantIds":["t1"],"periodDays":90}`,
+		},
+		"zones only": {
+			payload: `{"purchasedZones":[{"mallId":"m1","floor":2}],"periodDays":30}`,
+			want:    `{"purchasedZones":[{"mallId":"m1","floor":2}],"periodDays":30}`,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			var rule SegmentRule
+			if err := json.Unmarshal([]byte(tc.payload), &rule); err != nil {
+				t.Fatalf("unmarshal: %v", err)
+			}
+			encoded, err := json.Marshal(rule)
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+			if string(encoded) != tc.want {
+				t.Fatalf("encoded = %s, want %s", encoded, tc.want)
+			}
+		})
+	}
+}
+
 func TestSegmentRule_RoundTripPreservesPurchasedZones(t *testing.T) {
 	original := SegmentRule{PurchasedZones: []ZoneRef{{MallID: "m1", Floor: 3}}, PeriodDays: 14}
 	encoded, err := json.Marshal(original)
