@@ -70,7 +70,7 @@ func RecoverMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
 			defer func() {
 				if rec := recover(); rec != nil {
 					log.Error("panic", "err", rec, "request_id", RequestID(r.Context()))
-					WriteError(w, r, http.StatusInternalServerError, "internal", "Внутренняя ошибка")
+					WriteError(w, r, http.StatusInternalServerError, "internal_error", "Внутренняя ошибка")
 				}
 			}()
 			next.ServeHTTP(w, r)
@@ -105,8 +105,8 @@ func WriteDomainError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, domain.ErrTimeout), errors.Is(err, context.DeadlineExceeded):
 		WriteError(w, r, http.StatusGatewayTimeout, "timeout", "Превышен таймаут")
 	case errors.Is(err, domain.ErrValidation):
-		WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректные данные")
+		WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректные данные")
 	default:
-		WriteError(w, r, http.StatusInternalServerError, "internal", "Внутренняя ошибка")
+		WriteError(w, r, http.StatusInternalServerError, "internal_error", "Внутренняя ошибка")
 	}
 }

@@ -39,7 +39,7 @@ func (r *SegmentSQL) EnsureTemplates(ctx context.Context, clock domain.Clock, id
 			return err
 		}
 		segID := idGen.NewID(ctx)
-		rule := `{"was":[],"was_not":[],"period_days":30}`
+		rule := `{"was":[],"wasNot":[],"periodDays":30}`
 		tx, err := r.db.BeginTx(ctx, nil)
 		if err != nil {
 			return err

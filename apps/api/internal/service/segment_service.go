@@ -27,56 +27,113 @@ func NewSegmentService(repo domain.SegmentRepo, evaluator domain.SegmentEvaluato
 	}
 }
 
-type SegmentPreviewRequest struct {
+type SegmentRuleBody struct {
 	Was            []string `json:"was"`
-	WasNot         []string `json:"was_not"`
-	PeriodDays     int      `json:"period_days"`
-	RequireContact string   `json:"require_contact"`
+	WasNot         []string `json:"wasNot"`
+	PeriodDays     int      `json:"periodDays"`
+	RequireContact string   `json:"requireContact"`
+}
+
+type SegmentPreviewRequest struct {
+	Rule           *SegmentRuleBody `json:"rule"`
+	Was            []string         `json:"was"`
+	WasNot         []string         `json:"was_not"`
+	PeriodDays     int              `json:"period_days"`
+	RequireContact string           `json:"require_contact"`
+	Limit          int              `json:"limit"`
+}
+
+func (r SegmentPreviewRequest) toRule() domain.SegmentRule {
+	if r.Rule != nil {
+		return domain.SegmentRule{
+			Was:            r.Rule.Was,
+			WasNot:         r.Rule.WasNot,
+			PeriodDays:     r.Rule.PeriodDays,
+			RequireContact: r.Rule.RequireContact,
+		}
+	}
+	return domain.SegmentRule{
+		Was:            r.Was,
+		WasNot:         r.WasNot,
+		PeriodDays:     r.PeriodDays,
+		RequireContact: r.RequireContact,
+	}
+}
+
+type SegmentPreviewExample struct {
+	GuestID string `json:"guestId"`
 }
 
 type SegmentPreviewResponse struct {
-	Size     int      `json:"size"`
-	Examples []string `json:"examples"`
+	Size     int                     `json:"size"`
+	Examples []SegmentPreviewExample `json:"examples"`
+	Cached   bool                    `json:"cached"`
 }
 
 type SegmentCreateRequest struct {
-	Name           string   `json:"name"`
-	Description    string   `json:"description"`
-	TemplateCode   string   `json:"template_code"`
-	Was            []string `json:"was"`
-	WasNot         []string `json:"was_not"`
-	PeriodDays     int      `json:"period_days"`
-	RequireContact string   `json:"require_contact"`
+	Name           string           `json:"name"`
+	Description    string           `json:"description"`
+	TemplateCode   string           `json:"templateCode"`
+	Rule           *SegmentRuleBody `json:"rule"`
+	Was            []string         `json:"was"`
+	WasNot         []string         `json:"was_not"`
+	PeriodDays     int              `json:"period_days"`
+	RequireContact string           `json:"require_contact"`
+}
+
+func (r SegmentCreateRequest) toRule() domain.SegmentRule {
+	if r.Rule != nil {
+		return domain.SegmentRule{
+			Was:            r.Rule.Was,
+			WasNot:         r.Rule.WasNot,
+			PeriodDays:     r.Rule.PeriodDays,
+			RequireContact: r.Rule.RequireContact,
+		}
+	}
+	return domain.SegmentRule{
+		Was:            r.Was,
+		WasNot:         r.WasNot,
+		PeriodDays:     r.PeriodDays,
+		RequireContact: r.RequireContact,
+	}
 }
 
 type SegmentDTO struct {
 	ID               string          `json:"id"`
 	Name             string          `json:"name"`
 	Description      string          `json:"description"`
-	TemplateCode     string          `json:"template_code"`
-	CurrentVersionNo int             `json:"current_version_no"`
+	TemplateCode     string          `json:"templateCode"`
+	IsTemplate       bool            `json:"isTemplate"`
+	CurrentVersionNo int             `json:"currentVersionNo"`
 	Status           string          `json:"status"`
-	VersionStatus    string          `json:"version_status"`
-	MemberCount      *int            `json:"member_count"`
-	ComputedAt       string          `json:"computed_at,omitempty"`
+	VersionStatus    string          `json:"versionStatus,omitempty"`
+	MemberCount      int             `json:"memberCount"`
+	ComputedAt       string          `json:"computedAt,omitempty"`
 	Rule             json.RawMessage `json:"rule,omitempty"`
+	CreatedBy        string          `json:"createdBy,omitempty"`
+	CreatedAt        string          `json:"createdAt"`
+	UpdatedAt        string          `json:"updatedAt"`
+}
+
+type SegmentPage struct {
+	Items []SegmentDTO `json:"items"`
+	Meta  PageMeta     `json:"meta"`
 }
 
 func (s *SegmentService) Preview(ctx context.Context, req SegmentPreviewRequest) (*SegmentPreviewResponse, error) {
-	size, examples, err := s.evaluator.Preview(ctx, domain.SegmentRule{
-		Was:            req.Was,
-		WasNot:         req.WasNot,
-		PeriodDays:     req.PeriodDays,
-		RequireContact: req.RequireContact,
-	})
+	size, examples, err := s.evaluator.Preview(ctx, req.toRule())
 	if err != nil {
 		return nil, err
 	}
-	return &SegmentPreviewResponse{Size: size, Examples: examples}, nil
+	out := make([]SegmentPreviewExample, 0, len(examples))
+	for _, id := range examples {
+		out = append(out, SegmentPreviewExample{GuestID: id})
+	}
+	return &SegmentPreviewResponse{Size: size, Examples: out, Cached: false}, nil
 }
 
 func (s *SegmentService) Create(ctx context.Context, req SegmentCreateRequest, actorUserID string) (*SegmentDTO, error) {
-	rule := domain.SegmentRule{Was: req.Was, WasNot: req.WasNot, PeriodDays: req.PeriodDays, RequireContact: req.RequireContact}
+	rule := req.toRule()
 	members, err := s.evaluator.Evaluate(ctx, rule)
 	if err != nil {
 		return nil, err
@@ -99,7 +156,7 @@ func (s *SegmentService) Create(ctx context.Context, req SegmentCreateRequest, a
 		SegmentID: seg.ID,
 		VersionNo: 1,
 		Rule:      string(ruleJSON),
-		Status:    domain.VersionPending,
+		Status:    domain.VersionReady,
 		CreatedBy: actorUserID,
 		CreatedAt: now,
 	}
@@ -117,27 +174,44 @@ func (s *SegmentService) Get(ctx context.Context, id string) (*SegmentDTO, error
 	if err != nil {
 		return nil, err
 	}
-	dto := SegmentDTO{
+	return toSegmentDTO(seg, ver), nil
+}
+
+func toSegmentDTO(seg *domain.Segment, ver *domain.SegmentVersion) *SegmentDTO {
+	dto := &SegmentDTO{
 		ID:               seg.ID,
 		Name:             seg.Name,
 		Description:      seg.Description,
 		TemplateCode:     seg.TemplateCode,
+		IsTemplate:       seg.IsTemplate,
 		CurrentVersionNo: seg.CurrentVersionNo,
 		Status:           string(seg.Status),
 		VersionStatus:    string(ver.Status),
-		MemberCount:      ver.MemberCount,
+		MemberCount:      0,
 		Rule:             json.RawMessage(ver.Rule),
+		CreatedBy:        seg.CreatedBy,
+		CreatedAt:        seg.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:        seg.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+	}
+	if ver.MemberCount != nil {
+		dto.MemberCount = *ver.MemberCount
 	}
 	if ver.ComputedAt != nil {
 		dto.ComputedAt = ver.ComputedAt.UTC().Format("2006-01-02T15:04:05Z07:00")
 	}
-	return &dto, nil
+	return dto
 }
 
-func (s *SegmentService) List(ctx context.Context, limit, offset int) ([]SegmentDTO, error) {
+func (s *SegmentService) List(ctx context.Context, limit, offset int) (*SegmentPage, error) {
 	items, err := s.segments.List(ctx, limit, offset)
 	if err != nil {
 		return nil, err
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
 	}
 	out := make([]SegmentDTO, 0, len(items))
 	for _, seg := range items {
@@ -146,11 +220,28 @@ func (s *SegmentService) List(ctx context.Context, limit, offset int) ([]Segment
 			Name:             seg.Name,
 			Description:      seg.Description,
 			TemplateCode:     seg.TemplateCode,
+			IsTemplate:       seg.IsTemplate,
 			CurrentVersionNo: seg.CurrentVersionNo,
 			Status:           string(seg.Status),
+			MemberCount:      0,
+			CreatedAt:        seg.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:        seg.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		})
 	}
-	return out, nil
+	total := offset + len(out)
+	totalPages := (total + limit - 1) / limit
+	if totalPages < 1 {
+		totalPages = 1
+	}
+	return &SegmentPage{
+		Items: out,
+		Meta: PageMeta{
+			Page:       offset/limit + 1,
+			PageSize:   limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
+	}, nil
 }
 
 func (s *SegmentService) Update(ctx context.Context, id string, req SegmentCreateRequest, actorUserID string) (*SegmentDTO, error) {
@@ -161,7 +252,7 @@ func (s *SegmentService) Update(ctx context.Context, id string, req SegmentCreat
 	if seg.Status == domain.SegmentArchived {
 		return nil, domain.ErrConflict
 	}
-	rule := domain.SegmentRule{Was: req.Was, WasNot: req.WasNot, PeriodDays: req.PeriodDays, RequireContact: req.RequireContact}
+	rule := req.toRule()
 	ruleJSON, _ := json.Marshal(rule)
 	now := s.clock.Now()
 	ver := &domain.SegmentVersion{
@@ -240,12 +331,12 @@ func (s *SegmentService) Versions(ctx context.Context, id string) ([]SegmentVers
 
 type SegmentVersionDTO struct {
 	ID          string          `json:"id"`
-	VersionNo   int             `json:"version_no"`
+	VersionNo   int             `json:"versionNo"`
 	Rule        json.RawMessage `json:"rule"`
 	Status      string          `json:"status"`
-	MemberCount *int            `json:"member_count"`
-	ComputedAt  string          `json:"computed_at,omitempty"`
-	CreatedAt   string          `json:"created_at"`
+	MemberCount *int            `json:"memberCount"`
+	ComputedAt  string          `json:"computedAt,omitempty"`
+	CreatedAt   string          `json:"createdAt"`
 }
 
 func (s *SegmentService) Recompute(ctx context.Context, id string) (*SegmentDTO, error) {
@@ -299,8 +390,12 @@ func (s *SegmentService) Templates(ctx context.Context) ([]SegmentDTO, error) {
 			Name:             seg.Name,
 			Description:      seg.Description,
 			TemplateCode:     seg.TemplateCode,
+			IsTemplate:       seg.IsTemplate,
 			CurrentVersionNo: seg.CurrentVersionNo,
 			Status:           string(seg.Status),
+			MemberCount:      0,
+			CreatedAt:        seg.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:        seg.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		})
 	}
 	return out, nil

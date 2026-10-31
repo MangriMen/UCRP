@@ -79,7 +79,7 @@ func (h *IdentityHandler) Merge(w http.ResponseWriter, r *http.Request) {
 		TargetGuestID string `json:"target_guest_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TargetGuestID == "" {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Нужен target_guest_id")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Нужен target_guest_id")
 		return
 	}
 	item, err := h.identity.Merge(r.Context(), chi.URLParam(r, "id"), req.TargetGuestID, p.UserID)

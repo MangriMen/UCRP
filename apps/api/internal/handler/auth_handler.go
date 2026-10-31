@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/platform/auth"
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
@@ -23,15 +24,16 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	AccessToken string             `json:"access_token"`
-	ExpiresIn   int64              `json:"expires_in"`
-	User        service.PublicUser `json:"user"`
+	AccessToken string             `json:"accessToken"`
+	TokenType   string             `json:"tokenType"`
+	ExpiresIn   int64              `json:"expiresIn"`
+	User        service.MeResponse `json:"user"`
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" || req.Password == "" {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	res, err := h.auth.Login(r.Context(), req.Email, req.Password)
@@ -42,6 +44,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	setRefreshCookie(w, res.RefreshToken)
 	httpx.WriteJSON(w, http.StatusOK, loginResponse{
 		AccessToken: res.AccessToken,
+		TokenType:   "Bearer",
 		ExpiresIn:   res.ExpiresIn,
 		User:        res.User,
 	})
@@ -62,5 +65,9 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Healthz(w http.ResponseWriter, r *http.Request) {
-	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{
+		"status":  "ok",
+		"version": "1.0.0",
+		"time":    time.Now().UTC().Format(time.RFC3339),
+	})
 }

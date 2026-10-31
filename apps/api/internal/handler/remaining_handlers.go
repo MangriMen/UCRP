@@ -26,6 +26,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	setRefreshCookie(w, res.RefreshToken)
 	httpx.WriteJSON(w, http.StatusOK, loginResponse{
 		AccessToken: res.AccessToken,
+		TokenType:   "Bearer",
 		ExpiresIn:   res.ExpiresIn,
 		User:        res.User,
 	})
@@ -85,7 +86,7 @@ func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req service.UserCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	item, err := h.auth.CreateUserService(r.Context(), req)
@@ -99,7 +100,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var req service.UserUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	item, err := h.auth.UpdateUser(r.Context(), chi.URLParam(r, "id"), req)
@@ -177,7 +178,7 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	var req service.CampaignRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	item, err := h.campaigns.Create(r.Context(), req, p.UserID)
@@ -191,7 +192,7 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var req service.CampaignRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	item, err := h.campaigns.Update(r.Context(), chi.URLParam(r, "id"), req)

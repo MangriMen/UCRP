@@ -49,7 +49,7 @@ func (r *GuestSQL) Search(ctx context.Context, q string, limit, offset int) ([]d
 	if q == "" {
 		rows, err = r.db.QueryContext(ctx, `
 			SELECT id, COALESCE(display_name, ''), status, COALESCE(merged_into_id, ''), created_at, updated_at, deleted_at
-			FROM guest WHERE status <> 'deleted'
+			FROM guest WHERE status = 'active'
 			ORDER BY created_at DESC
 			LIMIT $1 OFFSET $2`, limit, offset)
 	} else {
@@ -58,7 +58,7 @@ func (r *GuestSQL) Search(ctx context.Context, q string, limit, offset int) ([]d
 			SELECT DISTINCT g.id, COALESCE(g.display_name, ''), g.status, COALESCE(g.merged_into_id, ''), g.created_at, g.updated_at, g.deleted_at
 			FROM guest g
 			LEFT JOIN guest_identifier i ON i.guest_id = g.id
-			WHERE g.status <> 'deleted' AND (
+			WHERE g.status = 'active' AND (
 				g.display_name ILIKE '%' || $1 || '%'
 				OR i.value_normalized = $1
 				OR i.value_normalized LIKE '%' || $1 || '%'

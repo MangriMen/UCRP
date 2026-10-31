@@ -21,7 +21,7 @@ func NewDataSourceHandler(sources *service.DataSourceService) *DataSourceHandler
 func (h *DataSourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req service.CreateDataSourceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	ds, err := h.sources.Create(r.Context(), req)
@@ -35,7 +35,7 @@ func (h *DataSourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *DataSourceHandler) CreateType(w http.ResponseWriter, r *http.Request) {
 	var req service.DataSourceTypeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	item, err := h.sources.CreateType(r.Context(), req)
@@ -49,7 +49,7 @@ func (h *DataSourceHandler) CreateType(w http.ResponseWriter, r *http.Request) {
 func (h *DataSourceHandler) UpdateType(w http.ResponseWriter, r *http.Request) {
 	var req service.DataSourceTypeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	item, err := h.sources.UpdateType(r.Context(), chi.URLParam(r, "id"), req)
@@ -63,7 +63,7 @@ func (h *DataSourceHandler) UpdateType(w http.ResponseWriter, r *http.Request) {
 func (h *DataSourceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var req service.DataSourceUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	ds, err := h.sources.Update(r.Context(), chi.URLParam(r, "id"), req)
@@ -107,5 +107,5 @@ func (h *DataSourceHandler) ListTypes(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, items)
 }

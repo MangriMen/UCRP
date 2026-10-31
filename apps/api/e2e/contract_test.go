@@ -273,12 +273,7 @@ func TestSegmentPreviewRejectsConflictingTenant(t *testing.T) {
 			"periodDays": 90,
 		},
 	}
-	implementationBody := map[string]any{
-		"was":         []string{tenant.ID},
-		"was_not":     []string{tenant.ID},
-		"period_days": 90,
-	}
-	resp, err := s.PostContractShape(ctx, "/api/v1/segments/preview", contractBody, implementationBody)
+	resp, err := s.API.Post(ctx, "/api/v1/segments/preview", contractBody)
 	if err != nil {
 		t.Fatalf("POST /api/v1/segments/preview: %v", err)
 	}

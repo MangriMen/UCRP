@@ -40,7 +40,7 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 	}
 	since := time.Now().UTC().AddDate(0, 0, -rule.PeriodDays)
 
-	args := make([]any, 0, len(rule.Was)+len(rule.WasNot)+4)
+	args := make([]any, 0, len(rule.Was)+len(rule.WasNot)+2)
 	for _, id := range rule.Was {
 		args = append(args, id)
 	}
@@ -48,15 +48,13 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 
 	query := `
 		SELECT guest_id FROM (
-			SELECT e.guest_id, COUNT(DISTINCT e.tenant_id) AS hit
+			SELECT DISTINCT e.guest_id
 			FROM event e
 			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
 			WHERE e.guest_id IS NOT NULL
 				AND e.tenant_id IN (` + inPlaceholders(1, len(rule.Was)) + `)
 				AND e.occurred_at >= $` + strconv.Itoa(len(rule.Was)+1) + `
-			GROUP BY e.guest_id
-			HAVING COUNT(DISTINCT e.tenant_id) = $` + strconv.Itoa(len(rule.Was)+2)
-	args = append(args, len(rule.Was))
+		) base`
 
 	if len(rule.WasNot) > 0 {
 		notStart := len(args) + 1
@@ -65,7 +63,6 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 		}
 		args = append(args, since)
 		query += `
-		) base
 		WHERE NOT EXISTS (
 			SELECT 1 FROM event e2
 			JOIN event_type et2 ON et2.id = e2.event_type_id AND et2.counts_as_presence
@@ -73,9 +70,9 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 				AND e2.tenant_id IN (` + inPlaceholders(notStart, len(rule.WasNot)) + `)
 				AND e2.occurred_at >= $` + strconv.Itoa(notStart+len(rule.WasNot)) + `
 		)`
-	} else {
+	} else if rule.RequireContact != "" {
 		query += `
-		) base`
+		WHERE true`
 	}
 
 	if rule.RequireContact != "" {

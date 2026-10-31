@@ -41,7 +41,7 @@ func (h *ContactLimitHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	var req service.ContactLimitRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	item, err := h.limits.Create(r.Context(), req, p.UserID)
@@ -55,7 +55,7 @@ func (h *ContactLimitHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *ContactLimitHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var req service.ContactLimitRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	item, err := h.limits.Update(r.Context(), chi.URLParam(r, "id"), req)
@@ -85,7 +85,11 @@ func NewSegmentHandler(segments *service.SegmentService) *SegmentHandler {
 func (h *SegmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
 	var req service.SegmentPreviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
+		return
+	}
+	if req.Rule == nil && len(req.Was) == 0 && req.PeriodDays == 0 {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -110,7 +114,15 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	var req service.SegmentCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
+		return
+	}
+	if req.Name == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "name: обязательно")
+		return
+	}
+	if req.Rule == nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "rule: обязательно")
 		return
 	}
 	seg, err := h.segments.Create(r.Context(), req, p.UserID)
@@ -132,12 +144,12 @@ func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	items, err := h.segments.List(r.Context(), limit, offset)
+	page, err := h.segments.List(r.Context(), limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, page)
 }
 
 func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -148,7 +160,11 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	var req service.SegmentCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
+		return
+	}
+	if req.Rule == nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "rule: обязательно")
 		return
 	}
 	seg, err := h.segments.Update(r.Context(), chi.URLParam(r, "id"), req, p.UserID)
@@ -248,7 +264,7 @@ func NewReferenceHandler(ref *service.ReferenceService) *ReferenceHandler {
 func decode[T any](w http.ResponseWriter, r *http.Request) (T, bool) {
 	var req T
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return req, false
 	}
 	return req, true

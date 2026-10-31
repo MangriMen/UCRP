@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -12,8 +13,10 @@ import (
 )
 
 type Spec struct {
-	raw   map[string]any
-	paths map[string]any
+	raw      map[string]any
+	paths    map[string]any
+	baseDir  string
+	external map[string]map[string]any
 }
 
 func Load(path string) (*Spec, error) {
@@ -29,7 +32,12 @@ func Load(path string) (*Spec, error) {
 	if !ok {
 		return nil, fmt.Errorf("openapi %s has no paths object", path)
 	}
-	return &Spec{raw: raw, paths: paths}, nil
+	return &Spec{
+		raw:      raw,
+		paths:    paths,
+		baseDir:  filepath.Dir(path),
+		external: map[string]map[string]any{},
+	}, nil
 }
 
 func (s *Spec) Operation(method, path string) (map[string]any, bool) {
@@ -37,12 +45,15 @@ func (s *Spec) Operation(method, path string) (map[string]any, bool) {
 	if !ok {
 		return nil, false
 	}
-	item, ok := s.paths[template].(map[string]any)
+	item, ok := s.resolveNode(s.paths[template])
 	if !ok {
 		return nil, false
 	}
-	op, ok := item[strings.ToLower(method)].(map[string]any)
-	return op, ok
+	op, ok := s.resolveNode(item[strings.ToLower(method)])
+	if !ok {
+		return nil, false
+	}
+	return op, true
 }
 
 func (s *Spec) matchPath(path string) (string, bool) {
@@ -108,15 +119,11 @@ func (s *Spec) ResponseSchema(method, path string, status int) (map[string]any, 
 	if !ok {
 		return nil, false
 	}
-	entry, ok := responses[strconv.Itoa(status)].(map[string]any)
+	entry, ok := s.resolveNode(responses[strconv.Itoa(status)])
 	if !ok {
 		return nil, false
 	}
-	resolved, ok := s.resolve(entry)
-	if !ok {
-		return nil, false
-	}
-	content, ok := resolved["content"].(map[string]any)
+	content, ok := entry["content"].(map[string]any)
 	if !ok {
 		return nil, false
 	}
@@ -125,27 +132,44 @@ func (s *Spec) ResponseSchema(method, path string, status int) (map[string]any, 
 		return nil, false
 	}
 	schema, ok := media["schema"].(map[string]any)
-	return schema, ok
-}
-
-func (s *Spec) resolve(node map[string]any) (map[string]any, bool) {
-	ref, ok := node["$ref"].(string)
-	if !ok {
-		return node, true
-	}
-	target, ok := s.lookup(ref)
 	if !ok {
 		return nil, false
 	}
-	return target, true
+	resolved, ok := s.resolveNode(schema)
+	return resolved, ok
+}
+
+func (s *Spec) resolveNode(node any) (map[string]any, bool) {
+	obj, ok := node.(map[string]any)
+	if !ok {
+		return nil, false
+	}
+	if ref, ok := obj["$ref"].(string); ok {
+		return s.lookup(ref)
+	}
+	return obj, true
 }
 
 func (s *Spec) lookup(ref string) (map[string]any, bool) {
-	if !strings.HasPrefix(ref, "#/") {
-		return nil, false
+	file, fragment := ref, ""
+	if i := strings.Index(ref, "#"); i >= 0 {
+		file, fragment = ref[:i], ref[i+1:]
 	}
-	var current any = s.raw
-	for _, part := range strings.Split(strings.TrimPrefix(ref, "#/"), "/") {
+	var current any
+	if file == "" {
+		current = s.raw
+	} else {
+		doc, ok := s.loadExternal(file)
+		if !ok {
+			return nil, false
+		}
+		current = doc
+	}
+	if fragment == "" || fragment == "/" {
+		out, ok := current.(map[string]any)
+		return out, ok
+	}
+	for _, part := range strings.Split(strings.TrimPrefix(fragment, "/"), "/") {
 		part = strings.ReplaceAll(strings.ReplaceAll(part, "~1", "/"), "~0", "~")
 		obj, ok := current.(map[string]any)
 		if !ok {
@@ -157,7 +181,33 @@ func (s *Spec) lookup(ref string) (map[string]any, bool) {
 		}
 	}
 	out, ok := current.(map[string]any)
-	return out, ok
+	if !ok {
+		return nil, false
+	}
+	if refTarget, ok := out["$ref"].(string); ok {
+		return s.lookup(refTarget)
+	}
+	return out, true
+}
+
+func (s *Spec) loadExternal(file string) (map[string]any, bool) {
+	if doc, ok := s.external[file]; ok {
+		return doc, true
+	}
+	path := file
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(s.baseDir, filepath.FromSlash(file))
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, false
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, false
+	}
+	s.external[file] = doc
+	return doc, true
 }
 
 func (s *Spec) Validate(schema map[string]any, value any) []string {
@@ -282,7 +332,7 @@ func (s *Spec) validateArray(schema map[string]any, value []any, at string, prob
 	if max, ok := intOf(schema["maxItems"]); ok && len(value) > max {
 		*problems = append(*problems, fmt.Sprintf("%s: expected at most %d items, got %d", at, max, len(value)))
 	}
-	items, ok := schema["items"].(map[string]any)
+	items, ok := s.resolveNode(schema["items"])
 	if !ok {
 		return
 	}
