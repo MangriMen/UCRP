@@ -1,0 +1,201 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force-rebuild:
+        description: Rebuild all services even without changes
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_sha || github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  API_IMAGE: mangrimen/ucrp/ucrp-api
+  WORKER_IMAGE: mangrimen/ucrp/ucrp-worker
+  WEB_IMAGE: mangrimen/ucrp/ucrp-web
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+      sha: ${{ steps.check.outputs.sha }}
+    steps:
+      - name: Check CI result
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "sha=" >> "$GITHUB_OUTPUT"
+          fi
+
+  changes:
+    needs: gate
+    if: ${{ needs.gate.outputs.proceed == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+      deploy: ${{ steps.filter.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'deploy/api/**'
+            web:
+              - 'apps/web/**'
+              - 'deploy/web/**'
+              - 'package.json'
+              - 'bun.lock'
+              - 'turbo.jsonc'
+              - 'tsconfig.base.json'
+            deploy:
+              - 'deploy/**'
+              - '.github/workflows/deploy.yml'
+
+  build-api:
+    needs: [gate, changes]
+    if: ${{ needs.gate.outputs.proceed == 'true' && (needs.changes.outputs.api == 'true' || inputs.force-rebuild == true) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - app: api
+            image: mangrimen/ucrp/ucrp-api
+          - app: worker
+            image: mangrimen/ucrp/ucrp-worker
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build & push ${{ matrix.app }} image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/api/Dockerfile
+          push: true
+          build-args: APP=${{ matrix.app }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ matrix.image }}:${{ needs.gate.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ matrix.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+  build-web:
+    needs: [gate, changes]
+    if: ${{ needs.gate.outputs.proceed == 'true' && (needs.changes.outputs.web == 'true' || inputs.force-rebuild == true) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build & push Web image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE }}:${{ needs.gate.outputs.sha }}
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE }}:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  deploy:
+    needs: [gate, changes, build-api, build-web]
+    if: ${{ always() && needs.gate.outputs.proceed == 'true' && (needs.build-api.result == 'success' || needs.build-web.result == 'success' || needs.changes.outputs.deploy == 'true') }}
+    runs-on: ubuntu-latest
+    environment: ucrp-prod
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Copy compose file to server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: deploy/docker-compose.yml
+          target: ${{ vars.SERVER_DIR }}/.deploy-tmp
+          strip_components: 1
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          COMPOSE_FILE_NAME: ${{ vars.COMPOSE_FILE_NAME }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: COMPOSE_FILE_NAME
+          script: |
+            set -e
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            cd ${{ vars.SERVER_DIR }}
+
+            mv .deploy-tmp/docker-compose.yml "$COMPOSE_FILE_NAME"
+            rm -rf .deploy-tmp
+
+            OVERRIDE="${COMPOSE_FILE_NAME%.yml}.override.yml"
+            if [ -f "$OVERRIDE" ]; then
+              COMPOSE="docker compose -f $COMPOSE_FILE_NAME -f $OVERRIDE"
+            else
+              COMPOSE="docker compose -f $COMPOSE_FILE_NAME"
+            fi
+
+            export IMAGE_TAG=latest
+            export UCRP_JWT_SECRET="${{ secrets.UCRP_JWT_SECRET }}"
+            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+
+            $COMPOSE pull
+            $COMPOSE up -d --remove-orphans
+            docker image prune -f
+            docker logout
