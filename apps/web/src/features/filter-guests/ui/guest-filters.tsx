@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { guestStatusLabels } from '@/entities/guest'
-import { useDataSources } from '@/entities/data-source'
+import { useDataSourceOptions } from '@/entities/data-source'
 import { useSegments } from '@/entities/segment'
 import { useTenants } from '@/entities/tenant'
 import type { ListParams } from '@/shared/lib/list-params'
@@ -44,7 +44,7 @@ export function GuestFiltersPanel({ params, isFiltered, onReset }: GuestFiltersP
   const { get, update } = params
   const [input, setInput] = useState(get('q'))
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const sources = useDataSources()
+  const sources = useDataSourceOptions()
   const tenants = useTenants({ pageSize: OPTIONS_LIMIT })
   const segments = useSegments({ pageSize: OPTIONS_LIMIT })
 

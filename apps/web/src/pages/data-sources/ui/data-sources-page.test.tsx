@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -36,11 +36,11 @@ describe('DataSourcesPage', () => {
     expect(within(rowOf('CRM «Лента»')).queryByRole('link')).not.toBeInTheDocument()
   })
 
-  it('filters by tenant search', async () => {
+  it('filters by tenant search on the server', async () => {
     renderPage()
     await screen.findByText('Касса «Зара»')
-    await userEvent.type(screen.getByLabelText('Поиск по арендатору'), 'спорт')
-    expect(screen.queryByText('Касса «Зара»')).not.toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Поиск по источнику или арендатору'), 'спорт')
+    await waitFor(() => expect(screen.queryByText('Касса «Зара»')).not.toBeInTheDocument())
     expect(screen.getByText('API «Спортмастер»')).toBeInTheDocument()
   })
 

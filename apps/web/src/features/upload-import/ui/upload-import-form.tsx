@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useDataSources } from '@/entities/data-source'
+import { useDataSourceOptions } from '@/entities/data-source'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
 import { ErrorBanner } from '@/shared/ui/error-banner'
@@ -14,7 +14,7 @@ interface UploadImportFormProps {
 }
 
 export function UploadImportForm({ onUploaded }: UploadImportFormProps) {
-  const sources = useDataSources()
+  const sources = useDataSourceOptions()
   const upload = useUploadImport()
   const [dataSourceId, setDataSourceId] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)

@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router'
-import { useDataSources } from '@/entities/data-source'
+import { useDataSourceOptions } from '@/entities/data-source'
 import {
   ImportStatusBadge,
   importStatusLabels,
@@ -40,7 +40,7 @@ export function ImportsPage() {
   const page = parsePage(searchParams.get('page'))
 
   const { can } = useAuth()
-  const sources = useDataSources()
+  const sources = useDataSourceOptions()
   const imports = useImports({
     dataSourceId: dataSourceId === ALL_OPTION ? undefined : dataSourceId,
     status: isImportStatus(status) ? status : undefined,

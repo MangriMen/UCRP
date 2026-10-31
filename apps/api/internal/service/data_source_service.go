@@ -30,6 +30,7 @@ func NewDataSourceService(sources domain.DataSourceRepo, types domain.DataSource
 type DataSourceDTO struct {
 	ID           string          `json:"id"`
 	TenantID     string          `json:"tenantId,omitempty"`
+	TenantName   string          `json:"tenantName,omitempty"`
 	TypeID       string          `json:"typeId"`
 	TypeCode     string          `json:"typeCode"`
 	Name         string          `json:"name"`
@@ -38,8 +39,17 @@ type DataSourceDTO struct {
 	ScheduleCron string          `json:"scheduleCron,omitempty"`
 	IsActive     bool            `json:"isActive"`
 	LastImportAt *time.Time      `json:"lastImportAt,omitempty"`
+	LastImport   *LastImportDTO  `json:"lastImport,omitempty"`
 	CreatedAt    time.Time       `json:"createdAt"`
 	UpdatedAt    time.Time       `json:"updatedAt"`
+}
+
+type LastImportDTO struct {
+	BatchID      string     `json:"batchId"`
+	Status       string     `json:"status"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	FinishedAt   *time.Time `json:"finishedAt,omitempty"`
+	RejectedRows int        `json:"rejectedRows"`
 }
 
 type CreateDataSourceRequest struct {
@@ -147,16 +157,27 @@ func (s *DataSourceService) Get(ctx context.Context, id string) (*DataSourceDTO,
 	return &d, nil
 }
 
-func (s *DataSourceService) List(ctx context.Context, limit, offset int) ([]DataSourceDTO, error) {
-	items, err := s.sources.List(ctx, limit, offset)
+func (s *DataSourceService) Search(ctx context.Context, filter domain.DataSourceFilter, limit, offset int) ([]DataSourceDTO, int, error) {
+	entries, total, err := s.sources.Search(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	out := make([]DataSourceDTO, 0, len(items))
-	for _, ds := range items {
-		out = append(out, toDataSourceDTO(ds))
+	out := make([]DataSourceDTO, 0, len(entries))
+	for _, entry := range entries {
+		dto := toDataSourceDTO(entry.DataSource)
+		dto.TenantName = entry.TenantName
+		if last := entry.LastImport; last != nil {
+			dto.LastImport = &LastImportDTO{
+				BatchID:      last.BatchID,
+				Status:       string(last.Status),
+				CreatedAt:    last.CreatedAt,
+				FinishedAt:   last.FinishedAt,
+				RejectedRows: last.RejectedRows,
+			}
+		}
+		out = append(out, dto)
 	}
-	return out, nil
+	return out, total, nil
 }
 
 type DataSourceTypeRequest struct {

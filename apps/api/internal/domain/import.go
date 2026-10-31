@@ -81,6 +81,29 @@ type DataSource struct {
 	UpdatedAt    time.Time
 }
 
+type DataSourceFilter struct {
+	Query        string
+	TenantID     string
+	TypeID       string
+	IsActive     *bool
+	ImportStatus string
+	Sort         string
+}
+
+type DataSourceLastImport struct {
+	BatchID      string
+	Status       ImportStatus
+	CreatedAt    time.Time
+	FinishedAt   *time.Time
+	RejectedRows int
+}
+
+type DataSourceListEntry struct {
+	DataSource
+	TenantName string
+	LastImport *DataSourceLastImport
+}
+
 type ImportBatchRepo interface {
 	CreateQueued(ctx context.Context, batch *ImportBatch, jobType, dedupKey string) error
 	FindByHash(ctx context.Context, dataSourceID, fileHash string) (*ImportBatch, error)
@@ -98,7 +121,7 @@ type RejectedRowRepo interface {
 
 type DataSourceRepo interface {
 	GetByID(ctx context.Context, id string) (*DataSource, error)
-	List(ctx context.Context, limit, offset int) ([]DataSource, error)
+	Search(ctx context.Context, filter DataSourceFilter, limit, offset int) ([]DataSourceListEntry, int, error)
 	Insert(ctx context.Context, ds *DataSource) error
 	Update(ctx context.Context, ds *DataSource) error
 	Deactivate(ctx context.Context, id string, now time.Time) error

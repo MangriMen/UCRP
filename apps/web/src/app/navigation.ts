@@ -57,7 +57,7 @@ const navigation: NavGroup[] = [
     ],
   },
   {
-    label: 'Данные',
+    label: 'Арендаторы',
     items: [
       { title: 'Арендаторы', to: '/tenants', icon: Store, permission: 'reference.read' },
       {
@@ -66,7 +66,7 @@ const navigation: NavGroup[] = [
         icon: Plug,
         permission: 'data_source.read',
       },
-      { title: 'Импорт', to: '/import', icon: Upload, permission: 'import.read' },
+      { title: 'Импорт данных', to: '/import', icon: Upload, permission: 'import.read' },
     ],
   },
   {
