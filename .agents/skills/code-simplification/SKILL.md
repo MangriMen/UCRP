@@ -1,45 +1,43 @@
 ---
 name: code-simplification
-description: Write and simplify code without neuroslop. Use when writing any application code in this repo, and when reviewing or refactoring code that works but is heavier than it needs to be. Prefer clarity over cleverness; preserve behavior exactly.
+description: Write and simplify code without slop. Use when writing application code in this repo, and when reviewing or refactoring code that works but is heavier than it needs to be. Clarity over cleverness; behavior preserved exactly.
 metadata:
   tags: 'code-quality, simplification, go, typescript'
 ---
 
-# Code simplification (anti-neuroslop)
+# Code simplification
 
-Источник: [addyosmani/agent-skills · code-simplification](https://github.com/addyosmani/agent-skills/blob/main/skills/code-simplification/SKILL.md), адаптировано под UCRP.
+Adapted from [addyosmani/agent-skills · code-simplification](https://github.com/addyosmani/agent-skills/blob/main/skills/code-simplification/SKILL.md).
 
-Пиши и правь код так, чтобы новый разработчик понял его быстрее, чем оригинал. Цель — понятность, а не «меньше строк».
+Goal: a newcomer understands the code faster than the original. Fewer lines is not the goal.
 
-## Правила репозитория (жёсткие)
+Repo-wide rules (no comments, no slop, scope, conventions) are in `AGENTS.md`; this skill covers how to simplify.
 
-1. **Без комментариев в коде.** Не оставляй `// increment counter`, «// TODO remove», «// scaffold only» и прочий шум. Код должен быть понятен без них. Doc-комментарии публичного API — только если без них невалидный godoc / экспорт; желательно минимум.
-2. **Без нейрослопа.** Никаких: пустых обёрток, «для галочки» абстракций, переименований без причины, пустых README-простыней в коде, повторных try/catch, комментариев «what».
-3. **Сохраняй поведение.** Упрощение не меняет входы/выходы/ошибки/побочные эффекты. Не уверен — не меняй.
-4. **Конвенции проекта.** Смотрим `ARCHITECTURE.md`, `AGENTS.md`, соседний код. Внешние предпочтения не навязываем.
-5. **Ясность > изящество.** Вложенные тернарники и цепочки reduce — в if/else или именованный шаг. Guard clauses вместо вложенности 3+.
-6. **Баланс.** Не инлайнить именованные концепции, не удалять полезные порты/интерфейсы «ради чистоты», не оптимизировать под длину строки.
-7. **Scope.** Упрощай то, что меняешь в задаче. Drive-by рефакторинг чужого кода — только по явной команде.
-8. **Сначала пойми (Chesterton’s Fence).** Не удаляй код/абстракцию, пока не понял, зачем она. Потом — решай, жива ли причина.
+## Rules
 
-## Когда упрощать
+1. **Preserve behavior.** Same inputs, outputs, errors, side effects. Unsure → don't change.
+2. **Clarity over cleverness.** Nested ternaries and `reduce` chains become `if`/named steps. Guard clauses instead of 3+ nesting levels.
+3. **Balance.** Don't inline named concepts, don't delete useful ports/interfaces "for cleanliness", don't optimize for line length.
+4. **Chesterton's fence.** Don't delete code or an abstraction until you know why it exists. Then decide whether the reason still holds.
 
-- После зелёных тестов, если реализация тяжелее нужного
-- На ревью по читаемости/сложности
-- Deep nesting, длинные функции, мусорные имена (`data`, `tmp`, `val`), дубли 5+ строк
+## When to simplify
 
-## Когда НЕ упрощать
+- After green tests, when the implementation is heavier than needed.
+- During review for readability or complexity.
+- Deep nesting, long functions, junk names (`data`, `tmp`, `val`), 5+ duplicated lines.
 
-- Код уже читаем — не «чисти» зря
-- Не понял поведение — сначала разберись
-- Performance-critical и «проще» будет медленнее
-- Полный rewrite модуля впереди
+## When not to
 
-## Чек-лист
+- Code already reads well.
+- You don't understand the behavior yet.
+- Performance-critical and "simpler" is slower.
+- A full module rewrite is ahead.
 
-- [ ] Тесты проходят без правок ожиданий
-- [ ] Build/lint без новых замечаний
-- [ ] Нет комментариев «what» и мёртвого кода
-- [ ] Diff по задаче, без чужих рефакторингов
-- [ ] Имена и стили — как в проекте
-- [ ] Обработка ошибок не ослаблена
+## Checklist
+
+- [ ] Tests pass without changing expectations.
+- [ ] Build and lint report no new findings.
+- [ ] No "what" comments, no dead code.
+- [ ] Diff stays in task scope.
+- [ ] Names and style match the project.
+- [ ] Error handling not weakened.
