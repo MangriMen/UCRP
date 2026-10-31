@@ -45,7 +45,7 @@ func (r *ExportSQL) ListMembers(ctx context.Context, exportID string) ([]domain.
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.ExportMember, 0)
 	for rows.Next() {
 		var m domain.ExportMember
@@ -102,7 +102,7 @@ func (r *ExportSQL) List(ctx context.Context, limit, offset int) ([]domain.Expor
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.ExportJob, 0)
 	for rows.Next() {
 		j, err := scanExport(rows)
@@ -189,7 +189,7 @@ func (r *ContactLimitSQL) List(ctx context.Context, limit, offset int) ([]domain
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.ContactLimit, 0)
 	for rows.Next() {
 		var c domain.ContactLimit
@@ -208,7 +208,7 @@ func (r *ContactLimitSQL) ListActive(ctx context.Context) ([]domain.ContactLimit
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.ContactLimit, 0)
 	for rows.Next() {
 		var c domain.ContactLimit
@@ -312,7 +312,7 @@ func (r *ContactLogSQL) count(ctx context.Context, guestIDs []string, since time
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var (
 			id string

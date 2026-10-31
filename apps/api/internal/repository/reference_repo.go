@@ -25,7 +25,7 @@ func (r *ContactLogSQL) ListByGuest(ctx context.Context, guestID string, limit, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.ContactLog, 0)
 	for rows.Next() {
 		var l domain.ContactLog
@@ -56,7 +56,7 @@ func (r *TenantSQL) List(ctx context.Context, limit, offset int) ([]domain.Tenan
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanTenants(rows)
 }
 
@@ -159,7 +159,7 @@ func (r *TenantCategorySQL) List(ctx context.Context) ([]domain.TenantCategory, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.TenantCategory, 0)
 	for rows.Next() {
 		var c domain.TenantCategory
@@ -230,7 +230,7 @@ func (r *TenantCategorySQL) ListRelations(ctx context.Context, categoryID string
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.CategoryRelation, 0)
 	for rows.Next() {
 		var rel domain.CategoryRelation
@@ -289,7 +289,7 @@ func (r *ProjectSQL) List(ctx context.Context, tenantID string, limit, offset in
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.Project, 0)
 	for rows.Next() {
 		var p domain.Project
@@ -367,7 +367,7 @@ func (r *EventTypeSQL) List(ctx context.Context) ([]domain.EventType, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.EventType, 0)
 	for rows.Next() {
 		var e domain.EventType

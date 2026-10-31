@@ -93,7 +93,7 @@ func (r *ImportBatchSQL) List(ctx context.Context, dataSourceID, status string, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.ImportBatch, 0)
 	for rows.Next() {
 		b, err := scanBatch(rows)
@@ -209,7 +209,7 @@ func (r *RejectedRowSQL) ListByBatch(ctx context.Context, batchID string, limit,
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.RejectedRow, 0)
 	for rows.Next() {
 		var rr domain.RejectedRow
@@ -237,7 +237,7 @@ func (r *RejectedRowSQL) InsertBatch(ctx context.Context, rows []domain.Rejected
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 	for _, row := range rows {
 		if _, err := stmt.ExecContext(ctx, row.ID, row.ImportBatchID, row.RowNumber, row.ErrorCode, row.ErrorMessage, nullIfEmpty(row.RawLine), row.CreatedAt); err != nil {
 			return err

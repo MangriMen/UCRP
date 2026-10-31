@@ -44,7 +44,7 @@ func (r *AuditSQL) List(ctx context.Context, entityType, entityID, actor string,
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.AuditLog, 0)
 	for rows.Next() {
 		var a domain.AuditLog
@@ -84,7 +84,7 @@ func (r *CampaignSQL) List(ctx context.Context, limit, offset int) ([]domain.Cam
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.Campaign, 0)
 	for rows.Next() {
 		c, err := scanCampaign(rows)

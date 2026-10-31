@@ -48,7 +48,7 @@ func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, e
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.User, 0)
 	for rows.Next() {
 		var (

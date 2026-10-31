@@ -39,7 +39,7 @@ func (r *UnmergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.UnmergeBlock, 0)
 	for rows.Next() {
 		var b domain.UnmergeBlock

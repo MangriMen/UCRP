@@ -33,7 +33,7 @@ func (r *EventSQL) ListByGuest(ctx context.Context, guestID string, limit, offse
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.Event, 0)
 	for rows.Next() {
 		var (
@@ -105,7 +105,7 @@ func (r *EventSQL) ListUnmatchedByBatch(ctx context.Context, batchID string, lim
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.Event, 0)
 	for rows.Next() {
 		var (

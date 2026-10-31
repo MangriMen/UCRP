@@ -65,7 +65,7 @@ func (r *DataSourceSQL) List(ctx context.Context, limit, offset int) ([]domain.D
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.DataSource, 0)
 	for rows.Next() {
 		var (
@@ -139,7 +139,7 @@ func (r *DataSourceTypeSQL) List(ctx context.Context) ([]domain.DataSourceType, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.DataSourceType, 0)
 	for rows.Next() {
 		var t domain.DataSourceType

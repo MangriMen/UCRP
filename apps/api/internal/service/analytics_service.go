@@ -59,7 +59,7 @@ func (s *AnalyticsService) Penetration(ctx context.Context, from, to time.Time) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out PenetrationResponse
 	if err := rows.Scan(&out.One, &out.Two, &out.ThreePlus, &out.Share); err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (s *AnalyticsService) DataQuality(ctx context.Context) ([]DataQualityItem, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]DataQualityItem, 0)
 	for rows.Next() {
 		var it DataQualityItem

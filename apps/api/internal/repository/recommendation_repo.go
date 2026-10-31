@@ -24,7 +24,7 @@ func (r *RecommendationSQL) ListByGuest(ctx context.Context, guestID string) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.Recommendation, 0)
 	for rows.Next() {
 		var rec domain.Recommendation
@@ -59,7 +59,7 @@ func (r *RecommendationSQL) TopTenantsForSegment(ctx context.Context, segmentID 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]domain.SegmentTenantScore, 0)
 	for rows.Next() {
 		var s domain.SegmentTenantScore

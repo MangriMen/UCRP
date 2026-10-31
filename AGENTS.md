@@ -36,6 +36,7 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 - **Write via [code-simplification](.agents/skills/code-simplification/SKILL.md).** Clarity over cleverness; preserve behavior; no wrappers-for-wrappers, no speculative abstractions, no renaming for taste.
 - Prefer guard clauses over deep nesting; named helpers over repeated conditionals; full words in names (`userID`, not `uid2`).
 - Do not batch unrelated “cleanup” into feature changes. Stay in scope.
+- **`database/sql`: always close `*sql.Rows`.** After `QueryContext` / `Query`, immediately `defer func() { _ = rows.Close() }()` (errcheck requires the ignored error). Do not leave `rows` open on early returns. `QueryRowContext` does not need this.
 
 ## Finishing
 

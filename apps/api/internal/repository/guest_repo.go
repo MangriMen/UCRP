@@ -69,7 +69,7 @@ func (r *GuestSQL) Search(ctx context.Context, q string, limit, offset int) ([]d
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	out := make([]domain.Guest, 0)
 	for rows.Next() {
@@ -113,7 +113,7 @@ func (r *GuestSQL) TenantNames(ctx context.Context, guestID string) ([]string, e
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := make([]string, 0)
 	for rows.Next() {
 		var name string
