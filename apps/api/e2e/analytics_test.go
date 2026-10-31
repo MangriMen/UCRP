@@ -146,7 +146,7 @@ func TestTenantAggregatesRespectsKThreshold(t *testing.T) {
 	if !hidden {
 		t.Fatalf("a single guest is below the k = 5 threshold and must be suppressed")
 	}
-	if value, exists := aggregate["new_guests"]; exists {
+	if value, exists := aggregate["newGuests"]; exists {
 		if n, _ := value.(float64); n != 0 {
 			t.Fatalf("a suppressed aggregate must not leak the value, got %v", value)
 		}
