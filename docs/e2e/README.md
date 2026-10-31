@@ -1,8 +1,8 @@
 # E2E-тестирование UCRP: анализ и план
 
 Комплект документов для разработки автоматизированных E2E-тестов API UCRP.
-Исходные данные: `docs/00…15`, `ARCHITECTURE.md`, `docs/endpoint-registry.md`,
-`docs/openapi.json` (+ `docs/openapi/`), `docs/customer-faq.md`,
+Исходные данные: `docs/00…15`, `docs/ARCHITECTURE.md`, `docs/endpoint-registry.md`,
+`docs/openapi.json` (+ `docs/openapi/`), `docs/Ответы_заказчика_Кейс_2_FAQ.md`,
 фактический код `apps/api`.
 
 | Файл                        | Содержание                                                        |
