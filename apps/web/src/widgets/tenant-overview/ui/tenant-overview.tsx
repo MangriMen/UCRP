@@ -7,8 +7,15 @@ import {
   type TenantAggregateDay,
   type TenantVisitAggregate,
 } from '@/entities/tenant-aggregates'
+import {
+  TENANT_AVG_CHECK_PERMISSION,
+  TENANT_FIRST_PURCHASES_PERMISSION,
+  TENANT_NEW_GUESTS_PERMISSION,
+  TENANT_REPEAT_VISITS_PERMISSION,
+  TENANT_REVENUE_PERMISSION,
+} from '@/entities/tenant'
 import { useAuth } from '@/entities/user'
-import { daysAgo, isPeriodValid, type Period } from '@/shared/lib/period'
+import { daysAgo, type Period } from '@/shared/lib/period'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { PeriodFilter } from '@/shared/ui/period-filter'
@@ -17,11 +24,6 @@ import { StatCard, StatGrid } from '@/shared/ui/stat-card'
 import { ActivityChart, type ActivityMetric, type ActivityPoint } from './activity-chart'
 import { SmallCellNotice } from './small-cell-notice'
 
-const NEW_GUESTS_METRIC = 'metric.new_guests_via_mall.read'
-const REPEAT_VISITS_METRIC = 'metric.repeat_visits.read'
-const FIRST_PURCHASES_METRIC = 'metric.first_purchase_new_tenant.read'
-const REVENUE_METRIC = 'metric.revenue_total.read'
-const AVG_CHECK_METRIC = 'metric.avg_check.read'
 const DEFAULT_PERIOD_DAYS = 29
 const MAX_PERIOD_DAYS = 366
 const DAY_MS = 86_400_000
@@ -52,33 +54,33 @@ const overviewCards: OverviewCard[] = [
   {
     id: 'new-guests-count',
     label: 'Новые гости',
-    permission: NEW_GUESTS_METRIC,
+    permission: TENANT_NEW_GUESTS_PERMISSION,
     format: count((data) => data.newGuestsCount),
   },
   {
     id: 'repeat-visits-count',
     label: 'Повторные визиты',
     hint: 'Визиты гостей, которые уже бывали у арендатора',
-    permission: REPEAT_VISITS_METRIC,
+    permission: TENANT_REPEAT_VISITS_PERMISSION,
     format: count((data) => data.repeatVisitsCount),
   },
   {
     id: 'first-purchases-count',
     label: 'Первые покупки',
     hint: 'Гости, чья первая покупка у арендатора пришлась на период',
-    permission: FIRST_PURCHASES_METRIC,
+    permission: TENANT_FIRST_PURCHASES_PERMISSION,
     format: count((data) => data.firstPurchasesCount),
   },
   {
     id: 'revenue-total',
     label: 'Выручка',
-    permission: REVENUE_METRIC,
+    permission: TENANT_REVENUE_PERMISSION,
     format: money((data) => data.revenueTotalMinor),
   },
   {
     id: 'avg-check',
     label: 'Средний чек',
-    permission: AVG_CHECK_METRIC,
+    permission: TENANT_AVG_CHECK_PERMISSION,
     format: money((data) => data.avgCheckMinor),
   },
 ]
@@ -113,16 +115,16 @@ export function TenantOverview({ tenantId }: TenantOverviewProps) {
     to: searchParams.get('to') ?? daysAgo(0),
   }
   const error = periodError(period)
-  const isValid = error === undefined && isPeriodValid(period)
+  const isValid = error === undefined
   const aggregates = useTenantAggregates(isValid ? tenantId : null, isValid ? period : undefined)
 
   const cards = overviewCards.filter((card) => !card.permission || can(card.permission))
   const activityMetrics: ActivityMetric[] = [
     'visitsCount',
-    ...(can(NEW_GUESTS_METRIC) ? (['newGuestsCount'] as const) : []),
-    ...(can(REPEAT_VISITS_METRIC) ? (['repeatVisitsCount'] as const) : []),
+    ...(can(TENANT_NEW_GUESTS_PERMISSION) ? (['newGuestsCount'] as const) : []),
+    ...(can(TENANT_REPEAT_VISITS_PERMISSION) ? (['repeatVisitsCount'] as const) : []),
   ]
-  const showRevenueChart = can(REVENUE_METRIC)
+  const showRevenueChart = can(TENANT_REVENUE_PERMISSION)
 
   const changePeriod = ({ from, to }: Period) =>
     setSearchParams(
