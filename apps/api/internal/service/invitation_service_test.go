@@ -115,10 +115,14 @@ func TestInvitationDisabledExpiredAndFailedDelivery(t *testing.T) {
 func TestRefreshRejectsTokenFromBeforePasswordRecovery(t *testing.T) {
 	manager := auth.NewManager("test-secret", time.Hour)
 	tokens, err := manager.Issue(domain.Principal{UserID: "u", Role: domain.RoleManager})
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	users := delegationUsers{users: map[string]domain.User{"u": {ID: "u", Role: domain.RoleManager, IsActive: true, AuthVersion: 1}}}
 	svc := NewAuthService(users, manager, domain.SystemClock{}, idgen.UUID{})
-	if _, err := svc.Refresh(context.Background(), tokens.RefreshToken); !errors.Is(err, domain.ErrUnauthorized) { t.Fatalf("stale refresh token: %v", err) }
+	if _, err := svc.Refresh(context.Background(), tokens.RefreshToken); !errors.Is(err, domain.ErrUnauthorized) {
+		t.Fatalf("stale refresh token: %v", err)
+	}
 }
 
 func TestRecoveryTargetsExistingAccount(t *testing.T) {
@@ -128,7 +132,9 @@ func TestRecoveryTargetsExistingAccount(t *testing.T) {
 		"u": {ID: "u", Email: "employee@example.test", DisplayName: "Employee", Role: domain.RoleTenant, TenantID: "tenant", IsActive: true, AuthVersion: 3},
 	}}
 	svc := NewInvitationService(repo, invitationTestAuthorizer{}, sender, clock, idgen.UUID{}, users)
-	if err := svc.IssueRecovery(context.Background(), domain.Principal{UserID: "manager", Role: domain.RoleManager}, "u"); err != nil { t.Fatal(err) }
+	if err := svc.IssueRecovery(context.Background(), domain.Principal{UserID: "manager", Role: domain.RoleManager}, "u"); err != nil {
+		t.Fatal(err)
+	}
 	if repo.invite.Purpose != "recovery" || repo.invite.TargetUserID != "u" || repo.invite.TargetAuthVersion != 3 || sender.token == "" {
 		t.Fatalf("unexpected recovery invitation: %+v", repo.invite)
 	}

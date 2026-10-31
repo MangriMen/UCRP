@@ -54,7 +54,3 @@ func writePage(w http.ResponseWriter, items any, limit, offset, total int) {
 		"meta":  pageMeta(limit, offset, total),
 	})
 }
-
-func writeItems(w http.ResponseWriter, items any) {
-	writePage(w, items, 0, 0, 0)
-}

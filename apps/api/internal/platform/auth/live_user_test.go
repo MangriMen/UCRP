@@ -37,7 +37,7 @@ func TestRequireActiveUser(t *testing.T) {
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 			req = req.WithContext(context.WithValue(req.Context(), principalKey, principal))
 			response := httptest.NewRecorder()
 			handler := RequireActiveUser(liveUserRepo{user: test.user, err: test.err})(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

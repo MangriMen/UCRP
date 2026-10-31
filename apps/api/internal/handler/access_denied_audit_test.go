@@ -76,7 +76,7 @@ func TestDeniedAuditMiddleware(t *testing.T) {
 	})
 	request := func(query string, want int) {
 		t.Helper()
-		req := httptest.NewRequest(http.MethodGet, "/guests/private-contact?"+query+"&email=secret@example.test", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/guests/private-contact?"+query+"&email=secret@example.test", nil)
 		req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 		response := httptest.NewRecorder()
 		router.ServeHTTP(response, req)

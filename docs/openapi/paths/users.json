@@ -75,6 +75,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/users.json#/User"
+                }
+              }
+            }
+          },
           "400": {
             "$ref": "../components/responses.json#/BadRequest"
           },

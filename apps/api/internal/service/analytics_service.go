@@ -143,14 +143,14 @@ func (s *AnalyticsService) penetrationSeries(ctx context.Context, from, to time.
 }
 
 type MetricsResponse struct {
-	From                 string  `json:"from"`
-	To                   string  `json:"to"`
-	MatchRate            float64 `json:"matchRate"`
-	ContestedMergeRate   float64 `json:"disputedMergeRate"`
-	AvgSegmentToExport   float64 `json:"segmentToExportMedianSeconds"`
-	SegmentToExportP95   float64 `json:"segmentToExportP95Seconds"`
-	DisputedSafe         bool
-	ExportLatencySafe    bool
+	From               string  `json:"from"`
+	To                 string  `json:"to"`
+	MatchRate          float64 `json:"matchRate"`
+	ContestedMergeRate float64 `json:"disputedMergeRate"`
+	AvgSegmentToExport float64 `json:"segmentToExportMedianSeconds"`
+	SegmentToExportP95 float64 `json:"segmentToExportP95Seconds"`
+	DisputedSafe       bool
+	ExportLatencySafe  bool
 }
 
 func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*MetricsResponse, error) {

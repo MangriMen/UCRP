@@ -74,7 +74,7 @@ func TestTenantReferenceIsolation(t *testing.T) {
 			router.Use(PermissionMiddleware(policy))
 			router.Get("/api/v1/tenants", handler.List)
 			router.Get("/api/v1/tenants/{id}", handler.Get)
-			req := httptest.NewRequest(http.MethodGet, tc.path, nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, tc.path, nil)
 			req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 			response := httptest.NewRecorder()
 			router.ServeHTTP(response, req)

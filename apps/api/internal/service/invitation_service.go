@@ -35,7 +35,9 @@ type InvitationService struct {
 
 func NewInvitationService(repo domain.InvitationRepo, authorizer InvitationAuthorizer, sender InvitationSender, clock domain.Clock, ids domain.IDGen, users ...domain.UserRepo) *InvitationService {
 	svc := &InvitationService{repo: repo, authorizer: authorizer, sender: sender, clock: clock, ids: ids}
-	if len(users) > 0 { svc.users = users[0] }
+	if len(users) > 0 {
+		svc.users = users[0]
+	}
 	return svc
 }
 
@@ -55,11 +57,19 @@ func (s *InvitationService) Issue(ctx context.Context, actor domain.Principal, e
 }
 
 func (s *InvitationService) IssueRecovery(ctx context.Context, actor domain.Principal, userID string) error {
-	if s.sender == nil { return ErrInvitationDeliveryUnavailable }
-	if s.users == nil { return domain.ErrForbidden }
+	if s.sender == nil {
+		return ErrInvitationDeliveryUnavailable
+	}
+	if s.users == nil {
+		return domain.ErrForbidden
+	}
 	user, err := s.users.GetByID(ctx, userID)
-	if err != nil { return err }
-	if !user.IsActive { return domain.ErrForbidden }
+	if err != nil {
+		return err
+	}
+	if !user.IsActive {
+		return domain.ErrForbidden
+	}
 	return s.send(ctx, actor, domain.UserInvitation{Email: user.Email, DisplayName: user.DisplayName, Role: user.Role,
 		TenantID: user.TenantID, Purpose: "recovery", TargetUserID: user.ID, TargetAuthVersion: user.AuthVersion})
 }

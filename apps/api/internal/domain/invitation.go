@@ -7,11 +7,11 @@ import (
 
 type UserInvitation struct {
 	ID, Email, DisplayName, TenantID, CreatedBy, AuditID, Purpose, TargetUserID string
-	Role                                                 Role
-	TokenHash                                            []byte
-	PolicyVersion                                        int64
-	TargetAuthVersion                                    int64
-	CreatedAt, ExpiresAt                                 time.Time
+	Role                                                                        Role
+	TokenHash                                                                   []byte
+	PolicyVersion                                                               int64
+	TargetAuthVersion                                                           int64
+	CreatedAt, ExpiresAt                                                        time.Time
 }
 
 type InvitationRepo interface {
