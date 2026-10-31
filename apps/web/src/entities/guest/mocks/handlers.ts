@@ -8,20 +8,54 @@ import {
   mockGuestProfileExtras,
   mockGuests,
 } from './fixtures'
+import type { Guest } from '../model/types'
 
 const digits = (value: string) => value.replace(/\D/g, '')
 
+interface EventFilter {
+  sourceId: string | null
+  tenantId: string | null
+  periodFrom: string | null
+  periodTo: string | null
+}
+
+const matchesQuery = (guest: Guest, query: string) =>
+  query === '' ||
+  (guest.displayName?.toLowerCase().includes(query) ?? false) ||
+  (digits(query) !== '' && guest.id.includes(digits(query)))
+
+const hasMatchingEvent = (guestId: string, filter: EventFilter) => {
+  const { sourceId, tenantId, periodFrom, periodTo } = filter
+  if (!sourceId && !tenantId && !periodFrom && !periodTo) return true
+  return mockGuestEvents.some((event) => {
+    const day = event.occurredAt.slice(0, 10)
+    return (
+      event.guestId === guestId &&
+      (!sourceId || event.dataSourceId === sourceId) &&
+      (!tenantId || event.tenantId === tenantId) &&
+      (!periodFrom || day >= periodFrom) &&
+      (!periodTo || day <= periodTo)
+    )
+  })
+}
+
 export const guestHandlers = [
   http.get(`${API}/guests`, ({ request }) => {
-    const query = new URL(request.url).searchParams.get('q')?.trim().toLowerCase() ?? ''
-    if (query.length < MIN_SEARCH_LENGTH) {
+    const params = new URL(request.url).searchParams
+    const query = params.get('q')?.trim().toLowerCase() ?? ''
+    if (params.has('q') && query.length < MIN_SEARCH_LENGTH) {
       return apiError(400, 'validation_error', 'Запрос слишком короткий')
     }
     const matched = mockGuests.filter(
       (guest) =>
         guest.status !== 'merged' &&
-        ((guest.displayName?.toLowerCase().includes(query) ?? false) ||
-          (digits(query) !== '' && guest.id.includes(digits(query)))),
+        matchesQuery(guest, query) &&
+        hasMatchingEvent(guest.id, {
+          sourceId: params.get('source_id'),
+          tenantId: params.get('tenant_id'),
+          periodFrom: params.get('period_from'),
+          periodTo: params.get('period_to'),
+        }),
     )
     return HttpResponse.json(paged(request, matched))
   }),

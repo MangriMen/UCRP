@@ -10,9 +10,35 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe('useGuestSearch', () => {
-  it('does not fetch a query shorter than the minimum', () => {
+  it('lists all guests without filters', async () => {
+    const { result } = renderHook(() => useGuestSearch({}), { wrapper })
+    await waitFor(() => expect(result.current.data).toBeDefined())
+    expect(result.current.data?.items.map((g) => g.id)).toEqual([
+      'guest-0001',
+      'guest-0002',
+      'guest-0003',
+    ])
+  })
+
+  it('ignores a query shorter than the minimum', async () => {
     const { result } = renderHook(() => useGuestSearch({ query: 'и' }), { wrapper })
-    expect(result.current.fetchStatus).toBe('idle')
+    await waitFor(() => expect(result.current.data).toBeDefined())
+    expect(result.current.data?.items).toHaveLength(3)
+  })
+
+  it('filters by tenant, source and period', async () => {
+    const { result } = renderHook(
+      () =>
+        useGuestSearch({
+          tenantId: 'tenant-0001',
+          sourceId: 'ds-0001',
+          periodFrom: '2026-10-01',
+          periodTo: '2026-10-02',
+        }),
+      { wrapper },
+    )
+    await waitFor(() => expect(result.current.data).toBeDefined())
+    expect(result.current.data?.items.map((g) => g.id)).toEqual(['guest-0002'])
   })
 
   it('finds guests by name and excludes merged profiles', async () => {

@@ -1,5 +1,9 @@
 export interface GuestSearchFilters {
-  query: string
+  query?: string
+  sourceId?: string
+  tenantId?: string
+  periodFrom?: string
+  periodTo?: string
   page?: number
   pageSize?: number
 }

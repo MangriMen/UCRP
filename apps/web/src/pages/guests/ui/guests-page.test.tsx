@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { describe, expect, it } from 'vitest'
@@ -21,16 +21,25 @@ function renderPage(url = '/guests') {
 }
 
 describe('GuestsPage', () => {
-  it('asks for a query before searching', () => {
+  it('lists guests without filters', async () => {
     renderPage()
-    expect(screen.getByText('Введите запрос для поиска')).toBeInTheDocument()
+    expect(await screen.findByText('Иван Петров')).toBeInTheDocument()
+    expect(screen.getByText('Мария Иванова')).toBeInTheDocument()
+  })
+
+  it('filters by tenant and resets', async () => {
+    renderPage('/guests?tenant_id=tenant-0002')
+    expect(await screen.findByText('Без имени')).toBeInTheDocument()
+    expect(screen.queryByText('Мария Иванова')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Сбросить' }))
+    expect(await screen.findByText('Мария Иванова')).toBeInTheDocument()
   })
 
   it('shows matching guests after typing a query', async () => {
     renderPage()
     await userEvent.type(screen.getByLabelText('Поиск гостей'), 'Петров')
-    expect(await screen.findByText('Иван Петров')).toBeInTheDocument()
-    expect(screen.queryByText('Мария Иванова')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Мария Иванова')).not.toBeInTheDocument())
+    expect(screen.getByText('Иван Петров')).toBeInTheDocument()
   })
 
   it('restores the search from the URL', async () => {

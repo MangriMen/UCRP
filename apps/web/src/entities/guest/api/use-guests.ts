@@ -14,9 +14,16 @@ export function useGuestSearch(filters: GuestSearchFilters) {
     queryKey: guestKeys.list(filters),
     queryFn: () =>
       api.get('/guests', {
-        query: { q: filters.query, page: filters.page, page_size: filters.pageSize },
+        query: {
+          q: filters.query && filters.query.length >= MIN_SEARCH_LENGTH ? filters.query : undefined,
+          source_id: filters.sourceId,
+          tenant_id: filters.tenantId,
+          period_from: filters.periodFrom,
+          period_to: filters.periodTo,
+          page: filters.page,
+          page_size: filters.pageSize,
+        },
       }),
-    enabled: filters.query.length >= MIN_SEARCH_LENGTH,
     placeholderData: keepPreviousData,
   })
 }

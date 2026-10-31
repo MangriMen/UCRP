@@ -1,14 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
-import { GuestStatusBadge, MIN_SEARCH_LENGTH, useGuestSearch, type Guest } from '@/entities/guest'
-import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
+import { useNavigate } from 'react-router'
+import { GuestStatusBadge, useGuestSearch, type Guest } from '@/entities/guest'
+import { GuestFiltersPanel, useGuestFilters } from '@/features/filter-guests'
 import { formatDateTime } from '@/shared/lib/format'
 import { DataTable, type Column } from '@/shared/ui/data-table'
-import { EmptyState } from '@/shared/ui/empty-state'
-import { Input } from '@/shared/ui/input'
 import { PageHeader } from '@/shared/ui/page-header'
-
-const SEARCH_DEBOUNCE_MS = 300
 
 const columns: Column<Guest>[] = [
   { id: 'name', header: 'Гость', cell: (g) => g.displayName ?? 'Без имени' },
@@ -22,40 +17,18 @@ const columns: Column<Guest>[] = [
   },
 ]
 
-const parsePage = (value: string | null) => {
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
-
 export function GuestsPage() {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const urlQuery = searchParams.get('q') ?? ''
-  const page = parsePage(searchParams.get('page'))
+  const { filters, update, setPage, reset, isFiltered } = useGuestFilters()
 
-  const [input, setInput] = useState(urlQuery)
-  const query = useDebouncedValue(input.trim(), SEARCH_DEBOUNCE_MS)
-
-  useEffect(() => {
-    if (query === urlQuery) return
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current)
-      if (query) next.set('q', query)
-      else next.delete('q')
-      next.delete('page')
-      return next
-    })
-  }, [query, urlQuery, setSearchParams])
-
-  const guests = useGuestSearch({ query: urlQuery, page })
-  const canSearch = urlQuery.length >= MIN_SEARCH_LENGTH
-
-  const changePage = (next: number) =>
-    setSearchParams((current) => {
-      const params = new URLSearchParams(current)
-      params.set('page', String(next))
-      return params
-    })
+  const guests = useGuestSearch({
+    query: filters.q,
+    sourceId: filters.sourceId || undefined,
+    tenantId: filters.tenantId || undefined,
+    periodFrom: filters.periodFrom || undefined,
+    periodTo: filters.periodTo || undefined,
+    page: filters.page,
+  })
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,31 +36,23 @@ export function GuestsPage() {
         title="Гости"
         description="Единая база профилей: поиск по телефону, email, карте или имени"
       />
-      <Input
-        value={input}
-        onChange={(event) => setInput(event.target.value)}
-        placeholder="Телефон, email, номер карты или имя"
-        aria-label="Поиск гостей"
-        className="max-w-md"
+      <GuestFiltersPanel
+        filters={filters}
+        isFiltered={isFiltered}
+        onChange={update}
+        onReset={reset}
       />
-      {canSearch ? (
-        <DataTable
-          columns={columns}
-          rows={guests.data?.items}
-          getRowId={(g) => g.id}
-          isLoading={guests.isLoading}
-          error={guests.error}
-          emptyTitle="Гости не найдены"
-          meta={guests.data?.meta}
-          onPageChange={changePage}
-          onRowClick={(g) => navigate(`/guests/${g.id}`)}
-        />
-      ) : (
-        <EmptyState
-          title="Введите запрос для поиска"
-          description={`Минимум ${MIN_SEARCH_LENGTH} символа`}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        rows={guests.data?.items}
+        getRowId={(g) => g.id}
+        isLoading={guests.isLoading}
+        error={guests.error}
+        emptyTitle="Гости не найдены"
+        meta={guests.data?.meta}
+        onPageChange={setPage}
+        onRowClick={(g) => navigate(`/guests/${g.id}`)}
+      />
     </div>
   )
 }
