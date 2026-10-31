@@ -1,6 +1,12 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { useTenants, type TenantListItem } from '@/entities/tenant'
+import {
+  TENANT_NEW_GUESTS_PERMISSION,
+  TENANT_SUPPRESSION_THRESHOLD,
+  TENANT_VISITS_PERMISSION,
+  useTenants,
+  type TenantListItem,
+} from '@/entities/tenant'
 import { formatAggregateCell } from '@/entities/tenant-aggregates'
 import { useAuth } from '@/entities/user'
 import type { Period } from '@/shared/lib/period'
@@ -8,13 +14,10 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
-const VISITS_PERMISSION = 'metric.visits_count.read'
-const NEW_GUESTS_PERMISSION = 'metric.new_guests_via_mall.read'
-const SUPPRESSION_THRESHOLD = 5
 const TOP_SIZE = 10
 
 const statCell = (value: number | null | undefined) =>
-  formatAggregateCell(value, SUPPRESSION_THRESHOLD)
+  formatAggregateCell(value, TENANT_SUPPRESSION_THRESHOLD)
 
 const baseColumns: Column<TenantListItem>[] = [
   {
@@ -53,8 +56,8 @@ const newGuestsColumn: Column<TenantListItem> = {
 
 export function TenantBreakdown({ period }: { period: Period }) {
   const { can } = useAuth()
-  const canSeeVisits = can(VISITS_PERMISSION)
-  const canSeeNewGuests = can(NEW_GUESTS_PERMISSION)
+  const canSeeVisits = can(TENANT_VISITS_PERMISSION)
+  const canSeeNewGuests = can(TENANT_NEW_GUESTS_PERMISSION)
 
   const columns = useMemo(
     () => [
