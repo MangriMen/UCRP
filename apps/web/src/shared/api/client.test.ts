@@ -1,0 +1,43 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ApiError, request, setAccessToken } from './client'
+
+const json = (status: number, body?: unknown) =>
+  new Response(body === undefined ? null : JSON.stringify(body), { status })
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  setAccessToken(null)
+})
+
+describe('request', () => {
+  it('throws ApiError with the backend error body on 4xx', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          json(403, { error: { code: 'forbidden', message: 'нет прав' } }),
+        ),
+    )
+    await expect(request('/x')).rejects.toMatchObject({
+      status: 403,
+      body: { code: 'forbidden' },
+    })
+    await expect(request('/x')).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('refreshes once and retries when two requests get 401 at the same time', async () => {
+    setAccessToken('old')
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/auth/refresh'))
+        return json(200, { access_token: 'new' })
+      const auth = new Headers(init?.headers).get('Authorization')
+      return auth === 'Bearer new' ? json(200, { ok: true }) : json(401)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    await Promise.all([request('/a'), request('/b')])
+    expect(
+      fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/auth/refresh')),
+    ).toHaveLength(1)
+  })
+})
