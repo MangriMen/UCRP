@@ -11,9 +11,12 @@ export type { SegmentListFilters, SegmentMemberFilters } from './model/keys'
 export { isSegmentComputing, segmentStatusLabels } from './model/status'
 export type {
   Segment,
+  SegmentCreateRequest,
   SegmentMember,
+  SegmentPreview,
   SegmentRule,
   SegmentStatus,
   SegmentTemplate,
+  SegmentUpdateRequest,
   SegmentVersion,
 } from './model/types'

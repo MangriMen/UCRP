@@ -1,7 +1,12 @@
 import { http, HttpResponse } from 'msw'
-import { API, apiError, paged } from '@/shared/api/mocks/helpers'
+import { API, apiError, mockId, paged } from '@/shared/api/mocks/helpers'
 import { isSegmentComputing } from '../model/status'
-import type { Segment, SegmentMember } from '../model/types'
+import type {
+  Segment,
+  SegmentCreateRequest,
+  SegmentMember,
+  SegmentUpdateRequest,
+} from '../model/types'
 import { mockSegments, mockSegmentTemplates, mockSegmentVersions } from './fixtures'
 
 const READY_MEMBER_COUNT = 150
@@ -40,6 +45,27 @@ export const segmentHandlers = [
     return HttpResponse.json(paged(request, filtered))
   }),
 
+  http.post(`${API}/segments`, async ({ request }) => {
+    const body = (await request.json()) as SegmentCreateRequest
+    const now = new Date().toISOString()
+    const segment: Segment = {
+      id: mockId('segment-new'),
+      name: body.name,
+      description: body.description ?? null,
+      templateCode: body.templateCode ?? null,
+      isTemplate: false,
+      currentVersionNo: 1,
+      status: 'pending',
+      memberCount: 0,
+      computedAt: null,
+      rule: body.rule,
+      createdAt: now,
+      updatedAt: now,
+    }
+    segments.unshift(segment)
+    return HttpResponse.json(segment, { status: 201 })
+  }),
+
   http.get(`${API}/segments/:id`, ({ params }) => {
     const segment = segments.find((s) => s.id === params.id)
     if (!segment) return apiError(404, 'not_found', 'Сегмент не найден')
@@ -57,6 +83,19 @@ export const segmentHandlers = [
     const segment = segments.find((s) => s.id === params.id)
     if (!segment) return apiError(404, 'not_found', 'Сегмент не найден')
     return HttpResponse.json(mockSegmentVersions(segment))
+  }),
+
+  http.put(`${API}/segments/:id`, async ({ params, request }) => {
+    const segment = segments.find((s) => s.id === params.id)
+    if (!segment) return apiError(404, 'not_found', 'Сегмент не найден')
+    const body = (await request.json()) as SegmentUpdateRequest
+    segment.name = body.name ?? segment.name
+    segment.description = body.description === undefined ? segment.description : body.description
+    segment.rule = body.rule
+    segment.currentVersionNo += 1
+    segment.status = 'pending'
+    segment.updatedAt = new Date().toISOString()
+    return HttpResponse.json(segment)
   }),
 
   http.post(`${API}/segments/:id/recompute`, ({ params }) => {

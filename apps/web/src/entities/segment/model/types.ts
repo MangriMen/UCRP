@@ -6,3 +6,6 @@ export type SegmentRule = Schema<'SegmentRule'>
 export type SegmentVersion = Schema<'SegmentVersion'>
 export type SegmentMember = Schema<'SegmentMember'>
 export type SegmentTemplate = Schema<'SegmentTemplate'>
+export type SegmentCreateRequest = Schema<'SegmentCreateRequest'>
+export type SegmentUpdateRequest = Schema<'SegmentUpdateRequest'>
+export type SegmentPreview = Schema<'SegmentPreviewResponse'>
