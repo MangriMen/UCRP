@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm } from 'react-hook-form'
-import type { Segment } from '@/entities/segment'
+import { Controller, useForm, useWatch } from 'react-hook-form'
+import type { Segment, SegmentTemplate } from '@/entities/segment'
 import { useTenantCategories } from '@/entities/tenant-category'
 import { useTenants } from '@/entities/tenant'
 import { Button } from '@/shared/ui/button'
@@ -13,12 +13,15 @@ import { Textarea } from '@/shared/ui/textarea'
 import { useCreateSegment, useUpdateSegment } from '../api/use-segment-mutations'
 import {
   emptyRuleValues,
+  ruleFormSchema,
   segmentFormSchema,
   toRule,
   toRuleFormValues,
   type SegmentFormValues,
 } from '../model/schema'
 import { EntityChecklist } from './entity-checklist'
+import { PreviewPanel } from './preview-panel'
+import { TemplateGallery } from './template-gallery'
 
 const REFERENCE_LIMIT = 200
 
@@ -43,6 +46,8 @@ export function RuleBuilderForm({ segment, onDone }: RuleBuilderFormProps) {
     register,
     control,
     handleSubmit,
+    getValues,
+    reset,
     formState: { errors },
   } = useForm<SegmentFormValues>({
     resolver: zodResolver(segmentFormSchema),
@@ -53,6 +58,21 @@ export function RuleBuilderForm({ segment, onDone }: RuleBuilderFormProps) {
       templateCode: null,
     },
   })
+
+  const watched = useWatch({ control })
+  const parsedRule = ruleFormSchema.safeParse(watched)
+  const previewRule = parsedRule.success ? toRule(parsedRule.data) : null
+  const templateCode = watched.templateCode ?? null
+
+  const applyTemplate = (template: SegmentTemplate) => {
+    const { name, description } = getValues()
+    reset({
+      ...toRuleFormValues(template.rule),
+      name: name || template.name,
+      description: description || template.description || '',
+      templateCode: template.code,
+    })
+  }
 
   const tenantItems = (tenants.data?.items ?? []).map((t) => ({ value: t.id, label: t.name }))
   const categoryItems = (categories.data ?? []).map((c) => ({ value: c.id, label: c.name }))
@@ -93,6 +113,7 @@ export function RuleBuilderForm({ segment, onDone }: RuleBuilderFormProps) {
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
       {mutation.error && <ErrorBanner error={mutation.error} />}
+      {!segment && <TemplateGallery selectedCode={templateCode} onSelect={applyTemplate} />}
       <FormField label="Название" error={errors.name?.message}>
         {(field) => <Input {...field} {...register('name')} />}
       </FormField>
@@ -143,6 +164,7 @@ export function RuleBuilderForm({ segment, onDone }: RuleBuilderFormProps) {
       <FormField label="Минимальная сумма, ₽" error={errors.minAmount?.message}>
         {(field) => <Input {...field} inputMode="decimal" {...register('minAmount')} />}
       </FormField>
+      <PreviewPanel rule={previewRule} />
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>
           Отмена

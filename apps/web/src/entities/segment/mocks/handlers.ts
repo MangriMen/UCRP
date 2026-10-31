@@ -5,11 +5,33 @@ import type {
   Segment,
   SegmentCreateRequest,
   SegmentMember,
+  SegmentPreview,
+  SegmentRule,
   SegmentUpdateRequest,
 } from '../model/types'
 import { mockSegments, mockSegmentTemplates, mockSegmentVersions } from './fixtures'
 
 const READY_MEMBER_COUNT = 150
+
+const PREVIEW_BASE_SIZE = 1200
+
+function previewFor(rule: SegmentRule, limit: number): SegmentPreview {
+  const conditions = Object.values(rule).filter((value) =>
+    Array.isArray(value) ? value.length > 0 : value != null,
+  ).length
+  const size = Math.floor(PREVIEW_BASE_SIZE / conditions)
+  return {
+    size,
+    examples: Array.from({ length: Math.min(limit, size) }, (_, index) => ({
+      guestId: `guest-${String(index + 1).padStart(4, '0')}`,
+      displayName: `Гость ${index + 1}`,
+      tenantCount: (index % 4) + 1,
+      lastSeenAt: '2026-10-28T18:20:00Z',
+    })),
+    cached: false,
+    computedInMs: 12,
+  }
+}
 
 const segments: Segment[] = structuredClone(mockSegments)
 
@@ -64,6 +86,13 @@ export const segmentHandlers = [
     }
     segments.unshift(segment)
     return HttpResponse.json(segment, { status: 201 })
+  }),
+
+  http.post(`${API}/segments/preview`, async ({ request }) => {
+    const body = (await request.json()) as { rule: SegmentRule; limit: number }
+    const overlap = body.rule.was?.some((id) => body.rule.wasNot?.includes(id))
+    if (overlap) return apiError(400, 'validation_error', 'Арендатор указан в was и wasNot')
+    return HttpResponse.json(previewFor(body.rule, body.limit))
   }),
 
   http.get(`${API}/segments/:id`, ({ params }) => {

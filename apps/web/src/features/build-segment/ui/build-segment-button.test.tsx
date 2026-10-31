@@ -35,4 +35,14 @@ describe('BuildSegmentButton', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Сохранить новую версию' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
+
+  it('prefills the form from a template', async () => {
+    renderButton()
+    await userEvent.click(screen.getByRole('button', { name: 'Новый сегмент' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(await within(dialog).findByRole('button', { name: /Риск оттока/ }))
+    expect(within(dialog).getByLabelText('Название')).toHaveValue('Риск оттока')
+    expect(within(dialog).getByLabelText('Период анализа, дней')).toHaveValue('60')
+    expect(within(dialog).getByLabelText('Минимум визитов')).toHaveValue('2')
+  })
 })
