@@ -22,16 +22,12 @@ func (c *Client) LoginToken(ctx context.Context, email, password string) (string
 		return "", nil, err
 	}
 	var payload struct {
-		Camel string `json:"accessToken"`
-		Snake string `json:"access_token"`
+		AccessToken string `json:"accessToken"`
 	}
 	if err := resp.Decode(&payload); err != nil {
 		return "", resp, err
 	}
-	token := payload.Camel
-	if token == "" {
-		token = payload.Snake
-	}
+	token := payload.AccessToken
 	if token == "" {
 		return "", resp, fmt.Errorf("login response carries no access token: %s", resp.Snippet())
 	}

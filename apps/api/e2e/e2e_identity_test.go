@@ -70,8 +70,8 @@ func TestE2EIdentityMergeLifecycle(t *testing.T) {
 		t.Fatalf("step 3 decode confirm: %v", err)
 	}
 	confirmObj, _ := confirmBody.(map[string]any)
-	winnerID := harness.StringField(confirmObj, "winnerGuestId", "winner_guest_id")
-	loserID := harness.StringField(confirmObj, "mergedGuestId", "merged_guest_id")
+	winnerID := harness.StringField(confirmObj, "winnerGuestId")
+	loserID := harness.StringField(confirmObj, "mergedGuestId")
 	if winnerID == "" || loserID == "" {
 		t.Fatalf("step 3: the confirm response must report winnerGuestId and mergedGuestId: %s", confirm.Snippet())
 	}
@@ -92,7 +92,7 @@ func TestE2EIdentityMergeLifecycle(t *testing.T) {
 	if status := harness.StringField(loserObj, "status"); status != "merged" {
 		t.Fatalf("step 4: loser status must be merged, got %q", status)
 	}
-	if mergedInto := harness.StringField(loserObj, "mergedIntoId", "merged_into_id"); mergedInto != winnerID {
+	if mergedInto := harness.StringField(loserObj, "mergedIntoId"); mergedInto != winnerID {
 		t.Fatalf("step 4: loser mergedIntoId must be %s, got %q", winnerID, mergedInto)
 	}
 
@@ -120,7 +120,7 @@ func TestE2EIdentityMergeLifecycle(t *testing.T) {
 		t.Fatalf("step 6 decode winner profile: %v", err)
 	}
 	winnerObj, _ := winnerProfileBody.(map[string]any)
-	if count, ok := harness.IntField(winnerObj, "tenantCount", "tenant_count"); !ok || count != 2 {
+	if count, ok := harness.IntField(winnerObj, "tenantCount"); !ok || count != 2 {
 		t.Fatalf("step 6: winner tenantCount must be 2 after absorbing the loser, got %v", count)
 	}
 
@@ -190,7 +190,7 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 
 	preview, err := s.PostContractShape(ctx, "/api/v1/segments/preview",
 		map[string]any{"rule": map[string]any{"was": []string{w.tenantA.ID}, "wasNot": []string{w.tenantC.ID}, "periodDays": 90}},
-		map[string]any{"was": []string{w.tenantA.ID}, "was_not": []string{w.tenantC.ID}, "period_days": 90})
+		map[string]any{"was": []string{w.tenantA.ID}, "wasNot": []string{w.tenantC.ID}, "periodDays": 90})
 	if err != nil {
 		t.Fatalf("step 1 preview: %v", err)
 	}
@@ -207,7 +207,7 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 
 	create, err := s.PostContractShape(ctx, "/api/v1/segments",
 		map[string]any{"name": s.Reg.Name("e2e-segment"), "rule": map[string]any{"was": []string{w.tenantA.ID}, "wasNot": []string{w.tenantC.ID}, "periodDays": 90}},
-		map[string]any{"name": s.Reg.Name("e2e-segment"), "was": []string{w.tenantA.ID}, "was_not": []string{w.tenantC.ID}, "period_days": 90})
+		map[string]any{"name": s.Reg.Name("e2e-segment"), "was": []string{w.tenantA.ID}, "wasNot": []string{w.tenantC.ID}, "periodDays": 90})
 	if err != nil {
 		t.Fatalf("step 2 create segment: %v", err)
 	}
@@ -241,7 +241,7 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 		t.Fatalf("step 3 decode segment: %v", err)
 	}
 	getObj, _ := getBody.(map[string]any)
-	if count, ok := harness.IntField(getObj, "memberCount", "member_count"); !ok || count < 1 {
+	if count, ok := harness.IntField(getObj, "memberCount"); !ok || count < 1 {
 		t.Fatalf("step 3: created segment must materialize at least one member, got %v", count)
 	}
 
@@ -258,7 +258,7 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 	items, _ := harness.Items(refreshBody)
 	for _, item := range items {
 		obj, _ := item.(map[string]any)
-		if harness.StringField(obj, "tenantId", "tenant_id") == w.tenantA.ID {
+		if harness.StringField(obj, "tenantId") == w.tenantA.ID {
 			t.Fatalf("step 4: recommendations must not include the visited tenant %s", w.tenantA.ID)
 		}
 	}

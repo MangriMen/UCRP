@@ -24,15 +24,15 @@ func NewIdentityService(candidates domain.MergeCandidateRepo, blocks domain.Unme
 
 type MergeCandidateDTO struct {
 	ID            string `json:"id"`
-	GuestAID      string `json:"guest_a_id"`
-	GuestBID      string `json:"guest_b_id"`
-	MatchType     string `json:"match_type"`
-	ReasonCode    string `json:"reason_code"`
-	ReasonText    string `json:"reason_text"`
+	GuestAID      string `json:"guestAId"`
+	GuestBID      string `json:"guestBId"`
+	MatchType     string `json:"matchType"`
+	ReasonCode    string `json:"reasonCode"`
+	ReasonText    string `json:"reasonText"`
 	Score         int    `json:"score"`
 	Resolution    string `json:"resolution"`
-	WinnerGuestID string `json:"winner_guest_id,omitempty"`
-	MergedGuestID string `json:"merged_guest_id,omitempty"`
+	WinnerGuestID string `json:"winnerGuestId,omitempty"`
+	MergedGuestID string `json:"mergedGuestId,omitempty"`
 }
 
 func (s *IdentityService) List(ctx context.Context, resolution string, limit, offset int) ([]MergeCandidateDTO, error) {
@@ -94,10 +94,10 @@ func (s *IdentityService) Merge(ctx context.Context, sourceGuestID, targetGuestI
 
 type UnmergeBlockDTO struct {
 	ID        string `json:"id"`
-	GuestAID  string `json:"guest_a_id"`
-	GuestBID  string `json:"guest_b_id"`
+	GuestAID  string `json:"guestAId"`
+	GuestBID  string `json:"guestBId"`
 	Reason    string `json:"reason"`
-	CreatedAt string `json:"created_at"`
+	CreatedAt string `json:"createdAt"`
 }
 
 func (s *IdentityService) ListBlocks(ctx context.Context, limit, offset int) ([]UnmergeBlockDTO, error) {

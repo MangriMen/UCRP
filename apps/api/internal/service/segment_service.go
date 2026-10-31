@@ -37,9 +37,9 @@ type SegmentRuleBody struct {
 type SegmentPreviewRequest struct {
 	Rule           *SegmentRuleBody `json:"rule"`
 	Was            []string         `json:"was"`
-	WasNot         []string         `json:"was_not"`
-	PeriodDays     int              `json:"period_days"`
-	RequireContact string           `json:"require_contact"`
+	WasNot         []string         `json:"wasNot"`
+	PeriodDays     int              `json:"periodDays"`
+	RequireContact string           `json:"requireContact"`
 	Limit          int              `json:"limit"`
 }
 
@@ -76,9 +76,9 @@ type SegmentCreateRequest struct {
 	TemplateCode   string           `json:"templateCode"`
 	Rule           *SegmentRuleBody `json:"rule"`
 	Was            []string         `json:"was"`
-	WasNot         []string         `json:"was_not"`
-	PeriodDays     int              `json:"period_days"`
-	RequireContact string           `json:"require_contact"`
+	WasNot         []string         `json:"wasNot"`
+	PeriodDays     int              `json:"periodDays"`
+	RequireContact string           `json:"requireContact"`
 }
 
 func (r SegmentCreateRequest) toRule() domain.SegmentRule {

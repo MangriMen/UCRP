@@ -30,7 +30,7 @@ func (h *ContactLimitHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *ContactLimitHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -232,7 +232,7 @@ func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *GuestHandler) Contacts(w http.ResponseWriter, r *http.Request) {
@@ -329,7 +329,7 @@ func (h *ReferenceHandler) ListCategories(w http.ResponseWriter, r *http.Request
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *ReferenceHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
@@ -440,7 +440,7 @@ func (h *ReferenceHandler) ListEventTypes(w http.ResponseWriter, r *http.Request
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *ReferenceHandler) CreateEventType(w http.ResponseWriter, r *http.Request) {
@@ -475,4 +475,11 @@ func (h *ReferenceHandler) DeleteEventType(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func nonNil[T any](items []T) []T {
+	if items == nil {
+		return []T{}
+	}
+	return items
 }

@@ -40,17 +40,17 @@ func buildExportWorld(t *testing.T, s *harness.Suite, suffix string, guestCount 
 
 func exportPreview(ctx context.Context, c *client.Client, segmentID, channel string) (*client.Response, error) {
 	return c.Post(ctx, "/api/v1/exports/preview", map[string]any{
-		"segment_id": segmentID,
-		"channel":    channel,
+		"segmentId": segmentID,
+		"channel":   channel,
 	})
 }
 
 func exportCreate(ctx context.Context, c *client.Client, segmentID, key string) (*client.Response, error) {
 	return c.Post(ctx, "/api/v1/exports", map[string]any{
-		"segment_id":      segmentID,
-		"channel":         "sms",
-		"format":          "csv",
-		"idempotency_key": key,
+		"segmentId":      segmentID,
+		"channel":        "sms",
+		"format":         "csv",
+		"idempotencyKey": key,
 	})
 }
 
@@ -73,11 +73,11 @@ func TestExportPreviewCounters(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	inSegment, _ := harness.IntField(obj, "in_segment", "inSegment")
-	withContact, _ := harness.IntField(obj, "with_contact", "withContact")
-	blocked, _ := harness.IntField(obj, "blocked_by_limit", "blockedByLimit")
+	inSegment, _ := harness.IntField(obj, "inSegment")
+	withContact, _ := harness.IntField(obj, "withContact")
+	blocked, _ := harness.IntField(obj, "blockedByLimit")
 	control, _ := harness.IntField(obj, "control")
-	toSend, _ := harness.IntField(obj, "to_send", "toSend")
+	toSend, _ := harness.IntField(obj, "toSend")
 
 	if inSegment != 3 {
 		t.Fatalf("in_segment: expected 3, got %d", inSegment)
@@ -112,7 +112,7 @@ func TestExportPreviewChannelContactFilter(t *testing.T) {
 		t.Fatalf("decode sms preview: %v", err)
 	}
 	smsObj, _ := smsBody.(map[string]any)
-	smsWithContact, _ := harness.IntField(smsObj, "with_contact", "withContact")
+	smsWithContact, _ := harness.IntField(smsObj, "withContact")
 	if smsWithContact != 2 {
 		t.Fatalf("sms with_contact: expected 2 (guests have phones), got %d", smsWithContact)
 	}
@@ -127,7 +127,7 @@ func TestExportPreviewChannelContactFilter(t *testing.T) {
 		t.Fatalf("decode email preview: %v", err)
 	}
 	emailObj, _ := emailBody.(map[string]any)
-	emailWithContact, _ := harness.IntField(emailObj, "with_contact", "withContact")
+	emailWithContact, _ := harness.IntField(emailObj, "withContact")
 	if emailWithContact != 0 {
 		t.Fatalf("email with_contact: expected 0 (guests have no email), got %d", emailWithContact)
 	}
@@ -161,7 +161,7 @@ func TestExportCreateReady(t *testing.T) {
 	if status := harness.StringField(obj, "status"); status != "ready" {
 		t.Fatalf("export status: expected ready, got %q", status)
 	}
-	exported, _ := harness.IntField(obj, "exported_count", "exportedCount")
+	exported, _ := harness.IntField(obj, "exportedCount")
 	if exported != 2 {
 		t.Fatalf("exported_count: expected 2, got %d", exported)
 	}
@@ -233,11 +233,11 @@ func TestExportDownloadExcludesControlGroup(t *testing.T) {
 	defer cancel()
 
 	resp, err := s.API.Post(ctx, "/api/v1/exports", map[string]any{
-		"segment_id":      ew.segment.ID,
-		"channel":         "sms",
-		"format":          "csv",
-		"control_percent": 50,
-		"idempotency_key": s.Reg.Name("key-control"),
+		"segmentId":      ew.segment.ID,
+		"channel":        "sms",
+		"format":         "csv",
+		"controlPercent": 50,
+		"idempotencyKey": s.Reg.Name("key-control"),
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/exports: %v", err)
@@ -251,8 +251,8 @@ func TestExportDownloadExcludesControlGroup(t *testing.T) {
 	exportID := harness.StringField(obj, "id")
 	trackExport(s, exportID)
 
-	control, _ := harness.IntField(obj, "control_count", "controlCount")
-	exported, _ := harness.IntField(obj, "exported_count", "exportedCount")
+	control, _ := harness.IntField(obj, "controlCount")
+	exported, _ := harness.IntField(obj, "exportedCount")
 	if control == 0 {
 		t.Fatalf("control_count: expected a non-empty control group at 50%%, got 0")
 	}
@@ -307,11 +307,11 @@ func TestExportCountersInvariant(t *testing.T) {
 		t.Fatalf("decode export: %v", err)
 	}
 	job, _ := decoded.(map[string]any)
-	total, _ := harness.IntField(job, "total_in_segment", "totalInSegment")
-	noContact, _ := harness.IntField(job, "no_contact_count", "noContactCount")
-	blocked, _ := harness.IntField(job, "blocked_by_limit_count", "blockedByLimitCount")
-	control, _ := harness.IntField(job, "control_count", "controlCount")
-	exported, _ := harness.IntField(job, "exported_count", "exportedCount")
+	total, _ := harness.IntField(job, "totalInSegment")
+	noContact, _ := harness.IntField(job, "noContactCount")
+	blocked, _ := harness.IntField(job, "blockedByLimitCount")
+	control, _ := harness.IntField(job, "controlCount")
+	exported, _ := harness.IntField(job, "exportedCount")
 
 	if total != 3 {
 		t.Fatalf("total_in_segment: expected 3, got %d", total)

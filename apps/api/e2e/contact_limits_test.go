@@ -38,8 +38,8 @@ func TestContactLimitBlocksRepeatExport(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	blocked, _ := harness.IntField(previewObj, "blocked_by_limit", "blockedByLimit")
-	toSend, _ := harness.IntField(previewObj, "to_send", "toSend")
+	blocked, _ := harness.IntField(previewObj, "blockedByLimit")
+	toSend, _ := harness.IntField(previewObj, "toSend")
 
 	if blocked != 3 {
 		t.Fatalf("blocked_by_limit: expected all 3 guests blocked by maxContacts=1, got %d", blocked)
@@ -84,7 +84,7 @@ func TestContactLimitStrictestRuleWins(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	blocked, _ := harness.IntField(previewObj, "blocked_by_limit", "blockedByLimit")
+	blocked, _ := harness.IntField(previewObj, "blockedByLimit")
 	if blocked != 2 {
 		t.Fatalf("the strictest rule (maxContacts=1) must block both guests, got %d blocked", blocked)
 	}
@@ -122,7 +122,7 @@ func TestContactLimitIsChannelScoped(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	blocked, _ := harness.IntField(previewObj, "blocked_by_limit", "blockedByLimit")
+	blocked, _ := harness.IntField(previewObj, "blockedByLimit")
 	if blocked != 2 {
 		t.Fatalf("sms limit must block both guests on the sms channel, got %d", blocked)
 	}
@@ -135,11 +135,11 @@ func TestContactLimitControlGroupNotLogged(t *testing.T) {
 	defer cancel()
 
 	resp, err := s.API.Post(ctx, "/api/v1/exports", map[string]any{
-		"segment_id":      ew.segment.ID,
-		"channel":         "sms",
-		"format":          "csv",
-		"control_percent": 50,
-		"idempotency_key": s.Reg.Name("control-log-key"),
+		"segmentId":      ew.segment.ID,
+		"channel":        "sms",
+		"format":         "csv",
+		"controlPercent": 50,
+		"idempotencyKey": s.Reg.Name("control-log-key"),
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/exports: %v", err)
@@ -153,8 +153,8 @@ func TestContactLimitControlGroupNotLogged(t *testing.T) {
 	exportID := harness.StringField(obj, "id")
 	trackExport(s, exportID)
 
-	control, _ := harness.IntField(obj, "control_count", "controlCount")
-	exported, _ := harness.IntField(obj, "exported_count", "exportedCount")
+	control, _ := harness.IntField(obj, "controlCount")
+	exported, _ := harness.IntField(obj, "exportedCount")
 
 	logs, err := s.DB.Count(ctx, `SELECT COUNT(*) FROM contact_log WHERE export_id = $1`, exportID)
 	if err != nil {

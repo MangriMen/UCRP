@@ -24,7 +24,7 @@ type PenetrationBucket struct {
 type PenetrationResponse struct {
 	One       int                 `json:"one"`
 	Two       int                 `json:"two"`
-	ThreePlus int                 `json:"three_plus"`
+	ThreePlus int                 `json:"threePlus"`
 	Share     float64             `json:"share"`
 	Buckets   []PenetrationBucket `json:"buckets"`
 }
@@ -73,9 +73,9 @@ func (s *AnalyticsService) Penetration(ctx context.Context, from, to time.Time) 
 }
 
 type MetricsResponse struct {
-	MatchRate          float64 `json:"match_rate"`
-	ContestedMergeRate float64 `json:"contested_merge_rate"`
-	AvgSegmentToExport float64 `json:"avg_segment_to_export_minutes"`
+	MatchRate          float64 `json:"matchRate"`
+	ContestedMergeRate float64 `json:"contestedMergeRate"`
+	AvgSegmentToExport float64 `json:"avgSegmentToExportMinutes"`
 }
 
 func (s *AnalyticsService) Metrics(ctx context.Context) (*MetricsResponse, error) {
@@ -105,7 +105,7 @@ func (s *AnalyticsService) Metrics(ctx context.Context) (*MetricsResponse, error
 }
 
 type TenantAggregateResponse struct {
-	NewGuests int  `json:"new_guests"`
+	NewGuests int  `json:"newGuests"`
 	Hidden    bool `json:"hidden"`
 }
 
@@ -132,11 +132,11 @@ func (s *AnalyticsService) TenantAggregates(ctx context.Context, tenantID string
 }
 
 type DataQualityItem struct {
-	DataSourceID  string  `json:"data_source_id"`
+	DataSourceID  string  `json:"dataSourceId"`
 	Name          string  `json:"name"`
-	LastImportAt  string  `json:"last_import_at,omitempty"`
-	RejectedRate  float64 `json:"rejected_rate"`
-	PendingMerges int     `json:"pending_merges"`
+	LastImportAt  string  `json:"lastImportAt,omitempty"`
+	RejectedRate  float64 `json:"rejectedRate"`
+	PendingMerges int     `json:"pendingMerges"`
 	Warning       bool    `json:"warning"`
 }
 

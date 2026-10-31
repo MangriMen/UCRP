@@ -414,5 +414,5 @@ func (r *Registry) SegmentWithContacts(ctx context.Context, suffix string, guest
 		}
 		memberIDs = append(memberIDs, g.ID)
 	}
-	return r.Segment(ctx, suffix, `{"was":[],"was_not":[],"period_days":90}`, memberIDs)
+	return r.Segment(ctx, suffix, `{"was":[],"wasNot":[],"periodDays":90}`, memberIDs)
 }

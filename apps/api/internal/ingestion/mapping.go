@@ -6,17 +6,17 @@ import (
 )
 
 type FieldMapping struct {
-	ExternalID  string `json:"external_id"`
-	OccurredAt  string `json:"occurred_at"`
-	EventType   string `json:"event_type"`
+	ExternalID  string `json:"externalId"`
+	OccurredAt  string `json:"occurredAt"`
+	EventType   string `json:"eventType"`
 	Amount      string `json:"amount"`
 	Currency    string `json:"currency"`
 	Phone       string `json:"phone"`
 	Email       string `json:"email"`
 	Card        string `json:"card"`
 	Name        string `json:"name"`
-	TenantCode  string `json:"tenant_code"`
-	ProjectCode string `json:"project_code"`
+	TenantCode  string `json:"tenantCode"`
+	ProjectCode string `json:"projectCode"`
 }
 
 func DefaultFieldMapping() FieldMapping {
