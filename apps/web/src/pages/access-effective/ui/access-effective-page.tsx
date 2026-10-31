@@ -77,7 +77,7 @@ export function AccessEffectivePage() {
     code,
     permission: permissions.data?.find((permission) => permission.code === code),
   }))
-  const subjectQuery = subject ? subjectParams(subject) : null
+  const subjectQuery = subject && subjectParams(subject)
 
   return (
     <div className="flex flex-col gap-6">
@@ -87,10 +87,10 @@ export function AccessEffectivePage() {
         breadcrumbs={[{ label: 'Доступы', to: '/access/grants' }, { label: 'Эффективный доступ' }]}
       />
       <SubjectPicker value={value} onChange={choose} directory={directory} />
-      {!subject && (
+      {!subjectQuery && (
         <EmptyState title="Выберите субъекта" description="Арендатора, пользователя или роль" />
       )}
-      {subject && subjectQuery && (
+      {subjectQuery && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">

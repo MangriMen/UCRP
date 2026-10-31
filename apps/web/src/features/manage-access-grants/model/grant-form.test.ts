@@ -7,12 +7,15 @@ import {
   validateGrantForm,
   type GrantFormValues,
 } from './grant-form'
+import type { SubjectValue } from './subject'
 
 const now = new Date('2026-11-01T09:00:00Z')
 const allow = { permission: 'tenant.aggregates.own', effect: 'allow' as const }
 
+const tenant: SubjectValue = { kind: 'tenant', id: 'tenant-0001' }
+
 const form = (overrides: Partial<GrantFormValues>): GrantFormValues => ({
-  ...emptyGrantForm({ kind: 'tenant', id: 'tenant-0001' }, now),
+  ...emptyGrantForm(now),
   items: [allow],
   reason: 'Пилот',
   ...overrides,
@@ -24,7 +27,7 @@ describe('grant form', () => {
       presetCode: 'tenant.self_aggregates',
       scopes: [{ type: 'period_days', value: ' 90 ' }],
     })
-    expect(toGrantRequest(values, 'tenant-0001')).toEqual({
+    expect(toGrantRequest(values, tenant, 'tenant-0001')).toEqual({
       subjectType: 'tenant',
       subjectId: 'tenant-0001',
       presetCode: 'tenant.self_aggregates',
@@ -42,17 +45,17 @@ describe('grant form', () => {
   })
 
   it('drops preset and scopes for a manager and sends an indefinite period without an end', () => {
+    const manager: SubjectValue = { kind: 'manager', id: 'user-manager-2' }
     const values = form({
-      subject: { kind: 'manager', id: 'user-manager-2' },
       presetCode: 'tenant.self_aggregates',
       scopes: [{ type: 'channel', value: 'sms' }],
       indefinite: true,
     })
-    const request = toGrantRequest(values, null)
+    const request = toGrantRequest(values, manager, null)
     expect(request).toMatchObject({ subjectType: 'user', indefinite: true, scopes: [] })
     expect(request).not.toHaveProperty('presetCode')
     expect(request).not.toHaveProperty('validTo')
-    expect(toGrantPatch(values, null)).toMatchObject({
+    expect(toGrantPatch(values, manager, null)).toMatchObject({
       presetCode: '',
       indefinite: true,
       scopes: [],
@@ -60,14 +63,15 @@ describe('grant form', () => {
   })
 
   it('targets the tenant role through the self scope', () => {
-    const request = toGrantRequest(form({ subject: { kind: 'tenant_role', id: '' } }), 'self')
+    const request = toGrantRequest(form({}), { kind: 'tenant_role', id: '' }, 'self')
     expect(request).toMatchObject({ subjectType: 'role', subjectId: 'tenant' })
     expect(request?.scopes[0]).toEqual({ type: 'tenant', value: 'self' })
   })
 
   it('reports missing parts of the grant', () => {
     const errors = validateGrantForm(
-      form({ subject: { kind: 'tenant_user', id: 'user-x' }, items: [], reason: ' ', validTo: '' }),
+      form({ items: [], reason: ' ', validTo: '' }),
+      { kind: 'tenant_user', id: 'user-x' },
       null,
     )
     expect(errors).toEqual({
@@ -84,7 +88,7 @@ describe('grant form', () => {
       validTo: '2026-11-01T10:00',
       scopes: [{ type: 'row_limit', value: 'много' }],
     })
-    expect(validateGrantForm(values, 'tenant-0001')).toEqual({
+    expect(validateGrantForm(values, tenant, 'tenant-0001')).toEqual({
       validTo: 'Окончание должно быть позже начала',
       scopes: 'Глубина периода, порог k и лимит строк задаются целым числом',
     })

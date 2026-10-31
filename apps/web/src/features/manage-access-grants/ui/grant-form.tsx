@@ -85,14 +85,13 @@ export function GrantForm({ grant, initialSubject, onSaved, onCancel }: GrantFor
   const simulate = useSimulateAccess()
   const [chosenSubject, setChosenSubject] = useState<SubjectValue | null>(null)
   const [values, setValues] = useState<GrantFormValues>(() =>
-    grant ? grantFormFromGrant(grant, DEFAULT_SUBJECT) : emptyGrantForm(DEFAULT_SUBJECT),
+    grant ? grantFormFromGrant(grant) : emptyGrantForm(),
   )
   const [errors, setErrors] = useState<GrantFormErrors>({})
 
   const fixedSubject = grant ?? initialSubject
   const subject =
     chosenSubject ?? (fixedSubject ? fromSubject(fixedSubject, directory.users) : DEFAULT_SUBJECT)
-  const form = { ...values, subject }
   const tenantScope = tenantScopeOf(subject, directory.users)
   const role = grantableRoleOf(subject.kind)
   const isManager = subject.kind === 'manager'
@@ -111,7 +110,7 @@ export function GrantForm({ grant, initialSubject, onSaved, onCancel }: GrantFor
   }
 
   const validated = () => {
-    const found = validateGrantForm(form, tenantScope)
+    const found = validateGrantForm(values, subject, tenantScope)
     setErrors(found)
     return Object.keys(found).length === 0
   }
@@ -120,16 +119,19 @@ export function GrantForm({ grant, initialSubject, onSaved, onCancel }: GrantFor
     event.preventDefault()
     if (!validated()) return
     if (grant) {
-      update.mutate({ id: grant.id, body: toGrantPatch(form, tenantScope) }, { onSuccess: onSaved })
+      update.mutate(
+        { id: grant.id, body: toGrantPatch(values, subject, tenantScope) },
+        { onSuccess: onSaved },
+      )
       return
     }
-    const body = toGrantRequest(form, tenantScope)
+    const body = toGrantRequest(values, subject, tenantScope)
     if (body) create.mutate(body, { onSuccess: onSaved })
   }
 
   const runSimulation = () => {
     if (!validated()) return
-    const body = toGrantRequest(form, tenantScope)
+    const body = toGrantRequest(values, subject, tenantScope)
     if (body) simulate.mutate({ ...body, status: 'active' })
   }
 

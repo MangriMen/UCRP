@@ -16,7 +16,6 @@ export interface ScopeDraft {
 }
 
 export interface GrantFormValues {
-  subject: SubjectValue
   presetCode: string
   items: AccessGrantItem[]
   scopes: ScopeDraft[]
@@ -54,9 +53,8 @@ export function toLocalInput(iso: string) {
 
 export const fromLocalInput = (value: string) => new Date(value).toISOString()
 
-export function emptyGrantForm(subject: SubjectValue, now = new Date()): GrantFormValues {
+export function emptyGrantForm(now = new Date()): GrantFormValues {
   return {
-    subject,
     presetCode: '',
     items: [],
     scopes: [],
@@ -68,12 +66,11 @@ export function emptyGrantForm(subject: SubjectValue, now = new Date()): GrantFo
   }
 }
 
-export function grantFormFromGrant(grant: AccessGrant, subject: SubjectValue): GrantFormValues {
+export function grantFormFromGrant(grant: AccessGrant): GrantFormValues {
   const scopes = grant.scopes.filter(
     (scope): scope is AccessGrantScope & { type: ExtraScopeType } => scope.type !== 'tenant',
   )
   return {
-    subject,
     presetCode: grant.presetCode ?? '',
     items: grant.items,
     scopes,
@@ -102,11 +99,12 @@ function scopeProblem(scopes: ScopeDraft[]) {
 
 export function validateGrantForm(
   values: GrantFormValues,
+  subject: SubjectValue,
   tenantScope: string | null,
 ): GrantFormErrors {
   const errors: GrantFormErrors = {}
-  if (!toSubject(values.subject)) errors.subject = 'Выберите субъект'
-  else if (values.subject.kind !== 'manager' && !tenantScope) {
+  if (!toSubject(subject)) errors.subject = 'Выберите субъект'
+  else if (subject.kind !== 'manager' && !tenantScope) {
     errors.subject = 'Пользователь не привязан к арендатору'
   }
   if (values.items.length === 0) errors.items = 'Выберите хотя бы одно право'
@@ -123,8 +121,12 @@ export function validateGrantForm(
   return errors
 }
 
-function requestScopes(values: GrantFormValues, tenantScope: string | null): AccessGrantScope[] {
-  if (values.subject.kind === 'manager' || !tenantScope) return []
+function requestScopes(
+  values: GrantFormValues,
+  subject: SubjectValue,
+  tenantScope: string | null,
+): AccessGrantScope[] {
+  if (subject.kind === 'manager' || !tenantScope) return []
   return [
     { type: 'tenant', value: tenantScope },
     ...values.scopes.map((scope) => ({ type: scope.type, value: scope.value.trim() })),
@@ -140,36 +142,38 @@ const period = (values: GrantFormValues) =>
         indefinite: false,
       }
 
-const presetOf = (values: GrantFormValues) =>
-  values.subject.kind === 'manager' ? '' : values.presetCode
+const presetOf = (values: GrantFormValues, subject: SubjectValue) =>
+  subject.kind === 'manager' ? '' : values.presetCode
 
 export function toGrantRequest(
   values: GrantFormValues,
+  subject: SubjectValue,
   tenantScope: string | null,
 ): AccessGrantRequest | null {
-  const subject = toSubject(values.subject)
-  if (!subject) return null
-  const presetCode = presetOf(values)
+  const target = toSubject(subject)
+  if (!target) return null
+  const presetCode = presetOf(values, subject)
   return {
-    ...subject,
+    ...target,
     ...(presetCode ? { presetCode } : {}),
     ...period(values),
     status: values.status,
     reason: values.reason.trim(),
     items: values.items,
-    scopes: requestScopes(values, tenantScope),
+    scopes: requestScopes(values, subject, tenantScope),
   }
 }
 
 export function toGrantPatch(
   values: GrantFormValues,
+  subject: SubjectValue,
   tenantScope: string | null,
 ): AccessGrantPatch {
   return {
-    presetCode: presetOf(values),
+    presetCode: presetOf(values, subject),
     ...period(values),
     reason: values.reason.trim(),
     items: values.items,
-    scopes: requestScopes(values, tenantScope),
+    scopes: requestScopes(values, subject, tenantScope),
   }
 }
