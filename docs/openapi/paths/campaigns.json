@@ -1,0 +1,274 @@
+{
+    "paths":  {
+                  "/api/v1/campaigns":  {
+                                            "get":  {
+                                                        "tags":  [
+                                                                     "Campaigns"
+                                                                 ],
+                                                        "operationId":  "listCampaigns",
+                                                        "summary":  "Список кампаний",
+                                                        "x-roles":  [
+                                                                        "R-1",
+                                                                        "R-2",
+                                                                        "R-4"
+                                                                    ],
+                                                        "x-uc":  [
+                                                                     "UC-20"
+                                                                 ],
+                                                        "parameters":  [
+                                                                           {
+                                                                               "name":  "status",
+                                                                               "in":  "query",
+                                                                               "schema":  {
+                                                                                              "$ref": "../components/schemas/campaigns.json#/CampaignStatus"
+                                                                                          }
+                                                                           },
+                                                                           {
+                                                                               "name":  "segment_id",
+                                                                               "in":  "query",
+                                                                               "schema":  {
+                                                                                              "type":  "string"
+                                                                                          }
+                                                                           },
+                                                                           {
+                                                                               "$ref": "../components/parameters.json#/Page"
+                                                                           },
+                                                                           {
+                                                                               "$ref": "../components/parameters.json#/PageSize"
+                                                                           }
+                                                                       ],
+                                                        "responses":  {
+                                                                          "200":  {
+                                                                                      "description":  "Страница кампаний",
+                                                                                      "content":  {
+                                                                                                      "application/json":  {
+                                                                                                                               "schema":  {
+                                                                                                                                              "$ref": "../components/schemas/campaigns.json#/CampaignPage"
+                                                                                                                                          }
+                                                                                                                           }
+                                                                                                  }
+                                                                                  },
+                                                                          "401":  {
+                                                                                      "$ref": "../components/responses.json#/Unauthorized"
+                                                                                  },
+                                                                          "403":  {
+                                                                                      "$ref": "../components/responses.json#/Forbidden"
+                                                                                  }
+                                                                      }
+                                                    },
+                                            "post":  {
+                                                         "tags":  [
+                                                                      "Campaigns"
+                                                                  ],
+                                                         "operationId":  "createCampaign",
+                                                         "summary":  "Создать кампанию",
+                                                         "description":  "Фиксирует целевого арендатора, сегмент и окно атрибуции (по умолчанию 14 дней).",
+                                                         "x-roles":  [
+                                                                         "R-1"
+                                                                     ],
+                                                         "x-uc":  [
+                                                                      "UC-20"
+                                                                  ],
+                                                         "requestBody":  {
+                                                                             "required":  true,
+                                                                             "content":  {
+                                                                                             "application/json":  {
+                                                                                                                      "schema":  {
+                                                                                                                                     "$ref": "../components/schemas/campaigns.json#/CampaignCreateRequest"
+                                                                                                                                 }
+                                                                                                                  }
+                                                                                         }
+                                                                         },
+                                                         "responses":  {
+                                                                           "201":  {
+                                                                                       "description":  "Кампания создана",
+                                                                                       "content":  {
+                                                                                                       "application/json":  {
+                                                                                                                                "schema":  {
+                                                                                                                                               "$ref": "../components/schemas/campaigns.json#/Campaign"
+                                                                                                                                           }
+                                                                                                                            }
+                                                                                                   }
+                                                                                   },
+                                                                           "400":  {
+                                                                                       "$ref": "../components/responses.json#/BadRequest"
+                                                                                   },
+                                                                           "401":  {
+                                                                                       "$ref": "../components/responses.json#/Unauthorized"
+                                                                                   },
+                                                                           "403":  {
+                                                                                       "$ref": "../components/responses.json#/Forbidden"
+                                                                                   }
+                                                                       }
+                                                     }
+                                        },
+                  "/api/v1/campaigns/{id}":  {
+                                                 "parameters":  [
+                                                                    {
+                                                                        "$ref": "../components/parameters.json#/IdPath"
+                                                                    }
+                                                                ],
+                                                 "get":  {
+                                                             "tags":  [
+                                                                          "Campaigns"
+                                                                      ],
+                                                             "operationId":  "getCampaign",
+                                                             "summary":  "Карточка кампании",
+                                                             "x-roles":  [
+                                                                             "R-1",
+                                                                             "R-2",
+                                                                             "R-4"
+                                                                         ],
+                                                             "x-uc":  [
+                                                                          "UC-20"
+                                                                      ],
+                                                             "responses":  {
+                                                                               "200":  {
+                                                                                           "description":  "Кампания",
+                                                                                           "content":  {
+                                                                                                           "application/json":  {
+                                                                                                                                    "schema":  {
+                                                                                                                                                   "$ref": "../components/schemas/campaigns.json#/Campaign"
+                                                                                                                                               }
+                                                                                                                                }
+                                                                                                       }
+                                                                                       },
+                                                                               "401":  {
+                                                                                           "$ref": "../components/responses.json#/Unauthorized"
+                                                                                       },
+                                                                               "403":  {
+                                                                                           "$ref": "../components/responses.json#/Forbidden"
+                                                                                       },
+                                                                               "404":  {
+                                                                                           "$ref": "../components/responses.json#/NotFound"
+                                                                                       }
+                                                                           }
+                                                         },
+                                                 "patch":  {
+                                                               "tags":  [
+                                                                            "Campaigns"
+                                                                        ],
+                                                               "operationId":  "updateCampaign",
+                                                               "summary":  "Изменить кампанию",
+                                                               "description":  "Смена сегмента или целевого арендатора после первой выгрузки запрещена — 409 `campaign_locked`.",
+                                                               "x-roles":  [
+                                                                               "R-1"
+                                                                           ],
+                                                               "x-uc":  [
+                                                                            "UC-20"
+                                                                        ],
+                                                               "requestBody":  {
+                                                                                   "required":  true,
+                                                                                   "content":  {
+                                                                                                   "application/json":  {
+                                                                                                                            "schema":  {
+                                                                                                                                           "$ref": "../components/schemas/campaigns.json#/CampaignUpdateRequest"
+                                                                                                                                       }
+                                                                                                                        }
+                                                                                               }
+                                                                               },
+                                                               "responses":  {
+                                                                                 "200":  {
+                                                                                             "description":  "Обновлённая кампания",
+                                                                                             "content":  {
+                                                                                                             "application/json":  {
+                                                                                                                                      "schema":  {
+                                                                                                                                                     "$ref": "../components/schemas/campaigns.json#/Campaign"
+                                                                                                                                                 }
+                                                                                                                                  }
+                                                                                                         }
+                                                                                         },
+                                                                                 "400":  {
+                                                                                             "$ref": "../components/responses.json#/BadRequest"
+                                                                                         },
+                                                                                 "401":  {
+                                                                                             "$ref": "../components/responses.json#/Unauthorized"
+                                                                                         },
+                                                                                 "403":  {
+                                                                                             "$ref": "../components/responses.json#/Forbidden"
+                                                                                         },
+                                                                                 "404":  {
+                                                                                             "$ref": "../components/responses.json#/NotFound"
+                                                                                         },
+                                                                                 "409":  {
+                                                                                             "$ref": "../components/responses.json#/Conflict"
+                                                                                         }
+                                                                             }
+                                                           },
+                                                 "delete":  {
+                                                                "tags":  [
+                                                                             "Campaigns"
+                                                                         ],
+                                                                "operationId":  "deleteCampaign",
+                                                                "summary":  "Удалить кампанию",
+                                                                "description":  "Удаление запрещено, если по кампании есть выгрузки — 409 `campaign_has_exports`.",
+                                                                "x-roles":  [
+                                                                                "R-1"
+                                                                            ],
+                                                                "x-uc":  [
+                                                                             "UC-20"
+                                                                         ],
+                                                                "responses":  {
+                                                                                  "204":  {
+                                                                                              "$ref": "../components/responses.json#/NoContent"
+                                                                                          },
+                                                                                  "401":  {
+                                                                                              "$ref": "../components/responses.json#/Unauthorized"
+                                                                                          },
+                                                                                  "403":  {
+                                                                                              "$ref": "../components/responses.json#/Forbidden"
+                                                                                          },
+                                                                                  "404":  {
+                                                                                              "$ref": "../components/responses.json#/NotFound"
+                                                                                          },
+                                                                                  "409":  {
+                                                                                              "$ref": "../components/responses.json#/Conflict"
+                                                                                          }
+                                                                              }
+                                                            }
+                                             },
+                  "/api/v1/campaigns/{id}/results":  {
+                                                         "parameters":  [
+                                                                            {
+                                                                                "$ref": "../components/parameters.json#/IdPath"
+                                                                            }
+                                                                        ],
+                                                         "get":  {
+                                                                     "tags":  [
+                                                                                  "Campaigns"
+                                                                              ],
+                                                                     "operationId":  "getCampaignResults",
+                                                                     "summary":  "Конверсия в визит и инкремент против контрольной группы",
+                                                                     "description":  "Конверсия — доля получателей (`contact_log`) с хотя бы одним событием `countsAsPresence` у целевого арендатора в интервале `(contactedAt, contactedAt + attributionDays]`. Инкремент — разность конверсий получателей и контрольной группы; значимость — двухвыборочный тест долей. База контрольной группы строится от `export.createdAt`, так как контрольные не попадают в `contact_log`.",
+                                                                     "x-roles":  [
+                                                                                     "R-1",
+                                                                                     "R-2"
+                                                                                 ],
+                                                                     "x-uc":  [
+                                                                                  "UC-20"
+                                                                              ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Результаты кампании",
+                                                                                                   "content":  {
+                                                                                                                   "application/json":  {
+                                                                                                                                            "schema":  {
+                                                                                                                                                           "$ref": "../components/schemas/campaigns.json#/CampaignResults"
+                                                                                                                                                       }
+                                                                                                                                        }
+                                                                                                               }
+                                                                                               },
+                                                                                       "401":  {
+                                                                                                   "$ref": "../components/responses.json#/Unauthorized"
+                                                                                               },
+                                                                                       "403":  {
+                                                                                                   "$ref": "../components/responses.json#/Forbidden"
+                                                                                               },
+                                                                                       "404":  {
+                                                                                                   "$ref": "../components/responses.json#/NotFound"
+                                                                                               }
+                                                                                   }
+                                                                 }
+                                                     }
+              }
+}

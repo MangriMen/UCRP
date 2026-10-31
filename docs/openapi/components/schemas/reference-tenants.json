@@ -1,0 +1,64 @@
+{
+  "Tenant": {
+    "type": "object",
+    "required": ["id", "code", "name", "categoryId", "floor", "priority", "isActive", "createdAt", "updatedAt"],
+    "properties": {
+      "id": { "type": "string" },
+      "code": { "type": "string", "maxLength": 64 },
+      "name": { "type": "string", "maxLength": 200 },
+      "categoryId": { "type": "string" },
+      "categoryName": { "type": "string", "readOnly": true },
+      "floor": { "type": "integer", "description": "Этаж комплекса" },
+      "areaSqm": { "type": "number", "format": "double", "nullable": true },
+      "xM": { "type": "number", "format": "double", "nullable": true, "description": "Координата X на плане, метры" },
+      "yM": { "type": "number", "format": "double", "nullable": true, "description": "Координата Y на плане, метры" },
+      "priority": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "description": "Приоритет арендатора в скоринге рекомендаций"
+      },
+      "isActive": { "type": "boolean" },
+      "deletedAt": { "type": "string", "format": "date-time", "nullable": true },
+      "createdAt": { "type": "string", "format": "date-time" },
+      "updatedAt": { "type": "string", "format": "date-time" }
+    }
+  },
+  "TenantCreateRequest": {
+    "type": "object",
+    "required": ["code", "name", "categoryId", "floor"],
+    "properties": {
+      "code": { "type": "string", "minLength": 1, "maxLength": 64 },
+      "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+      "categoryId": { "type": "string" },
+      "floor": { "type": "integer" },
+      "areaSqm": { "type": "number", "format": "double", "nullable": true },
+      "xM": { "type": "number", "format": "double", "nullable": true },
+      "yM": { "type": "number", "format": "double", "nullable": true },
+      "priority": { "type": "integer", "minimum": 0, "maximum": 100, "default": 50 },
+      "isActive": { "type": "boolean", "default": true }
+    }
+  },
+  "TenantUpdateRequest": {
+    "type": "object",
+    "properties": {
+      "code": { "type": "string", "minLength": 1, "maxLength": 64 },
+      "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+      "categoryId": { "type": "string" },
+      "floor": { "type": "integer" },
+      "areaSqm": { "type": "number", "format": "double", "nullable": true },
+      "xM": { "type": "number", "format": "double", "nullable": true },
+      "yM": { "type": "number", "format": "double", "nullable": true },
+      "priority": { "type": "integer", "minimum": 0, "maximum": 100 },
+      "isActive": { "type": "boolean" }
+    }
+  },
+  "TenantPage": {
+    "type": "object",
+    "required": ["items", "meta"],
+    "properties": {
+      "items": { "type": "array", "items": { "$ref": "./reference-tenants.json#/Tenant" } },
+      "meta": { "$ref": "./common.json#/PageMeta" }
+    }
+  }
+}

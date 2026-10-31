@@ -1,0 +1,192 @@
+{
+    "SegmentStatus":  {
+                          "type":  "string",
+                          "enum":  [
+                                       "pending",
+                                       "computing",
+                                       "ready",
+                                       "failed",
+                                       "archived"
+                                   ]
+                      },
+    "SegmentRule":  {
+                        "type":  "object",
+                        "description":  "Правило сегмента (JSON DSL). Компилируется в параметризованный SQL, поэтому произвольный запрос невозможен.",
+                        "required":  [
+                                         "periodDays"
+                                     ],
+                        "properties":  {
+                                           "was":  {
+                                                       "type":  "array",
+                                                       "description":  "Гость имел событие у любого из этих арендаторов",
+                                                       "items":  {
+                                                                     "type":  "string"
+                                                                 }
+                                                   },
+                                           "wasNot":  {
+                                                          "type":  "array",
+                                                          "description":  "Гость не имел событий ни у одного из этих арендаторов",
+                                                          "items":  {
+                                                                        "type":  "string"
+                                                                    }
+                                                      },
+                                           "categoriesWas":  {
+                                                                 "type":  "array",
+                                                                 "description":  "Гость был у арендатора из категории",
+                                                                 "items":  {
+                                                                               "type":  "string"
+                                                                           }
+                                                             },
+                                           "categoriesWasNot":  {
+                                                                    "type":  "array",
+                                                                    "items":  {
+                                                                                  "type":  "string"
+                                                                              }
+                                                                },
+                                           "periodDays":  {
+                                                              "type":  "integer",
+                                                              "minimum":  1,
+                                                              "maximum":  730,
+                                                              "description":  "Окно анализа в днях"
+                                                          },
+                                           "requireContact":  {
+                                                                  "type":  "string",
+                                                                  "nullable":  true,
+                                                                  "enum":  [
+                                                                               "phone",
+                                                                               "email"
+                                                                           ],
+                                                                  "description":  "Требовать наличие контакта указанного типа"
+                                                              },
+                                           "minVisits":  {
+                                                             "type":  "integer",
+                                                             "minimum":  1,
+                                                             "nullable":  true
+                                                         },
+                                           "minAmountMinor":  {
+                                                                  "type":  "integer",
+                                                                  "format":  "int64",
+                                                                  "minimum":  0,
+                                                                  "nullable":  true
+                                                              }
+                                       }
+                    },
+    "SegmentVersion":  {
+                           "type":  "object",
+                           "required":  [
+                                            "id",
+                                            "segmentId",
+                                            "versionNo",
+                                            "rule",
+                                            "status",
+                                            "memberCount"
+                                        ],
+                           "properties":  {
+                                              "id":  {
+                                                         "type":  "string"
+                                                     },
+                                              "segmentId":  {
+                                                                "type":  "string"
+                                                            },
+                                              "versionNo":  {
+                                                                "type":  "integer",
+                                                                "minimum":  1
+                                                            },
+                                              "rule":  {
+                                                           "$ref": "./segments.json#/SegmentRule"
+                                                       },
+                                              "ruleText":  {
+                                                               "type":  "string",
+                                                               "description":  "Правило на бизнес-языке"
+                                                           },
+                                              "status":  {
+                                                             "$ref": "./segments.json#/SegmentStatus"
+                                                         },
+                                              "memberCount":  {
+                                                                  "type":  "integer",
+                                                                  "minimum":  0
+                                                              },
+                                              "computedAt":  {
+                                                                 "type":  "string",
+                                                                 "format":  "date-time",
+                                                                 "nullable":  true
+                                                             },
+                                              "createdBy":  {
+                                                                "type":  "string",
+                                                                "nullable":  true
+                                                            },
+                                              "createdAt":  {
+                                                                "type":  "string",
+                                                                "format":  "date-time"
+                                                            }
+                                          }
+                       },
+    "Segment":  {
+                    "type":  "object",
+                    "required":  [
+                                     "id",
+                                     "name",
+                                     "isTemplate",
+                                     "currentVersionNo",
+                                     "status",
+                                     "memberCount",
+                                     "createdAt",
+                                     "updatedAt"
+                                 ],
+                    "properties":  {
+                                       "id":  {
+                                                  "type":  "string"
+                                              },
+                                       "name":  {
+                                                    "type":  "string",
+                                                    "maxLength":  200
+                                                },
+                                       "description":  {
+                                                           "type":  "string",
+                                                           "nullable":  true
+                                                       },
+                                       "templateCode":  {
+                                                            "type":  "string",
+                                                            "nullable":  true,
+                                                            "example":  "sleeping_neighbor"
+                                                        },
+                                       "isTemplate":  {
+                                                          "type":  "boolean"
+                                                      },
+                                       "currentVersionNo":  {
+                                                                "type":  "integer",
+                                                                "minimum":  1
+                                                            },
+                                       "status":  {
+                                                      "$ref": "./segments.json#/SegmentStatus"
+                                                  },
+                                       "memberCount":  {
+                                                           "type":  "integer",
+                                                           "minimum":  0
+                                                       },
+                                       "computedAt":  {
+                                                          "type":  "string",
+                                                          "format":  "date-time",
+                                                          "nullable":  true
+                                                      },
+                                       "rule":  {
+                                                    "$ref": "./segments.json#/SegmentRule"
+                                                },
+                                       "ruleText":  {
+                                                        "type":  "string"
+                                                    },
+                                       "createdBy":  {
+                                                         "type":  "string",
+                                                         "nullable":  true
+                                                     },
+                                       "createdAt":  {
+                                                         "type":  "string",
+                                                         "format":  "date-time"
+                                                     },
+                                       "updatedAt":  {
+                                                         "type":  "string",
+                                                         "format":  "date-time"
+                                                     }
+                                   }
+                }
+}

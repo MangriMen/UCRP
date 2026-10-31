@@ -1,0 +1,241 @@
+{
+    "paths":  {
+                  "/api/v1/data-sources":  {
+                                               "get":  {
+                                                           "tags":  [
+                                                                        "Reference"
+                                                                    ],
+                                                           "operationId":  "listDataSources",
+                                                           "summary":  "Источники данных",
+                                                           "description":  "`tenantId = null` означает общий источник УК (Wi-Fi, парковка).",
+                                                           "x-roles":  [
+                                                                           "R-1",
+                                                                           "R-2",
+                                                                           "R-4"
+                                                                       ],
+                                                           "x-uc":  [
+                                                                        "UC-17",
+                                                                        "UC-9"
+                                                                    ],
+                                                           "parameters":  [
+                                                                              {
+                                                                                  "name":  "tenant_id",
+                                                                                  "in":  "query",
+                                                                                  "schema":  {
+                                                                                                 "type":  "string"
+                                                                                             }
+                                                                              },
+                                                                              {
+                                                                                  "name":  "type_id",
+                                                                                  "in":  "query",
+                                                                                  "schema":  {
+                                                                                                 "type":  "string"
+                                                                                             }
+                                                                              },
+                                                                              {
+                                                                                  "name":  "is_active",
+                                                                                  "in":  "query",
+                                                                                  "schema":  {
+                                                                                                 "type":  "boolean"
+                                                                                             }
+                                                                              },
+                                                                              {
+                                                                                  "$ref": "../components/parameters.json#/Page"
+                                                                              },
+                                                                              {
+                                                                                  "$ref": "../components/parameters.json#/PageSize"
+                                                                              }
+                                                                          ],
+                                                           "responses":  {
+                                                                             "200":  {
+                                                                                         "description":  "Страница источников",
+                                                                                         "content":  {
+                                                                                                         "application/json":  {
+                                                                                                                                  "schema":  {
+                                                                                                                                                 "$ref": "../components/schemas/reference-data-sources.json#/DataSourcePage"
+                                                                                                                                             }
+                                                                                                                              }
+                                                                                                     }
+                                                                                     },
+                                                                             "401":  {
+                                                                                         "$ref": "../components/responses.json#/Unauthorized"
+                                                                                     },
+                                                                             "403":  {
+                                                                                         "$ref": "../components/responses.json#/Forbidden"
+                                                                                     }
+                                                                         }
+                                                       },
+                                               "post":  {
+                                                            "tags":  [
+                                                                         "Reference"
+                                                                     ],
+                                                            "operationId":  "createDataSource",
+                                                            "summary":  "Создать источник арендатора",
+                                                            "description":  "`fieldMapping` сопоставляет колонки файла/ответа API с полями платформы (`externalId`, `occurredAt`, `amountMinor`, `phone`, `email`, `card`, `eventType`).",
+                                                            "x-roles":  [
+                                                                            "R-4"
+                                                                        ],
+                                                            "x-uc":  [
+                                                                         "UC-17",
+                                                                         "UC-1"
+                                                                     ],
+                                                            "requestBody":  {
+                                                                                "required":  true,
+                                                                                "content":  {
+                                                                                                "application/json":  {
+                                                                                                                         "schema":  {
+                                                                                                                                        "$ref": "../components/schemas/reference-data-sources.json#/DataSourceCreateRequest"
+                                                                                                                                    }
+                                                                                                                     }
+                                                                                            }
+                                                                            },
+                                                            "responses":  {
+                                                                              "201":  {
+                                                                                          "description":  "Источник создан",
+                                                                                          "content":  {
+                                                                                                          "application/json":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "$ref": "../components/schemas/reference-data-sources.json#/DataSource"
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                      }
+                                                                                      },
+                                                                              "400":  {
+                                                                                          "$ref": "../components/responses.json#/BadRequest"
+                                                                                      },
+                                                                              "401":  {
+                                                                                          "$ref": "../components/responses.json#/Unauthorized"
+                                                                                      },
+                                                                              "403":  {
+                                                                                          "$ref": "../components/responses.json#/Forbidden"
+                                                                                      },
+                                                                              "409":  {
+                                                                                          "$ref": "../components/responses.json#/Conflict"
+                                                                                      }
+                                                                          }
+                                                        }
+                                           },
+                  "/api/v1/data-sources/{id}":  {
+                                                    "parameters":  [
+                                                                       {
+                                                                           "$ref": "../components/parameters.json#/IdPath"
+                                                                       }
+                                                                   ],
+                                                    "get":  {
+                                                                "tags":  [
+                                                                             "Reference"
+                                                                         ],
+                                                                "operationId":  "getDataSource",
+                                                                "summary":  "Карточка источника",
+                                                                "x-roles":  [
+                                                                                "R-1",
+                                                                                "R-2",
+                                                                                "R-4"
+                                                                            ],
+                                                                "x-uc":  [
+                                                                             "UC-17",
+                                                                             "UC-9"
+                                                                         ],
+                                                                "responses":  {
+                                                                                  "200":  {
+                                                                                              "description":  "Источник",
+                                                                                              "content":  {
+                                                                                                              "application/json":  {
+                                                                                                                                       "schema":  {
+                                                                                                                                                      "$ref": "../components/schemas/reference-data-sources.json#/DataSource"
+                                                                                                                                                  }
+                                                                                                                                   }
+                                                                                                          }
+                                                                                          },
+                                                                                  "401":  {
+                                                                                              "$ref": "../components/responses.json#/Unauthorized"
+                                                                                          },
+                                                                                  "403":  {
+                                                                                              "$ref": "../components/responses.json#/Forbidden"
+                                                                                          },
+                                                                                  "404":  {
+                                                                                              "$ref": "../components/responses.json#/NotFound"
+                                                                                          }
+                                                                              }
+                                                            },
+                                                    "patch":  {
+                                                                  "tags":  [
+                                                                               "Reference"
+                                                                           ],
+                                                                  "operationId":  "updateDataSource",
+                                                                  "summary":  "Конфиг, маппинг полей, расписание",
+                                                                  "x-roles":  [
+                                                                                  "R-4"
+                                                                              ],
+                                                                  "x-uc":  [
+                                                                               "UC-17"
+                                                                           ],
+                                                                  "requestBody":  {
+                                                                                      "required":  true,
+                                                                                      "content":  {
+                                                                                                      "application/json":  {
+                                                                                                                               "schema":  {
+                                                                                                                                              "$ref": "../components/schemas/reference-data-sources.json#/DataSourceUpdateRequest"
+                                                                                                                                          }
+                                                                                                                           }
+                                                                                                  }
+                                                                                  },
+                                                                  "responses":  {
+                                                                                    "200":  {
+                                                                                                "description":  "Обновлённый источник",
+                                                                                                "content":  {
+                                                                                                                "application/json":  {
+                                                                                                                                         "schema":  {
+                                                                                                                                                        "$ref": "../components/schemas/reference-data-sources.json#/DataSource"
+                                                                                                                                                    }
+                                                                                                                                     }
+                                                                                                            }
+                                                                                            },
+                                                                                    "400":  {
+                                                                                                "$ref": "../components/responses.json#/BadRequest"
+                                                                                            },
+                                                                                    "401":  {
+                                                                                                "$ref": "../components/responses.json#/Unauthorized"
+                                                                                            },
+                                                                                    "403":  {
+                                                                                                "$ref": "../components/responses.json#/Forbidden"
+                                                                                            },
+                                                                                    "404":  {
+                                                                                                "$ref": "../components/responses.json#/NotFound"
+                                                                                            }
+                                                                                }
+                                                              },
+                                                    "delete":  {
+                                                                   "tags":  [
+                                                                                "Reference"
+                                                                            ],
+                                                                   "operationId":  "deleteDataSource",
+                                                                   "summary":  "Деактивация источника",
+                                                                   "description":  "Если по источнику есть загрузки, выполняется деактивация (`isActive=false`), история сохраняется. Ответ 204.",
+                                                                   "x-roles":  [
+                                                                                   "R-4"
+                                                                               ],
+                                                                   "x-uc":  [
+                                                                                "UC-17"
+                                                                            ],
+                                                                   "responses":  {
+                                                                                     "204":  {
+                                                                                                 "$ref": "../components/responses.json#/NoContent"
+                                                                                             },
+                                                                                     "401":  {
+                                                                                                 "$ref": "../components/responses.json#/Unauthorized"
+                                                                                             },
+                                                                                     "403":  {
+                                                                                                 "$ref": "../components/responses.json#/Forbidden"
+                                                                                             },
+                                                                                     "404":  {
+                                                                                                 "$ref": "../components/responses.json#/NotFound"
+                                                                                             },
+                                                                                     "409":  {
+                                                                                                 "$ref": "../components/responses.json#/Conflict"
+                                                                                             }
+                                                                                 }
+                                                               }
+                                                }
+              }
+}

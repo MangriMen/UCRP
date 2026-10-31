@@ -1,0 +1,242 @@
+{
+    "MergeResolution":  {
+                            "type":  "string",
+                            "enum":  [
+                                         "pending",
+                                         "confirmed",
+                                         "rejected",
+                                         "auto_merged",
+                                         "reverted"
+                                     ]
+                        },
+    "MergeCandidate":  {
+                           "type":  "object",
+                           "required":  [
+                                            "id",
+                                            "guestAId",
+                                            "guestBId",
+                                            "reasonCode",
+                                            "score",
+                                            "resolution",
+                                            "createdAt"
+                                        ],
+                           "properties":  {
+                                              "id":  {
+                                                         "type":  "string"
+                                                     },
+                                              "guestAId":  {
+                                                               "type":  "string",
+                                                               "description":  "Меньший идентификатор пары (канонический порядок)"
+                                                           },
+                                              "guestBId":  {
+                                                               "type":  "string"
+                                                           },
+                                              "reasonCode":  {
+                                                                 "type":  "string",
+                                                                 "example":  "shared_phone_names_differ",
+                                                                 "description":  "Код причины совпадения"
+                                                             },
+                                              "reasonText":  {
+                                                                 "type":  "string",
+                                                                 "description":  "Причина на русском языке"
+                                                             },
+                                              "score":  {
+                                                            "type":  "integer",
+                                                            "minimum":  0,
+                                                            "maximum":  100,
+                                                            "description":  "Оценка уверенности склейки"
+                                                        },
+                                              "resolution":  {
+                                                                 "$ref": "./identity.json#/MergeResolution"
+                                                             },
+                                              "winnerGuestId":  {
+                                                                    "type":  "string",
+                                                                    "nullable":  true
+                                                                },
+                                              "mergedGuestId":  {
+                                                                    "type":  "string",
+                                                                    "nullable":  true
+                                                                },
+                                              "decidedBy":  {
+                                                                "type":  "string",
+                                                                "nullable":  true
+                                                            },
+                                              "decidedAt":  {
+                                                                "type":  "string",
+                                                                "format":  "date-time",
+                                                                "nullable":  true
+                                                            },
+                                              "createdAt":  {
+                                                                "type":  "string",
+                                                                "format":  "date-time"
+                                                            }
+                                          }
+                       },
+    "MergeCandidateDetail":  {
+                                 "allOf":  [
+                                               {
+                                                   "$ref": "./identity.json#/MergeCandidate"
+                                               },
+                                               {
+                                                   "type":  "object",
+                                                   "required":  [
+                                                                    "guestA",
+                                                                    "guestB",
+                                                                    "sharedKeys"
+                                                                ],
+                                                   "properties":  {
+                                                                      "guestA":  {
+                                                                                     "$ref": "./guests.json#/GuestProfile"
+                                                                                 },
+                                                                      "guestB":  {
+                                                                                     "$ref": "./guests.json#/GuestProfile"
+                                                                                 },
+                                                                      "sharedKeys":  {
+                                                                                         "type":  "array",
+                                                                                         "description":  "Совпавшие нормализованные ключи",
+                                                                                         "items":  {
+                                                                                                       "type":  "object",
+                                                                                                       "properties":  {
+                                                                                                                          "idType":  {
+                                                                                                                                         "$ref": "./guests.json#/IdentifierType"
+                                                                                                                                     },
+                                                                                                                          "valueNormalized":  {
+                                                                                                                                                  "type":  "string"
+                                                                                                                                              }
+                                                                                                                      }
+                                                                                                   }
+                                                                                     },
+                                                                      "differingFields":  {
+                                                                                              "type":  "array",
+                                                                                              "description":  "Различающиеся признаки (например, displayName)",
+                                                                                              "items":  {
+                                                                                                            "type":  "string"
+                                                                                                        }
+                                                                                          }
+                                                                  }
+                                               }
+                                           ]
+                             },
+    "MergeCandidatePage":  {
+                               "type":  "object",
+                               "required":  [
+                                                "items",
+                                                "meta"
+                                            ],
+                               "properties":  {
+                                                  "items":  {
+                                                                "type":  "array",
+                                                                "items":  {
+                                                                              "$ref": "./identity.json#/MergeCandidate"
+                                                                          }
+                                                            },
+                                                  "meta":  {
+                                                               "$ref": "./common.json#/PageMeta"
+                                                           }
+                                              }
+                           },
+    "MergeRequest":  {
+                         "type":  "object",
+                         "required":  [
+                                          "targetGuestId"
+                                      ],
+                         "properties":  {
+                                            "targetGuestId":  {
+                                                                  "type":  "string",
+                                                                  "description":  "Профиль-победитель, к которому присоединяется гость из пути"
+                                                              }
+                                        }
+                     },
+    "MergeResult":  {
+                        "type":  "object",
+                        "required":  [
+                                         "winnerGuestId",
+                                         "mergedGuestId",
+                                         "eventsMoved",
+                                         "identifiersMoved"
+                                     ],
+                        "properties":  {
+                                           "candidateId":  {
+                                                               "type":  "string",
+                                                               "nullable":  true
+                                                           },
+                                           "winnerGuestId":  {
+                                                                 "type":  "string"
+                                                             },
+                                           "mergedGuestId":  {
+                                                                 "type":  "string"
+                                                             },
+                                           "eventsMoved":  {
+                                                               "type":  "integer",
+                                                               "minimum":  0
+                                                           },
+                                           "identifiersMoved":  {
+                                                                    "type":  "integer",
+                                                                    "minimum":  0
+                                                                },
+                                           "auditLogId":  {
+                                                              "type":  "string"
+                                                          }
+                                       }
+                    },
+    "UnmergeBlock":  {
+                         "type":  "object",
+                         "required":  [
+                                          "id",
+                                          "guestAId",
+                                          "guestBId",
+                                          "reason",
+                                          "createdAt"
+                                      ],
+                         "properties":  {
+                                            "id":  {
+                                                       "type":  "string"
+                                                   },
+                                            "guestAId":  {
+                                                             "type":  "string"
+                                                         },
+                                            "guestBId":  {
+                                                             "type":  "string"
+                                                         },
+                                            "reason":  {
+                                                           "type":  "string",
+                                                           "enum":  [
+                                                                        "manual_unmerge",
+                                                                        "manual_reject",
+                                                                        "auto_conflict"
+                                                                    ],
+                                                           "description":  "Причина запрета склейки"
+                                                       },
+                                            "candidateId":  {
+                                                                "type":  "string",
+                                                                "nullable":  true
+                                                            },
+                                            "createdBy":  {
+                                                              "type":  "string",
+                                                              "nullable":  true
+                                                          },
+                                            "createdAt":  {
+                                                              "type":  "string",
+                                                              "format":  "date-time"
+                                                          }
+                                        }
+                     },
+    "UnmergeBlockPage":  {
+                             "type":  "object",
+                             "required":  [
+                                              "items",
+                                              "meta"
+                                          ],
+                             "properties":  {
+                                                "items":  {
+                                                              "type":  "array",
+                                                              "items":  {
+                                                                            "$ref": "./identity.json#/UnmergeBlock"
+                                                                        }
+                                                          },
+                                                "meta":  {
+                                                             "$ref": "./common.json#/PageMeta"
+                                                         }
+                                            }
+                         }
+}

@@ -1,0 +1,240 @@
+{
+    "paths":  {
+                  "/api/v1/exports/preview":  {
+                                                  "post":  {
+                                                               "tags":  [
+                                                                            "Exports"
+                                                                        ],
+                                                               "operationId":  "previewExport",
+                                                               "summary":  "Подсчёт до создания выгрузки",
+                                                               "description":  "Возвращает четыре числа: всего в сегменте, с контактом канала, блокировано лимитом, в контрольной группе. Ничего не пишет в БД. Фильтр по контакту выполняется до лимита и контрольной группы.",
+                                                               "x-roles":  [
+                                                                               "R-1"
+                                                                           ],
+                                                               "x-uc":  [
+                                                                            "UC-5",
+                                                                            "UC-10"
+                                                                        ],
+                                                               "requestBody":  {
+                                                                                   "required":  true,
+                                                                                   "content":  {
+                                                                                                   "application/json":  {
+                                                                                                                            "schema":  {
+                                                                                                                                           "$ref": "../components/schemas/exports.json#/ExportPreviewRequest"
+                                                                                                                                       }
+                                                                                                                        }
+                                                                                               }
+                                                                               },
+                                                               "responses":  {
+                                                                                 "200":  {
+                                                                                             "description":  "Счётчики предпросмотра",
+                                                                                             "content":  {
+                                                                                                             "application/json":  {
+                                                                                                                                      "schema":  {
+                                                                                                                                                     "$ref": "../components/schemas/exports.json#/ExportPreviewResponse"
+                                                                                                                                                 }
+                                                                                                                                  }
+                                                                                                         }
+                                                                                         },
+                                                                                 "400":  {
+                                                                                             "$ref": "../components/responses.json#/BadRequest"
+                                                                                         },
+                                                                                 "401":  {
+                                                                                             "$ref": "../components/responses.json#/Unauthorized"
+                                                                                         },
+                                                                                 "403":  {
+                                                                                             "$ref": "../components/responses.json#/Forbidden"
+                                                                                         },
+                                                                                 "404":  {
+                                                                                             "$ref": "../components/responses.json#/NotFound"
+                                                                                         }
+                                                                             }
+                                                           }
+                                              },
+                  "/api/v1/exports":  {
+                                          "post":  {
+                                                       "tags":  [
+                                                                    "Exports"
+                                                                ],
+                                                       "operationId":  "createExport",
+                                                       "summary":  "Создать выгрузку сегмента в канал",
+                                                       "description":  "Обязателен заголовок `Idempotency-Key`: повтор с тем же ключом возвращает ту же выгрузку и не создаёт новых `contact_log`. Порядок: проверка ключа → версия сегмента `ready` (иначе 409 `segment_not_ready`) → фильтр по контакту канала (`sms`/`push` — телефон, `email` — email) → самое строгое правило лимита → контрольная группа по `controlSeed` → транзакционная запись с повторной проверкой лимита. Если не осталось ни одного получателя — 409 `contact_limit_exceeded` с разбивкой причин. До 20 000 членов — синхронно (201), больше — задание `export.build` (202).",
+                                                       "x-roles":  [
+                                                                       "R-1"
+                                                                   ],
+                                                       "x-uc":  [
+                                                                    "UC-5",
+                                                                    "UC-10"
+                                                                ],
+                                                       "parameters":  [
+                                                                          {
+                                                                              "$ref": "../components/parameters.json#/IdempotencyKey"
+                                                                          }
+                                                                      ],
+                                                       "requestBody":  {
+                                                                           "required":  true,
+                                                                           "content":  {
+                                                                                           "application/json":  {
+                                                                                                                    "schema":  {
+                                                                                                                                   "$ref": "../components/schemas/exports.json#/ExportCreateRequest"
+                                                                                                                               }
+                                                                                                                }
+                                                                                       }
+                                                                       },
+                                                       "responses":  {
+                                                                         "201":  {
+                                                                                     "description":  "Выгрузка готова",
+                                                                                     "content":  {
+                                                                                                     "application/json":  {
+                                                                                                                              "schema":  {
+                                                                                                                                             "$ref": "../components/schemas/exports.json#/Export"
+                                                                                                                                         }
+                                                                                                                          }
+                                                                                                 }
+                                                                                 },
+                                                                         "202":  {
+                                                                                     "description":  "Выгрузка строится асинхронно",
+                                                                                     "content":  {
+                                                                                                     "application/json":  {
+                                                                                                                              "schema":  {
+                                                                                                                                             "$ref": "../components/schemas/exports.json#/Export"
+                                                                                                                                         }
+                                                                                                                          }
+                                                                                                 }
+                                                                                 },
+                                                                         "400":  {
+                                                                                     "$ref": "../components/responses.json#/BadRequest"
+                                                                                 },
+                                                                         "401":  {
+                                                                                     "$ref": "../components/responses.json#/Unauthorized"
+                                                                                 },
+                                                                         "403":  {
+                                                                                     "$ref": "../components/responses.json#/Forbidden"
+                                                                                 },
+                                                                         "404":  {
+                                                                                     "$ref": "../components/responses.json#/NotFound"
+                                                                                 },
+                                                                         "409":  {
+                                                                                     "$ref": "../components/responses.json#/Conflict"
+                                                                                 },
+                                                                         "504":  {
+                                                                                     "$ref": "../components/responses.json#/GatewayTimeout"
+                                                                                 }
+                                                                     }
+                                                   },
+                                          "get":  {
+                                                      "tags":  [
+                                                                   "Exports"
+                                                               ],
+                                                      "operationId":  "listExports",
+                                                      "summary":  "Журнал выгрузок",
+                                                      "x-roles":  [
+                                                                      "R-1",
+                                                                      "R-2",
+                                                                      "R-4"
+                                                                  ],
+                                                      "x-uc":  [
+                                                                   "UC-5"
+                                                               ],
+                                                      "parameters":  [
+                                                                         {
+                                                                             "name":  "segment_id",
+                                                                             "in":  "query",
+                                                                             "schema":  {
+                                                                                            "type":  "string"
+                                                                                        }
+                                                                         },
+                                                                         {
+                                                                             "name":  "campaign_id",
+                                                                             "in":  "query",
+                                                                             "schema":  {
+                                                                                            "type":  "string"
+                                                                                        }
+                                                                         },
+                                                                         {
+                                                                             "name":  "channel",
+                                                                             "in":  "query",
+                                                                             "schema":  {
+                                                                                            "$ref": "../components/schemas/exports.json#/ExportChannel"
+                                                                                        }
+                                                                         },
+                                                                         {
+                                                                             "name":  "status",
+                                                                             "in":  "query",
+                                                                             "schema":  {
+                                                                                            "$ref": "../components/schemas/exports.json#/ExportStatus"
+                                                                                        }
+                                                                         },
+                                                                         {
+                                                                             "$ref": "../components/parameters.json#/Page"
+                                                                         },
+                                                                         {
+                                                                             "$ref": "../components/parameters.json#/PageSize"
+                                                                         }
+                                                                     ],
+                                                      "responses":  {
+                                                                        "200":  {
+                                                                                    "description":  "Страница выгрузок",
+                                                                                    "content":  {
+                                                                                                    "application/json":  {
+                                                                                                                             "schema":  {
+                                                                                                                                            "$ref": "../components/schemas/exports.json#/ExportPage"
+                                                                                                                                        }
+                                                                                                                         }
+                                                                                                }
+                                                                                },
+                                                                        "401":  {
+                                                                                    "$ref": "../components/responses.json#/Unauthorized"
+                                                                                },
+                                                                        "403":  {
+                                                                                    "$ref": "../components/responses.json#/Forbidden"
+                                                                                }
+                                                                    }
+                                                  }
+                                      },
+                  "/api/v1/exports/{id}":  {
+                                               "parameters":  [
+                                                                  {
+                                                                      "$ref": "../components/parameters.json#/IdPath"
+                                                                  }
+                                                              ],
+                                               "get":  {
+                                                           "tags":  [
+                                                                        "Exports"
+                                                                    ],
+                                                           "operationId":  "getExport",
+                                                           "summary":  "Карточка и счётчики выгрузки",
+                                                           "description":  "Инвариант: `exportedCount + controlCount + noContactCount + blockedByLimitCount = totalInSegment`.",
+                                                           "x-roles":  [
+                                                                           "R-1",
+                                                                           "R-2",
+                                                                           "R-4"
+                                                                       ],
+                                                           "x-uc":  [
+                                                                        "UC-5"
+                                                                    ],
+                                                           "responses":  {
+                                                                             "200":  {
+                                                                                         "description":  "Выгрузка",
+                                                                                         "content":  {
+                                                                                                         "application/json":  {
+                                                                                                                                  "schema":  {
+                                                                                                                                                 "$ref": "../components/schemas/exports.json#/Export"
+                                                                                                                                             }
+                                                                                                                              }
+                                                                                                     }
+                                                                                     },
+                                                                             "401":  {
+                                                                                         "$ref": "../components/responses.json#/Unauthorized"
+                                                                                     },
+                                                                             "403":  {
+                                                                                         "$ref": "../components/responses.json#/Forbidden"
+                                                                                     },
+                                                                             "404":  {
+                                                                                         "$ref": "../components/responses.json#/NotFound"
+                                                                                     }
+                                                                         }
+                                                       }
+                                           }
+              }
+}

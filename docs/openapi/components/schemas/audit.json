@@ -1,0 +1,81 @@
+{
+    "AuditLog":  {
+                     "type":  "object",
+                     "required":  [
+                                      "id",
+                                      "action",
+                                      "entityType",
+                                      "entityId",
+                                      "createdAt"
+                                  ],
+                     "properties":  {
+                                        "id":  {
+                                                   "type":  "string"
+                                               },
+                                        "actorUserId":  {
+                                                            "type":  "string",
+                                                            "nullable":  true
+                                                        },
+                                        "actorRole":  {
+                                                          "type":  "string",
+                                                          "nullable":  true,
+                                                          "description":  "Снимок роли на момент действия",
+                                                          "enum":  [
+                                                                       "marketer",
+                                                                       "manager",
+                                                                       "tenant",
+                                                                       "analyst",
+                                                                       "system"
+                                                                   ]
+                                                      },
+                                        "action":  {
+                                                       "type":  "string",
+                                                       "example":  "merge.confirm",
+                                                       "description":  "Например: `merge.confirm`, `merge.revert`, `export.create`, `import.create`, `user.update`"
+                                                   },
+                                        "entityType":  {
+                                                           "type":  "string",
+                                                           "example":  "merge_candidate"
+                                                       },
+                                        "entityId":  {
+                                                         "type":  "string"
+                                                     },
+                                        "details":  {
+                                                        "type":  "object",
+                                                        "nullable":  true,
+                                                        "additionalProperties":  true,
+                                                        "description":  "Снимок значимых параметров операции"
+                                                    },
+                                        "requestId":  {
+                                                          "type":  "string",
+                                                          "nullable":  true
+                                                      },
+                                        "ipAddress":  {
+                                                          "type":  "string",
+                                                          "nullable":  true
+                                                      },
+                                        "createdAt":  {
+                                                          "type":  "string",
+                                                          "format":  "date-time"
+                                                      }
+                                    }
+                 },
+    "AuditLogPage":  {
+                         "type":  "object",
+                         "required":  [
+                                          "items",
+                                          "meta"
+                                      ],
+                         "properties":  {
+                                            "items":  {
+                                                          "type":  "array",
+                                                          "items":  {
+                                                                        "$ref": "./audit.json#/AuditLog"
+                                                                    }
+                                                      },
+                                            "meta":  {
+                                                         "$ref": "./common.json#/PageMeta"
+                                                     }
+                                        }
+                     }
+}

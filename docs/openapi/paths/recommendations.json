@@ -1,0 +1,149 @@
+{
+    "paths":  {
+                  "/api/v1/guests/{id}/recommendations":  {
+                                                              "parameters":  [
+                                                                                 {
+                                                                                     "$ref": "../components/parameters.json#/IdPath"
+                                                                                 }
+                                                                             ],
+                                                              "get":  {
+                                                                          "tags":  [
+                                                                                       "Guests"
+                                                                                   ],
+                                                                          "operationId":  "getGuestRecommendations",
+                                                                          "summary":  "До 3 рекомендаций с обоснованием",
+                                                                          "description":  "Чтение не пересчитывает рекомендации. Инварианты: арендатор из списка не входит в посещённые гостем; прямые конкуренты (`tenant_category_relation.relationType = competitor`) исключены. Пустой список — валидное состояние, не ошибка.",
+                                                                          "x-roles":  [
+                                                                                          "R-1",
+                                                                                          "R-4"
+                                                                                      ],
+                                                                          "x-uc":  [
+                                                                                       "UC-4"
+                                                                                   ],
+                                                                          "responses":  {
+                                                                                            "200":  {
+                                                                                                        "description":  "Рекомендации",
+                                                                                                        "content":  {
+                                                                                                                        "application/json":  {
+                                                                                                                                                 "schema":  {
+                                                                                                                                                                "$ref": "../components/schemas/recommendations.json#/RecommendationList"
+                                                                                                                                                            }
+                                                                                                                                             }
+                                                                                                                    }
+                                                                                                    },
+                                                                                            "401":  {
+                                                                                                        "$ref": "../components/responses.json#/Unauthorized"
+                                                                                                    },
+                                                                                            "403":  {
+                                                                                                        "$ref": "../components/responses.json#/Forbidden"
+                                                                                                    },
+                                                                                            "404":  {
+                                                                                                        "$ref": "../components/responses.json#/NotFound"
+                                                                                                    }
+                                                                                        }
+                                                                      }
+                                                          },
+                  "/api/v1/guests/{id}/recommendations/refresh":  {
+                                                                      "parameters":  [
+                                                                                         {
+                                                                                             "$ref": "../components/parameters.json#/IdPath"
+                                                                                         }
+                                                                                     ],
+                                                                      "post":  {
+                                                                                   "tags":  [
+                                                                                                "Guests"
+                                                                                            ],
+                                                                                   "operationId":  "refreshGuestRecommendations",
+                                                                                   "summary":  "Принудительный пересчёт рекомендаций",
+                                                                                   "description":  "Синхронный вызов `Recommender.Refresh` с дедлайном 10 с; при превышении — 504 `timeout`. Набор рекомендаций заменяется в одной транзакции, поэтому чтение никогда не видит неполный набор.",
+                                                                                   "x-roles":  [
+                                                                                                   "R-1",
+                                                                                                   "R-4"
+                                                                                               ],
+                                                                                   "x-uc":  [
+                                                                                                "UC-4",
+                                                                                                "UC-15"
+                                                                                            ],
+                                                                                   "responses":  {
+                                                                                                     "200":  {
+                                                                                                                 "description":  "Пересчитанные рекомендации",
+                                                                                                                 "content":  {
+                                                                                                                                 "application/json":  {
+                                                                                                                                                          "schema":  {
+                                                                                                                                                                         "$ref": "../components/schemas/recommendations.json#/RecommendationList"
+                                                                                                                                                                     }
+                                                                                                                                                      }
+                                                                                                                             }
+                                                                                                             },
+                                                                                                     "401":  {
+                                                                                                                 "$ref": "../components/responses.json#/Unauthorized"
+                                                                                                             },
+                                                                                                     "403":  {
+                                                                                                                 "$ref": "../components/responses.json#/Forbidden"
+                                                                                                             },
+                                                                                                     "404":  {
+                                                                                                                 "$ref": "../components/responses.json#/NotFound"
+                                                                                                             },
+                                                                                                     "504":  {
+                                                                                                                 "$ref": "../components/responses.json#/GatewayTimeout"
+                                                                                                             }
+                                                                                                 }
+                                                                               }
+                                                                  },
+                  "/api/v1/segments/{id}/recommendations":  {
+                                                                "parameters":  [
+                                                                                   {
+                                                                                       "$ref": "../components/parameters.json#/IdPath"
+                                                                                   }
+                                                                               ],
+                                                                "get":  {
+                                                                            "tags":  [
+                                                                                         "Guests"
+                                                                                     ],
+                                                                            "operationId":  "getSegmentRecommendations",
+                                                                            "summary":  "Агрегат по сегменту: топ-арендаторы для приглашения",
+                                                                            "description":  "Суммирует рекомендации участников сегмента и возвращает арендаторов, наиболее часто предлагаемых сегменту, с числом гостей-кандидатов.",
+                                                                            "x-roles":  [
+                                                                                            "R-1",
+                                                                                            "R-4"
+                                                                                        ],
+                                                                            "x-uc":  [
+                                                                                         "UC-4"
+                                                                                     ],
+                                                                            "parameters":  [
+                                                                                               {
+                                                                                                   "name":  "limit",
+                                                                                                   "in":  "query",
+                                                                                                   "schema":  {
+                                                                                                                  "type":  "integer",
+                                                                                                                  "minimum":  1,
+                                                                                                                  "maximum":  50,
+                                                                                                                  "default":  10
+                                                                                                              }
+                                                                                               }
+                                                                                           ],
+                                                                            "responses":  {
+                                                                                              "200":  {
+                                                                                                          "description":  "Рейтинг арендаторов по сегменту",
+                                                                                                          "content":  {
+                                                                                                                          "application/json":  {
+                                                                                                                                                   "schema":  {
+                                                                                                                                                                  "$ref": "../components/schemas/recommendations.json#/SegmentRecommendationList"
+                                                                                                                                                              }
+                                                                                                                                               }
+                                                                                                                      }
+                                                                                                      },
+                                                                                              "401":  {
+                                                                                                          "$ref": "../components/responses.json#/Unauthorized"
+                                                                                                      },
+                                                                                              "403":  {
+                                                                                                          "$ref": "../components/responses.json#/Forbidden"
+                                                                                                      },
+                                                                                              "404":  {
+                                                                                                          "$ref": "../components/responses.json#/NotFound"
+                                                                                                      }
+                                                                                          }
+                                                                        }
+                                                            }
+              }
+}
