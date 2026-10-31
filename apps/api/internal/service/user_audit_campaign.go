@@ -1,0 +1,313 @@
+package service
+
+import (
+	"context"
+	"strings"
+	"time"
+
+	"github.com/MangriMen/UCRP/internal/domain"
+	"github.com/MangriMen/UCRP/internal/platform/auth"
+	"github.com/MangriMen/UCRP/internal/platform/idgen"
+)
+
+func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginResult, error) {
+	p, err := s.tokens.ParseRefresh(refreshToken)
+	if err != nil {
+		return LoginResult{}, domain.ErrUnauthorized
+	}
+	u, err := s.users.GetByID(ctx, p.UserID)
+	if err != nil || !u.IsActive {
+		return LoginResult{}, domain.ErrUnauthorized
+	}
+	pair, err := s.tokens.Issue(domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID})
+	if err != nil {
+		return LoginResult{}, err
+	}
+	return LoginResult{
+		AccessToken:  pair.AccessToken,
+		RefreshToken: pair.RefreshToken,
+		ExpiresIn:    pair.ExpiresIn,
+		User:         PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID},
+	}, nil
+}
+
+func (s *AuthService) ListUsers(ctx context.Context, limit, offset int) ([]UserDTO, error) {
+	items, err := s.users.List(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]UserDTO, 0, len(items))
+	for _, u := range items {
+		out = append(out, UserDTO{
+			ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
+			Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive,
+		})
+	}
+	return out, nil
+}
+
+func (s *AuthService) GetUser(ctx context.Context, id string) (*UserDTO, error) {
+	u, err := s.users.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &UserDTO{
+		ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
+		Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive,
+	}, nil
+}
+
+type UserDTO struct {
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	DisplayName string `json:"display_name"`
+	Role        string `json:"role"`
+	TenantID    string `json:"tenant_id,omitempty"`
+	IsActive    bool   `json:"is_active"`
+}
+
+type UserCreateRequest struct {
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	DisplayName string `json:"display_name"`
+	Role        string `json:"role"`
+	TenantID    string `json:"tenant_id"`
+}
+
+type UserUpdateRequest struct {
+	DisplayName string `json:"display_name"`
+	Role        string `json:"role"`
+	TenantID    string `json:"tenant_id"`
+	Password    string `json:"password"`
+	IsActive    *bool  `json:"is_active"`
+}
+
+func (s *AuthService) CreateUserService(ctx context.Context, req UserCreateRequest) (*UserDTO, error) {
+	email := strings.TrimSpace(req.Email)
+	if email == "" || len(req.Password) < 6 || strings.TrimSpace(req.DisplayName) == "" {
+		return nil, domain.ErrValidation
+	}
+	role := domain.Role(req.Role)
+	if role != domain.RoleMarketer && role != domain.RoleManager && role != domain.RoleTenant && role != domain.RoleAnalyst {
+		return nil, domain.ErrValidation
+	}
+	if role == domain.RoleTenant && req.TenantID == "" {
+		return nil, domain.ErrValidation
+	}
+	if role != domain.RoleTenant && req.TenantID != "" {
+		return nil, domain.ErrValidation
+	}
+	pub, err := s.CreateUser(ctx, email, req.Password, req.DisplayName, role, req.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	return &UserDTO{ID: pub.ID, Email: email, DisplayName: req.DisplayName, Role: string(pub.Role), TenantID: pub.TenantID, IsActive: true}, nil
+}
+
+func (s *AuthService) UpdateUser(ctx context.Context, id string, req UserUpdateRequest) (*UserDTO, error) {
+	u, err := s.users.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if req.DisplayName != "" {
+		u.DisplayName = req.DisplayName
+	}
+	if req.Role != "" {
+		u.Role = domain.Role(req.Role)
+	}
+	if req.TenantID != "" || u.Role == domain.RoleTenant {
+		u.TenantID = req.TenantID
+	}
+	if req.Password != "" {
+		hash, err := auth.HashPassword(req.Password)
+		if err != nil {
+			return nil, err
+		}
+		u.PasswordHash = hash
+	}
+	if req.IsActive != nil {
+		u.IsActive = *req.IsActive
+	}
+	if u.Role == domain.RoleTenant && u.TenantID == "" {
+		return nil, domain.ErrValidation
+	}
+	if u.Role != domain.RoleTenant {
+		u.TenantID = ""
+	}
+	if err := s.users.Update(ctx, u); err != nil {
+		return nil, err
+	}
+	return &UserDTO{ID: u.ID, Email: u.Email, DisplayName: u.DisplayName, Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive}, nil
+}
+
+func (s *AuthService) DeactivateUser(ctx context.Context, id string, actorRole domain.Role) error {
+	if actorRole == domain.RoleManager {
+		n, err := s.users.CountActiveByRole(ctx, domain.RoleManager)
+		if err != nil {
+			return err
+		}
+		u, err := s.users.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		if u.Role == domain.RoleManager && n <= 1 {
+			return domain.ErrConflict
+		}
+	}
+	return s.users.Deactivate(ctx, id, s.clock.Now())
+}
+
+type AuditService struct {
+	audit domain.AuditRepo
+}
+
+func NewAuditService(audit domain.AuditRepo) *AuditService {
+	return &AuditService{audit: audit}
+}
+
+type AuditDTO struct {
+	ID         string `json:"id"`
+	Actor      string `json:"actor_user_id,omitempty"`
+	Role       string `json:"actor_role"`
+	Action     string `json:"action"`
+	EntityType string `json:"entity_type"`
+	EntityID   string `json:"entity_id"`
+	CreatedAt  string `json:"created_at"`
+}
+
+func (s *AuditService) List(ctx context.Context, entityType, entityID, actor string, limit, offset int) ([]AuditDTO, error) {
+	items, err := s.audit.List(ctx, entityType, entityID, actor, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]AuditDTO, 0, len(items))
+	for _, a := range items {
+		out = append(out, AuditDTO{
+			ID: a.ID, Actor: a.ActorUserID, Role: a.ActorRole, Action: a.Action,
+			EntityType: a.EntityType, EntityID: a.EntityID,
+			CreatedAt: a.CreatedAt.UTC().Format(time.RFC3339),
+		})
+	}
+	return out, nil
+}
+
+type CampaignService struct {
+	campaigns domain.CampaignRepo
+	clock     domain.Clock
+	idGen     domain.IDGen
+}
+
+func NewCampaignService(campaigns domain.CampaignRepo) *CampaignService {
+	return &CampaignService{campaigns: campaigns, clock: domain.SystemClock{}, idGen: idgen.UUID{}}
+}
+
+type CampaignDTO struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	TenantID        string `json:"tenant_id"`
+	SegmentID       string `json:"segment_id"`
+	AttributionDays int    `json:"attribution_days"`
+	Status          string `json:"status"`
+}
+
+type CampaignRequest struct {
+	Name            string `json:"name"`
+	TenantID        string `json:"tenant_id"`
+	SegmentID       string `json:"segment_id"`
+	AttributionDays int    `json:"attribution_days"`
+	Status          string `json:"status"`
+}
+
+func (s *CampaignService) List(ctx context.Context, limit, offset int) ([]CampaignDTO, error) {
+	items, err := s.campaigns.List(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]CampaignDTO, 0, len(items))
+	for _, c := range items {
+		out = append(out, toCampaignDTO(c))
+	}
+	return out, nil
+}
+
+func (s *CampaignService) Get(ctx context.Context, id string) (*CampaignDTO, error) {
+	c, err := s.campaigns.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	d := toCampaignDTO(*c)
+	return &d, nil
+}
+
+func (s *CampaignService) Create(ctx context.Context, req CampaignRequest, actor string) (*CampaignDTO, error) {
+	if strings.TrimSpace(req.Name) == "" || req.TenantID == "" || req.SegmentID == "" {
+		return nil, domain.ErrValidation
+	}
+	days := req.AttributionDays
+	if days <= 0 {
+		days = 14
+	}
+	now := s.clock.Now()
+	c := &domain.Campaign{
+		ID:              s.idGen.NewID(ctx),
+		Name:            strings.TrimSpace(req.Name),
+		TenantID:        req.TenantID,
+		SegmentID:       req.SegmentID,
+		AttributionDays: days,
+		Status:          "active",
+		CreatedBy:       actor,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	if err := s.campaigns.Insert(ctx, c); err != nil {
+		return nil, err
+	}
+	d := toCampaignDTO(*c)
+	return &d, nil
+}
+
+func (s *CampaignService) Update(ctx context.Context, id string, req CampaignRequest) (*CampaignDTO, error) {
+	c, err := s.campaigns.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if hasExports, _ := s.campaigns.HasExports(ctx, id); hasExports {
+		if req.TenantID != "" && req.TenantID != c.TenantID {
+			return nil, domain.ErrConflict
+		}
+	}
+	if req.Name != "" {
+		c.Name = req.Name
+	}
+	if req.SegmentID != "" {
+		c.SegmentID = req.SegmentID
+	}
+	if req.AttributionDays > 0 {
+		c.AttributionDays = req.AttributionDays
+	}
+	if req.Status != "" {
+		c.Status = req.Status
+	}
+	c.UpdatedAt = s.clock.Now()
+	if err := s.campaigns.Update(ctx, c); err != nil {
+		return nil, err
+	}
+	d := toCampaignDTO(*c)
+	return &d, nil
+}
+
+func (s *CampaignService) Delete(ctx context.Context, id string) error {
+	if has, err := s.campaigns.HasExports(ctx, id); err != nil {
+		return err
+	} else if has {
+		return domain.ErrConflict
+	}
+	return s.campaigns.Delete(ctx, id)
+}
+
+func toCampaignDTO(c domain.Campaign) CampaignDTO {
+	return CampaignDTO{
+		ID: c.ID, Name: c.Name, TenantID: c.TenantID, SegmentID: c.SegmentID,
+		AttributionDays: c.AttributionDays, Status: c.Status,
+	}
+}

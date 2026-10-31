@@ -85,10 +85,16 @@ type ExportRepo interface {
 }
 
 type ContactLimitRepo interface {
+	List(ctx context.Context, limit, offset int) ([]ContactLimit, error)
 	ListActive(ctx context.Context) ([]ContactLimit, error)
+	GetByID(ctx context.Context, id string) (*ContactLimit, error)
+	Insert(ctx context.Context, c *ContactLimit) error
+	Update(ctx context.Context, c *ContactLimit) error
+	Delete(ctx context.Context, id string) error
 }
 
 type ContactLogRepo interface {
+	ListByGuest(ctx context.Context, guestID string, limit, offset int) ([]ContactLog, error)
 	CountSince(ctx context.Context, guestIDs []string, since time.Time) (map[string]int, error)
 	CountSinceChannel(ctx context.Context, guestIDs []string, since time.Time, channel string) (map[string]int, error)
 	InsertBatch(ctx context.Context, logs []ContactLog) error

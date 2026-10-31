@@ -103,6 +103,21 @@ func (r *DataSourceSQL) Insert(ctx context.Context, ds *domain.DataSource) error
 	return err
 }
 
+func (r *DataSourceSQL) Update(ctx context.Context, ds *domain.DataSource) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE data_source SET name = $2, config = $3, field_mapping = $4, schedule_cron = $5, is_active = $6, updated_at = $7
+		WHERE id = $1`,
+		ds.ID, ds.Name, nullIfEmpty(ds.Config), nullIfEmpty(ds.FieldMapping), nullIfEmpty(ds.ScheduleCron), ds.IsActive, ds.UpdatedAt,
+	)
+	return err
+}
+
+func (r *DataSourceSQL) Deactivate(ctx context.Context, id string, now time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE data_source SET is_active = FALSE, updated_at = $2 WHERE id = $1`, id, now)
+	return err
+}
+
 func (r *DataSourceSQL) TouchLastImport(ctx context.Context, id string, at time.Time) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE data_source SET last_import_at = $2, updated_at = $2 WHERE id = $1`, id, at)
@@ -134,6 +149,39 @@ func (r *DataSourceTypeSQL) List(ctx context.Context) ([]domain.DataSourceType, 
 		out = append(out, t)
 	}
 	return out, rows.Err()
+}
+
+func (r *DataSourceTypeSQL) GetByID(ctx context.Context, id string) (*domain.DataSourceType, error) {
+	var t domain.DataSourceType
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, code, name, connector_key, supports_file, supports_pull, is_active
+		FROM data_source_type WHERE id = $1`, id).
+		Scan(&t.ID, &t.Code, &t.Name, &t.ConnectorKey, &t.SupportsFile, &t.SupportsPull, &t.IsActive)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	return &t, err
+}
+
+func (r *DataSourceTypeSQL) Insert(ctx context.Context, t *domain.DataSourceType) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO data_source_type (id, code, name, connector_key, supports_file, supports_pull, is_active)
+		VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+		t.ID, t.Code, t.Name, t.ConnectorKey, t.SupportsFile, t.SupportsPull, t.IsActive,
+	)
+	if err != nil && strings.Contains(err.Error(), "duplicate key") {
+		return domain.ErrConflict
+	}
+	return err
+}
+
+func (r *DataSourceTypeSQL) Update(ctx context.Context, t *domain.DataSourceType) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE data_source_type SET name = $2, supports_file = $3, supports_pull = $4, is_active = $5
+		WHERE id = $1`,
+		t.ID, t.Name, t.SupportsFile, t.SupportsPull, t.IsActive,
+	)
+	return err
 }
 
 func (r *DataSourceTypeSQL) EnsureDefaults(ctx context.Context, clock domain.Clock, idGen domain.IDGen) error {

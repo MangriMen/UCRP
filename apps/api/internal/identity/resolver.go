@@ -44,16 +44,23 @@ func NewResolver(
 }
 
 func (r *Resolver) ResolveBatch(ctx context.Context, batchID string) error {
-	events, err := r.events.ListUnmatchedByBatch(ctx, batchID, resolveBatchLimit)
-	if err != nil {
-		return err
-	}
-	for i := range events {
-		if err := r.resolveEvent(ctx, &events[i]); err != nil {
+	for {
+		events, err := r.events.ListUnmatchedByBatch(ctx, batchID, resolveBatchLimit)
+		if err != nil {
 			return err
 		}
+		if len(events) == 0 {
+			return nil
+		}
+		for i := range events {
+			if err := r.resolveEvent(ctx, &events[i]); err != nil {
+				return err
+			}
+		}
+		if len(events) < resolveBatchLimit {
+			return nil
+		}
 	}
-	return nil
 }
 
 func (r *Resolver) resolveEvent(ctx context.Context, e *domain.Event) error {

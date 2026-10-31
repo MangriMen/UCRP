@@ -73,6 +73,7 @@ type GuestRepo interface {
 	TenantNames(ctx context.Context, guestID string) ([]string, error)
 	MarkMerged(ctx context.Context, loserID, winnerID string) error
 	MarkActive(ctx context.Context, guestID string) error
+	SoftDelete(ctx context.Context, id string, now time.Time) error
 }
 
 type GuestIdentifierRepo interface {

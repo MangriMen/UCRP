@@ -100,11 +100,16 @@ type DataSourceRepo interface {
 	GetByID(ctx context.Context, id string) (*DataSource, error)
 	List(ctx context.Context, limit, offset int) ([]DataSource, error)
 	Insert(ctx context.Context, ds *DataSource) error
+	Update(ctx context.Context, ds *DataSource) error
+	Deactivate(ctx context.Context, id string, now time.Time) error
 	TouchLastImport(ctx context.Context, id string, at time.Time) error
 }
 
 type DataSourceTypeRepo interface {
 	List(ctx context.Context) ([]DataSourceType, error)
+	GetByID(ctx context.Context, id string) (*DataSourceType, error)
+	Insert(ctx context.Context, t *DataSourceType) error
+	Update(ctx context.Context, t *DataSourceType) error
 	EnsureDefaults(ctx context.Context, clock Clock, idGen IDGen) error
 }
 

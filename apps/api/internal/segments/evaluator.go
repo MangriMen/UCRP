@@ -3,6 +3,7 @@ package segments
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -38,46 +39,59 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 		rule.PeriodDays = 90
 	}
 	since := time.Now().UTC().AddDate(0, 0, -rule.PeriodDays)
-	sinceIdx := 1 + len(rule.Was)
-	notStart := sinceIdx + 1
-	notSinceIdx := notStart + len(rule.WasNot)
 
-	query := `
-		WITH was AS (
-			SELECT DISTINCT e.guest_id
-			FROM event e
-			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
-			WHERE e.guest_id IS NOT NULL
-				AND e.tenant_id IN (` + inPlaceholders(1, len(rule.Was)) + `)
-				AND e.occurred_at >= $` + strconv.Itoa(sinceIdx) + `
-		),
-		was_not AS (
-			SELECT DISTINCT e.guest_id
-			FROM event e
-			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
-			WHERE e.guest_id IS NOT NULL
-				AND e.tenant_id IN (` + inPlaceholders(notStart, len(rule.WasNot)) + `)
-				AND e.occurred_at >= $` + strconv.Itoa(notSinceIdx) + `
-		)
-		SELECT w.guest_id
-		FROM was w
-		LEFT JOIN was_not n ON n.guest_id = w.guest_id
-		WHERE n.guest_id IS NULL
-		ORDER BY w.guest_id`
-
-	args := make([]any, 0, len(rule.Was)+len(rule.WasNot)+2)
+	args := make([]any, 0, len(rule.Was)+len(rule.WasNot)+4)
 	for _, id := range rule.Was {
 		args = append(args, id)
 	}
 	args = append(args, since)
-	for _, id := range rule.WasNot {
-		args = append(args, id)
+
+	query := `
+		SELECT guest_id FROM (
+			SELECT e.guest_id, COUNT(DISTINCT e.tenant_id) AS hit
+			FROM event e
+			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+			WHERE e.guest_id IS NOT NULL
+				AND e.tenant_id IN (` + inPlaceholders(1, len(rule.Was)) + `)
+				AND e.occurred_at >= $` + strconv.Itoa(len(rule.Was)+1) + `
+			GROUP BY e.guest_id
+			HAVING COUNT(DISTINCT e.tenant_id) = $` + strconv.Itoa(len(rule.Was)+2)
+	args = append(args, len(rule.Was))
+
+	if len(rule.WasNot) > 0 {
+		notStart := len(args) + 1
+		for _, id := range rule.WasNot {
+			args = append(args, id)
+		}
+		args = append(args, since)
+		query += `
+		) base
+		WHERE NOT EXISTS (
+			SELECT 1 FROM event e2
+			JOIN event_type et2 ON et2.id = e2.event_type_id AND et2.counts_as_presence
+			WHERE e2.guest_id = base.guest_id
+				AND e2.tenant_id IN (` + inPlaceholders(notStart, len(rule.WasNot)) + `)
+				AND e2.occurred_at >= $` + strconv.Itoa(notStart+len(rule.WasNot)) + `
+		)`
+	} else {
+		query += `
+		) base`
 	}
-	args = append(args, since)
+
+	if rule.RequireContact != "" {
+		args = append(args, rule.RequireContact)
+		query += `
+		AND EXISTS (
+			SELECT 1 FROM guest_identifier i
+			WHERE i.guest_id = base.guest_id AND i.id_type = $` + strconv.Itoa(len(args)) + `
+		)`
+	}
+
+	query += ` ORDER BY guest_id`
 
 	rows, err := e.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("evaluate segment: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]string, 0)
@@ -101,6 +115,12 @@ func validateRule(rule domain.SegmentRule) error {
 				return domain.ErrValidation
 			}
 		}
+	}
+	switch rule.RequireContact {
+	case "":
+	case "phone", "email", "card":
+	default:
+		return domain.ErrValidation
 	}
 	return nil
 }

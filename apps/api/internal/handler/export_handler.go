@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -50,6 +51,11 @@ func (h *ExportHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	exp, err := h.exports.Create(r.Context(), req, p.UserID)
 	if err != nil {
+		var ce *service.ExportConflictError
+		if errors.As(err, &ce) {
+			httpx.WriteError(w, r, http.StatusConflict, ce.Code, ce.Message)
+			return
+		}
 		httpx.WriteDomainError(w, r, err)
 		return
 	}

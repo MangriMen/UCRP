@@ -54,4 +54,11 @@ type MergeCandidateRepo interface {
 type UnmergeBlockRepo interface {
 	HasBlock(ctx context.Context, guestA, guestB string) (bool, error)
 	Insert(ctx context.Context, b *UnmergeBlock) error
+	List(ctx context.Context, limit, offset int) ([]UnmergeBlock, error)
+	GetByID(ctx context.Context, id string) (*UnmergeBlock, error)
+	Delete(ctx context.Context, id string) error
+}
+
+type MergeManualRepo interface {
+	ManualMerge(ctx context.Context, guestA, guestB, actorUserID string, now time.Time) (*MergeCandidate, error)
 }

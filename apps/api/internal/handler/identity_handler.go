@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -66,4 +67,43 @@ func (h *IdentityHandler) decide(
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, item)
+}
+
+func (h *IdentityHandler) Merge(w http.ResponseWriter, r *http.Request) {
+	p, ok := auth.PrincipalFrom(r.Context())
+	if !ok {
+		httpx.WriteError(w, r, http.StatusUnauthorized, "unauthorized", "Нет пользователя")
+		return
+	}
+	var req struct {
+		TargetGuestID string `json:"target_guest_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TargetGuestID == "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Нужен target_guest_id")
+		return
+	}
+	item, err := h.identity.Merge(r.Context(), chi.URLParam(r, "id"), req.TargetGuestID, p.UserID)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, item)
+}
+
+func (h *IdentityHandler) ListBlocks(w http.ResponseWriter, r *http.Request) {
+	limit, offset := pageParams(r)
+	items, err := h.identity.ListBlocks(r.Context(), limit, offset)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+}
+
+func (h *IdentityHandler) DeleteBlock(w http.ResponseWriter, r *http.Request) {
+	if err := h.identity.DeleteBlock(r.Context(), chi.URLParam(r, "id")); err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

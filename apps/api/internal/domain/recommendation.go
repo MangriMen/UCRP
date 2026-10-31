@@ -16,8 +16,15 @@ type Recommendation struct {
 	ComputedAt       time.Time
 }
 
+type SegmentTenantScore struct {
+	TenantID string
+	Score    float64
+	Guests   int
+}
+
 type RecommendationRepo interface {
 	ListByGuest(ctx context.Context, guestID string) ([]Recommendation, error)
+	TopTenantsForSegment(ctx context.Context, segmentID string, limit int) ([]SegmentTenantScore, error)
 }
 
 type Recommender interface {

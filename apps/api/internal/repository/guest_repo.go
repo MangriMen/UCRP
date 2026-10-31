@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 )
@@ -52,6 +53,7 @@ func (r *GuestSQL) Search(ctx context.Context, q string, limit, offset int) ([]d
 			ORDER BY created_at DESC
 			LIMIT $1 OFFSET $2`, limit, offset)
 	} else {
+		like := strings.ReplaceAll(strings.ReplaceAll(q, "%", `\%`), "_", `\_`)
 		rows, err = r.db.QueryContext(ctx, `
 			SELECT DISTINCT g.id, COALESCE(g.display_name, ''), g.status, COALESCE(g.merged_into_id, ''), g.created_at, g.updated_at, g.deleted_at
 			FROM guest g
@@ -62,7 +64,7 @@ func (r *GuestSQL) Search(ctx context.Context, q string, limit, offset int) ([]d
 				OR i.value_normalized LIKE '%' || $1 || '%'
 			)
 			ORDER BY g.created_at DESC
-			LIMIT $2 OFFSET $3`, q, limit, offset)
+			LIMIT $2 OFFSET $3`, like, limit, offset)
 	}
 	if err != nil {
 		return nil, err
@@ -135,4 +137,16 @@ func (r *GuestSQL) MarkActive(ctx context.Context, guestID string) error {
 		UPDATE guest SET status = 'active', merged_into_id = NULL, updated_at = now()
 		WHERE id = $1`, guestID)
 	return err
+}
+
+func (r *GuestSQL) SoftDelete(ctx context.Context, id string, now time.Time) error {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE guest SET status = 'deleted', deleted_at = $2, updated_at = $2 WHERE id = $1`, id, now)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }
