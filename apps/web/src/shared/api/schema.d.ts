@@ -1696,8 +1696,10 @@ export interface components {
         HealthResponse: {
             /** @enum {string} */
             status: "ok" | "degraded" | "down";
-            /** @example 1.0.0 */
+            /** @example a1b2c3d */
             version: string;
+            /** @example 2026-10-31T12:00:00Z */
+            buildTime?: string;
             /** Format: date-time */
             time: string;
             /**
