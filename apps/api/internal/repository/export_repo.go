@@ -176,6 +176,31 @@ func NewContactLimitSQL(db *sql.DB) *ContactLimitSQL {
 	return &ContactLimitSQL{db: db}
 }
 
+func (r *ContactLimitSQL) List(ctx context.Context, limit, offset int) ([]domain.ContactLimit, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, COALESCE(channel, ''), max_contacts, period_days, is_active, COALESCE(created_by, ''), created_at, updated_at
+		FROM contact_limit ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]domain.ContactLimit, 0)
+	for rows.Next() {
+		var c domain.ContactLimit
+		if err := rows.Scan(&c.ID, &c.Channel, &c.MaxContacts, &c.PeriodDays, &c.IsActive, &c.CreatedBy, &c.CreatedAt, &c.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
 func (r *ContactLimitSQL) ListActive(ctx context.Context) ([]domain.ContactLimit, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, COALESCE(channel, ''), max_contacts, period_days, is_active, COALESCE(created_by, ''), created_at, updated_at
@@ -193,6 +218,53 @@ func (r *ContactLimitSQL) ListActive(ctx context.Context) ([]domain.ContactLimit
 		out = append(out, c)
 	}
 	return out, rows.Err()
+}
+
+func (r *ContactLimitSQL) GetByID(ctx context.Context, id string) (*domain.ContactLimit, error) {
+	var c domain.ContactLimit
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, COALESCE(channel, ''), max_contacts, period_days, is_active, COALESCE(created_by, ''), created_at, updated_at
+		FROM contact_limit WHERE id = $1`, id).
+		Scan(&c.ID, &c.Channel, &c.MaxContacts, &c.PeriodDays, &c.IsActive, &c.CreatedBy, &c.CreatedAt, &c.UpdatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	return &c, err
+}
+
+func (r *ContactLimitSQL) Insert(ctx context.Context, c *domain.ContactLimit) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO contact_limit (id, channel, max_contacts, period_days, is_active, created_by, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+		c.ID, nullIfEmpty(c.Channel), c.MaxContacts, c.PeriodDays, c.IsActive, nullIfEmpty(c.CreatedBy), c.CreatedAt, c.UpdatedAt,
+	)
+	return err
+}
+
+func (r *ContactLimitSQL) Update(ctx context.Context, c *domain.ContactLimit) error {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE contact_limit SET channel = $2, max_contacts = $3, period_days = $4, is_active = $5, updated_at = $6
+		WHERE id = $1`,
+		c.ID, nullIfEmpty(c.Channel), c.MaxContacts, c.PeriodDays, c.IsActive, c.UpdatedAt,
+	)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+func (r *ContactLimitSQL) Delete(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM contact_limit WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }
 
 type ContactLogSQL struct {

@@ -18,6 +18,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/platform/storage"
 	"github.com/MangriMen/UCRP/internal/repository"
 	"github.com/MangriMen/UCRP/internal/repository/sqlstore"
+	"github.com/MangriMen/UCRP/internal/segments"
 	"github.com/MangriMen/UCRP/internal/service"
 )
 
@@ -70,7 +71,12 @@ func run(log *slog.Logger, cfg config.Config) error {
 		repository.NewMergeSQL(store.DB),
 		repository.NewUnmergeBlockSQL(store.DB),
 	)
-	jobTypes := []string{"import.process", "connector.pull", "identity.resolve"}
+	segmentSvc := service.NewSegmentService(
+		repository.NewSegmentSQL(store.DB),
+		segments.NewSqlEvaluator(store.DB),
+		q,
+	)
+	jobTypes := []string{"import.process", "connector.pull", "identity.resolve", "segment.recompute"}
 	maxAttempts := 3
 
 	log.Info("worker started")
@@ -100,7 +106,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		}
 
 		log.Info("job taken", "id", job.ID, "type", job.JobType)
-		if err := handleJob(ctx, imports, resolver, job); err != nil {
+		if err := handleJob(ctx, imports, resolver, segmentSvc, job); err != nil {
 			log.Error("job failed", "id", job.ID, "type", job.JobType, "err", err)
 			if job.Attempts >= maxAttempts {
 				if failErr := q.Fail(ctx, job.ID, err.Error(), time.Time{}); failErr != nil {
@@ -120,18 +126,30 @@ func run(log *slog.Logger, cfg config.Config) error {
 	}
 }
 
-func handleJob(ctx context.Context, imports *service.ImportService, resolver *identity.Resolver, job *domain.Job) error {
+func handleJob(ctx context.Context, imports *service.ImportService, resolver *identity.Resolver, segmentSvc *service.SegmentService, job *domain.Job) error {
 	var payload struct {
-		BatchID string `json:"batch_id"`
+		BatchID   string `json:"batch_id"`
+		SegmentID string `json:"segment_id"`
+		VersionID string `json:"version_id"`
 	}
 	if err := json.Unmarshal([]byte(job.Payload), &payload); err != nil {
 		return err
 	}
-	if payload.BatchID == "" {
-		return domain.ErrValidation
-	}
-	if job.JobType == "identity.resolve" {
+	switch job.JobType {
+	case "identity.resolve":
+		if payload.BatchID == "" {
+			return domain.ErrValidation
+		}
 		return resolver.ResolveBatch(ctx, payload.BatchID)
+	case "segment.recompute":
+		if payload.SegmentID == "" {
+			return domain.ErrValidation
+		}
+		return segmentSvc.RecomputeVersion(ctx, payload.SegmentID, payload.VersionID)
+	default:
+		if payload.BatchID == "" {
+			return domain.ErrValidation
+		}
+		return imports.ProcessBatch(ctx, payload.BatchID)
 	}
-	return imports.ProcessBatch(ctx, payload.BatchID)
 }

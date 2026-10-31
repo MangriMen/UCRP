@@ -38,42 +38,54 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 		rule.PeriodDays = 90
 	}
 	since := time.Now().UTC().AddDate(0, 0, -rule.PeriodDays)
-	sinceIdx := 1 + len(rule.Was)
-	notStart := sinceIdx + 1
-	notSinceIdx := notStart + len(rule.WasNot)
 
-	query := `
-		WITH was AS (
+	var query string
+	args := make([]any, 0, len(rule.Was)+len(rule.WasNot)+2)
+	for _, id := range rule.Was {
+		args = append(args, id)
+	}
+	if len(rule.WasNot) == 0 {
+		args = append(args, since)
+		query = `
 			SELECT DISTINCT e.guest_id
 			FROM event e
 			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
 			WHERE e.guest_id IS NOT NULL
 				AND e.tenant_id IN (` + inPlaceholders(1, len(rule.Was)) + `)
-				AND e.occurred_at >= $` + strconv.Itoa(sinceIdx) + `
-		),
-		was_not AS (
-			SELECT DISTINCT e.guest_id
-			FROM event e
-			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
-			WHERE e.guest_id IS NOT NULL
-				AND e.tenant_id IN (` + inPlaceholders(notStart, len(rule.WasNot)) + `)
-				AND e.occurred_at >= $` + strconv.Itoa(notSinceIdx) + `
-		)
-		SELECT w.guest_id
-		FROM was w
-		LEFT JOIN was_not n ON n.guest_id = w.guest_id
-		WHERE n.guest_id IS NULL
-		ORDER BY w.guest_id`
-
-	args := make([]any, 0, len(rule.Was)+len(rule.WasNot)+2)
-	for _, id := range rule.Was {
-		args = append(args, id)
+				AND e.occurred_at >= $` + strconv.Itoa(len(rule.Was)+1) + `
+			ORDER BY e.guest_id`
+	} else {
+		sinceIdx := 1 + len(rule.Was)
+		notStart := sinceIdx + 1
+		notSinceIdx := notStart + len(rule.WasNot)
+		args = append(args, since)
+		for _, id := range rule.WasNot {
+			args = append(args, id)
+		}
+		args = append(args, since)
+		query = `
+			WITH was AS (
+				SELECT DISTINCT e.guest_id
+				FROM event e
+				JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+				WHERE e.guest_id IS NOT NULL
+					AND e.tenant_id IN (` + inPlaceholders(1, len(rule.Was)) + `)
+					AND e.occurred_at >= $` + strconv.Itoa(sinceIdx) + `
+			),
+			was_not AS (
+				SELECT DISTINCT e.guest_id
+				FROM event e
+				JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+				WHERE e.guest_id IS NOT NULL
+					AND e.tenant_id IN (` + inPlaceholders(notStart, len(rule.WasNot)) + `)
+					AND e.occurred_at >= $` + strconv.Itoa(notSinceIdx) + `
+			)
+			SELECT w.guest_id
+			FROM was w
+			LEFT JOIN was_not n ON n.guest_id = w.guest_id
+			WHERE n.guest_id IS NULL
+			ORDER BY w.guest_id`
 	}
-	args = append(args, since)
-	for _, id := range rule.WasNot {
-		args = append(args, id)
-	}
-	args = append(args, since)
 
 	rows, err := e.db.QueryContext(ctx, query, args...)
 	if err != nil {

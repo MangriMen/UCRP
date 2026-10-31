@@ -63,7 +63,14 @@ type SegmentRepo interface {
 	Insert(ctx context.Context, s *Segment, v *SegmentVersion) error
 	GetByID(ctx context.Context, id string) (*Segment, *SegmentVersion, error)
 	List(ctx context.Context, limit, offset int) ([]Segment, error)
+	ListTemplates(ctx context.Context) ([]Segment, error)
+	ListVersions(ctx context.Context, segmentID string) ([]SegmentVersion, error)
+	GetVersion(ctx context.Context, segmentID string, versionNo int) (*Segment, *SegmentVersion, error)
+	InsertVersion(ctx context.Context, v *SegmentVersion) error
+	Archive(ctx context.Context, id string, now time.Time) error
+	MarkComputing(ctx context.Context, versionID string) error
 	ReplaceMembers(ctx context.Context, versionID string, guestIDs []string, computedAt time.Time) error
+	ListMembers(ctx context.Context, versionID string, limit, offset int) ([]string, error)
 	ListMemberContacts(ctx context.Context, versionID string) ([]GuestContact, error)
 }
 

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 )
@@ -135,4 +136,16 @@ func (r *GuestSQL) MarkActive(ctx context.Context, guestID string) error {
 		UPDATE guest SET status = 'active', merged_into_id = NULL, updated_at = now()
 		WHERE id = $1`, guestID)
 	return err
+}
+
+func (r *GuestSQL) SoftDelete(ctx context.Context, id string, now time.Time) error {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE guest SET status = 'deleted', deleted_at = $2, updated_at = $2 WHERE id = $1`, id, now)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }

@@ -77,24 +77,29 @@ func run(log *slog.Logger, cfg config.Config) error {
 	}
 	authSvc := service.NewAuthService(users, tokens, clock, idg)
 	authHandler := handler.NewAuthHandler(authSvc)
+	q := queue.NewDBQueue(store.DB, clock, idg)
 	guests := repository.NewGuestSQL(store.DB)
 	identifiers := repository.NewGuestIdentifierSQL(store.DB)
 	events := repository.NewEventSQL(store.DB)
-	profileSvc := service.NewProfileService(guests, identifiers, events)
+	contacts := repository.NewContactLogSQL(store.DB)
+	profileSvc := service.NewProfileService(guests, identifiers, events, contacts)
 	guestHandler := handler.NewGuestHandler(profileSvc)
 	identitySvc := service.NewIdentityService(repository.NewMergeSQL(store.DB))
 	identityHandler := handler.NewIdentityHandler(identitySvc)
-	segmentSvc := service.NewSegmentService(repository.NewSegmentSQL(store.DB), segments.NewSqlEvaluator(store.DB))
+	segmentRepo := repository.NewSegmentSQL(store.DB)
+	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), q)
 	segmentHandler := handler.NewSegmentHandler(segmentSvc)
 	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), recommend.NewWeightedRecommender(store.DB))
 	recoHandler := handler.NewRecommendationHandler(recoSvc)
 	exportSvc := service.NewExportService(
 		repository.NewExportSQL(store.DB),
 		repository.NewContactLimitSQL(store.DB),
-		repository.NewContactLogSQL(store.DB),
-		repository.NewSegmentSQL(store.DB),
+		contacts,
+		segmentRepo,
 	)
 	exportHandler := handler.NewExportHandler(exportSvc)
+	limitSvc := service.NewContactLimitService(repository.NewContactLimitSQL(store.DB))
+	limitHandler := handler.NewContactLimitHandler(limitSvc)
 	dataSources := repository.NewDataSourceSQL(store.DB)
 	imports := service.NewImportService(
 		repository.NewImportBatchSQL(store.DB),
@@ -103,11 +108,18 @@ func run(log *slog.Logger, cfg config.Config) error {
 		events,
 		catalog,
 		blobs,
-		queue.NewDBQueue(store.DB, clock, idg),
+		q,
 	)
 	dataSourceSvc := service.NewDataSourceService(dataSources, sourceTypes)
 	importHandler := handler.NewImportHandler(imports, dataSourceSvc)
 	dataSourceHandler := handler.NewDataSourceHandler(dataSourceSvc)
+	refSvc := service.NewReferenceService(
+		repository.NewTenantSQL(store.DB),
+		repository.NewTenantCategorySQL(store.DB),
+		repository.NewProjectSQL(store.DB),
+		repository.NewEventTypeSQL(store.DB),
+	)
+	refHandler := handler.NewReferenceHandler(refSvc)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -124,6 +136,8 @@ func run(log *slog.Logger, cfg config.Config) error {
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/", guestHandler.Search)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}", guestHandler.Get)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/events", guestHandler.Events)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/contacts", guestHandler.Contacts)
+				g.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", guestHandler.Delete)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/recommendations", recoHandler.List)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/{id}/recommendations/refresh", recoHandler.Refresh)
 			})
@@ -135,17 +149,57 @@ func run(log *slog.Logger, cfg config.Config) error {
 				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/revert", identityHandler.Revert)
 			})
 			priv.Route("/segments", func(s chi.Router) {
-				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/", segmentHandler.List)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", segmentHandler.List)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/templates", segmentHandler.Templates)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/preview", segmentHandler.Preview)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/", segmentHandler.Create)
-				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}", segmentHandler.Get)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}", segmentHandler.Get)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Put("/{id}", segmentHandler.Update)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Delete("/{id}", segmentHandler.Delete)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/members", segmentHandler.Members)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/versions", segmentHandler.Versions)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/{id}/recompute", segmentHandler.Recompute)
 			})
 			priv.Route("/exports", func(x chi.Router) {
-				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/", exportHandler.List)
+				x.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", exportHandler.List)
+				x.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}", exportHandler.Get)
 				x.With(auth.RequireRole(domain.RoleMarketer)).Post("/preview", exportHandler.Preview)
 				x.With(auth.RequireRole(domain.RoleMarketer)).Post("/", exportHandler.Create)
-				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/{id}", exportHandler.Get)
+				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/{id}/members", exportHandler.Members)
 				x.With(auth.RequireRole(domain.RoleMarketer)).Get("/{id}/download", exportHandler.Download)
+			})
+			priv.Route("/contact-limits", func(c chi.Router) {
+				c.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", limitHandler.List)
+				c.With(auth.RequireRole(domain.RoleMarketer)).Post("/", limitHandler.Create)
+				c.With(auth.RequireRole(domain.RoleMarketer)).Patch("/{id}", limitHandler.Update)
+				c.With(auth.RequireRole(domain.RoleMarketer)).Delete("/{id}", limitHandler.Delete)
+			})
+			priv.Route("/tenants", func(t chi.Router) {
+				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", refHandler.ListTenants)
+				t.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", refHandler.CreateTenant)
+				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}", refHandler.GetTenant)
+				t.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/{id}", refHandler.UpdateTenant)
+				t.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", refHandler.DeleteTenant)
+			})
+			priv.Route("/tenant-categories", func(c chi.Router) {
+				c.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", refHandler.ListCategories)
+				c.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", refHandler.CreateCategory)
+				c.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/{id}", refHandler.UpdateCategory)
+				c.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", refHandler.DeleteCategory)
+				c.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}/relations", refHandler.ListRelations)
+				c.With(auth.RequireRole(domain.RoleAnalyst)).Put("/{id}/relations", refHandler.ReplaceRelations)
+			})
+			priv.Route("/projects", func(p chi.Router) {
+				p.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", refHandler.ListProjects)
+				p.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", refHandler.CreateProject)
+				p.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/{id}", refHandler.UpdateProject)
+				p.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", refHandler.DeleteProject)
+			})
+			priv.Route("/event-types", func(e chi.Router) {
+				e.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", refHandler.ListEventTypes)
+				e.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", refHandler.CreateEventType)
+				e.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/{id}", refHandler.UpdateEventType)
+				e.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", refHandler.DeleteEventType)
 			})
 			priv.Route("/imports", func(i chi.Router) {
 				i.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", importHandler.Create)

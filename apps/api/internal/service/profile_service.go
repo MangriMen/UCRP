@@ -10,10 +10,18 @@ type ProfileService struct {
 	guests      domain.GuestRepo
 	identifiers domain.GuestIdentifierRepo
 	events      domain.EventRepo
+	contacts    domain.ContactLogRepo
+	clock       domain.Clock
 }
 
-func NewProfileService(guests domain.GuestRepo, identifiers domain.GuestIdentifierRepo, events domain.EventRepo) *ProfileService {
-	return &ProfileService{guests: guests, identifiers: identifiers, events: events}
+func NewProfileService(guests domain.GuestRepo, identifiers domain.GuestIdentifierRepo, events domain.EventRepo, contacts domain.ContactLogRepo) *ProfileService {
+	return &ProfileService{
+		guests:      guests,
+		identifiers: identifiers,
+		events:      events,
+		contacts:    contacts,
+		clock:       domain.SystemClock{},
+	}
 }
 
 type GuestListItem struct {
