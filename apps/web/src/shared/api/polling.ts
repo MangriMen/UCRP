@@ -8,3 +8,5 @@ export function pollWhile<TData>(isActive: (data: TData) => boolean, intervalMs:
     return data !== undefined && isActive(data) ? intervalMs : false
   }
 }
+
+export const SEGMENT_POLL_MS = 5000
