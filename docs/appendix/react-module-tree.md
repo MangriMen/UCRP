@@ -1,6 +1,6 @@
 # Дерево React-модулей (проектное, без кода)
 
-Стек: React + Vite + TypeScript, shadcn/ui (Tailwind), React Router, TanStack Query и Table, React Hook Form. Связь с backend — только REST `/api/v1` через `shared/api`. Структура соответствует `ARCHITECTURE.md`, раздел 3 (`app → features → shared`). Модуль `features/admin` добавлен к списку плана (D-14).
+Стек: React + Vite + TypeScript, shadcn/ui (Tailwind), React Router, TanStack Query и Table, React Hook Form. Связь с backend — только REST `/api/v1` через `shared/api`. Структура соответствует `ARCHITECTURE.md`, раздел 3 (FSD: `app → pages → widgets → features → entities → shared`). Ниже перечислены бизнес-области; при реализации каждая раскладывается на `pages/` (экраны), `features/` (действия) и `entities/` (данные и типы). Модуль `features/admin` добавлен к списку плана (D-14).
 
 ```text
 src/

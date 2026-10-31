@@ -59,3 +59,6 @@ vendor/
 
 # Vite
 .vite/
+
+# Local agent planning (task slices)
+/.plan/
