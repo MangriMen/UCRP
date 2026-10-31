@@ -46,10 +46,14 @@ func (q *DBQueue) Enqueue(ctx context.Context, job domain.Job) error {
 			return err
 		}
 	}
+	var dedup any
+	if job.DedupKey != "" {
+		dedup = job.DedupKey
+	}
 	_, err := q.db.ExecContext(ctx, `
 		INSERT INTO job_queue (id, job_type, payload, dedup_key, status, attempts, run_after, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		job.ID, job.JobType, job.Payload, nullIfEmpty(job.DedupKey), string(job.Status), job.Attempts, job.RunAfter, job.CreatedAt,
+		job.ID, job.JobType, job.Payload, dedup, string(job.Status), job.Attempts, job.RunAfter, job.CreatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("enqueue: %w", err)
@@ -68,17 +72,15 @@ func (q *DBQueue) Take(ctx context.Context, jobTypes []string, workerID string) 
 	defer func() { _ = tx.Rollback() }()
 
 	now := q.clock.Now()
-	args := make([]any, 0, len(jobTypes)+2)
+	args := make([]any, 0, len(jobTypes)+3)
 	args = append(args, now, string(domain.JobRunning), workerID)
-	for i, t := range jobTypes {
+	for _, t := range jobTypes {
 		args = append(args, t)
-		_ = i
 	}
-	typeList := numberedPlaceholders(3, len(jobTypes))
 	query := `
 		WITH next AS (
 			SELECT id FROM job_queue
-			WHERE status = 'queued' AND run_after <= $1 AND job_type IN (` + typeList + `)
+			WHERE status = 'queued' AND run_after <= $1 AND job_type IN (` + numberedPlaceholders(3, len(jobTypes)) + `)
 			ORDER BY run_after
 			FOR UPDATE SKIP LOCKED
 			LIMIT 1
@@ -88,6 +90,7 @@ func (q *DBQueue) Take(ctx context.Context, jobTypes []string, workerID string) 
 		FROM next
 		WHERE j.id = next.id
 		RETURNING j.id, j.job_type, j.payload, j.dedup_key, j.status, j.attempts, j.run_after, j.created_at`
+
 	var (
 		job    domain.Job
 		status string
@@ -133,19 +136,9 @@ func (q *DBQueue) Fail(ctx context.Context, id string, errMsg string, retryAfter
 }
 
 func numberedPlaceholders(start, n int) string {
-	if n <= 0 {
-		return ""
-	}
 	parts := make([]string, n)
-	for i := 0; i < n; i++ {
+	for i := range parts {
 		parts[i] = fmt.Sprintf("$%d", start+i)
 	}
 	return strings.Join(parts, ",")
-}
-
-func nullIfEmpty(s string) any {
-	if s == "" {
-		return nil
-	}
-	return s
 }

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -133,12 +132,4 @@ func RequireRole(roles ...domain.Role) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-func BearerToken(r *http.Request) (string, error) {
-	header := r.Header.Get("Authorization")
-	if !strings.HasPrefix(header, "Bearer ") {
-		return "", errors.New("missing bearer token")
-	}
-	return strings.TrimPrefix(header, "Bearer "), nil
 }
