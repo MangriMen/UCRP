@@ -129,4 +129,4 @@ Test names describe the expected behavior and the condition: `TestMerge_RejectsC
 3. **Do not change visibility for tests.** Use tests in the same package.
 4. **The API contract source of truth is `packages/openapi/`.** When changing an endpoint, update the spec; the frontend types in `packages/api-types` are generated and never committed.
 5. **Do not add a dependency** without checking that the standard library or an existing package does not already cover it.
-6. **Code without comments and without slop**: `AGENTS.md` plus the `code-simplification` skill.
+6. **Read `AGENTS.md`** for agent behavior, commit rules and code style.
