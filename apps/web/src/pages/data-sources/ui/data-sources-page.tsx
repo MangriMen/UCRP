@@ -32,7 +32,7 @@ interface FormState {
 export function DataSourcesPage() {
   const { role } = useAuth()
   const canEdit = role === 'analyst'
-  const canImport = role === 'analyst' || role === 'manager'
+  const canImport = role === 'analyst'
   const [searchParams, setSearchParams] = useSearchParams()
   const typeId = searchParams.get('type') ?? ALL
   const status = searchParams.get('status') ?? ALL
