@@ -19,6 +19,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
 	"github.com/MangriMen/UCRP/internal/platform/logging"
+	"github.com/MangriMen/UCRP/internal/platform/queue"
 	"github.com/MangriMen/UCRP/internal/platform/storage"
 	"github.com/MangriMen/UCRP/internal/recommend"
 	"github.com/MangriMen/UCRP/internal/repository"
@@ -102,6 +103,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		events,
 		catalog,
 		blobs,
+		queue.NewDBQueue(store.DB, clock, idg),
 	)
 	dataSourceSvc := service.NewDataSourceService(dataSources, sourceTypes)
 	importHandler := handler.NewImportHandler(imports, dataSourceSvc)

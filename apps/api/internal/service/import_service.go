@@ -39,6 +39,7 @@ type ImportService struct {
 	sources  domain.DataSourceRepo
 	storage  domain.BlobStore
 	pipeline *ingestion.Pipeline
+	queue    domain.Queue
 	clock    domain.Clock
 	idGen    domain.IDGen
 }
@@ -50,6 +51,7 @@ func NewImportService(
 	events domain.EventRepo,
 	catalog domain.ImportCatalog,
 	storage domain.BlobStore,
+	q domain.Queue,
 ) *ImportService {
 	clock := domain.SystemClock{}
 	idGen := idgen.UUID{}
@@ -59,6 +61,7 @@ func NewImportService(
 		sources:  sources,
 		storage:  storage,
 		pipeline: ingestion.NewPipeline(batches, rejected, events, sources, catalog, clock, idGen),
+		queue:    q,
 		clock:    clock,
 		idGen:    idGen,
 	}
@@ -290,8 +293,14 @@ func (s *ImportService) processFile(ctx context.Context, batch *domain.ImportBat
 	if err != nil {
 		return s.pipeline.Fail(ctx, batch.ID, csvError(err).Message)
 	}
-	_, err = s.pipeline.ProcessRows(ctx, batch, rows, mapping)
-	return err
+	counters, err := s.pipeline.ProcessRows(ctx, batch, rows, mapping)
+	if err != nil {
+		return err
+	}
+	if counters.Accepted > 0 {
+		return s.enqueueResolve(ctx, batch.ID)
+	}
+	return nil
 }
 
 func (s *ImportService) processPull(ctx context.Context, batch *domain.ImportBatch) error {
@@ -326,8 +335,26 @@ func (s *ImportService) processPull(ctx context.Context, batch *domain.ImportBat
 	if err != nil {
 		return s.pipeline.Fail(ctx, batch.ID, csvError(err).Message)
 	}
-	_, err = s.pipeline.ProcessRows(ctx, batch, rows, mapping)
-	return err
+	counters, err := s.pipeline.ProcessRows(ctx, batch, rows, mapping)
+	if err != nil {
+		return err
+	}
+	if counters.Accepted > 0 {
+		return s.enqueueResolve(ctx, batch.ID)
+	}
+	return nil
+}
+
+func (s *ImportService) enqueueResolve(ctx context.Context, batchID string) error {
+	payload, err := json.Marshal(map[string]string{"batch_id": batchID})
+	if err != nil {
+		return err
+	}
+	return s.queue.Enqueue(ctx, domain.Job{
+		JobType:  "identity.resolve",
+		Payload:  string(payload),
+		DedupKey: "resolve:" + batchID,
+	})
 }
 
 func readCSV(r io.Reader, mapping ingestion.FieldMapping) ([]ingestion.Row, error) {
