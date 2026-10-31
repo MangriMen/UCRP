@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMalls } from '@/entities/mall'
 import { useTenants, type Tenant } from '@/entities/tenant'
 import { ActiveBadge } from '@/shared/ui/active-badge'
 import { Button } from '@/shared/ui/button'
@@ -19,6 +20,7 @@ interface FormState {
 export function TenantsManager({ canEdit }: TenantsManagerProps) {
   const [page, setPage] = useState(1)
   const tenants = useTenants({ page })
+  const malls = useMalls()
   const remove = useDeleteTenant()
   const [form, setForm] = useState<FormState | null>(null)
   const [deleting, setDeleting] = useState<Tenant | null>(null)
@@ -27,7 +29,12 @@ export function TenantsManager({ canEdit }: TenantsManagerProps) {
     { id: 'code', header: 'Код', cell: (t) => t.code },
     { id: 'name', header: 'Название', cell: (t) => t.name },
     { id: 'category', header: 'Категория', cell: (t) => t.categoryName ?? '—' },
-    { id: 'floor', header: 'Этаж', cell: (t) => t.floor, className: 'text-right' },
+    {
+      id: 'mall',
+      header: 'ТЦ',
+      cell: (t) => malls.data?.find((m) => m.id === t.mallId)?.name ?? '—',
+    },
+    { id: 'floor', header: 'Этаж', cell: (t) => t.floor ?? '—', className: 'text-right' },
     { id: 'priority', header: 'Приоритет', cell: (t) => t.priority, className: 'text-right' },
     { id: 'status', header: 'Статус', cell: (t) => <ActiveBadge isActive={t.isActive} /> },
     ...(canEdit

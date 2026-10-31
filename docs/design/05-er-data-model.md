@@ -9,7 +9,8 @@
 | E-1 Гость                    | `guest`                                        | `status` (`active/merged/deleted`), `merged_into_id`, `deleted_at` |
 | E-2 Событие                  | `event`                                        | `guest_id` может быть NULL (не привязано)                          |
 | E-3 Сегмент                  | `segment`, `segment_version`, `segment_member` | версионирование правил, материализованный состав                   |
-| E-4 Арендатор                | `tenant`                                       |                                                                    |
+| E-4 Арендатор                | `tenant`                                       | `mall_id` — ТЦ, `floor` — этаж внутри ТЦ                           |
+| E-22 ТЦ                      | `mall`                                         | зона = пара (`mall_id`, `floor`), отдельной таблицы этажей нет     |
 | E-5 Источник данных          | `data_source`, `data_source_type`              | тип — справочник                                                   |
 | E-6 Категория арендатора     | `tenant_category`, `tenant_category_relation`  | смежность/конкуренция                                              |
 | E-7 Проект                   | `project`                                      |                                                                    |
@@ -35,6 +36,7 @@
 
 ```mermaid
 erDiagram
+  mall ||--o{ tenant : "ТЦ"
   tenant_category ||--o{ tenant : "категория"
   tenant_category ||--o{ tenant_category_relation : "связи"
   tenant ||--o{ project : "проекты"
@@ -59,8 +61,15 @@ erDiagram
     varchar relation_type PK
     smallint weight_pct
   }
+  mall {
+    text id PK
+    varchar code UK
+    varchar name
+    boolean is_active
+  }
   tenant {
     text id PK
+    text mall_id FK
     text category_id FK
     varchar kind
     smallint floor
@@ -301,7 +310,8 @@ erDiagram
 | -------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tenant_category`          | `id`                                                          | Атрибуты зависят только от категории                                                                                                                                                                                                                                                                        |
 | `tenant_category_relation` | (`category_id`, `related_category_id`, `relation_type`)       | Единственный неключевой атрибут `weight_pct` зависит от всего ключа                                                                                                                                                                                                                                         |
-| `tenant`                   | `id`                                                          | Категория — по FK, название категории не дублируется; `kind` (`mall`/`external`) отделяет арендатора комплекса от внешнего партнёра (A-22, D-38); `floor`, `x_m`, `y_m`, `priority` зависят от арендатора                                                                                                   |
+| `mall`                     | `id`, `UNIQUE(code)`                                          | Название и признак активности зависят от ТЦ; список этажей выводится из арендаторов (`DISTINCT tenant.floor`, кроме 0), отдельно не хранится                                                                                                                                                                |
+| `tenant`                   | `id`                                                          | ТЦ — по FK `mall_id`; индекс (`mall_id`, `floor`) обслуживает зонные запросы. Категория — по FK, название категории не дублируется; `kind` (`mall`/`external`) отделяет арендатора комплекса от внешнего партнёра (A-22, D-38); `floor`, `x_m`, `y_m`, `priority` зависят от арендатора                     |
 | `project`                  | `id`, `UNIQUE(tenant_id, code)`                               | Принадлежность арендатору по FK                                                                                                                                                                                                                                                                             |
 | `event_type`               | `id`                                                          | Свойства типа (`has_amount`, `counts_as_presence`, `reverses_event_type_id`) вынесены из события. Отдельные типы `top_up` и `spend` с `counts_as_presence=false` различают пополнение и посещение (A-20, D-36)                                                                                              |
 | `data_source_type`         | `id`                                                          | `connector_key` и возможности зависят от типа, а не от экземпляра                                                                                                                                                                                                                                           |

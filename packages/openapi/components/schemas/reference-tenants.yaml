@@ -4,6 +4,7 @@ Tenant:
     - id
     - code
     - name
+    - mallId
     - categoryId
     - floor
     - priority
@@ -19,6 +20,9 @@ Tenant:
     name:
       type: string
       maxLength: 200
+    mallId:
+      type: string
+      description: Mall the tenant belongs to
     categoryId:
       type: string
     categoryName:
@@ -26,7 +30,8 @@ Tenant:
       readOnly: true
     floor:
       type: integer
-      description: Complex floor
+      nullable: true
+      description: Mall floor; null means the tenant has no floor and cannot be used as a zone
     areaSqm:
       type: number
       format: double
@@ -83,6 +88,7 @@ TenantOwnReference:
       type: string
     floor:
       type: integer
+      nullable: true
     isActive:
       type: boolean
 TenantOwnReferencePage:
@@ -100,6 +106,7 @@ TenantCreateRequest:
   required:
     - code
     - name
+    - mallId
     - categoryId
     - floor
   properties:
@@ -111,10 +118,13 @@ TenantCreateRequest:
       type: string
       minLength: 1
       maxLength: 200
+    mallId:
+      type: string
     categoryId:
       type: string
     floor:
       type: integer
+      nullable: true
     areaSqm:
       type: number
       format: double
@@ -146,10 +156,13 @@ TenantUpdateRequest:
       type: string
       minLength: 1
       maxLength: 200
+    mallId:
+      type: string
     categoryId:
       type: string
     floor:
       type: integer
+      nullable: true
     areaSqm:
       type: number
       format: double

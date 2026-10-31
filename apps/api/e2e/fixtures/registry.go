@@ -108,6 +108,7 @@ func (r *Registry) Cleanup(ctx context.Context) error {
 		"project",
 		"app_user",
 		"tenant",
+		"mall",
 		"tenant_category_relation",
 		"tenant_category",
 		"event_type",
@@ -156,8 +157,8 @@ func (r *Registry) Tenant(ctx context.Context, suffix, categoryID string, priori
 	name := "E2E tenant " + suffix
 	now := time.Now().UTC()
 	err := r.db.Exec(ctx, `
-		INSERT INTO tenant (id, code, name, category_id, kind, floor, priority, is_active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, 'mall', 1, $5, TRUE, $6, $6)`, id, code, name, categoryID, priority, now)
+		INSERT INTO tenant (id, code, name, mall_id, category_id, kind, floor, priority, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, (SELECT id FROM mall ORDER BY code LIMIT 1), $4, 'mall', 1, $5, TRUE, $6, $6)`, id, code, name, categoryID, priority, now)
 	if err != nil {
 		return nil, err
 	}

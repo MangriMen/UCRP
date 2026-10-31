@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 )
@@ -54,6 +55,47 @@ func (r *EventSQL) ListByGuest(ctx context.Context, guestID string, limit, offse
 		out = append(out, e)
 	}
 	return out, rows.Err()
+}
+
+func (r *EventSQL) ListMovement(ctx context.Context, guestID string, from, to *time.Time, limit int) ([]domain.MovementStep, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, code, tenant_id, tenant_name, mall_id, mall_name, floor, occurred_at FROM (
+			SELECT e.id, et.code, t.id AS tenant_id, t.name AS tenant_name, m.id AS mall_id, m.name AS mall_name,
+				t.floor, e.occurred_at
+			FROM event e
+			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+			JOIN tenant t ON t.id = e.tenant_id
+			JOIN mall m ON m.id = t.mall_id AND m.is_active
+			WHERE e.guest_id = $1
+				AND ($2::timestamp IS NULL OR e.occurred_at >= $2)
+				AND ($3::timestamp IS NULL OR e.occurred_at < $3)
+			ORDER BY e.occurred_at DESC, e.id DESC
+			LIMIT $4
+		) recent
+		ORDER BY occurred_at, id`, guestID, nullTime(from), nullTime(to), limit)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]domain.MovementStep, 0)
+	for rows.Next() {
+		var step domain.MovementStep
+		if err := rows.Scan(
+			&step.EventID, &step.EventTypeCode, &step.TenantID, &step.TenantName,
+			&step.MallID, &step.MallName, &step.Floor, &step.OccurredAt,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, step)
+	}
+	return out, rows.Err()
+}
+
+func nullTime(t *time.Time) sql.NullTime {
+	if t == nil {
+		return sql.NullTime{}
+	}
+	return sql.NullTime{Time: *t, Valid: true}
 }
 
 func (r *EventSQL) Insert(ctx context.Context, e *domain.Event) error {

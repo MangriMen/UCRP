@@ -17,6 +17,9 @@ export function describeLeaf(rule: SegmentRule): string {
     countOf(rule.excludedTenantIds, 'не был у', 'арендаторов'),
     countOf(rule.visitedCategoryIds, 'был в', 'категориях'),
     countOf(rule.excludedCategoryIds, 'не был в', 'категориях'),
+    rule.purchasedZones && rule.purchasedZones.length > 0
+      ? `покупал на ${rule.purchasedZones.length} этажах`
+      : null,
     rule.requireContact
       ? `контакт: ${rule.requireContact === 'phone' ? 'телефон' : 'email'}`
       : null,

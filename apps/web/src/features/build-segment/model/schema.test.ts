@@ -7,6 +7,7 @@ import {
   segmentFormSchema,
   toRule,
   toRuleFormValues,
+  zoneKey,
 } from './schema'
 
 const group = (overrides: Partial<ReturnType<typeof emptyGroupValues>> = {}) => ({
@@ -37,6 +38,29 @@ describe('segment rule form', () => {
     expect(values.conditions).toHaveLength(1)
     expect(values.groups).toEqual([])
     expect(toRule(values)).toEqual({ operator: 'and', conditions: [rule] })
+  })
+
+  it('maps selected zones to purchasedZones and omits an empty selection', () => {
+    const withZones = group({
+      conditions: [{ ...emptyLeafValues, purchasedZones: [zoneKey({ mallId: 'm1', floor: 2 })] }],
+    })
+    expect(toRule(withZones)).toEqual({
+      operator: 'and',
+      conditions: [{ periodDays: 90, purchasedZones: [{ mallId: 'm1', floor: 2 }] }],
+    })
+    expect(toRule(group())).toEqual({ operator: 'and', conditions: [{ periodDays: 90 }] })
+  })
+
+  it('keeps negative floors and mall ids with separators when mapping zones', () => {
+    const zones = [
+      { mallId: 'mall|north', floor: -1 },
+      { mallId: 'm2', floor: 3 },
+    ]
+    const rule = {
+      operator: 'and' as const,
+      conditions: [{ periodDays: 30, purchasedZones: zones }],
+    }
+    expect(toRule(toRuleFormValues(rule))).toEqual(rule)
   })
 
   it('round-trips a nested group', () => {
