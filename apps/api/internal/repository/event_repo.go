@@ -90,6 +90,50 @@ func (r *EventSQL) InsertIgnoreDuplicate(ctx context.Context, e *domain.Event) (
 	return n > 0, nil
 }
 
+func (r *EventSQL) ListUnmatchedByBatch(ctx context.Context, batchID string, limit int) ([]domain.Event, error) {
+	if limit <= 0 || limit > 50000 {
+		limit = 5000
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, COALESCE(guest_id, ''), COALESCE(origin_guest_id, ''), tenant_id, COALESCE(project_id, ''),
+			event_type_id, data_source_id, COALESCE(import_batch_id, ''), external_id, occurred_at,
+			amount_minor, currency, COALESCE(match_keys, ''), COALESCE(raw_payload, ''), created_at
+		FROM event
+		WHERE import_batch_id = $1 AND guest_id IS NULL
+		ORDER BY id
+		LIMIT $2`, batchID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]domain.Event, 0)
+	for rows.Next() {
+		var (
+			e      domain.Event
+			amount sql.NullInt64
+		)
+		if err := rows.Scan(
+			&e.ID, &e.GuestID, &e.OriginGuestID, &e.TenantID, &e.ProjectID,
+			&e.EventTypeID, &e.DataSourceID, &e.ImportBatchID, &e.ExternalID, &e.OccurredAt,
+			&amount, &e.Currency, &e.MatchKeys, &e.RawPayload, &e.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		if amount.Valid {
+			v := amount.Int64
+			e.AmountMinor = &v
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+func (r *EventSQL) AttachGuest(ctx context.Context, eventID, guestID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE event SET guest_id = $2 WHERE id = $1 AND guest_id IS NULL`, eventID, guestID)
+	return err
+}
+
 func (r *EventSQL) MoveToGuest(ctx context.Context, fromGuestID, toGuestID string) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE event SET guest_id = $2

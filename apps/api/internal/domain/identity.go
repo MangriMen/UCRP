@@ -44,6 +44,8 @@ type UnmergeBlock struct {
 type MergeCandidateRepo interface {
 	GetByID(ctx context.Context, id string) (*MergeCandidate, error)
 	List(ctx context.Context, resolution MergeResolution, limit, offset int) ([]MergeCandidate, error)
+	CreatePending(ctx context.Context, guestA, guestB, matchType, reasonCode, reasonText string, score int, now time.Time) (*MergeCandidate, error)
+	AutoMerge(ctx context.Context, guestA, guestB, matchType, reasonCode, reasonText string, score int, now time.Time) (*MergeCandidate, error)
 	Confirm(ctx context.Context, id, actorUserID string, now time.Time) (*MergeCandidate, error)
 	Reject(ctx context.Context, id, actorUserID string, now time.Time) (*MergeCandidate, error)
 	Revert(ctx context.Context, id, actorUserID string, now time.Time) (*MergeCandidate, error)
