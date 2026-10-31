@@ -1,236 +1,206 @@
 {
-    "paths":  {
-                  "/api/v1/users":  {
-                                        "get":  {
-                                                    "tags":  [
-                                                                 "Users"
-                                                             ],
-                                                    "operationId":  "listUsers",
-                                                    "summary":  "List users",
-                                                    "x-roles":  [
-                                                                    "R-2"
-                                                                ],
-                                                    "x-uc":  [
-                                                                 "UC-18"
-                                                             ],
-                                                    "parameters":  [
-                                                                       {
-                                                                           "$ref": "../components/parameters.json#/Page"
-                                                                       },
-                                                                       {
-                                                                           "$ref": "../components/parameters.json#/PageSize"
-                                                                       },
-                                                                       {
-                                                                           "name":  "role",
-                                                                           "in":  "query",
-                                                                           "schema":  {
-                                                                                          "$ref": "../components/schemas/common.json#/UserRole"
-                                                                                      }
-                                                                       },
-                                                                       {
-                                                                           "name":  "is_active",
-                                                                           "in":  "query",
-                                                                           "schema":  {
-                                                                                          "type":  "boolean"
-                                                                                      }
-                                                                       },
-                                                                       {
-                                                                           "name":  "q",
-                                                                           "in":  "query",
-                                                                           "description":  "Search by email or name",
-                                                                           "schema":  {
-                                                                                          "type":  "string",
-                                                                                          "maxLength":  200
-                                                                                      }
-                                                                       }
-                                                                   ],
-                                                    "responses":  {
-                                                                      "200":  {
-                                                                                  "description":  "User page",
-                                                                                  "content":  {
-                                                                                                  "application/json":  {
-                                                                                                                           "schema":  {
-                                                                                                                                          "$ref": "../components/schemas/users.json#/UserPage"
-                                                                                                                                      }
-                                                                                                                       }
-                                                                                              }
-                                                                              },
-                                                                      "401":  {
-                                                                                  "$ref": "../components/responses.json#/Unauthorized"
-                                                                              },
-                                                                      "403":  {
-                                                                                  "$ref": "../components/responses.json#/Forbidden"
-                                                                              }
-                                                                  }
-                                                },
-                                        "post":  {
-                                                     "tags":  [
-                                                                  "Users"
-                                                              ],
-                                                     "operationId":  "createUser",
-                                                     "summary":  "Create a user",
-                                                     "description":  "For the `tenant` role (R-3) `tenantId` is required; a database CHECK constraint ties the role to the tenant. The password is set by the administrator and delivered outside the API (or via a reset link).",
-                                                     "x-roles":  [
-                                                                     "R-2"
-                                                                 ],
-                                                     "x-uc":  [
-                                                                  "UC-18"
-                                                              ],
-                                                     "requestBody":  {
-                                                                         "required":  true,
-                                                                         "content":  {
-                                                                                         "application/json":  {
-                                                                                                                  "schema":  {
-                                                                                                                                 "$ref": "../components/schemas/users.json#/UserCreateRequest"
-                                                                                                                             }
-                                                                                                              }
-                                                                                     }
-                                                                     },
-                                                     "responses":  {
-                                                                       "201":  {
-                                                                                   "description":  "User created",
-                                                                                   "content":  {
-                                                                                                   "application/json":  {
-                                                                                                                            "schema":  {
-                                                                                                                                           "$ref": "../components/schemas/users.json#/User"
-                                                                                                                                       }
-                                                                                                                        }
-                                                                                               }
-                                                                               },
-                                                                       "400":  {
-                                                                                   "$ref": "../components/responses.json#/BadRequest"
-                                                                               },
-                                                                       "401":  {
-                                                                                   "$ref": "../components/responses.json#/Unauthorized"
-                                                                               },
-                                                                       "403":  {
-                                                                                   "$ref": "../components/responses.json#/Forbidden"
-                                                                               },
-                                                                       "409":  {
-                                                                                   "$ref": "../components/responses.json#/Conflict"
-                                                                               }
-                                                                   }
-                                                 }
-                                    },
-                  "/api/v1/users/{id}":  {
-                                             "parameters":  [
-                                                                {
-                                                                    "$ref": "../components/parameters.json#/IdPath"
-                                                                }
-                                                            ],
-                                             "get":  {
-                                                         "tags":  [
-                                                                      "Users"
-                                                                  ],
-                                                         "operationId":  "getUser",
-                                                         "summary":  "User details",
-                                                         "x-roles":  [
-                                                                         "R-2"
-                                                                     ],
-                                                         "x-uc":  [
-                                                                      "UC-18"
-                                                                  ],
-                                                         "responses":  {
-                                                                           "200":  {
-                                                                                       "description":  "User",
-                                                                                       "content":  {
-                                                                                                       "application/json":  {
-                                                                                                                                "schema":  {
-                                                                                                                                               "$ref": "../components/schemas/users.json#/User"
-                                                                                                                                           }
-                                                                                                                            }
-                                                                                                   }
-                                                                                   },
-                                                                           "401":  {
-                                                                                       "$ref": "../components/responses.json#/Unauthorized"
-                                                                                   },
-                                                                           "403":  {
-                                                                                       "$ref": "../components/responses.json#/Forbidden"
-                                                                                   },
-                                                                           "404":  {
-                                                                                       "$ref": "../components/responses.json#/NotFound"
-                                                                                   }
-                                                                       }
-                                                     },
-                                             "patch":  {
-                                                           "tags":  [
-                                                                        "Users"
-                                                                    ],
-                                                           "operationId":  "updateUser",
-                                                           "summary":  "Change role, activity, reset password",
-                                                           "description":  "Partial update. Changing the role to `tenant` requires `tenantId`. A password reset invalidates the user refresh tokens.",
-                                                           "x-roles":  [
-                                                                           "R-2"
-                                                                       ],
-                                                           "x-uc":  [
-                                                                        "UC-18"
-                                                                    ],
-                                                           "requestBody":  {
-                                                                               "required":  true,
-                                                                               "content":  {
-                                                                                               "application/json":  {
-                                                                                                                        "schema":  {
-                                                                                                                                       "$ref": "../components/schemas/users.json#/UserUpdateRequest"
-                                                                                                                                   }
-                                                                                                                    }
-                                                                                           }
-                                                                           },
-                                                           "responses":  {
-                                                                             "200":  {
-                                                                                         "description":  "Updated user",
-                                                                                         "content":  {
-                                                                                                         "application/json":  {
-                                                                                                                                  "schema":  {
-                                                                                                                                                 "$ref": "../components/schemas/users.json#/User"
-                                                                                                                                             }
-                                                                                                                              }
-                                                                                                     }
-                                                                                     },
-                                                                             "400":  {
-                                                                                         "$ref": "../components/responses.json#/BadRequest"
-                                                                                     },
-                                                                             "401":  {
-                                                                                         "$ref": "../components/responses.json#/Unauthorized"
-                                                                                     },
-                                                                             "403":  {
-                                                                                         "$ref": "../components/responses.json#/Forbidden"
-                                                                                     },
-                                                                             "404":  {
-                                                                                         "$ref": "../components/responses.json#/NotFound"
-                                                                                     }
-                                                                         }
-                                                       },
-                                             "delete":  {
-                                                            "tags":  [
-                                                                         "Users"
-                                                                     ],
-                                                            "operationId":  "deactivateUser",
-                                                            "summary":  "Deactivate a user (soft)",
-                                                            "description":  "No hard delete: `isActive=false` and refresh tokens are revoked. The last active R-2 cannot be deactivated — 409.",
-                                                            "x-roles":  [
-                                                                            "R-2"
-                                                                        ],
-                                                            "x-uc":  [
-                                                                         "UC-18"
-                                                                     ],
-                                                            "responses":  {
-                                                                              "204":  {
-                                                                                          "$ref": "../components/responses.json#/NoContent"
-                                                                                      },
-                                                                              "401":  {
-                                                                                          "$ref": "../components/responses.json#/Unauthorized"
-                                                                                      },
-                                                                              "403":  {
-                                                                                          "$ref": "../components/responses.json#/Forbidden"
-                                                                                      },
-                                                                              "404":  {
-                                                                                          "$ref": "../components/responses.json#/NotFound"
-                                                                                      },
-                                                                              "409":  {
-                                                                                          "$ref": "../components/responses.json#/Conflict"
-                                                                                      }
-                                                                          }
-                                                        }
-                                         }
+  "paths": {
+    "/api/v1/users": {
+      "get": {
+        "tags": ["Users"],
+        "operationId": "listUsers",
+        "summary": "List users",
+        "x-roles": ["R-2"],
+        "x-uc": ["UC-18"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/Page"
+          },
+          {
+            "$ref": "../components/parameters.json#/PageSize"
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "schema": {
+              "$ref": "../components/schemas/common.json#/UserRole"
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search by email or name",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/users.json#/UserPage"
+                }
               }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "operationId": "createUser",
+        "summary": "Create a user",
+        "description": "For the `tenant` role (R-3) `tenantId` is required; a database CHECK constraint ties the role to the tenant. The password is set by the administrator and delivered outside the API (or via a reset link).",
+        "x-roles": ["R-2"],
+        "x-uc": ["UC-18"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/users.json#/UserCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/users.json#/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Users"],
+        "operationId": "getUser",
+        "summary": "User details",
+        "x-roles": ["R-2"],
+        "x-uc": ["UC-18"],
+        "responses": {
+          "200": {
+            "description": "User",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/users.json#/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "operationId": "updateUser",
+        "summary": "Change role, activity, reset password",
+        "description": "Partial update. Changing the role to `tenant` requires `tenantId`. A password reset invalidates the user refresh tokens.",
+        "x-roles": ["R-2"],
+        "x-uc": ["UC-18"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/users.json#/UserUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/users.json#/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "operationId": "deactivateUser",
+        "summary": "Deactivate a user (soft)",
+        "description": "No hard delete: `isActive=false` and refresh tokens are revoked. The last active R-2 cannot be deactivated — 409.",
+        "x-roles": ["R-2"],
+        "x-uc": ["UC-18"],
+        "responses": {
+          "204": {
+            "$ref": "../components/responses.json#/NoContent"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    }
+  }
 }

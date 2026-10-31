@@ -1,138 +1,120 @@
 {
-    "paths":  {
-                  "/api/v1/guests/{id}/merge":  {
-                                                    "parameters":  [
-                                                                       {
-                                                                           "$ref": "../components/parameters.json#/IdPath"
-                                                                       }
-                                                                   ],
-                                                    "post":  {
-                                                                 "tags":  [
-                                                                              "Identity"
-                                                                          ],
-                                                                 "operationId":  "mergeGuests",
-                                                                 "summary":  "Manual profile merge",
-                                                                 "description":  "Merges guest `{id}` into `targetGuestId`. Merging with itself → 400; a blocked pair → 409 `merge_blocked` (remove the block via `DELETE /unmerge-blocks/{id}`).",
-                                                                 "x-roles":  [
-                                                                                 "R-4"
-                                                                             ],
-                                                                 "x-uc":  [
-                                                                              "UC-11"
-                                                                          ],
-                                                                 "requestBody":  {
-                                                                                     "required":  true,
-                                                                                     "content":  {
-                                                                                                     "application/json":  {
-                                                                                                                              "schema":  {
-                                                                                                                                             "$ref": "../components/schemas/identity.json#/MergeRequest"
-                                                                                                                                         }
-                                                                                                                          }
-                                                                                                 }
-                                                                                 },
-                                                                 "responses":  {
-                                                                                   "200":  {
-                                                                                               "description":  "Merge result",
-                                                                                               "content":  {
-                                                                                                               "application/json":  {
-                                                                                                                                        "schema":  {
-                                                                                                                                                       "$ref": "../components/schemas/identity.json#/MergeResult"
-                                                                                                                                                   }
-                                                                                                                                    }
-                                                                                                           }
-                                                                                           },
-                                                                                   "400":  {
-                                                                                               "$ref": "../components/responses.json#/BadRequest"
-                                                                                           },
-                                                                                   "401":  {
-                                                                                               "$ref": "../components/responses.json#/Unauthorized"
-                                                                                           },
-                                                                                   "403":  {
-                                                                                               "$ref": "../components/responses.json#/Forbidden"
-                                                                                           },
-                                                                                   "404":  {
-                                                                                               "$ref": "../components/responses.json#/NotFound"
-                                                                                           },
-                                                                                   "409":  {
-                                                                                               "$ref": "../components/responses.json#/Conflict"
-                                                                                           }
-                                                                               }
-                                                             }
-                                                },
-                  "/api/v1/unmerge-blocks":  {
-                                                 "get":  {
-                                                             "tags":  [
-                                                                          "Identity"
-                                                                      ],
-                                                             "operationId":  "listUnmergeBlocks",
-                                                             "summary":  "List merge blocks",
-                                                             "x-roles":  [
-                                                                             "R-4"
-                                                                         ],
-                                                             "x-uc":  [
-                                                                          "UC-11"
-                                                                      ],
-                                                             "parameters":  [
-                                                                                {
-                                                                                    "$ref": "../components/parameters.json#/Page"
-                                                                                },
-                                                                                {
-                                                                                    "$ref": "../components/parameters.json#/PageSize"
-                                                                                }
-                                                                            ],
-                                                             "responses":  {
-                                                                               "200":  {
-                                                                                           "description":  "Merge block page",
-                                                                                           "content":  {
-                                                                                                           "application/json":  {
-                                                                                                                                    "schema":  {
-                                                                                                                                                   "$ref": "../components/schemas/identity.json#/UnmergeBlockPage"
-                                                                                                                                               }
-                                                                                                                                }
-                                                                                                       }
-                                                                                       },
-                                                                               "401":  {
-                                                                                           "$ref": "../components/responses.json#/Unauthorized"
-                                                                                       },
-                                                                               "403":  {
-                                                                                           "$ref": "../components/responses.json#/Forbidden"
-                                                                                       }
-                                                                           }
-                                                         }
-                                             },
-                  "/api/v1/unmerge-blocks/{id}":  {
-                                                      "parameters":  [
-                                                                         {
-                                                                             "$ref": "../components/parameters.json#/IdPath"
-                                                                         }
-                                                                     ],
-                                                      "delete":  {
-                                                                     "tags":  [
-                                                                                  "Identity"
-                                                                              ],
-                                                                     "operationId":  "deleteUnmergeBlock",
-                                                                     "summary":  "Remove a merge block",
-                                                                     "description":  "Once removed, the pair can be merged automatically again when a shared reliable key appears.",
-                                                                     "x-roles":  [
-                                                                                     "R-4"
-                                                                                 ],
-                                                                     "x-uc":  [
-                                                                                  "UC-11"
-                                                                              ],
-                                                                     "responses":  {
-                                                                                       "204":  {
-                                                                                                   "$ref": "../components/responses.json#/NoContent"
-                                                                                               },
-                                                                                       "401":  {
-                                                                                                   "$ref": "../components/responses.json#/Unauthorized"
-                                                                                               },
-                                                                                       "403":  {
-                                                                                                   "$ref": "../components/responses.json#/Forbidden"
-                                                                                               },
-                                                                                       "404":  {
-                                                                                                   "$ref": "../components/responses.json#/NotFound"
-                                                                                               }
-                                                                                   }
-                                                                 }
-                                                  }
+  "paths": {
+    "/api/v1/guests/{id}/merge": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "post": {
+        "tags": ["Identity"],
+        "operationId": "mergeGuests",
+        "summary": "Manual profile merge",
+        "description": "Merges guest `{id}` into `targetGuestId`. Merging with itself → 400; a blocked pair → 409 `merge_blocked` (remove the block via `DELETE /unmerge-blocks/{id}`).",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-11"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/identity.json#/MergeRequest"
               }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Merge result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/identity.json#/MergeResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/unmerge-blocks": {
+      "get": {
+        "tags": ["Identity"],
+        "operationId": "listUnmergeBlocks",
+        "summary": "List merge blocks",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-11"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/Page"
+          },
+          {
+            "$ref": "../components/parameters.json#/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Merge block page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/identity.json#/UnmergeBlockPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/unmerge-blocks/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "delete": {
+        "tags": ["Identity"],
+        "operationId": "deleteUnmergeBlock",
+        "summary": "Remove a merge block",
+        "description": "Once removed, the pair can be merged automatically again when a shared reliable key appears.",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-11"],
+        "responses": {
+          "204": {
+            "$ref": "../components/responses.json#/NoContent"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    }
+  }
 }

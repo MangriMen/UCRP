@@ -1,240 +1,210 @@
 {
-    "paths":  {
-                  "/api/v1/exports/preview":  {
-                                                  "post":  {
-                                                               "tags":  [
-                                                                            "Exports"
-                                                                        ],
-                                                               "operationId":  "previewExport",
-                                                               "summary":  "Counts before creating an export",
-                                                               "description":  "Returns four numbers: total in segment, with a channel contact, blocked by limit, in control group. Writes nothing to the database. The contact filter runs before the limit and the control group.",
-                                                               "x-roles":  [
-                                                                               "R-1"
-                                                                           ],
-                                                               "x-uc":  [
-                                                                            "UC-5",
-                                                                            "UC-10"
-                                                                        ],
-                                                               "requestBody":  {
-                                                                                   "required":  true,
-                                                                                   "content":  {
-                                                                                                   "application/json":  {
-                                                                                                                            "schema":  {
-                                                                                                                                           "$ref": "../components/schemas/exports.json#/ExportPreviewRequest"
-                                                                                                                                       }
-                                                                                                                        }
-                                                                                               }
-                                                                               },
-                                                               "responses":  {
-                                                                                 "200":  {
-                                                                                             "description":  "Preview counts",
-                                                                                             "content":  {
-                                                                                                             "application/json":  {
-                                                                                                                                      "schema":  {
-                                                                                                                                                     "$ref": "../components/schemas/exports.json#/ExportPreviewResponse"
-                                                                                                                                                 }
-                                                                                                                                  }
-                                                                                                         }
-                                                                                         },
-                                                                                 "400":  {
-                                                                                             "$ref": "../components/responses.json#/BadRequest"
-                                                                                         },
-                                                                                 "401":  {
-                                                                                             "$ref": "../components/responses.json#/Unauthorized"
-                                                                                         },
-                                                                                 "403":  {
-                                                                                             "$ref": "../components/responses.json#/Forbidden"
-                                                                                         },
-                                                                                 "404":  {
-                                                                                             "$ref": "../components/responses.json#/NotFound"
-                                                                                         }
-                                                                             }
-                                                           }
-                                              },
-                  "/api/v1/exports":  {
-                                          "post":  {
-                                                       "tags":  [
-                                                                    "Exports"
-                                                                ],
-                                                       "operationId":  "createExport",
-                                                       "summary":  "Create a segment export to a channel",
-                                                       "description":  "The `Idempotency-Key` header is required: repeating the same key returns the same export and creates no new `contact_log` rows. Order: key check → segment version `ready` (otherwise 409 `segment_not_ready`) → channel contact filter (`sms`/`push` — phone, `email` — email) → strictest limit rule → control group by `controlSeed` → transactional write with a repeated limit check. If no recipients remain — 409 `contact_limit_exceeded` with a breakdown of reasons. Up to 20,000 members are built synchronously (201); larger exports use the `export.build` job (202).",
-                                                       "x-roles":  [
-                                                                       "R-1"
-                                                                   ],
-                                                       "x-uc":  [
-                                                                    "UC-5",
-                                                                    "UC-10"
-                                                                ],
-                                                       "parameters":  [
-                                                                          {
-                                                                              "$ref": "../components/parameters.json#/IdempotencyKey"
-                                                                          }
-                                                                      ],
-                                                       "requestBody":  {
-                                                                           "required":  true,
-                                                                           "content":  {
-                                                                                           "application/json":  {
-                                                                                                                    "schema":  {
-                                                                                                                                   "$ref": "../components/schemas/exports.json#/ExportCreateRequest"
-                                                                                                                               }
-                                                                                                                }
-                                                                                       }
-                                                                       },
-                                                       "responses":  {
-                                                                         "201":  {
-                                                                                     "description":  "Export ready",
-                                                                                     "content":  {
-                                                                                                     "application/json":  {
-                                                                                                                              "schema":  {
-                                                                                                                                             "$ref": "../components/schemas/exports.json#/Export"
-                                                                                                                                         }
-                                                                                                                          }
-                                                                                                 }
-                                                                                 },
-                                                                         "202":  {
-                                                                                     "description":  "Export is being built asynchronously",
-                                                                                     "content":  {
-                                                                                                     "application/json":  {
-                                                                                                                              "schema":  {
-                                                                                                                                             "$ref": "../components/schemas/exports.json#/Export"
-                                                                                                                                         }
-                                                                                                                          }
-                                                                                                 }
-                                                                                 },
-                                                                         "400":  {
-                                                                                     "$ref": "../components/responses.json#/BadRequest"
-                                                                                 },
-                                                                         "401":  {
-                                                                                     "$ref": "../components/responses.json#/Unauthorized"
-                                                                                 },
-                                                                         "403":  {
-                                                                                     "$ref": "../components/responses.json#/Forbidden"
-                                                                                 },
-                                                                         "404":  {
-                                                                                     "$ref": "../components/responses.json#/NotFound"
-                                                                                 },
-                                                                         "409":  {
-                                                                                     "$ref": "../components/responses.json#/Conflict"
-                                                                                 },
-                                                                         "504":  {
-                                                                                     "$ref": "../components/responses.json#/GatewayTimeout"
-                                                                                 }
-                                                                     }
-                                                   },
-                                          "get":  {
-                                                      "tags":  [
-                                                                   "Exports"
-                                                               ],
-                                                      "operationId":  "listExports",
-                                                      "summary":  "Export log",
-                                                      "x-roles":  [
-                                                                      "R-1",
-                                                                      "R-2",
-                                                                      "R-4"
-                                                                  ],
-                                                      "x-uc":  [
-                                                                   "UC-5"
-                                                               ],
-                                                      "parameters":  [
-                                                                         {
-                                                                             "name":  "segment_id",
-                                                                             "in":  "query",
-                                                                             "schema":  {
-                                                                                            "type":  "string"
-                                                                                        }
-                                                                         },
-                                                                         {
-                                                                             "name":  "campaign_id",
-                                                                             "in":  "query",
-                                                                             "schema":  {
-                                                                                            "type":  "string"
-                                                                                        }
-                                                                         },
-                                                                         {
-                                                                             "name":  "channel",
-                                                                             "in":  "query",
-                                                                             "schema":  {
-                                                                                            "$ref": "../components/schemas/exports.json#/ExportChannel"
-                                                                                        }
-                                                                         },
-                                                                         {
-                                                                             "name":  "status",
-                                                                             "in":  "query",
-                                                                             "schema":  {
-                                                                                            "$ref": "../components/schemas/exports.json#/ExportStatus"
-                                                                                        }
-                                                                         },
-                                                                         {
-                                                                             "$ref": "../components/parameters.json#/Page"
-                                                                         },
-                                                                         {
-                                                                             "$ref": "../components/parameters.json#/PageSize"
-                                                                         }
-                                                                     ],
-                                                      "responses":  {
-                                                                        "200":  {
-                                                                                    "description":  "Export page",
-                                                                                    "content":  {
-                                                                                                    "application/json":  {
-                                                                                                                             "schema":  {
-                                                                                                                                            "$ref": "../components/schemas/exports.json#/ExportPage"
-                                                                                                                                        }
-                                                                                                                         }
-                                                                                                }
-                                                                                },
-                                                                        "401":  {
-                                                                                    "$ref": "../components/responses.json#/Unauthorized"
-                                                                                },
-                                                                        "403":  {
-                                                                                    "$ref": "../components/responses.json#/Forbidden"
-                                                                                }
-                                                                    }
-                                                  }
-                                      },
-                  "/api/v1/exports/{id}":  {
-                                               "parameters":  [
-                                                                  {
-                                                                      "$ref": "../components/parameters.json#/IdPath"
-                                                                  }
-                                                              ],
-                                               "get":  {
-                                                           "tags":  [
-                                                                        "Exports"
-                                                                    ],
-                                                           "operationId":  "getExport",
-                                                           "summary":  "Export details and counters",
-                                                           "description":  "Invariant: `exportedCount + controlCount + noContactCount + blockedByLimitCount = totalInSegment`.",
-                                                           "x-roles":  [
-                                                                           "R-1",
-                                                                           "R-2",
-                                                                           "R-4"
-                                                                       ],
-                                                           "x-uc":  [
-                                                                        "UC-5"
-                                                                    ],
-                                                           "responses":  {
-                                                                             "200":  {
-                                                                                         "description":  "Export",
-                                                                                         "content":  {
-                                                                                                         "application/json":  {
-                                                                                                                                  "schema":  {
-                                                                                                                                                 "$ref": "../components/schemas/exports.json#/Export"
-                                                                                                                                             }
-                                                                                                                              }
-                                                                                                     }
-                                                                                     },
-                                                                             "401":  {
-                                                                                         "$ref": "../components/responses.json#/Unauthorized"
-                                                                                     },
-                                                                             "403":  {
-                                                                                         "$ref": "../components/responses.json#/Forbidden"
-                                                                                     },
-                                                                             "404":  {
-                                                                                         "$ref": "../components/responses.json#/NotFound"
-                                                                                     }
-                                                                         }
-                                                       }
-                                           }
+  "paths": {
+    "/api/v1/exports/preview": {
+      "post": {
+        "tags": ["Exports"],
+        "operationId": "previewExport",
+        "summary": "Counts before creating an export",
+        "description": "Returns four numbers: total in segment, with a channel contact, blocked by limit, in control group. Writes nothing to the database. The contact filter runs before the limit and the control group.",
+        "x-roles": ["R-1"],
+        "x-uc": ["UC-5", "UC-10"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/exports.json#/ExportPreviewRequest"
               }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preview counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/exports.json#/ExportPreviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/exports": {
+      "post": {
+        "tags": ["Exports"],
+        "operationId": "createExport",
+        "summary": "Create a segment export to a channel",
+        "description": "The `Idempotency-Key` header is required: repeating the same key returns the same export and creates no new `contact_log` rows. Order: key check → segment version `ready` (otherwise 409 `segment_not_ready`) → channel contact filter (`sms`/`push` — phone, `email` — email) → strictest limit rule → control group by `controlSeed` → transactional write with a repeated limit check. If no recipients remain — 409 `contact_limit_exceeded` with a breakdown of reasons. Up to 20,000 members are built synchronously (201); larger exports use the `export.build` job (202).",
+        "x-roles": ["R-1"],
+        "x-uc": ["UC-5", "UC-10"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/exports.json#/ExportCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Export ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/exports.json#/Export"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Export is being built asynchronously",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/exports.json#/Export"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          },
+          "504": {
+            "$ref": "../components/responses.json#/GatewayTimeout"
+          }
+        }
+      },
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "listExports",
+        "summary": "Export log",
+        "x-roles": ["R-1", "R-2", "R-4"],
+        "x-uc": ["UC-5"],
+        "parameters": [
+          {
+            "name": "segment_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "campaign_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "schema": {
+              "$ref": "../components/schemas/exports.json#/ExportChannel"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "../components/schemas/exports.json#/ExportStatus"
+            }
+          },
+          {
+            "$ref": "../components/parameters.json#/Page"
+          },
+          {
+            "$ref": "../components/parameters.json#/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/exports.json#/ExportPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/exports/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "getExport",
+        "summary": "Export details and counters",
+        "description": "Invariant: `exportedCount + controlCount + noContactCount + blockedByLimitCount = totalInSegment`.",
+        "x-roles": ["R-1", "R-2", "R-4"],
+        "x-uc": ["UC-5"],
+        "responses": {
+          "200": {
+            "description": "Export",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/exports.json#/Export"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    }
+  }
 }

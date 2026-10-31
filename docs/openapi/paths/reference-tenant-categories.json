@@ -1,267 +1,226 @@
 {
-    "paths":  {
-                  "/api/v1/tenant-categories":  {
-                                                    "get":  {
-                                                                "tags":  [
-                                                                             "Reference"
-                                                                         ],
-                                                                "operationId":  "listTenantCategories",
-                                                                "summary":  "List tenant categories",
-                                                                "x-roles":  [
-                                                                                "R-1",
-                                                                                "R-2",
-                                                                                "R-4"
-                                                                            ],
-                                                                "x-uc":  [
-                                                                             "UC-17"
-                                                                         ],
-                                                                "responses":  {
-                                                                                  "200":  {
-                                                                                              "description":  "Categories",
-                                                                                              "content":  {
-                                                                                                              "application/json":  {
-                                                                                                                                       "schema":  {
-                                                                                                                                                      "type":  "array",
-                                                                                                                                                      "items":  {
-                                                                                                                                                                    "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategory"
-                                                                                                                                                                }
-                                                                                                                                                  }
-                                                                                                                                   }
-                                                                                                          }
-                                                                                          },
-                                                                                  "401":  {
-                                                                                              "$ref": "../components/responses.json#/Unauthorized"
-                                                                                          },
-                                                                                  "403":  {
-                                                                                              "$ref": "../components/responses.json#/Forbidden"
-                                                                                          }
-                                                                              }
-                                                            },
-                                                    "post":  {
-                                                                 "tags":  [
-                                                                              "Reference"
-                                                                          ],
-                                                                 "operationId":  "createTenantCategory",
-                                                                 "summary":  "Create a category",
-                                                                 "x-roles":  [
-                                                                                 "R-4"
-                                                                             ],
-                                                                 "x-uc":  [
-                                                                              "UC-17"
-                                                                          ],
-                                                                 "requestBody":  {
-                                                                                     "required":  true,
-                                                                                     "content":  {
-                                                                                                     "application/json":  {
-                                                                                                                              "schema":  {
-                                                                                                                                             "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRequest"
-                                                                                                                                         }
-                                                                                                                          }
-                                                                                                 }
-                                                                                 },
-                                                                 "responses":  {
-                                                                                   "201":  {
-                                                                                               "description":  "Category created",
-                                                                                               "content":  {
-                                                                                                               "application/json":  {
-                                                                                                                                        "schema":  {
-                                                                                                                                                       "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategory"
-                                                                                                                                                   }
-                                                                                                                                    }
-                                                                                                           }
-                                                                                           },
-                                                                                   "400":  {
-                                                                                               "$ref": "../components/responses.json#/BadRequest"
-                                                                                           },
-                                                                                   "401":  {
-                                                                                               "$ref": "../components/responses.json#/Unauthorized"
-                                                                                           },
-                                                                                   "403":  {
-                                                                                               "$ref": "../components/responses.json#/Forbidden"
-                                                                                           },
-                                                                                   "409":  {
-                                                                                               "$ref": "../components/responses.json#/Conflict"
-                                                                                           }
-                                                                               }
-                                                             }
-                                                },
-                  "/api/v1/tenant-categories/{id}":  {
-                                                         "parameters":  [
-                                                                            {
-                                                                                "$ref": "../components/parameters.json#/IdPath"
-                                                                            }
-                                                                        ],
-                                                         "patch":  {
-                                                                       "tags":  [
-                                                                                    "Reference"
-                                                                                ],
-                                                                       "operationId":  "updateTenantCategory",
-                                                                       "summary":  "Update a category",
-                                                                       "x-roles":  [
-                                                                                       "R-4"
-                                                                                   ],
-                                                                       "x-uc":  [
-                                                                                    "UC-17"
-                                                                                ],
-                                                                       "requestBody":  {
-                                                                                           "required":  true,
-                                                                                           "content":  {
-                                                                                                           "application/json":  {
-                                                                                                                                    "schema":  {
-                                                                                                                                                   "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRequest"
-                                                                                                                                               }
-                                                                                                                                }
-                                                                                                       }
-                                                                                       },
-                                                                       "responses":  {
-                                                                                         "200":  {
-                                                                                                     "description":  "Updated category",
-                                                                                                     "content":  {
-                                                                                                                     "application/json":  {
-                                                                                                                                              "schema":  {
-                                                                                                                                                             "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategory"
-                                                                                                                                                         }
-                                                                                                                                          }
-                                                                                                                 }
-                                                                                                 },
-                                                                                         "400":  {
-                                                                                                     "$ref": "../components/responses.json#/BadRequest"
-                                                                                                 },
-                                                                                         "401":  {
-                                                                                                     "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                 },
-                                                                                         "403":  {
-                                                                                                     "$ref": "../components/responses.json#/Forbidden"
-                                                                                                 },
-                                                                                         "404":  {
-                                                                                                     "$ref": "../components/responses.json#/NotFound"
-                                                                                                 }
-                                                                                     }
-                                                                   },
-                                                         "delete":  {
-                                                                        "tags":  [
-                                                                                     "Reference"
-                                                                                 ],
-                                                                        "operationId":  "deleteTenantCategory",
-                                                                        "summary":  "Delete a category",
-                                                                        "description":  "Deletion is not allowed when the category is used by tenants or relations — 409 `category_in_use`.",
-                                                                        "x-roles":  [
-                                                                                        "R-4"
-                                                                                    ],
-                                                                        "x-uc":  [
-                                                                                     "UC-17"
-                                                                                 ],
-                                                                        "responses":  {
-                                                                                          "204":  {
-                                                                                                      "$ref": "../components/responses.json#/NoContent"
-                                                                                                  },
-                                                                                          "401":  {
-                                                                                                      "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                  },
-                                                                                          "403":  {
-                                                                                                      "$ref": "../components/responses.json#/Forbidden"
-                                                                                                  },
-                                                                                          "404":  {
-                                                                                                      "$ref": "../components/responses.json#/NotFound"
-                                                                                                  },
-                                                                                          "409":  {
-                                                                                                      "$ref": "../components/responses.json#/Conflict"
-                                                                                                  }
-                                                                                      }
-                                                                    }
-                                                     },
-                  "/api/v1/tenant-categories/{id}/relations":  {
-                                                                   "parameters":  [
-                                                                                      {
-                                                                                          "$ref": "../components/parameters.json#/IdPath"
-                                                                                      }
-                                                                                  ],
-                                                                   "get":  {
-                                                                               "tags":  [
-                                                                                            "Reference"
-                                                                                        ],
-                                                                               "operationId":  "getTenantCategoryRelations",
-                                                                               "summary":  "Category adjacency and competition",
-                                                                               "description":  "Returns the category relations in both directions. Used by recommendation scoring: `adjacent` boosts the score, `competitor` excludes the candidate.",
-                                                                               "x-roles":  [
-                                                                                               "R-1",
-                                                                                               "R-2",
-                                                                                               "R-4"
-                                                                                           ],
-                                                                               "x-uc":  [
-                                                                                            "UC-17",
-                                                                                            "UC-15"
-                                                                                        ],
-                                                                               "responses":  {
-                                                                                                 "200":  {
-                                                                                                             "description":  "Relation set",
-                                                                                                             "content":  {
-                                                                                                                             "application/json":  {
-                                                                                                                                                      "schema":  {
-                                                                                                                                                                     "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRelations"
-                                                                                                                                                                 }
-                                                                                                                                                  }
-                                                                                                                         }
-                                                                                                         },
-                                                                                                 "401":  {
-                                                                                                             "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                         },
-                                                                                                 "403":  {
-                                                                                                             "$ref": "../components/responses.json#/Forbidden"
-                                                                                                         },
-                                                                                                 "404":  {
-                                                                                                             "$ref": "../components/responses.json#/NotFound"
-                                                                                                         }
-                                                                                             }
-                                                                           },
-                                                                   "put":  {
-                                                                               "tags":  [
-                                                                                            "Reference"
-                                                                                        ],
-                                                                               "operationId":  "replaceTenantCategoryRelations",
-                                                                               "summary":  "Replace the category relation set",
-                                                                               "description":  "Full set replacement (idempotent). Self-relations and duplicate pairs are rejected — 400.",
-                                                                               "x-roles":  [
-                                                                                               "R-4"
-                                                                                           ],
-                                                                               "x-uc":  [
-                                                                                            "UC-17"
-                                                                                        ],
-                                                                               "requestBody":  {
-                                                                                                   "required":  true,
-                                                                                                   "content":  {
-                                                                                                                   "application/json":  {
-                                                                                                                                            "schema":  {
-                                                                                                                                                           "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRelationsReplaceRequest"
-                                                                                                                                                       }
-                                                                                                                                        }
-                                                                                                               }
-                                                                                               },
-                                                                               "responses":  {
-                                                                                                 "200":  {
-                                                                                                             "description":  "New relation set",
-                                                                                                             "content":  {
-                                                                                                                             "application/json":  {
-                                                                                                                                                      "schema":  {
-                                                                                                                                                                     "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRelations"
-                                                                                                                                                                 }
-                                                                                                                                                  }
-                                                                                                                         }
-                                                                                                         },
-                                                                                                 "400":  {
-                                                                                                             "$ref": "../components/responses.json#/BadRequest"
-                                                                                                         },
-                                                                                                 "401":  {
-                                                                                                             "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                         },
-                                                                                                 "403":  {
-                                                                                                             "$ref": "../components/responses.json#/Forbidden"
-                                                                                                         },
-                                                                                                 "404":  {
-                                                                                                             "$ref": "../components/responses.json#/NotFound"
-                                                                                                         }
-                                                                                             }
-                                                                           }
-                                                               }
+  "paths": {
+    "/api/v1/tenant-categories": {
+      "get": {
+        "tags": ["Reference"],
+        "operationId": "listTenantCategories",
+        "summary": "List tenant categories",
+        "x-roles": ["R-1", "R-2", "R-4"],
+        "x-uc": ["UC-17"],
+        "responses": {
+          "200": {
+            "description": "Categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategory"
+                  }
+                }
               }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reference"],
+        "operationId": "createTenantCategory",
+        "summary": "Create a category",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-17"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategory"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/tenant-categories/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "patch": {
+        "tags": ["Reference"],
+        "operationId": "updateTenantCategory",
+        "summary": "Update a category",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-17"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategory"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Reference"],
+        "operationId": "deleteTenantCategory",
+        "summary": "Delete a category",
+        "description": "Deletion is not allowed when the category is used by tenants or relations — 409 `category_in_use`.",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-17"],
+        "responses": {
+          "204": {
+            "$ref": "../components/responses.json#/NoContent"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/tenant-categories/{id}/relations": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Reference"],
+        "operationId": "getTenantCategoryRelations",
+        "summary": "Category adjacency and competition",
+        "description": "Returns the category relations in both directions. Used by recommendation scoring: `adjacent` boosts the score, `competitor` excludes the candidate.",
+        "x-roles": ["R-1", "R-2", "R-4"],
+        "x-uc": ["UC-17", "UC-15"],
+        "responses": {
+          "200": {
+            "description": "Relation set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRelations"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Reference"],
+        "operationId": "replaceTenantCategoryRelations",
+        "summary": "Replace the category relation set",
+        "description": "Full set replacement (idempotent). Self-relations and duplicate pairs are rejected — 400.",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-17"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRelationsReplaceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New relation set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/reference-tenant-categories.json#/TenantCategoryRelations"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    }
+  }
 }

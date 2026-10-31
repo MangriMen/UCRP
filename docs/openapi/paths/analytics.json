@@ -1,249 +1,210 @@
 {
-    "paths":  {
-                  "/api/v1/dashboard/penetration":  {
-                                                        "get":  {
-                                                                    "tags":  [
-                                                                                 "Analytics"
-                                                                             ],
-                                                                    "operationId":  "getPenetration",
-                                                                    "summary":  "Guest distribution by tenant count and its trend",
-                                                                    "description":  "For active guests, counts the number of distinct `event.tenantId` values among events of types with `countsAsPresence`. Returns the 1 / 2 / 3+ distribution and the share of guests with two or more tenants. The period must not exceed 24 months and `from <= to`, otherwise 400.",
-                                                                    "x-roles":  [
-                                                                                    "R-2",
-                                                                                    "R-1",
-                                                                                    "R-4"
-                                                                                ],
-                                                                    "x-uc":  [
-                                                                                 "UC-7"
-                                                                             ],
-                                                                    "parameters":  [
-                                                                                       {
-                                                                                           "$ref": "../components/parameters.json#/From"
-                                                                                       },
-                                                                                       {
-                                                                                           "$ref": "../components/parameters.json#/To"
-                                                                                       },
-                                                                                       {
-                                                                                           "$ref": "../components/parameters.json#/Granularity"
-                                                                                       }
-                                                                                   ],
-                                                                    "responses":  {
-                                                                                      "200":  {
-                                                                                                  "description":  "Distribution and trend",
-                                                                                                  "content":  {
-                                                                                                                  "application/json":  {
-                                                                                                                                           "schema":  {
-                                                                                                                                                          "$ref": "../components/schemas/analytics.json#/PenetrationReport"
-                                                                                                                                                      }
-                                                                                                                                       }
-                                                                                                              }
-                                                                                              },
-                                                                                      "400":  {
-                                                                                                  "$ref": "../components/responses.json#/BadRequest"
-                                                                                              },
-                                                                                      "401":  {
-                                                                                                  "$ref": "../components/responses.json#/Unauthorized"
-                                                                                              },
-                                                                                      "403":  {
-                                                                                                  "$ref": "../components/responses.json#/Forbidden"
-                                                                                              }
-                                                                                  }
-                                                                }
-                                                    },
-                  "/api/v1/dashboard/metrics":  {
-                                                    "get":  {
-                                                                "tags":  [
-                                                                             "Analytics"
-                                                                         ],
-                                                                "operationId":  "getDashboardMetrics",
-                                                                "summary":  "Key platform metrics",
-                                                                "description":  "Match rate (target ≥ 70%), disputed merge share (< 1%), segment → export time (median and p95, target ≤ 5 min), campaign conversion (≥ 3%), visit lift. All metrics are computed by queries over the ER tables; there are no dedicated metric tables.",
-                                                                "x-roles":  [
-                                                                                "R-2",
-                                                                                "R-1",
-                                                                                "R-4"
-                                                                            ],
-                                                                "x-uc":  [
-                                                                             "UC-7"
-                                                                         ],
-                                                                "parameters":  [
-                                                                                   {
-                                                                                       "$ref": "../components/parameters.json#/From"
-                                                                                   },
-                                                                                   {
-                                                                                       "$ref": "../components/parameters.json#/To"
-                                                                                   }
-                                                                               ],
-                                                                "responses":  {
-                                                                                  "200":  {
-                                                                                              "description":  "Metrics for the period",
-                                                                                              "content":  {
-                                                                                                              "application/json":  {
-                                                                                                                                       "schema":  {
-                                                                                                                                                      "$ref": "../components/schemas/analytics.json#/DashboardMetrics"
-                                                                                                                                                  }
-                                                                                                                                   }
-                                                                                                          }
-                                                                                          },
-                                                                                  "400":  {
-                                                                                              "$ref": "../components/responses.json#/BadRequest"
-                                                                                          },
-                                                                                  "401":  {
-                                                                                              "$ref": "../components/responses.json#/Unauthorized"
-                                                                                          },
-                                                                                  "403":  {
-                                                                                              "$ref": "../components/responses.json#/Forbidden"
-                                                                                          }
-                                                                              }
-                                                            }
-                                                },
-                  "/api/v1/tenants/{id}/aggregates":  {
-                                                          "parameters":  [
-                                                                             {
-                                                                                 "$ref": "../components/parameters.json#/IdPath"
-                                                                             }
-                                                                         ],
-                                                          "get":  {
-                                                                      "tags":  [
-                                                                                   "Analytics"
-                                                                               ],
-                                                                      "operationId":  "getTenantAggregates",
-                                                                      "summary":  "Tenant aggregates",
-                                                                      "description":  "R-3 receives only its own aggregates: the `tenantId` from the path is compared with the claim in the service, a mismatch → 403 `forbidden_tenant`; the repository uses only `...ForTenant` methods. The response contains no guest identifiers. Cells below k = 5 are suppressed (`suppressed = true`, value `null`). R-2, R-1, and R-4 may request any tenant.",
-                                                                      "x-roles":  [
-                                                                                      "R-3 (own)",
-                                                                                      "R-2",
-                                                                                      "R-1",
-                                                                                      "R-4"
-                                                                                  ],
-                                                                      "x-uc":  [
-                                                                                   "UC-8"
-                                                                               ],
-                                                                      "parameters":  [
-                                                                                         {
-                                                                                             "$ref": "../components/parameters.json#/From"
-                                                                                         },
-                                                                                         {
-                                                                                             "$ref": "../components/parameters.json#/To"
-                                                                                         },
-                                                                                         {
-                                                                                             "$ref": "../components/parameters.json#/Granularity"
-                                                                                         }
-                                                                                     ],
-                                                                      "responses":  {
-                                                                                        "200":  {
-                                                                                                    "description":  "Tenant aggregates",
-                                                                                                    "content":  {
-                                                                                                                    "application/json":  {
-                                                                                                                                             "schema":  {
-                                                                                                                                                            "$ref": "../components/schemas/analytics-tenant.json#/TenantAggregates"
-                                                                                                                                                        }
-                                                                                                                                         }
-                                                                                                                }
-                                                                                                },
-                                                                                        "400":  {
-                                                                                                    "$ref": "../components/responses.json#/BadRequest"
-                                                                                                },
-                                                                                        "401":  {
-                                                                                                    "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                },
-                                                                                        "403":  {
-                                                                                                    "$ref": "../components/responses.json#/Forbidden"
-                                                                                                },
-                                                                                        "404":  {
-                                                                                                    "$ref": "../components/responses.json#/NotFound"
-                                                                                                }
-                                                                                    }
-                                                                  }
-                                                      },
-                  "/api/v1/data-quality/sources":  {
-                                                       "get":  {
-                                                                   "tags":  [
-                                                                                "Analytics"
-                                                                            ],
-                                                                   "operationId":  "listDataQualitySources",
-                                                                   "summary":  "Data quality by source",
-                                                                   "description":  "For each source: last successful import date, share of rejected rows over 30 days, number of disputed profiles. A warning is raised when the rejected share exceeds 10% or the data is older than 7 days.",
-                                                                   "x-roles":  [
-                                                                                   "R-4",
-                                                                                   "R-2"
-                                                                               ],
-                                                                   "x-uc":  [
-                                                                                "UC-9"
-                                                                            ],
-                                                                   "responses":  {
-                                                                                     "200":  {
-                                                                                                 "description":  "Sources with quality metrics",
-                                                                                                 "content":  {
-                                                                                                                 "application/json":  {
-                                                                                                                                          "schema":  {
-                                                                                                                                                         "type":  "array",
-                                                                                                                                                         "items":  {
-                                                                                                                                                                       "$ref": "../components/schemas/analytics-tenant.json#/DataQualitySource"
-                                                                                                                                                                   }
-                                                                                                                                                     }
-                                                                                                                                      }
-                                                                                                             }
-                                                                                             },
-                                                                                     "401":  {
-                                                                                                 "$ref": "../components/responses.json#/Unauthorized"
-                                                                                             },
-                                                                                     "403":  {
-                                                                                                 "$ref": "../components/responses.json#/Forbidden"
-                                                                                             }
-                                                                                 }
-                                                               }
-                                                   },
-                  "/api/v1/data-quality/sources/{id}":  {
-                                                            "parameters":  [
-                                                                               {
-                                                                                   "$ref": "../components/parameters.json#/IdPath"
-                                                                               }
-                                                                           ],
-                                                            "get":  {
-                                                                        "tags":  [
-                                                                                     "Analytics"
-                                                                                 ],
-                                                                        "operationId":  "getDataQualitySource",
-                                                                        "summary":  "Source details and trend",
-                                                                        "description":  "Chart of rejected rows per import and links to specific imports. A source without imports is a valid state with empty series, not an error.",
-                                                                        "x-roles":  [
-                                                                                        "R-4",
-                                                                                        "R-2"
-                                                                                    ],
-                                                                        "x-uc":  [
-                                                                                     "UC-9"
-                                                                                 ],
-                                                                        "parameters":  [
-                                                                                           {
-                                                                                               "$ref": "../components/parameters.json#/From"
-                                                                                           },
-                                                                                           {
-                                                                                               "$ref": "../components/parameters.json#/To"
-                                                                                           }
-                                                                                       ],
-                                                                        "responses":  {
-                                                                                          "200":  {
-                                                                                                      "description":  "Source quality details",
-                                                                                                      "content":  {
-                                                                                                                      "application/json":  {
-                                                                                                                                               "schema":  {
-                                                                                                                                                              "$ref": "../components/schemas/analytics-tenant.json#/DataQualitySourceDetail"
-                                                                                                                                                          }
-                                                                                                                                           }
-                                                                                                                  }
-                                                                                                  },
-                                                                                          "401":  {
-                                                                                                      "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                  },
-                                                                                          "403":  {
-                                                                                                      "$ref": "../components/responses.json#/Forbidden"
-                                                                                                  },
-                                                                                          "404":  {
-                                                                                                      "$ref": "../components/responses.json#/NotFound"
-                                                                                                  }
-                                                                                      }
-                                                                    }
-                                                        }
+  "paths": {
+    "/api/v1/dashboard/penetration": {
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "getPenetration",
+        "summary": "Guest distribution by tenant count and its trend",
+        "description": "For active guests, counts the number of distinct `event.tenantId` values among events of types with `countsAsPresence`. Returns the 1 / 2 / 3+ distribution and the share of guests with two or more tenants. The period must not exceed 24 months and `from <= to`, otherwise 400.",
+        "x-roles": ["R-2", "R-1", "R-4"],
+        "x-uc": ["UC-7"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/From"
+          },
+          {
+            "$ref": "../components/parameters.json#/To"
+          },
+          {
+            "$ref": "../components/parameters.json#/Granularity"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Distribution and trend",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/analytics.json#/PenetrationReport"
+                }
               }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/metrics": {
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "getDashboardMetrics",
+        "summary": "Key platform metrics",
+        "description": "Match rate (target ≥ 70%), disputed merge share (< 1%), segment → export time (median and p95, target ≤ 5 min), campaign conversion (≥ 3%), visit lift. All metrics are computed by queries over the ER tables; there are no dedicated metric tables.",
+        "x-roles": ["R-2", "R-1", "R-4"],
+        "x-uc": ["UC-7"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/From"
+          },
+          {
+            "$ref": "../components/parameters.json#/To"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metrics for the period",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/analytics.json#/DashboardMetrics"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{id}/aggregates": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "getTenantAggregates",
+        "summary": "Tenant aggregates",
+        "description": "R-3 receives only its own aggregates: the `tenantId` from the path is compared with the claim in the service, a mismatch → 403 `forbidden_tenant`; the repository uses only `...ForTenant` methods. The response contains no guest identifiers. Cells below k = 5 are suppressed (`suppressed = true`, value `null`). R-2, R-1, and R-4 may request any tenant.",
+        "x-roles": ["R-3 (own)", "R-2", "R-1", "R-4"],
+        "x-uc": ["UC-8"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/From"
+          },
+          {
+            "$ref": "../components/parameters.json#/To"
+          },
+          {
+            "$ref": "../components/parameters.json#/Granularity"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant aggregates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/analytics-tenant.json#/TenantAggregates"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/data-quality/sources": {
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "listDataQualitySources",
+        "summary": "Data quality by source",
+        "description": "For each source: last successful import date, share of rejected rows over 30 days, number of disputed profiles. A warning is raised when the rejected share exceeds 10% or the data is older than 7 days.",
+        "x-roles": ["R-4", "R-2"],
+        "x-uc": ["UC-9"],
+        "responses": {
+          "200": {
+            "description": "Sources with quality metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../components/schemas/analytics-tenant.json#/DataQualitySource"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/data-quality/sources/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Analytics"],
+        "operationId": "getDataQualitySource",
+        "summary": "Source details and trend",
+        "description": "Chart of rejected rows per import and links to specific imports. A source without imports is a valid state with empty series, not an error.",
+        "x-roles": ["R-4", "R-2"],
+        "x-uc": ["UC-9"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/From"
+          },
+          {
+            "$ref": "../components/parameters.json#/To"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Source quality details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/analytics-tenant.json#/DataQualitySourceDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    }
+  }
 }

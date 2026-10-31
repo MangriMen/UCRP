@@ -1,237 +1,203 @@
 {
-    "ImportStatus":  {
-                         "type":  "string",
-                         "enum":  [
-                                      "queued",
-                                      "running",
-                                      "completed",
-                                      "completed_with_errors",
-                                      "failed"
-                                  ]
-                     },
-    "ImportMode":  {
-                       "type":  "string",
-                       "enum":  [
-                                    "file",
-                                    "pull"
-                                ]
-                   },
-    "ImportBatch":  {
-                        "type":  "object",
-                        "required":  [
-                                         "id",
-                                         "dataSourceId",
-                                         "mode",
-                                         "status",
-                                         "totalRows",
-                                         "acceptedRows",
-                                         "rejectedRows",
-                                         "duplicateRows",
-                                         "createdAt"
-                                     ],
-                        "properties":  {
-                                           "id":  {
-                                                      "type":  "string"
-                                                  },
-                                           "dataSourceId":  {
-                                                                "type":  "string"
-                                                            },
-                                           "dataSourceName":  {
-                                                                  "type":  "string",
-                                                                  "readOnly":  true
-                                                              },
-                                           "tenantId":  {
-                                                            "type":  "string",
-                                                            "nullable":  true,
-                                                            "readOnly":  true
-                                                        },
-                                           "mode":  {
-                                                        "$ref": "./imports.json#/ImportMode"
-                                                    },
-                                           "fileName":  {
-                                                            "type":  "string",
-                                                            "nullable":  true
-                                                        },
-                                           "fileHash":  {
-                                                            "type":  "string",
-                                                            "nullable":  true,
-                                                            "description":  "File sha256"
-                                                        },
-                                           "status":  {
-                                                          "$ref": "./imports.json#/ImportStatus"
-                                                      },
-                                           "totalRows":  {
-                                                             "type":  "integer",
-                                                             "minimum":  0
-                                                         },
-                                           "acceptedRows":  {
-                                                                "type":  "integer",
-                                                                "minimum":  0
-                                                            },
-                                           "rejectedRows":  {
-                                                                "type":  "integer",
-                                                                "minimum":  0
-                                                            },
-                                           "duplicateRows":  {
-                                                                 "type":  "integer",
-                                                                 "minimum":  0
-                                                             },
-                                           "windowFrom":  {
-                                                              "type":  "string",
-                                                              "format":  "date-time",
-                                                              "nullable":  true
-                                                          },
-                                           "windowTo":  {
-                                                            "type":  "string",
-                                                            "format":  "date-time",
-                                                            "nullable":  true
-                                                        },
-                                           "errorMessage":  {
-                                                                "type":  "string",
-                                                                "nullable":  true
-                                                            },
-                                           "createdBy":  {
-                                                             "type":  "string",
-                                                             "nullable":  true
-                                                         },
-                                           "startedAt":  {
-                                                             "type":  "string",
-                                                             "format":  "date-time",
-                                                             "nullable":  true
-                                                         },
-                                           "finishedAt":  {
-                                                              "type":  "string",
-                                                              "format":  "date-time",
-                                                              "nullable":  true
-                                                          },
-                                           "createdAt":  {
-                                                             "type":  "string",
-                                                             "format":  "date-time"
-                                                         }
-                                       }
-                    },
-    "ImportAccepted":  {
-                           "type":  "object",
-                           "required":  [
-                                            "batchId",
-                                            "status",
-                                            "duplicate"
-                                        ],
-                           "properties":  {
-                                              "batchId":  {
-                                                              "type":  "string"
-                                                          },
-                                              "status":  {
-                                                             "$ref": "./imports.json#/ImportStatus"
-                                                         },
-                                              "duplicate":  {
-                                                                "type":  "boolean",
-                                                                "description":  "true — a file with this sha256 was already uploaded for this source"
-                                                            },
-                                              "createdAt":  {
-                                                                "type":  "string",
-                                                                "format":  "date-time"
-                                                            }
-                                          }
-                       },
-    "ImportBatchPage":  {
-                            "type":  "object",
-                            "required":  [
-                                             "items",
-                                             "meta"
-                                         ],
-                            "properties":  {
-                                               "items":  {
-                                                             "type":  "array",
-                                                             "items":  {
-                                                                           "$ref": "./imports.json#/ImportBatch"
-                                                                       }
-                                                         },
-                                               "meta":  {
-                                                            "$ref": "./common.json#/PageMeta"
-                                                        }
-                                           }
-                        },
-    "RejectedRow":  {
-                        "type":  "object",
-                        "required":  [
-                                         "id",
-                                         "importBatchId",
-                                         "rowNumber",
-                                         "errorCode",
-                                         "errorMessage"
-                                     ],
-                        "properties":  {
-                                           "id":  {
-                                                      "type":  "string"
-                                                  },
-                                           "importBatchId":  {
-                                                                 "type":  "string"
-                                                             },
-                                           "rowNumber":  {
-                                                             "type":  "integer",
-                                                             "minimum":  1
-                                                         },
-                                           "errorCode":  {
-                                                             "type":  "string",
-                                                             "enum":  [
-                                                                          "bad_date",
-                                                                          "no_external_id",
-                                                                          "bad_amount",
-                                                                          "unknown_event_type",
-                                                                          "bad_phone"
-                                                                      ]
-                                                         },
-                                           "errorMessage":  {
-                                                                "type":  "string",
-                                                                "description":  "Reason"
-                                                            },
-                                           "rawData":  {
-                                                           "type":  "object",
-                                                           "nullable":  true,
-                                                           "additionalProperties":  true
-                                                       }
-                                       }
-                    },
-    "RejectedRowPage":  {
-                            "type":  "object",
-                            "required":  [
-                                             "items",
-                                             "meta"
-                                         ],
-                            "properties":  {
-                                               "items":  {
-                                                             "type":  "array",
-                                                             "items":  {
-                                                                           "$ref": "./imports.json#/RejectedRow"
-                                                                       }
-                                                         },
-                                               "meta":  {
-                                                            "$ref": "./common.json#/PageMeta"
-                                                        }
-                                           }
-                        },
-    "SyncAccepted":  {
-                         "type":  "object",
-                         "required":  [
-                                          "batchId",
-                                          "status"
-                                      ],
-                         "properties":  {
-                                            "batchId":  {
-                                                            "type":  "string"
-                                                        },
-                                            "status":  {
-                                                           "$ref": "./imports.json#/ImportStatus"
-                                                       },
-                                            "windowFrom":  {
-                                                               "type":  "string",
-                                                               "format":  "date-time"
-                                                           },
-                                            "windowTo":  {
-                                                             "type":  "string",
-                                                             "format":  "date-time"
-                                                         }
-                                        }
-                     }
+  "ImportStatus": {
+    "type": "string",
+    "enum": ["queued", "running", "completed", "completed_with_errors", "failed"]
+  },
+  "ImportMode": {
+    "type": "string",
+    "enum": ["file", "pull"]
+  },
+  "ImportBatch": {
+    "type": "object",
+    "required": [
+      "id",
+      "dataSourceId",
+      "mode",
+      "status",
+      "totalRows",
+      "acceptedRows",
+      "rejectedRows",
+      "duplicateRows",
+      "createdAt"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "dataSourceId": {
+        "type": "string"
+      },
+      "dataSourceName": {
+        "type": "string",
+        "readOnly": true
+      },
+      "tenantId": {
+        "type": "string",
+        "nullable": true,
+        "readOnly": true
+      },
+      "mode": {
+        "$ref": "./imports.json#/ImportMode"
+      },
+      "fileName": {
+        "type": "string",
+        "nullable": true
+      },
+      "fileHash": {
+        "type": "string",
+        "nullable": true,
+        "description": "File sha256"
+      },
+      "status": {
+        "$ref": "./imports.json#/ImportStatus"
+      },
+      "totalRows": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "acceptedRows": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "rejectedRows": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "duplicateRows": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "windowFrom": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+      },
+      "windowTo": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+      },
+      "errorMessage": {
+        "type": "string",
+        "nullable": true
+      },
+      "createdBy": {
+        "type": "string",
+        "nullable": true
+      },
+      "startedAt": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+      },
+      "finishedAt": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "ImportAccepted": {
+    "type": "object",
+    "required": ["batchId", "status", "duplicate"],
+    "properties": {
+      "batchId": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "./imports.json#/ImportStatus"
+      },
+      "duplicate": {
+        "type": "boolean",
+        "description": "true — a file with this sha256 was already uploaded for this source"
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "ImportBatchPage": {
+    "type": "object",
+    "required": ["items", "meta"],
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "./imports.json#/ImportBatch"
+        }
+      },
+      "meta": {
+        "$ref": "./common.json#/PageMeta"
+      }
+    }
+  },
+  "RejectedRow": {
+    "type": "object",
+    "required": ["id", "importBatchId", "rowNumber", "errorCode", "errorMessage"],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "importBatchId": {
+        "type": "string"
+      },
+      "rowNumber": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "errorCode": {
+        "type": "string",
+        "enum": ["bad_date", "no_external_id", "bad_amount", "unknown_event_type", "bad_phone"]
+      },
+      "errorMessage": {
+        "type": "string",
+        "description": "Reason"
+      },
+      "rawData": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true
+      }
+    }
+  },
+  "RejectedRowPage": {
+    "type": "object",
+    "required": ["items", "meta"],
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "./imports.json#/RejectedRow"
+        }
+      },
+      "meta": {
+        "$ref": "./common.json#/PageMeta"
+      }
+    }
+  },
+  "SyncAccepted": {
+    "type": "object",
+    "required": ["batchId", "status"],
+    "properties": {
+      "batchId": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "./imports.json#/ImportStatus"
+      },
+      "windowFrom": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "windowTo": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
 }

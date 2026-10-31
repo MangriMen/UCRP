@@ -1,45 +1,39 @@
 {
-    "paths":  {
-                  "/healthz":  {
-                                   "get":  {
-                                               "tags":  [
-                                                            "System"
-                                                        ],
-                                               "operationId":  "getHealth",
-                                               "summary":  "Liveness check",
-                                               "description":  "Outside the `/api/v1` prefix, no authentication. Checks database and queue availability.",
-                                               "security":  [
-
-                                                            ],
-                                               "x-roles":  [
-                                                               "pub"
-                                                           ],
-                                               "responses":  {
-                                                                 "200":  {
-                                                                             "description":  "Service is alive",
-                                                                             "content":  {
-                                                                                             "application/json":  {
-                                                                                                                      "schema":  {
-                                                                                                                                     "$ref": "../components/schemas/common.json#/HealthResponse"
-                                                                                                                                 }
-                                                                                                                  }
-                                                                                         }
-                                                                         },
-                                                                 "503":  {
-                                                                             "description":  "Service is not ready",
-                                                                             "content":  {
-                                                                                             "application/json":  {
-                                                                                                                      "schema":  {
-                                                                                                                                     "$ref": "../components/schemas/common.json#/HealthResponse"
-                                                                                                                                 }
-                                                                                                                  }
-                                                                                         }
-                                                                         },
-                                                                 "429":  {
-                                                                             "$ref": "../components/responses.json#/TooManyRequests"
-                                                                         }
-                                                             }
-                                           }
-                               }
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": ["System"],
+        "operationId": "getHealth",
+        "summary": "Liveness check",
+        "description": "Outside the `/api/v1` prefix, no authentication. Checks database and queue availability.",
+        "security": [],
+        "x-roles": ["pub"],
+        "responses": {
+          "200": {
+            "description": "Service is alive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/common.json#/HealthResponse"
+                }
               }
+            }
+          },
+          "503": {
+            "description": "Service is not ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/common.json#/HealthResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "../components/responses.json#/TooManyRequests"
+          }
+        }
+      }
+    }
+  }
 }
