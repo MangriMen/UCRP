@@ -79,8 +79,9 @@ export function ExportWizard({ segmentId: fixedSegmentId, onClose }: ExportWizar
       <div className="flex flex-col gap-4">
         <Alert>
           <AlertDescription>
-            Выгрузка создана: {created.exportedCount} получателей, контрольная группа{' '}
-            {created.controlCount ?? 0}.
+            {created.status === 'ready'
+              ? `Выгрузка создана: ${created.exportedCount} получателей, контрольная группа ${created.controlCount ?? 0}.`
+              : 'Выгрузка создана и формируется. Скачать файл можно будет в списке выгрузок.'}
           </AlertDescription>
         </Alert>
         <DialogFooter>
