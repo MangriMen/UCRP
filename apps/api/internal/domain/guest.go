@@ -85,8 +85,10 @@ type GuestIdentifierRepo interface {
 
 type EventRepo interface {
 	ListByGuest(ctx context.Context, guestID string, limit, offset int) ([]Event, error)
+	ListUnmatchedByBatch(ctx context.Context, batchID string, limit int) ([]Event, error)
 	Insert(ctx context.Context, e *Event) error
 	InsertIgnoreDuplicate(ctx context.Context, e *Event) (bool, error)
+	AttachGuest(ctx context.Context, eventID, guestID string) error
 	MoveToGuest(ctx context.Context, fromGuestID, toGuestID string) error
 	RestoreOrigin(ctx context.Context, originGuestID string) error
 }

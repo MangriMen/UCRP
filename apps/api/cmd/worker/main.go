@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
+	"github.com/MangriMen/UCRP/internal/identity"
 	"github.com/MangriMen/UCRP/internal/platform/config"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
 	"github.com/MangriMen/UCRP/internal/platform/logging"
@@ -56,15 +57,24 @@ func run(log *slog.Logger, cfg config.Config) error {
 	}
 	dataSources := repository.NewDataSourceSQL(store.DB)
 	catalog := repository.NewImportCatalogSQL(store.DB)
+	events := repository.NewEventSQL(store.DB)
 	imports := service.NewImportService(
 		repository.NewImportBatchSQL(store.DB),
 		repository.NewRejectedRowSQL(store.DB),
 		dataSources,
-		repository.NewEventSQL(store.DB),
+		events,
 		catalog,
 		blobs,
+		q,
 	)
-	jobTypes := []string{"import.process", "connector.pull"}
+	resolver := identity.NewResolver(
+		repository.NewGuestSQL(store.DB),
+		repository.NewGuestIdentifierSQL(store.DB),
+		events,
+		repository.NewMergeSQL(store.DB),
+		repository.NewUnmergeBlockSQL(store.DB),
+	)
+	jobTypes := []string{"import.process", "connector.pull", "identity.resolve"}
 	maxAttempts := 3
 
 	log.Info("worker started")
@@ -94,7 +104,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		}
 
 		log.Info("job taken", "id", job.ID, "type", job.JobType)
-		if err := handleJob(ctx, imports, job); err != nil {
+		if err := handleJob(ctx, imports, resolver, job); err != nil {
 			log.Error("job failed", "id", job.ID, "type", job.JobType, "err", err)
 			if job.Attempts >= maxAttempts {
 				if failErr := q.Fail(ctx, job.ID, err.Error(), time.Time{}); failErr != nil {
@@ -114,7 +124,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 	}
 }
 
-func handleJob(ctx context.Context, imports *service.ImportService, job *domain.Job) error {
+func handleJob(ctx context.Context, imports *service.ImportService, resolver *identity.Resolver, job *domain.Job) error {
 	var payload struct {
 		BatchID string `json:"batch_id"`
 	}
@@ -123,6 +133,9 @@ func handleJob(ctx context.Context, imports *service.ImportService, job *domain.
 	}
 	if payload.BatchID == "" {
 		return domain.ErrValidation
+	}
+	if job.JobType == "identity.resolve" {
+		return resolver.ResolveBatch(ctx, payload.BatchID)
 	}
 	return imports.ProcessBatch(ctx, payload.BatchID)
 }
