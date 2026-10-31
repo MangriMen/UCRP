@@ -1,0 +1,26 @@
+pre-commit:
+  parallel: true
+
+  jobs:
+    # Go-задачи включаются автоматически, как только появится apps/api/go.mod.
+    - name: go:fmt
+      root: "apps/api/"
+      glob: "**/*.go"
+      run: gofmt -l -w {staged_files}
+      stage_fixed: true
+
+    - name: go:vet
+      root: "apps/api/"
+      glob: "**/*.go"
+      run: go vet ./...
+
+    - name: js:lint
+      glob: "**/*.{js,jsx,ts,tsx,json,jsonc,css}"
+      run: bun run lint
+
+commit-msg:
+  jobs:
+    - name: conventional-commit
+      run: |
+        head -1 {1} | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: .+' \
+          || { echo "Сообщение коммита должно соответствовать Conventional Commits"; exit 1; }
