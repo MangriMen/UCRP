@@ -6,8 +6,6 @@ import (
 
 	"github.com/MangriMen/UCRP/e2e/harness"
 	"github.com/MangriMen/UCRP/e2e/report"
-	"github.com/MangriMen/UCRP/internal/domain"
-	"github.com/MangriMen/UCRP/internal/segments"
 )
 
 func TestGuestProfileReflectsTenantCount(t *testing.T) {
@@ -39,7 +37,7 @@ func TestGuestProfileReflectsTenantCount(t *testing.T) {
 	if !ok {
 		t.Fatalf("profile is not a JSON object: %s", resp.Snippet())
 	}
-	count, ok := harness.IntField(profile, "tenantCount", "tenant_count")
+	count, ok := harness.IntField(profile, "tenantCount")
 	if !ok {
 		t.Fatalf("profile has no tenantCount field: %s", resp.Snippet())
 	}
@@ -82,8 +80,8 @@ func TestGuestEventsSortedDescending(t *testing.T) {
 	}
 	first, _ := items[0].(map[string]any)
 	second, _ := items[1].(map[string]any)
-	firstAt := harness.StringField(first, "occurredAt", "occurred_at")
-	secondAt := harness.StringField(second, "occurredAt", "occurred_at")
+	firstAt := harness.StringField(first, "occurredAt")
+	secondAt := harness.StringField(second, "occurredAt")
 	if firstAt == "" || secondAt == "" {
 		t.Fatalf("event feed items carry no occurredAt: %s", resp.Snippet())
 	}
@@ -213,9 +211,9 @@ func TestSegmentPreviewCountsMatchingGuests(t *testing.T) {
 		},
 	}
 	implementationBody := map[string]any{
-		"was":         []string{w.tenantA.ID, w.tenantB.ID},
-		"was_not":     []string{w.tenantC.ID},
-		"period_days": 90,
+		"was":        []string{w.tenantA.ID, w.tenantB.ID},
+		"wasNot":     []string{w.tenantC.ID},
+		"periodDays": 90,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments/preview", contractBody, implementationBody)
 	if err != nil {
@@ -229,20 +227,12 @@ func TestSegmentPreviewCountsMatchingGuests(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	obj, _ := decoded.(map[string]any)
-	if size, ok := obj["size"]; !ok || size != nil || obj["suppressed"] != true {
-		t.Fatalf("preview must suppress the small segment: %s", resp.Snippet())
+	size, ok := harness.IntField(obj, "size")
+	if !ok {
+		t.Fatalf("preview response has no size field: %s", resp.Snippet())
 	}
-	if examples, ok := obj["examples"].([]any); !ok || len(examples) != 0 {
-		t.Fatalf("preview must hide examples for the small segment: %s", resp.Snippet())
-	}
-	members, err := segments.NewSqlEvaluator(s.DB.DB).Evaluate(ctx, domain.SegmentRule{
-		Was: []string{w.tenantA.ID, w.tenantB.ID}, WasNot: []string{w.tenantC.ID}, PeriodDays: 90,
-	})
-	if err != nil {
-		t.Fatalf("evaluate preview rule: %v", err)
-	}
-	if len(members) != 2 || !containsString(members, both.ID) || !containsString(members, onlyA.ID) {
-		t.Fatalf("preview rule should select both expected guests, got %v", members)
+	if size != 2 {
+		t.Fatalf("preview size: expected 2 guests that visited A or B and never C, got %d", size)
 	}
 }
 
@@ -266,9 +256,9 @@ func TestSegmentPreviewDoesNotPersist(t *testing.T) {
 		},
 	}
 	implementationBody := map[string]any{
-		"was":         []string{w.tenantA.ID},
-		"was_not":     []string{w.tenantC.ID},
-		"period_days": 30,
+		"was":        []string{w.tenantA.ID},
+		"wasNot":     []string{w.tenantC.ID},
+		"periodDays": 30,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments/preview", contractBody, implementationBody)
 	if err != nil {
@@ -307,10 +297,10 @@ func TestSegmentCreatePersistsMembership(t *testing.T) {
 		},
 	}
 	implementationBody := map[string]any{
-		"name":        s.Reg.Name("segment-members"),
-		"was":         []string{w.tenantA.ID},
-		"was_not":     []string{w.tenantC.ID},
-		"period_days": 90,
+		"name":       s.Reg.Name("segment-members"),
+		"was":        []string{w.tenantA.ID},
+		"wasNot":     []string{w.tenantC.ID},
+		"periodDays": 90,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments", contractBody, implementationBody)
 	if err != nil {
@@ -371,7 +361,7 @@ func TestSegmentGetReportsReadyVersion(t *testing.T) {
 	}
 	w.visit(t, s, guest.ID, w.tenantA.ID, "segment-ready-a", 1)
 
-	segment, err := s.Reg.Segment(ctx, "ready", `{"was":[],"was_not":[],"period_days":90}`, []string{guest.ID})
+	segment, err := s.Reg.Segment(ctx, "ready", `{"was":[],"wasNot":[],"periodDays":90}`, []string{guest.ID})
 	if err != nil {
 		t.Fatalf("fixture segment: %v", err)
 	}
@@ -388,22 +378,13 @@ func TestSegmentGetReportsReadyVersion(t *testing.T) {
 		t.Fatalf("decode segment: %v", err)
 	}
 	obj, _ := decoded.(map[string]any)
-	if count, ok := obj["memberCount"]; !ok || count != nil || obj["suppressed"] != true {
-		t.Fatalf("segment must suppress its small membership: %s", resp.Snippet())
+	count, ok := harness.IntField(obj, "memberCount")
+	if !ok {
+		t.Fatalf("segment response has no memberCount: %s", resp.Snippet())
 	}
-	count, err := s.DB.Count(ctx, `SELECT COUNT(*) FROM segment_member sm JOIN segment_version sv ON sv.id = sm.segment_version_id WHERE sv.segment_id = $1 AND sm.guest_id = $2`, segment.ID, guest.ID)
-	if err != nil || count != 1 {
-		t.Fatalf("expected fixture guest in materialized segment, got %d: %v", count, err)
+	if count != 1 {
+		t.Fatalf("memberCount: expected 1 materialized member, got %d", count)
 	}
-}
-
-func containsString(items []string, target string) bool {
-	for _, item := range items {
-		if item == target {
-			return true
-		}
-	}
-	return false
 }
 
 func TestRecommendationsExcludeVisitedTenants(t *testing.T) {
@@ -439,7 +420,7 @@ func TestRecommendationsExcludeVisitedTenants(t *testing.T) {
 	}
 	for _, item := range items {
 		obj, _ := item.(map[string]any)
-		tenantID := harness.StringField(obj, "tenantId", "tenant_id")
+		tenantID := harness.StringField(obj, "tenantId")
 		if tenantID == w.tenantA.ID {
 			t.Fatalf("recommendation list contains the visited tenant %s", tenantID)
 		}
@@ -580,8 +561,8 @@ func TestMergeCandidateConfirmMovesEventsAndIdentifiers(t *testing.T) {
 		t.Fatalf("decode confirm: %v", err)
 	}
 	obj, _ := decoded.(map[string]any)
-	winnerID := harness.StringField(obj, "winnerGuestId", "winner_guest_id")
-	loserID := harness.StringField(obj, "mergedGuestId", "merged_guest_id")
+	winnerID := harness.StringField(obj, "winnerGuestId")
+	loserID := harness.StringField(obj, "mergedGuestId")
 	if winnerID == "" || loserID == "" {
 		t.Fatalf("confirm response must report winnerGuestId and mergedGuestId: %s", resp.Snippet())
 	}
@@ -621,7 +602,7 @@ func TestMergeCandidateConfirmMovesEventsAndIdentifiers(t *testing.T) {
 	if status := harness.StringField(profile, "status"); status != "merged" {
 		t.Fatalf("loser status: expected merged, got %q", status)
 	}
-	if mergedInto := harness.StringField(profile, "mergedIntoId", "merged_into_id"); mergedInto != winnerID {
+	if mergedInto := harness.StringField(profile, "mergedIntoId"); mergedInto != winnerID {
 		t.Fatalf("loser mergedIntoId: expected %s, got %q", winnerID, mergedInto)
 	}
 }
@@ -752,9 +733,9 @@ func TestSegmentPreviewRejectsEmptyWas(t *testing.T) {
 	defer cancel()
 
 	resp, err := s.API.Post(ctx, "/api/v1/segments/preview", map[string]any{
-		"was":         []string{},
-		"was_not":     []string{w.tenantC.ID},
-		"period_days": 90,
+		"was":        []string{},
+		"wasNot":     []string{w.tenantC.ID},
+		"periodDays": 90,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/segments/preview with an empty was: %v", err)
@@ -771,8 +752,8 @@ func TestSegmentPreviewAcceptsEmptyWasNot(t *testing.T) {
 	defer cancel()
 
 	resp, err := s.API.Post(ctx, "/api/v1/segments/preview", map[string]any{
-		"was":         []string{w.tenantA.ID},
-		"period_days": 90,
+		"was":        []string{w.tenantA.ID},
+		"periodDays": 90,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/segments/preview without wasNot: %v", err)

@@ -30,7 +30,7 @@ func (h *ContactLimitHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *ContactLimitHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -191,7 +191,7 @@ func (h *SegmentHandler) Members(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *SegmentHandler) Versions(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +200,7 @@ func (h *SegmentHandler) Versions(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writeItems(w, items)
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *SegmentHandler) Recompute(w http.ResponseWriter, r *http.Request) {
@@ -218,7 +218,7 @@ func (h *SegmentHandler) Templates(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writeItems(w, items)
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
@@ -232,7 +232,7 @@ func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writeItems(w, items)
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *GuestHandler) Contacts(w http.ResponseWriter, r *http.Request) {
@@ -242,7 +242,7 @@ func (h *GuestHandler) Contacts(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *GuestHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -277,7 +277,7 @@ func (h *ReferenceHandler) ListTenants(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *ReferenceHandler) GetTenant(w http.ResponseWriter, r *http.Request) {
@@ -329,7 +329,7 @@ func (h *ReferenceHandler) ListCategories(w http.ResponseWriter, r *http.Request
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writeItems(w, items)
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *ReferenceHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
@@ -372,7 +372,7 @@ func (h *ReferenceHandler) ListRelations(w http.ResponseWriter, r *http.Request)
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writeItems(w, items)
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *ReferenceHandler) ReplaceRelations(w http.ResponseWriter, r *http.Request) {
@@ -387,7 +387,7 @@ func (h *ReferenceHandler) ReplaceRelations(w http.ResponseWriter, r *http.Reque
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writeItems(w, items)
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *ReferenceHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
@@ -397,7 +397,7 @@ func (h *ReferenceHandler) ListProjects(w http.ResponseWriter, r *http.Request) 
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *ReferenceHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
@@ -440,7 +440,7 @@ func (h *ReferenceHandler) ListEventTypes(w http.ResponseWriter, r *http.Request
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writeItems(w, items)
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }
 
 func (h *ReferenceHandler) CreateEventType(w http.ResponseWriter, r *http.Request) {
@@ -475,4 +475,11 @@ func (h *ReferenceHandler) DeleteEventType(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func nonNil[T any](items []T) []T {
+	if items == nil {
+		return []T{}
+	}
+	return items
 }

@@ -19,23 +19,23 @@ func NewRecommendationService(guests domain.GuestRepo, repo domain.Recommendatio
 
 type RecommendationDTO struct {
 	Rank             int     `json:"rank"`
-	TenantID         string  `json:"tenant_id"`
+	TenantID         string  `json:"tenantId"`
 	Score            float64 `json:"score"`
 	Explanation      string  `json:"explanation"`
-	AlgorithmVersion string  `json:"algorithm_version"`
-	ComputedAt       string  `json:"computed_at"`
+	AlgorithmVersion string  `json:"algorithmVersion"`
+	ComputedAt       string  `json:"computedAt"`
 }
 
 type SegmentRecommendationDTO struct {
-	TenantID        string  `json:"tenant_id"`
-	TenantName      string  `json:"tenant_name"`
-	CategoryID      string  `json:"category_id,omitempty"`
+	TenantID        string  `json:"tenantId"`
+	TenantName      string  `json:"tenantName"`
+	CategoryID      string  `json:"categoryId,omitempty"`
 	Score           float64 `json:"score"`
 	Guests          int     `json:"guests"`
-	EligibleCount   int     `json:"eligible_count"`
-	SegmentCount    int     `json:"segment_count"`
-	AverageScore    float64 `json:"average_score"`
-	IncompleteCount int     `json:"incomplete_count"`
+	EligibleCount   int     `json:"eligibleCount"`
+	SegmentCount    int     `json:"segmentCount"`
+	AverageScore    float64 `json:"averageScore"`
+	IncompleteCount int     `json:"incompleteCount"`
 }
 
 type SegmentAggregator interface {

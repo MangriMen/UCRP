@@ -39,7 +39,8 @@ function refreshAccessToken(): Promise<boolean> {
   })
     .then(async (res) => {
       if (!res.ok) return false
-      const data = (await res.json()) as Schema<'TokenResponse'>
+      const data = (await res.json()) as Partial<Schema<'TokenResponse'>>
+      if (!data.accessToken) return false
       accessToken = data.accessToken
       return true
     })

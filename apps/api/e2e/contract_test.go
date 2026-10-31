@@ -239,9 +239,9 @@ func TestSegmentPreviewContract(t *testing.T) {
 		},
 	}
 	implementationBody := map[string]any{
-		"was":         []string{tenant.ID},
-		"was_not":     []string{"00000000-0000-0000-0000-000000000000"},
-		"period_days": 90,
+		"was":        []string{tenant.ID},
+		"wasNot":     []string{"00000000-0000-0000-0000-000000000000"},
+		"periodDays": 90,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments/preview", contractBody, implementationBody)
 	if err != nil {
@@ -321,10 +321,10 @@ func TestSegmentCreateContract(t *testing.T) {
 		},
 	}
 	implementationBody := map[string]any{
-		"name":        s.Reg.Name("segment-contract"),
-		"was":         []string{tenant.ID},
-		"was_not":     []string{"00000000-0000-0000-0000-000000000000"},
-		"period_days": 90,
+		"name":       s.Reg.Name("segment-contract"),
+		"was":        []string{tenant.ID},
+		"wasNot":     []string{"00000000-0000-0000-0000-000000000000"},
+		"periodDays": 90,
 	}
 	resp, err := s.PostContractShape(ctx, "/api/v1/segments", contractBody, implementationBody)
 	if err != nil {
@@ -354,7 +354,7 @@ func TestSegmentGetContract(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	segment, err := s.Reg.Segment(ctx, "contract-get", `{"was":[],"was_not":[],"period_days":90}`, nil)
+	segment, err := s.Reg.Segment(ctx, "contract-get", `{"was":[],"wasNot":[],"periodDays":90}`, nil)
 	if err != nil {
 		t.Fatalf("fixture segment: %v", err)
 	}

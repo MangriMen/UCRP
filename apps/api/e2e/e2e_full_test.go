@@ -28,7 +28,7 @@ func TestE2EImportToExport(t *testing.T) {
 		t.Fatalf("step 1 decode import: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	var guestID string
@@ -67,7 +67,7 @@ func TestE2EImportToExport(t *testing.T) {
 	segmentName := s.Reg.Name("e2e-full-segment")
 	create, err := s.PostContractShape(ctx, "/api/v1/segments",
 		map[string]any{"name": segmentName, "rule": map[string]any{"was": []string{iw.world.tenantA.ID}, "wasNot": []string{iw.world.tenantC.ID}, "periodDays": 365}},
-		map[string]any{"name": segmentName, "was": []string{iw.world.tenantA.ID}, "was_not": []string{iw.world.tenantC.ID}, "period_days": 365})
+		map[string]any{"name": segmentName, "was": []string{iw.world.tenantA.ID}, "wasNot": []string{iw.world.tenantC.ID}, "periodDays": 365})
 	if err != nil {
 		t.Fatalf("step 5 create segment: %v", err)
 	}
@@ -106,7 +106,10 @@ func TestE2EImportToExport(t *testing.T) {
 		t.Fatalf("step 7 decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	assertExportCountsSuppressed(t, previewObj, "in_segment", "with_contact", "blocked_by_limit", "control", "to_send")
+	toSend, _ := harness.IntField(previewObj, "toSend")
+	if toSend < 1 {
+		t.Fatalf("step 7: the imported guest must be exportable, to_send=%d", toSend)
+	}
 
 	exportResp, err := exportCreate(ctx, marketer, segmentID, s.Reg.Name("e2e-full-key"))
 	if err != nil {
@@ -155,7 +158,7 @@ func TestE2ENewEventChangesSegmentAndRecommendations(t *testing.T) {
 		t.Fatalf("step 1 decode import: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	trackImport(s, harness.StringField(obj, "batch_id", "batchId"))
+	trackImport(s, harness.StringField(obj, "batchId"))
 
 	var guestID string
 	s.WaitFor(s.Cfg.ImportTimeout, "step 2 guest resolution", func(ctx context.Context) (bool, error) {
@@ -178,7 +181,7 @@ func TestE2ENewEventChangesSegmentAndRecommendations(t *testing.T) {
 		t.Fatalf("step 3 decode profile: %v", err)
 	}
 	beforeObj, _ := beforeBody.(map[string]any)
-	beforeTenants, _ := harness.IntField(beforeObj, "tenantCount", "tenant_count")
+	beforeTenants, _ := harness.IntField(beforeObj, "tenantCount")
 
 	second := []byte(csvHeader +
 		"e2e-delta-2,2026-10-02T10:00:00Z,purchase,2000," + phone + ",," + iw.world.tenantB.Code + "\n")
@@ -192,7 +195,7 @@ func TestE2ENewEventChangesSegmentAndRecommendations(t *testing.T) {
 		t.Fatalf("step 4 decode import: %v", err)
 	}
 	obj2, _ := body2.(map[string]any)
-	batch2 := harness.StringField(obj2, "batch_id", "batchId")
+	batch2 := harness.StringField(obj2, "batchId")
 	trackImport(s, batch2)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "step 5 second event to attach", func(ctx context.Context) (bool, error) {
@@ -213,7 +216,7 @@ func TestE2ENewEventChangesSegmentAndRecommendations(t *testing.T) {
 		t.Fatalf("step 6 decode profile: %v", err)
 	}
 	afterObj, _ := afterBody.(map[string]any)
-	afterTenants, _ := harness.IntField(afterObj, "tenantCount", "tenant_count")
+	afterTenants, _ := harness.IntField(afterObj, "tenantCount")
 	if afterTenants <= beforeTenants {
 		t.Fatalf("step 6: a purchase in a new tenant must grow tenantCount: before=%d after=%d", beforeTenants, afterTenants)
 	}
@@ -244,7 +247,7 @@ func TestE2ENewEventChangesSegmentAndRecommendations(t *testing.T) {
 	items, _ := harness.Items(refreshBody)
 	for _, item := range items {
 		reco, _ := item.(map[string]any)
-		tenantID := harness.StringField(reco, "tenantId", "tenant_id")
+		tenantID := harness.StringField(reco, "tenantId")
 		if tenantID == iw.world.tenantA.ID || tenantID == iw.world.tenantB.ID {
 			t.Fatalf("step 8: recommendations must exclude visited tenants, got %s", tenantID)
 		}

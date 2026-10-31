@@ -71,7 +71,7 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -101,10 +101,6 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var req service.UserUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
-		return
-	}
-	if req.Role != "" || req.TenantID != "" || req.Password != "" || req.IsActive != nil {
-		httpx.WriteError(w, r, http.StatusForbidden, "forbidden_permission", "Недостаточно прав для изменения учётных данных")
 		return
 	}
 	item, err := h.auth.UpdateUser(r.Context(), chi.URLParam(r, "id"), req)
@@ -144,7 +140,7 @@ func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 type CampaignHandler struct {
@@ -162,7 +158,7 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -277,5 +273,5 @@ func (h *AnalyticsHandler) DataQuality(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writeItems(w, items)
+	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
 }

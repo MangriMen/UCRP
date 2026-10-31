@@ -291,6 +291,9 @@ func IntField(obj map[string]any, names ...string) (int, bool) {
 }
 
 func Items(body any) ([]any, bool) {
+	if list, ok := body.([]any); ok {
+		return list, true
+	}
 	obj, ok := body.(map[string]any)
 	if !ok {
 		return nil, false

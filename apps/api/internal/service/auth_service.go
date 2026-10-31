@@ -14,11 +14,6 @@ type AuthService struct {
 	tokens *auth.Manager
 	clock  domain.Clock
 	idGen  domain.IDGen
-	access *AccessGrantService
-}
-
-func (s *AuthService) SetAccess(access *AccessGrantService) {
-	s.access = access
 }
 
 func NewAuthService(users domain.UserRepo, tokens *auth.Manager, clock domain.Clock, idGen domain.IDGen) *AuthService {
@@ -33,13 +28,12 @@ type LoginResult struct {
 }
 
 type MeResponse struct {
-	UserID        string   `json:"userId"`
-	Email         string   `json:"email"`
-	DisplayName   string   `json:"displayName"`
-	Role          string   `json:"role"`
-	TenantID      string   `json:"tenantId,omitempty"`
-	Permissions   []string `json:"permissions"`
-	PolicyVersion int64    `json:"policyVersion"`
+	UserID      string   `json:"userId"`
+	Email       string   `json:"email"`
+	DisplayName string   `json:"displayName"`
+	Role        string   `json:"role"`
+	TenantID    string   `json:"tenantId,omitempty"`
+	Permissions []string `json:"permissions"`
 }
 
 func permissionsFor(role domain.Role) []string {
@@ -72,20 +66,6 @@ func toMe(u *domain.User) MeResponse {
 	return m
 }
 
-func (s *AuthService) effectiveMe(ctx context.Context, u *domain.User) (MeResponse, error) {
-	me := toMe(u)
-	if s.access == nil {
-		return me, nil
-	}
-	permissions, version, err := s.access.Effective(ctx, domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID})
-	if err != nil {
-		return MeResponse{}, err
-	}
-	me.Permissions = permissions
-	me.PolicyVersion = version
-	return me, nil
-}
-
 func (s *AuthService) Login(ctx context.Context, email, password string) (LoginResult, error) {
 	u, err := s.users.GetByEmail(ctx, email)
 	if err != nil {
@@ -101,15 +81,11 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (LoginR
 	if err := s.users.TouchLastLogin(ctx, u.ID, s.clock.Now()); err != nil {
 		return LoginResult{}, err
 	}
-	me, err := s.effectiveMe(ctx, u)
-	if err != nil {
-		return LoginResult{}, err
-	}
 	return LoginResult{
 		AccessToken:  pair.AccessToken,
 		RefreshToken: pair.RefreshToken,
 		ExpiresIn:    pair.ExpiresIn,
-		User:         me,
+		User:         toMe(u),
 	}, nil
 }
 
@@ -121,7 +97,7 @@ func (s *AuthService) Me(ctx context.Context, userID string) (MeResponse, error)
 		}
 		return MeResponse{}, err
 	}
-	return s.effectiveMe(ctx, u)
+	return toMe(u), nil
 }
 
 func (s *AuthService) CreateUser(ctx context.Context, email, password, displayName string, role domain.Role, tenantID string) (MeResponse, error) {

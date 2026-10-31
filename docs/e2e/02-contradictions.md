@@ -306,7 +306,7 @@ US-7, US-8, US-9 не проверяемы.
 ### G11. Нет тестовой инфраструктуры
 
 В репозитории нет ни одного `*_test.go`, нет `playwright.config.*`, нет
-`docker-compose` для тестового окружения (есть только `apps/api/docker/docker-compose.yml`
+`docker-compose` для тестового окружения (есть только `deploy/docker-compose.yml` и `deploy/docker-compose.dev.yml`
 с `api` + `worker` + `db`). `bun run test` запускает только `vitest` в `apps/web`.
 
 ### G12. Go-тулчейн не установлен в среде

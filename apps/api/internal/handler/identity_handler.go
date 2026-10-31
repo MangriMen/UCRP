@@ -76,7 +76,7 @@ func (h *IdentityHandler) Merge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		TargetGuestID string `json:"target_guest_id"`
+		TargetGuestID string `json:"targetGuestId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TargetGuestID == "" {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Нужен target_guest_id")

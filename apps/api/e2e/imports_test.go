@@ -45,7 +45,7 @@ func TestImportUploadAccepted(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	if batchID == "" {
 		t.Fatalf("import response carries no batch id: %s", resp.Snippet())
 	}
@@ -74,7 +74,7 @@ func TestImportCountersInvariant(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "import batch to finish", func(ctx context.Context) (bool, error) {
@@ -106,10 +106,10 @@ func TestImportCountersInvariant(t *testing.T) {
 		t.Fatalf("decode batch: %v", err)
 	}
 	batch, _ := decoded.(map[string]any)
-	total, _ := harness.IntField(batch, "total_rows", "totalRows", "total")
-	accepted, _ := harness.IntField(batch, "accepted_rows", "acceptedRows", "accepted")
-	rejected, _ := harness.IntField(batch, "rejected_rows", "rejectedRows", "rejected")
-	duplicate, _ := harness.IntField(batch, "duplicate_rows", "duplicateRows", "duplicate")
+	total, _ := harness.IntField(batch, "totalRows", "total")
+	accepted, _ := harness.IntField(batch, "acceptedRows", "accepted")
+	rejected, _ := harness.IntField(batch, "rejectedRows", "rejected")
+	duplicate, _ := harness.IntField(batch, "duplicateRows", "duplicate")
 
 	if total != 4 {
 		t.Fatalf("total rows: expected 4, got %d", total)
@@ -142,7 +142,7 @@ func TestImportRejectedRowCodes(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "import batch to finish", func(ctx context.Context) (bool, error) {
@@ -180,7 +180,7 @@ func TestImportRejectedRowCodes(t *testing.T) {
 	codes := map[string]bool{}
 	for _, item := range items {
 		obj, _ := item.(map[string]any)
-		codes[harness.StringField(obj, "error_code", "errorCode")] = true
+		codes[harness.StringField(obj, "errorCode")] = true
 	}
 	for _, want := range []string{"bad_date", "no_external_id", "bad_tenant"} {
 		if !codes[want] {
@@ -205,7 +205,7 @@ func TestImportRejectedRowsCSV(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "import batch to finish", func(ctx context.Context) (bool, error) {
@@ -257,7 +257,7 @@ func TestImportUploadIsIdempotent(t *testing.T) {
 		t.Fatalf("decode first upload: %v", err)
 	}
 	firstObj, _ := firstBody.(map[string]any)
-	firstID := harness.StringField(firstObj, "batch_id", "batchId")
+	firstID := harness.StringField(firstObj, "batchId")
 	trackImport(s, firstID)
 
 	second, err := uploadImport(ctx, s, iw.source.ID, "same.csv", content)
@@ -270,7 +270,7 @@ func TestImportUploadIsIdempotent(t *testing.T) {
 		t.Fatalf("decode second upload: %v", err)
 	}
 	secondObj, _ := secondBody.(map[string]any)
-	secondID := harness.StringField(secondObj, "batch_id", "batchId")
+	secondID := harness.StringField(secondObj, "batchId")
 	if secondID != firstID {
 		t.Fatalf("repeated upload must return the same batch: first=%s second=%s", firstID, secondID)
 	}
@@ -355,7 +355,7 @@ func TestImportListFilters(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	list, err := s.API.Get(ctx, "/api/v1/imports", map[string][]string{"data_source_id": {iw.source.ID}})
@@ -412,7 +412,7 @@ func TestImportDuplicateExternalIDCountedAsDuplicate(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "import batch to finish", func(ctx context.Context) (bool, error) {
@@ -441,8 +441,8 @@ func TestImportDuplicateExternalIDCountedAsDuplicate(t *testing.T) {
 		t.Fatalf("decode batch: %v", err)
 	}
 	batch, _ := decoded.(map[string]any)
-	accepted, _ := harness.IntField(batch, "accepted_rows", "acceptedRows", "accepted")
-	duplicate, _ := harness.IntField(batch, "duplicate_rows", "duplicateRows", "duplicate")
+	accepted, _ := harness.IntField(batch, "acceptedRows", "accepted")
+	duplicate, _ := harness.IntField(batch, "duplicateRows", "duplicate")
 	if accepted != 1 {
 		t.Fatalf("accepted rows: expected 1, got %d", accepted)
 	}

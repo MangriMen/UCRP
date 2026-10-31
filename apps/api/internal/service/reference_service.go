@@ -37,17 +37,17 @@ type TenantDTO struct {
 	ID         string `json:"id"`
 	Code       string `json:"code"`
 	Name       string `json:"name"`
-	CategoryID string `json:"category_id"`
+	CategoryID string `json:"categoryId"`
 	Kind       string `json:"kind"`
 	Floor      int    `json:"floor"`
 	Priority   int    `json:"priority"`
-	IsActive   bool   `json:"is_active"`
+	IsActive   bool   `json:"isActive"`
 }
 
 type TenantCreateRequest struct {
 	Code       string `json:"code"`
 	Name       string `json:"name"`
-	CategoryID string `json:"category_id"`
+	CategoryID string `json:"categoryId"`
 	Kind       string `json:"kind"`
 	Floor      int    `json:"floor"`
 	Priority   int    `json:"priority"`
@@ -55,11 +55,11 @@ type TenantCreateRequest struct {
 
 type TenantUpdateRequest struct {
 	Name       string `json:"name"`
-	CategoryID string `json:"category_id"`
+	CategoryID string `json:"categoryId"`
 	Kind       string `json:"kind"`
 	Floor      int    `json:"floor"`
 	Priority   *int   `json:"priority"`
-	IsActive   *bool  `json:"is_active"`
+	IsActive   *bool  `json:"isActive"`
 }
 
 func (s *ReferenceService) ListTenants(ctx context.Context, limit, offset int) ([]TenantDTO, error) {
@@ -156,13 +156,13 @@ type CategoryDTO struct {
 	ID       string `json:"id"`
 	Code     string `json:"code"`
 	Name     string `json:"name"`
-	IsActive bool   `json:"is_active"`
+	IsActive bool   `json:"isActive"`
 }
 
 type CategoryRequest struct {
 	Code     string `json:"code"`
 	Name     string `json:"name"`
-	IsActive *bool  `json:"is_active"`
+	IsActive *bool  `json:"isActive"`
 }
 
 func (s *ReferenceService) ListCategories(ctx context.Context) ([]CategoryDTO, error) {
@@ -218,9 +218,9 @@ func (s *ReferenceService) DeleteCategory(ctx context.Context, id string) error 
 }
 
 type RelationDTO struct {
-	RelatedCategoryID string `json:"related_category_id"`
-	RelationType      string `json:"relation_type"`
-	WeightPct         int    `json:"weight_pct"`
+	RelatedCategoryID string `json:"relatedCategoryId"`
+	RelationType      string `json:"relationType"`
+	WeightPct         int    `json:"weightPct"`
 }
 
 func (s *ReferenceService) ListRelations(ctx context.Context, categoryID string) ([]RelationDTO, error) {
@@ -262,17 +262,17 @@ func (s *ReferenceService) ReplaceRelations(ctx context.Context, categoryID stri
 
 type ProjectDTO struct {
 	ID       string `json:"id"`
-	TenantID string `json:"tenant_id"`
+	TenantID string `json:"tenantId"`
 	Code     string `json:"code"`
 	Name     string `json:"name"`
-	IsActive bool   `json:"is_active"`
+	IsActive bool   `json:"isActive"`
 }
 
 type ProjectRequest struct {
-	TenantID string `json:"tenant_id"`
+	TenantID string `json:"tenantId"`
 	Code     string `json:"code"`
 	Name     string `json:"name"`
-	IsActive *bool  `json:"is_active"`
+	IsActive *bool  `json:"isActive"`
 }
 
 func (s *ReferenceService) ListProjects(ctx context.Context, tenantID string, limit, offset int) ([]ProjectDTO, error) {
@@ -329,17 +329,17 @@ type EventTypeDTO struct {
 	ID               string `json:"id"`
 	Code             string `json:"code"`
 	Name             string `json:"name"`
-	HasAmount        bool   `json:"has_amount"`
-	CountsAsPresence bool   `json:"counts_as_presence"`
-	IsActive         bool   `json:"is_active"`
+	HasAmount        bool   `json:"hasAmount"`
+	CountsAsPresence bool   `json:"countsAsPresence"`
+	IsActive         bool   `json:"isActive"`
 }
 
 type EventTypeRequest struct {
 	Code             string `json:"code"`
 	Name             string `json:"name"`
-	HasAmount        bool   `json:"has_amount"`
-	CountsAsPresence bool   `json:"counts_as_presence"`
-	IsActive         *bool  `json:"is_active"`
+	HasAmount        bool   `json:"hasAmount"`
+	CountsAsPresence bool   `json:"countsAsPresence"`
+	IsActive         *bool  `json:"isActive"`
 }
 
 func (s *ReferenceService) ListEventTypes(ctx context.Context) ([]EventTypeDTO, error) {

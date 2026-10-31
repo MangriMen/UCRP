@@ -22,16 +22,16 @@ func NewContactLimitService(limits domain.ContactLimitRepo) *ContactLimitService
 type ContactLimitDTO struct {
 	ID          string `json:"id"`
 	Channel     string `json:"channel"`
-	MaxContacts int    `json:"max_contacts"`
-	PeriodDays  int    `json:"period_days"`
-	IsActive    bool   `json:"is_active"`
+	MaxContacts int    `json:"maxContacts"`
+	PeriodDays  int    `json:"periodDays"`
+	IsActive    bool   `json:"isActive"`
 }
 
 type ContactLimitRequest struct {
 	Channel     string `json:"channel"`
-	MaxContacts int    `json:"max_contacts"`
-	PeriodDays  int    `json:"period_days"`
-	IsActive    *bool  `json:"is_active"`
+	MaxContacts int    `json:"maxContacts"`
+	PeriodDays  int    `json:"periodDays"`
+	IsActive    *bool  `json:"isActive"`
 }
 
 func (s *ContactLimitService) List(ctx context.Context, limit, offset int) ([]ContactLimitDTO, error) {
@@ -117,10 +117,10 @@ func toLimitDTO(c domain.ContactLimit) ContactLimitDTO {
 }
 
 type ExportMemberDTO struct {
-	GuestID   string `json:"guest_id"`
+	GuestID   string `json:"guestId"`
 	Contact   string `json:"contact"`
-	IDType    string `json:"id_type"`
-	IsControl bool   `json:"is_control"`
+	IDType    string `json:"idType"`
+	IsControl bool   `json:"isControl"`
 }
 
 func (s *ExportService) Members(ctx context.Context, exportID string, isControl *bool) ([]ExportMemberDTO, error) {
@@ -171,8 +171,8 @@ func (s *ProfileService) Contacts(ctx context.Context, guestID string, limit, of
 
 type ContactDTO struct {
 	ID          string `json:"id"`
-	ExportID    string `json:"export_id"`
-	ContactedAt string `json:"contacted_at"`
+	ExportID    string `json:"exportId"`
+	ContactedAt string `json:"contactedAt"`
 }
 
 func (s *ProfileService) SoftDelete(ctx context.Context, guestID string) error {

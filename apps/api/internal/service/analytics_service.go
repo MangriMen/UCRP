@@ -73,7 +73,7 @@ func (s *AnalyticsService) Penetration(ctx context.Context, from, to time.Time, 
 			COALESCE(SUM(CASE WHEN tn = 1 THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN tn = 2 THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN tn >= 3 THEN 1 ELSE 0 END), 0),
-			COALESCE(COALESCE(SUM(CASE WHEN tn >= 2 THEN 1 ELSE 0 END), 0)::float8 / NULLIF(COUNT(*), 0), 0)
+			COALESCE(SUM(CASE WHEN tn >= 2 THEN 1 ELSE 0 END), 0)::float8 / NULLIF(COUNT(*), 0)
 		FROM guest_tenants`, from, to).Scan(&dist.One, &dist.Two, &dist.ThreePlus, &rate)
 	if err != nil {
 		return nil, err
@@ -143,15 +143,14 @@ func (s *AnalyticsService) penetrationSeries(ctx context.Context, from, to time.
 }
 
 type MetricsResponse struct {
-	From                   string  `json:"from"`
-	To                     string  `json:"to"`
-	MatchRate              float64 `json:"matchRate"`
-	ContestedMergeRate     float64 `json:"disputedMergeRate"`
-	AvgSegmentToExport     float64 `json:"segmentToExportMedianSeconds"`
-	SegmentToExportP95     float64 `json:"segmentToExportP95Seconds"`
-	CampaignConversionRate float64 `json:"campaignConversionRate"`
-	DisputedSafe           bool    `json:"-"`
-	ExportLatencySafe      bool    `json:"-"`
+	From                 string  `json:"from"`
+	To                   string  `json:"to"`
+	MatchRate            float64 `json:"matchRate"`
+	ContestedMergeRate   float64 `json:"disputedMergeRate"`
+	AvgSegmentToExport   float64 `json:"segmentToExportMedianSeconds"`
+	SegmentToExportP95   float64 `json:"segmentToExportP95Seconds"`
+	DisputedSafe         bool
+	ExportLatencySafe    bool
 }
 
 func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*MetricsResponse, error) {
@@ -164,31 +163,28 @@ func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*Me
 	if from.After(to) {
 		return nil, domain.ErrValidation
 	}
-	if to.Sub(from) > 24*31*24*time.Hour {
-		return nil, domain.ErrValidation
-	}
 	out := &MetricsResponse{
 		From: from.UTC().Format(time.RFC3339),
 		To:   to.UTC().Format(time.RFC3339),
 	}
 	err := s.db.QueryRowContext(ctx, `
-		SELECT COALESCE(
-			SUM(CASE WHEN guest_id IS NOT NULL THEN 1 ELSE 0 END)::float8 / NULLIF(COUNT(*), 0), 0)
-		FROM event WHERE created_at >= $1 AND created_at <= $2`, from, to).Scan(&out.MatchRate)
+		SELECT
+			COALESCE(SUM(CASE WHEN guest_id IS NOT NULL THEN 1 ELSE 0 END)::float8 / NULLIF(COUNT(*), 0), 0)
+		FROM event`).Scan(&out.MatchRate)
 	if err != nil {
 		return nil, err
 	}
-	var disputedGuests, otherGuests int
+	var mergeTotal, mergeRejected int
 	err = s.db.QueryRowContext(ctx, `
-		SELECT COALESCE(
-			SUM(CASE WHEN resolution = 'reverted' THEN 1 ELSE 0 END)::float8 / NULLIF(COUNT(*), 0), 0),
-			COUNT(DISTINCT guest_a_id) FILTER (WHERE resolution = 'reverted'),
-			COUNT(DISTINCT guest_a_id) FILTER (WHERE resolution <> 'reverted')
-		FROM merge_candidate`).Scan(&out.ContestedMergeRate, &disputedGuests, &otherGuests)
+		SELECT COUNT(*), COUNT(*) FILTER (WHERE resolution = 'reverted')
+		FROM merge_candidate`).Scan(&mergeTotal, &mergeRejected)
 	if err != nil {
 		return nil, err
 	}
-	out.DisputedSafe = disputedGuests >= 5 && otherGuests >= 5
+	if mergeTotal > 0 {
+		out.ContestedMergeRate = float64(mergeRejected) / float64(mergeTotal)
+		out.DisputedSafe = mergeTotal >= 100
+	}
 	err = s.db.QueryRowContext(ctx, `
 		SELECT
 			COALESCE(percentile_cont(0.5) WITHIN GROUP (
@@ -196,44 +192,20 @@ func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*Me
 			), 0),
 			COALESCE(percentile_cont(0.95) WITHIN GROUP (
 				ORDER BY EXTRACT(EPOCH FROM (j.created_at - s.computed_at))
-			), 0)
+			), 0),
+			COUNT(*)
 		FROM export_job j
 		JOIN segment_version s ON s.id = j.segment_version_id
-		WHERE s.computed_at IS NOT NULL AND j.created_at >= s.computed_at
-		  AND j.created_at >= $1 AND j.created_at <= $2`, from, to).Scan(&out.AvgSegmentToExport, &out.SegmentToExportP95)
+		WHERE s.computed_at IS NOT NULL AND j.created_at >= s.computed_at`).Scan(&out.AvgSegmentToExport, &out.SegmentToExportP95, &mergeTotal)
 	if err != nil {
 		return nil, err
 	}
-	var exportCount, exportGuests int
-	err = s.db.QueryRowContext(ctx, `
-		SELECT COUNT(DISTINCT j.id), COUNT(DISTINCT m.guest_id)
-		FROM export_job j JOIN segment_version s ON s.id = j.segment_version_id
-		LEFT JOIN segment_member m ON m.segment_version_id = s.id
-		WHERE s.computed_at IS NOT NULL AND j.created_at >= s.computed_at
-		  AND j.created_at >= $1 AND j.created_at <= $2`, from, to).Scan(&exportCount, &exportGuests)
-	if err != nil {
-		return nil, err
-	}
-	out.ExportLatencySafe = exportCount >= 5 && exportGuests >= 5
-	err = s.db.QueryRowContext(ctx, `
-		SELECT COALESCE(
-			COUNT(*) FILTER (WHERE EXISTS (
-				SELECT 1 FROM event e
-				JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
-				WHERE e.guest_id = r.guest_id AND e.tenant_id = r.tenant_id
-				  AND e.occurred_at > r.computed_at
-				  AND e.occurred_at <= r.computed_at + interval '14 days'
-			))::float8 / NULLIF(COUNT(*), 0), 0)
-		FROM recommendation r
-		WHERE r.computed_at >= $1 AND r.computed_at <= $2`, from, to).Scan(&out.CampaignConversionRate)
-	if err != nil {
-		return nil, err
-	}
+	out.ExportLatencySafe = mergeTotal >= 30
 	return out, nil
 }
 
 type TenantAggregateResponse struct {
-	NewGuests int  `json:"new_guests"`
+	NewGuests int  `json:"newGuests"`
 	Hidden    bool `json:"hidden"`
 }
 
@@ -260,26 +232,29 @@ func (s *AnalyticsService) TenantAggregates(ctx context.Context, tenantID string
 }
 
 type DataQualityItem struct {
-	DataSourceID  string   `json:"data_source_id"`
-	Name          string   `json:"name"`
-	LastImportAt  string   `json:"last_import_at,omitempty"`
-	RejectedRate  *float64 `json:"rejected_rate"`
-	PendingMerges *int     `json:"pending_merges"`
-	Warning       *bool    `json:"warning"`
-	Suppressed    bool     `json:"suppressed"`
+	DataSourceID  string  `json:"data_source_id"`
+	Name          string  `json:"name"`
+	LastImportAt  string  `json:"last_import_at,omitempty"`
+	RejectedRate  float64 `json:"rejected_rate"`
+	PendingMerges int     `json:"pending_merges"`
+	Warning       bool    `json:"warning"`
 }
 
 func (s *AnalyticsService) DataQuality(ctx context.Context) ([]DataQualityItem, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT d.id, d.name, d.last_import_at, pending.candidates, pending.guests
+		SELECT d.id, d.name, d.last_import_at,
+			COALESCE((
+				SELECT SUM(b.rejected_rows)::float8 / NULLIF(SUM(b.total_rows), 0)
+				FROM import_batch b
+				WHERE b.data_source_id = d.id AND b.created_at >= now() - interval '30 days'
+			), 0),
+			COALESCE((
+				SELECT COUNT(*) FROM merge_candidate m
+				WHERE m.resolution = 'pending'
+				  AND m.guest_a_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = d.id)
+				  OR m.guest_b_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = d.id)
+			), 0)
 		FROM data_source d
-		CROSS JOIN LATERAL (
-			SELECT COUNT(*) AS candidates, COUNT(DISTINCT m.guest_a_id) AS guests
-			FROM merge_candidate m
-			WHERE m.resolution = 'pending' AND (
-				m.guest_a_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = d.id)
-				OR m.guest_b_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = d.id))
-		) pending
 		ORDER BY d.name`)
 	if err != nil {
 		return nil, err
@@ -289,23 +264,16 @@ func (s *AnalyticsService) DataQuality(ctx context.Context) ([]DataQualityItem, 
 	for rows.Next() {
 		var it DataQualityItem
 		var last sql.NullTime
-		var pending, guests int
-		if err := rows.Scan(&it.DataSourceID, &it.Name, &last, &pending, &guests); err != nil {
+		if err := rows.Scan(&it.DataSourceID, &it.Name, &last, &it.RejectedRate, &it.PendingMerges); err != nil {
 			return nil, err
 		}
-		it.PendingMerges = visibleMergeCount(pending, guests)
-		it.Suppressed = true
 		if last.Valid {
 			it.LastImportAt = last.Time.UTC().Format(time.RFC3339)
+			it.Warning = time.Since(last.Time) > 7*24*time.Hour || it.RejectedRate > 0.10
+		} else {
+			it.Warning = true
 		}
 		out = append(out, it)
 	}
 	return out, rows.Err()
-}
-
-func visibleMergeCount(pending, guests int) *int {
-	if pending < 5 || guests < 5 {
-		return nil
-	}
-	return &pending
 }

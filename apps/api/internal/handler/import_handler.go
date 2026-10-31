@@ -49,7 +49,7 @@ func (h *ImportHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteJSON(w, res.HTTPStatus, map[string]any{
-		"batch_id":  res.BatchID,
+		"batchId":   res.BatchID,
 		"status":    res.Status,
 		"duplicate": res.Duplicate,
 	})
@@ -96,10 +96,10 @@ func (h *ImportHandler) RejectedRows(w http.ResponseWriter, r *http.Request) {
 		page = offset/limit + 1
 	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{
-		"items":     items,
-		"page":      page,
-		"page_size": limit,
-		"total":     offset + len(items),
+		"items":    items,
+		"page":     page,
+		"pageSize": limit,
+		"total":    offset + len(items),
 	})
 }
 
@@ -131,8 +131,8 @@ func (h *ImportHandler) Sync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteJSON(w, res.HTTPStatus, map[string]any{
-		"batch_id": res.BatchID,
-		"status":   res.Status,
+		"batchId": res.BatchID,
+		"status":  res.Status,
 	})
 }
 

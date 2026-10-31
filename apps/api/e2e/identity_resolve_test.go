@@ -28,7 +28,7 @@ func TestIdentityResolveCreatesGuestFromImport(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "identity resolution to attach events", func(ctx context.Context) (bool, error) {
@@ -86,7 +86,7 @@ func TestIdentityResolveAttachesToExistingGuest(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "event to attach to the existing guest", func(ctx context.Context) (bool, error) {
@@ -132,7 +132,7 @@ func TestIdentityAutoMergeOnSharedPhone(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "auto-merge candidate for the shared phone", func(ctx context.Context) (bool, error) {
@@ -193,7 +193,7 @@ func TestIdentityPendingCandidateOnSharedEmail(t *testing.T) {
 		t.Fatalf("decode import response: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	batchID := harness.StringField(obj, "batch_id", "batchId")
+	batchID := harness.StringField(obj, "batchId")
 	trackImport(s, batchID)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "pending candidate for the shared email", func(ctx context.Context) (bool, error) {

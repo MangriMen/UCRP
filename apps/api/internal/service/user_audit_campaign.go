@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
-	"github.com/MangriMen/UCRP/internal/platform/auth"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
 )
 
@@ -23,15 +22,11 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 	if err != nil {
 		return LoginResult{}, err
 	}
-	me, err := s.effectiveMe(ctx, u)
-	if err != nil {
-		return LoginResult{}, err
-	}
 	return LoginResult{
 		AccessToken:  pair.AccessToken,
 		RefreshToken: pair.RefreshToken,
 		ExpiresIn:    pair.ExpiresIn,
-		User:         me,
+		User:         toMe(u),
 	}, nil
 }
 
@@ -64,26 +59,26 @@ func (s *AuthService) GetUser(ctx context.Context, id string) (*UserDTO, error) 
 type UserDTO struct {
 	ID          string `json:"id"`
 	Email       string `json:"email"`
-	DisplayName string `json:"display_name"`
+	DisplayName string `json:"displayName"`
 	Role        string `json:"role"`
-	TenantID    string `json:"tenant_id,omitempty"`
-	IsActive    bool   `json:"is_active"`
+	TenantID    string `json:"tenantId,omitempty"`
+	IsActive    bool   `json:"isActive"`
 }
 
 type UserCreateRequest struct {
 	Email       string `json:"email"`
 	Password    string `json:"password"`
-	DisplayName string `json:"display_name"`
+	DisplayName string `json:"displayName"`
 	Role        string `json:"role"`
-	TenantID    string `json:"tenant_id"`
+	TenantID    string `json:"tenantId"`
 }
 
 type UserUpdateRequest struct {
-	DisplayName string `json:"display_name"`
+	DisplayName string `json:"displayName"`
 	Role        string `json:"role"`
-	TenantID    string `json:"tenant_id"`
+	TenantID    string `json:"tenantId"`
 	Password    string `json:"password"`
-	IsActive    *bool  `json:"is_active"`
+	IsActive    *bool  `json:"isActive"`
 }
 
 func (s *AuthService) CreateUserService(ctx context.Context, req UserCreateRequest) (*UserDTO, error) {
@@ -109,34 +104,15 @@ func (s *AuthService) CreateUserService(ctx context.Context, req UserCreateReque
 }
 
 func (s *AuthService) UpdateUser(ctx context.Context, id string, req UserUpdateRequest) (*UserDTO, error) {
+	if req.Role != "" || req.TenantID != "" || req.Password != "" || req.IsActive != nil {
+		return nil, domain.ErrForbidden
+	}
 	u, err := s.users.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if req.DisplayName != "" {
 		u.DisplayName = req.DisplayName
-	}
-	if req.Role != "" {
-		u.Role = domain.Role(req.Role)
-	}
-	if req.TenantID != "" {
-		u.TenantID = req.TenantID
-	}
-	if req.Password != "" {
-		hash, err := auth.HashPassword(req.Password)
-		if err != nil {
-			return nil, err
-		}
-		u.PasswordHash = hash
-	}
-	if req.IsActive != nil {
-		u.IsActive = *req.IsActive
-	}
-	if u.Role == domain.RoleTenant && u.TenantID == "" {
-		return nil, domain.ErrValidation
-	}
-	if u.Role != domain.RoleTenant {
-		u.TenantID = ""
 	}
 	if err := s.users.Update(ctx, u); err != nil {
 		return nil, err
@@ -171,12 +147,12 @@ func NewAuditService(audit domain.AuditRepo) *AuditService {
 
 type AuditDTO struct {
 	ID         string `json:"id"`
-	Actor      string `json:"actor_user_id,omitempty"`
-	Role       string `json:"actor_role"`
+	Actor      string `json:"actorUserId,omitempty"`
+	Role       string `json:"actorRole"`
 	Action     string `json:"action"`
-	EntityType string `json:"entity_type"`
-	EntityID   string `json:"entity_id"`
-	CreatedAt  string `json:"created_at"`
+	EntityType string `json:"entityType"`
+	EntityID   string `json:"entityId"`
+	CreatedAt  string `json:"createdAt"`
 }
 
 func (s *AuditService) List(ctx context.Context, entityType, entityID, actor string, limit, offset int) ([]AuditDTO, error) {
@@ -208,17 +184,17 @@ func NewCampaignService(campaigns domain.CampaignRepo) *CampaignService {
 type CampaignDTO struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
-	TenantID        string `json:"tenant_id"`
-	SegmentID       string `json:"segment_id"`
-	AttributionDays int    `json:"attribution_days"`
+	TenantID        string `json:"tenantId"`
+	SegmentID       string `json:"segmentId"`
+	AttributionDays int    `json:"attributionDays"`
 	Status          string `json:"status"`
 }
 
 type CampaignRequest struct {
 	Name            string `json:"name"`
-	TenantID        string `json:"tenant_id"`
-	SegmentID       string `json:"segment_id"`
-	AttributionDays int    `json:"attribution_days"`
+	TenantID        string `json:"tenantId"`
+	SegmentID       string `json:"segmentId"`
+	AttributionDays int    `json:"attributionDays"`
 	Status          string `json:"status"`
 }
 

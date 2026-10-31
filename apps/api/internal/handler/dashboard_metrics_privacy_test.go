@@ -7,7 +7,7 @@ import (
 )
 
 func TestDashboardMetricSuppression(t *testing.T) {
-	metrics := &service.MetricsResponse{MatchRate: 0.8, ContestedMergeRate: 0.2, AvgSegmentToExport: 20, SegmentToExportP95: 40, CampaignConversionRate: 0.9}
+	metrics := &service.MetricsResponse{MatchRate: 0.8, ContestedMergeRate: 0.2, AvgSegmentToExport: 20, SegmentToExportP95: 40}
 	result := dashboardMetricsResponse(metrics)
 	for _, key := range []string{"matchRate", "disputedMergeRate", "segmentToExportMedianSeconds", "segmentToExportP95Seconds"} {
 		if result[key] != nil {

@@ -86,7 +86,6 @@ func run(log *slog.Logger, cfg config.Config) error {
 	accessSvc := service.NewAccessGrantService(repository.NewAccessSQL(store.DB), clock, idg, users)
 	accessSvc.SetTenantRepository(repository.NewTenantSQL(store.DB))
 	accessSvc.SetAuditRepository(repository.NewAuditSQL(store.DB))
-	authSvc.SetAccess(accessSvc)
 	authHandler := handler.NewAuthHandler(authSvc)
 	accessHandler := handler.NewAccessGrantHandler(accessSvc)
 	invitationHandler := handler.NewInvitationHandler(service.NewInvitationService(repository.NewInvitationSQL(store.DB), accessSvc, nil, clock, idg, users))

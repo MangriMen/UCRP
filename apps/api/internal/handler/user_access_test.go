@@ -8,7 +8,7 @@ import (
 )
 
 func TestUserUpdateRejectsCredentialChanges(t *testing.T) {
-	for _, body := range []string{`{"role":"analyst"}`, `{"tenant_id":"other"}`, `{"password":"secret"}`, `{"is_active":true}`} {
+	for _, body := range []string{`{"role":"analyst"}`, `{"tenantId":"other"}`, `{"password":"secret"}`, `{"isActive":true}`} {
 		response := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPatch, "/users/id", strings.NewReader(body))
 		NewUserHandler(nil).Update(response, req)
