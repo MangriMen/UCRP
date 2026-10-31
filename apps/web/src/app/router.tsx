@@ -7,6 +7,7 @@ import { CampaignDetailsPage } from '@/pages/campaign-details'
 import { CampaignsPage } from '@/pages/campaigns'
 import { ContactLimitsPage } from '@/pages/contact-limits'
 import { DashboardPage } from '@/pages/dashboard'
+import { DataQualityPage } from '@/pages/data-quality'
 import { DataSourcesPage } from '@/pages/data-sources'
 import { ExportsPage } from '@/pages/exports'
 import { GuestProfilePage } from '@/pages/guest-profile'
@@ -86,6 +87,10 @@ export const router = createBrowserRouter([
           {
             element: <RoleGuard roles={['manager', 'analyst']} />,
             children: [{ path: 'admin/audit', element: <AuditLogPage /> }],
+          },
+          {
+            element: <RoleGuard roles={['analyst', 'manager']} />,
+            children: [{ path: 'data-quality', element: <DataQualityPage /> }],
           },
           {
             element: <RoleGuard roles={['tenant']} />,

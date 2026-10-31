@@ -6,8 +6,10 @@ export interface Period {
 const dayOf = (date: Date) => date.toISOString().slice(0, 10)
 
 export function defaultPeriod(months = 6, now = new Date()): Period {
-  const start = new Date(now)
-  start.setUTCMonth(start.getUTCMonth() - months)
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth() - months
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+  const start = new Date(Date.UTC(year, month, Math.min(now.getUTCDate(), lastDay)))
   return { from: dayOf(start), to: dayOf(now) }
 }
 
