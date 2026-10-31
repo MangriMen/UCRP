@@ -22,11 +22,15 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 	if err != nil {
 		return LoginResult{}, err
 	}
+	me, err := s.meWithEffective(ctx, u)
+	if err != nil {
+		return LoginResult{}, err
+	}
 	return LoginResult{
 		AccessToken:  pair.AccessToken,
 		RefreshToken: pair.RefreshToken,
 		ExpiresIn:    pair.ExpiresIn,
-		User:         toMe(u),
+		User:         me,
 	}, nil
 }
 

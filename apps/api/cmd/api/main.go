@@ -305,6 +305,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 			})
 			priv.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/tenants/{id}/aggregates", tenantAccessHandler.Aggregates)
 			priv.With(auth.RequireRole(domain.RoleManager, domain.RoleAnalyst)).Get("/data-quality/sources", analyticsHandler.DataQuality)
+			priv.With(auth.RequireRole(domain.RoleManager, domain.RoleAnalyst)).Get("/data-quality/sources/{id}", analyticsHandler.DataQualitySource)
 		})
 	})
 

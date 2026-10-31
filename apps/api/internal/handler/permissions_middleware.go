@@ -57,7 +57,7 @@ func PermissionMiddleware(authorizer policyAuthorizer) func(http.Handler) http.H
 				segmentCount := len(parts) > 0 && parts[0] == "segments"
 				exportCount := len(parts) > 0 && len(parts) <= 2 && parts[0] == "exports"
 				dashboard := r.Method == http.MethodGet && len(parts) == 2 && parts[0] == "dashboard" && (parts[1] == "cross-tenant" || parts[1] == "metrics")
-				dataQuality := r.Method == http.MethodGet && len(parts) == 2 && parts[0] == "data-quality" && parts[1] == "sources"
+				dataQuality := r.Method == http.MethodGet && len(parts) >= 2 && len(parts) <= 3 && parts[0] == "data-quality" && parts[1] == "sources"
 				if strings.HasPrefix(permission, "metric.") && !segmentCount && !exportCount && !dashboard && !dataQuality && (len(parts) != 3 || parts[0] != "tenants" || parts[2] != "aggregates") {
 					httpx.WriteError(w, r, http.StatusForbidden, "forbidden_permission", "Нет доступа")
 					return
@@ -225,4 +225,5 @@ var protectedRoutes = []protectedRoute{
 	{http.MethodGet, "/dashboard/cross-tenant", []string{"dashboard.read", "metric.cross_tenant_distribution.read", "metric.cross_tenant_rate.read"}},
 	{http.MethodGet, "/dashboard/metrics", []string{"dashboard.read", "metric.match_rate.read", "metric.disputed_merge_rate.read", "metric.segment_to_export_time.read"}},
 	{http.MethodGet, "/data-quality/sources", []string{"data_quality.read", "metric.data_quality.read", "metric.merge_queue_size.read"}},
+	{http.MethodGet, "/data-quality/sources/{id}", []string{"data_quality.read", "metric.data_quality.read", "metric.merge_queue_size.read"}},
 }

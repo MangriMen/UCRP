@@ -327,6 +327,93 @@ func TestDataQualityForbiddenForMarketer(t *testing.T) {
 	s.RequireStatus(resp, 403, "GET /api/v1/data-quality/sources as marketer")
 }
 
+func TestDataQualitySourceWithoutImports(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	iw := buildImportWorld(t, s, "dq-source-empty")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Get(ctx, "/api/v1/data-quality/sources/"+iw.source.ID, nil)
+	if err != nil {
+		t.Fatalf("GET /api/v1/data-quality/sources/{id}: %v", err)
+	}
+	s.RequireStatus(resp, 200, "GET /api/v1/data-quality/sources/{id}")
+	s.RequireDeclaredStatus("GET", "/api/v1/data-quality/sources/{id}", resp)
+	s.RequireSchema("GET", "/api/v1/data-quality/sources/{id}", resp)
+
+	body, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode data quality source: %v", err)
+	}
+	obj, _ := body.(map[string]any)
+	if name := harness.StringField(obj, "dataSourceName"); name != iw.source.Name {
+		t.Fatalf("data source name: expected %q, got %q", iw.source.Name, name)
+	}
+	if series, ok := obj["series"].([]any); !ok || len(series) != 0 {
+		t.Fatalf("a source without imports must expose an empty series: %s", resp.Snippet())
+	}
+	if batches, ok := obj["recentBatches"].([]any); !ok || len(batches) != 0 {
+		t.Fatalf("a source without imports must expose empty recentBatches: %s", resp.Snippet())
+	}
+}
+
+func TestDataQualitySourceDetail(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	iw := buildImportWorld(t, s, "dq-source-detail")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := uploadImport(ctx, s, iw.source.ID, "valid.csv", csvValid(iw.world.tenantA.Code, s.Reg.Phone(11), s.Reg.Phone(12)))
+	if err != nil {
+		t.Fatalf("POST /api/v1/imports: %v", err)
+	}
+	s.RequireStatus(resp, 202, "POST /api/v1/imports")
+	body, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode import response: %v", err)
+	}
+	obj, _ := body.(map[string]any)
+	batchID := harness.StringField(obj, "batchId")
+	trackImport(s, batchID)
+
+	detail, err := s.API.Get(ctx, "/api/v1/data-quality/sources/"+iw.source.ID, nil)
+	if err != nil {
+		t.Fatalf("GET /api/v1/data-quality/sources/{id}: %v", err)
+	}
+	s.RequireStatus(detail, 200, "GET /api/v1/data-quality/sources/{id}")
+	s.RequireSchema("GET", "/api/v1/data-quality/sources/{id}", detail)
+
+	decoded, err := detail.JSON()
+	if err != nil {
+		t.Fatalf("decode data quality source: %v", err)
+	}
+	row, _ := decoded.(map[string]any)
+	batches, ok := row["recentBatches"].([]any)
+	if !ok || len(batches) == 0 {
+		t.Fatalf("a source with an import must expose recentBatches: %s", detail.Snippet())
+	}
+	first, _ := batches[0].(map[string]any)
+	if id := harness.StringField(first, "id"); id != batchID {
+		t.Fatalf("recentBatches[0].id: expected %q, got %q", batchID, id)
+	}
+	if series, ok := row["series"].([]any); !ok || len(series) == 0 {
+		t.Fatalf("a source with an import must expose a non-empty series: %s", detail.Snippet())
+	}
+}
+
+func TestDataQualitySourceNotFound(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Get(ctx, "/api/v1/data-quality/sources/00000000-0000-0000-0000-000000000000", nil)
+	if err != nil {
+		t.Fatalf("GET /api/v1/data-quality/sources/{id}: %v", err)
+	}
+	s.RequireStatus(resp, 404, "GET /api/v1/data-quality/sources/{id} for an unknown source")
+	s.RequireDeclaredStatus("GET", "/api/v1/data-quality/sources/{id}", resp)
+}
+
 func contains(haystack, needle string) bool {
 	return needle != "" && strings.Contains(haystack, needle)
 }
