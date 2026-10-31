@@ -83,6 +83,14 @@ type GuestSegmentSummary struct {
 	VersionNo int
 }
 
+type GuestActionLogEntry struct {
+	OccurredAt  time.Time
+	TenantName  string
+	EventType   string
+	AmountMinor *int64
+	Currency    string
+}
+
 type MovementStep struct {
 	EventID       string
 	EventTypeCode string
@@ -166,6 +174,7 @@ type EventRepo interface {
 	ListByGuest(ctx context.Context, guestID string, filter EventFilter, limit, offset int) ([]GuestEvent, int, error)
 	ListMovement(ctx context.Context, guestID string, from, to *time.Time, limit int) ([]MovementStep, error)
 	ListUnmatchedByBatch(ctx context.Context, batchID string, limit int) ([]Event, error)
+	ActionLog(ctx context.Context, guestID string, limit int) ([]GuestActionLogEntry, error)
 	Insert(ctx context.Context, e *Event) error
 	InsertIgnoreDuplicate(ctx context.Context, e *Event) (bool, error)
 	AttachGuest(ctx context.Context, eventID, guestID string) error

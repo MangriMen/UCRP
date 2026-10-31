@@ -16,6 +16,7 @@ type Config struct {
 	JWTAccessTTL time.Duration
 	HTTPTimeout  time.Duration
 	Recommend    RecommendConfig
+	Kev          KevConfig
 }
 
 type RecommendConfig struct {
@@ -32,6 +33,11 @@ type RecommendConfig struct {
 	StaleAfter           time.Duration
 }
 
+type KevConfig struct {
+	BaseURL string
+	Timeout time.Duration
+}
+
 func Load() (Config, error) {
 	cfg := Config{
 		HTTPAddr:     getenv("UCRP_HTTP_ADDR", ":8080"),
@@ -42,12 +48,19 @@ func Load() (Config, error) {
 		JWTAccessTTL: 15 * time.Minute,
 		HTTPTimeout:  30 * time.Second,
 		Recommend:    DefaultRecommendConfig(),
+		Kev: KevConfig{
+			BaseURL: os.Getenv("UCRP_KEV_BASE_URL"),
+			Timeout: time.Duration(getenvInt("UCRP_KEV_TIMEOUT_SEC", 60)) * time.Second,
+		},
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("UCRP_DATABASE_URL is required")
 	}
 	if cfg.JWTSecret == "" {
 		return Config{}, fmt.Errorf("UCRP_JWT_SECRET is required")
+	}
+	if cfg.Kev.Timeout <= 0 {
+		return Config{}, fmt.Errorf("UCRP_KEV_TIMEOUT_SEC must be > 0")
 	}
 	if err := cfg.Recommend.loadEnv(); err != nil {
 		return Config{}, err

@@ -36,8 +36,22 @@ type SegmentTenantScore struct {
 	IncompleteCount int
 }
 
+type RecommendationEval struct {
+	ID                       string
+	GuestID                  string
+	Probabilities            map[string]float64
+	Ranking                  []string
+	Confidence               *float64
+	RecommendationComputedAt time.Time
+	EvaluatedAt              time.Time
+}
+
 type RecommendationRepo interface {
 	ListByGuest(ctx context.Context, guestID string) ([]Recommendation, error)
+}
+
+type RecommendationEvalRepo interface {
+	Insert(ctx context.Context, ev *RecommendationEval) error
 }
 
 type Recommender interface {

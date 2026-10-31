@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/MangriMen/UCRP/internal/domain"
@@ -11,10 +12,11 @@ type RecommendationService struct {
 	guests domain.GuestRepo
 	repo   domain.RecommendationRepo
 	rec    domain.Recommender
+	q      domain.Queue
 }
 
-func NewRecommendationService(guests domain.GuestRepo, repo domain.RecommendationRepo, rec domain.Recommender) *RecommendationService {
-	return &RecommendationService{guests: guests, repo: repo, rec: rec}
+func NewRecommendationService(guests domain.GuestRepo, repo domain.RecommendationRepo, rec domain.Recommender, q domain.Queue) *RecommendationService {
+	return &RecommendationService{guests: guests, repo: repo, rec: rec, q: q}
 }
 
 type RecommendationDTO struct {
@@ -89,7 +91,22 @@ func (s *RecommendationService) Refresh(ctx context.Context, guestID string) ([]
 	if err != nil {
 		return nil, fmt.Errorf("refresh: %w", err)
 	}
+	if err := enqueueRecommendEvaluate(ctx, s.q, guestID); err != nil {
+		return nil, err
+	}
 	return toRecoDTOs(items), nil
+}
+
+func enqueueRecommendEvaluate(ctx context.Context, q domain.Queue, guestID string) error {
+	payload, err := json.Marshal(map[string]string{"guest_id": guestID})
+	if err != nil {
+		return err
+	}
+	return q.Enqueue(ctx, domain.Job{
+		JobType:  "recommend.evaluate",
+		Payload:  string(payload),
+		DedupKey: "eval:" + guestID,
+	})
 }
 
 func toRecoDTOs(items []domain.Recommendation) []RecommendationDTO {

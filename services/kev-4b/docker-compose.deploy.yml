@@ -1,0 +1,32 @@
+services:
+  # Deployment target: pulls the image built by CI instead of building locally.
+  #   docker compose -f docker-compose.deploy.yml up -d
+  #
+  # Point at your registry with IMAGE=registry.example.com/kev-4b:tag
+  kev4b:
+    image: ${IMAGE:-kev-4b:latest}
+    container_name: kev4b
+    ports:
+      - '${PORT:-8080}:8080'
+    environment:
+      PORT: '8080'
+      # 0 = use all cores. On a Ryzen 5 3600 (6C/12T) the default is fine.
+      THREADS: '${THREADS:-0}'
+      CTX_SIZE: '${CTX_SIZE:-8192}'
+      PARALLEL_SLOTS: '${PARALLEL_SLOTS:-1}'
+    # Override the baked-in model with a host file:
+    # volumes:
+    #   - /srv/models/Kev-4B-Q8_0.gguf:/app/models/model.gguf
+    # environment:
+    #   MODEL_PATH: /app/models/model.gguf
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://127.0.0.1:8080/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 6g

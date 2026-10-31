@@ -28,3 +28,9 @@ services:
       dockerfile: deploy/web/Dockerfile
     ports:
       - '${UCRP_WEB_PORT:-8081}:80'
+
+  kev4b:
+    image: kev-4b:local
+    build:
+      context: ../services/kev-4b
+      dockerfile: docker/Dockerfile

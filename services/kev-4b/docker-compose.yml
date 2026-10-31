@@ -1,0 +1,51 @@
+# Deployable stack: Kev-4B decision model behind /v1/systemone.
+#
+#   docker compose up -d --build
+#   docker compose run --rm test
+#
+services:
+  kev4b:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        # OFF = portable x86-64. Set ON when building on the deploy host
+        # for max throughput.
+        GGML_NATIVE: 'OFF'
+    image: kev-4b:latest
+    container_name: kev4b
+    ports:
+      - '${PORT:-8080}:8080'
+    environment:
+      PORT: '8080'
+      # 0 = let llama.cpp use all available cores
+      THREADS: '${THREADS:-0}'
+      CTX_SIZE: '${CTX_SIZE:-8192}'
+      PARALLEL_SLOTS: '${PARALLEL_SLOTS:-1}'
+    # Override the baked-in model with a host file:
+    # volumes:
+    #   - /path/to/Kev-4B-Q8_0.gguf:/app/models/model.gguf
+    # environment:
+    #   MODEL_PATH: /app/models/model.gguf
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://127.0.0.1:8080/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+
+  # One-shot smoke test: `docker compose run --rm test`
+  test:
+    image: python:3.12-slim
+    depends_on:
+      kev4b:
+        condition: service_healthy
+    volumes:
+      - ./test_math_classifier.py:/test_math_classifier.py:ro
+    entrypoint: ['python3', '/test_math_classifier.py', '--url', 'http://kev4b:8080']
+    profiles: ['test']

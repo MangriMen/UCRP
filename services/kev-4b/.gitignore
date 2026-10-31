@@ -1,0 +1,12 @@
+# Build artifacts
+.venv/
+llama.cpp/build/
+**/__pycache__/
+*.log
+
+# Model weights — fetched at build time or mounted at runtime, never committed
+models/
+*.gguf
+
+# Local scratch
+_flash/

@@ -1,0 +1,21 @@
+# Build context should carry only the Dockerfile inputs (docker/ + compose).
+# llama.cpp is cloned and the model is pulled at build time — neither is
+# vendored here.
+.git
+**/.git
+**/__pycache__
+*.log
+
+# Local artifacts — never part of the image build context
+.venv
+models
+llama.cpp
+start_vllm.sh
+vllm_serve.log
+llama_serve.log
+_flash
+
+# Docs
+README.md
+MANIFEST.md
+**/.DS_Store
