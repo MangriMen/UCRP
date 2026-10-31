@@ -3,7 +3,7 @@ import type { AccessGrant, GrantStatus } from './types'
 
 export type GrantTransition = 'activate' | 'suspend' | 'revoke'
 
-const transitionSources: Record<GrantTransition, GrantStatus[]> = {
+export const transitionSources: Record<GrantTransition, GrantStatus[]> = {
   activate: ['draft', 'suspended'],
   suspend: ['active'],
   revoke: ['draft', 'active', 'suspended'],

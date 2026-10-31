@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw'
 import { mockTenants } from '@/entities/tenant/mocks'
 import { mockUsers } from '@/entities/user/mocks'
 import { API, apiError, mockId, paged } from '@/shared/api/mocks/helpers'
-import type { GrantTransition } from '../model/lifecycle'
+import { transitionSources, type GrantTransition } from '../model/lifecycle'
 import type {
   AccessAuditEntry,
   AccessGrant,
@@ -25,11 +25,6 @@ let policyVersion = 3
 const SESSION_KEY = 'ucrp-mock-session'
 const sessionUserId = () => localStorage.getItem(SESSION_KEY) ?? 'user-manager'
 
-const transitionSources: Record<GrantTransition, GrantStatus[]> = {
-  activate: ['draft', 'suspended'],
-  suspend: ['active'],
-  revoke: ['draft', 'active', 'suspended'],
-}
 const transitionTargets: Record<GrantTransition, GrantStatus> = {
   activate: 'active',
   suspend: 'suspended',
