@@ -11,8 +11,8 @@
                                                                                        "Guests"
                                                                                    ],
                                                                           "operationId":  "getGuestRecommendations",
-                                                                          "summary":  "До 3 рекомендаций с обоснованием",
-                                                                          "description":  "Чтение не пересчитывает рекомендации. Инварианты: арендатор из списка не входит в посещённые гостем; прямые конкуренты (`tenant_category_relation.relationType = competitor`) исключены. Пустой список — валидное состояние, не ошибка.",
+                                                                          "summary":  "Up to 3 recommendations with explanations",
+                                                                          "description":  "Reading does not recompute recommendations. Invariants: a listed tenant is not among the guest visited tenants; direct competitors (`tenant_category_relation.relationType = competitor`) are excluded. An empty list is a valid state, not an error.",
                                                                           "x-roles":  [
                                                                                           "R-1",
                                                                                           "R-4"
@@ -22,7 +22,7 @@
                                                                                    ],
                                                                           "responses":  {
                                                                                             "200":  {
-                                                                                                        "description":  "Рекомендации",
+                                                                                                        "description":  "Recommendations",
                                                                                                         "content":  {
                                                                                                                         "application/json":  {
                                                                                                                                                  "schema":  {
@@ -54,8 +54,8 @@
                                                                                                 "Guests"
                                                                                             ],
                                                                                    "operationId":  "refreshGuestRecommendations",
-                                                                                   "summary":  "Принудительный пересчёт рекомендаций",
-                                                                                   "description":  "Синхронный вызов `Recommender.Refresh` с дедлайном 10 с; при превышении — 504 `timeout`. Набор рекомендаций заменяется в одной транзакции, поэтому чтение никогда не видит неполный набор.",
+                                                                                   "summary":  "Force a recommendation recompute",
+                                                                                   "description":  "Synchronous `Recommender.Refresh` call with a 10 s deadline; on timeout — 504 `timeout`. The recommendation set is replaced in a single transaction, so reads never see a partial set.",
                                                                                    "x-roles":  [
                                                                                                    "R-1",
                                                                                                    "R-4"
@@ -66,7 +66,7 @@
                                                                                             ],
                                                                                    "responses":  {
                                                                                                      "200":  {
-                                                                                                                 "description":  "Пересчитанные рекомендации",
+                                                                                                                 "description":  "Recomputed recommendations",
                                                                                                                  "content":  {
                                                                                                                                  "application/json":  {
                                                                                                                                                           "schema":  {
@@ -101,8 +101,8 @@
                                                                                          "Guests"
                                                                                      ],
                                                                             "operationId":  "getSegmentRecommendations",
-                                                                            "summary":  "Агрегат по сегменту: топ-арендаторы для приглашения",
-                                                                            "description":  "Суммирует рекомендации участников сегмента и возвращает арендаторов, наиболее часто предлагаемых сегменту, с числом гостей-кандидатов.",
+                                                                            "summary":  "Segment aggregate: top tenants to invite",
+                                                                            "description":  "Aggregates recommendations of segment members and returns the tenants most often suggested to the segment, with the number of candidate guests.",
                                                                             "x-roles":  [
                                                                                             "R-1",
                                                                                             "R-4"
@@ -124,7 +124,7 @@
                                                                                            ],
                                                                             "responses":  {
                                                                                               "200":  {
-                                                                                                          "description":  "Рейтинг арендаторов по сегменту",
+                                                                                                          "description":  "Tenant ranking for the segment",
                                                                                                           "content":  {
                                                                                                                           "application/json":  {
                                                                                                                                                    "schema":  {

@@ -6,8 +6,8 @@
                                                                        "Reference"
                                                                    ],
                                                           "operationId":  "listEventTypes",
-                                                          "summary":  "Типы событий",
-                                                          "description":  "`countsAsPresence=true` означает, что событие участвует в расчёте посещений и cross-tenant penetration.",
+                                                          "summary":  "Event types",
+                                                          "description":  "`countsAsPresence=true` means the event participates in visit counting and cross-tenant penetration.",
                                                           "x-roles":  [
                                                                           "R-1",
                                                                           "R-2",
@@ -18,7 +18,7 @@
                                                                    ],
                                                           "responses":  {
                                                                             "200":  {
-                                                                                        "description":  "Типы событий",
+                                                                                        "description":  "Event types",
                                                                                         "content":  {
                                                                                                         "application/json":  {
                                                                                                                                  "schema":  {
@@ -43,7 +43,7 @@
                                                                         "Reference"
                                                                     ],
                                                            "operationId":  "createEventType",
-                                                           "summary":  "Новый тип события",
+                                                           "summary":  "New event type",
                                                            "x-roles":  [
                                                                            "R-4"
                                                                        ],
@@ -62,7 +62,7 @@
                                                                            },
                                                            "responses":  {
                                                                              "201":  {
-                                                                                         "description":  "Тип события создан",
+                                                                                         "description":  "Event type created",
                                                                                          "content":  {
                                                                                                          "application/json":  {
                                                                                                                                   "schema":  {
@@ -97,7 +97,7 @@
                                                                               "Reference"
                                                                           ],
                                                                  "operationId":  "updateEventType",
-                                                                 "summary":  "Изменить или деактивировать тип события",
+                                                                 "summary":  "Update or deactivate an event type",
                                                                  "x-roles":  [
                                                                                  "R-4"
                                                                              ],
@@ -116,7 +116,7 @@
                                                                                  },
                                                                  "responses":  {
                                                                                    "200":  {
-                                                                                               "description":  "Обновлённый тип события",
+                                                                                               "description":  "Updated event type",
                                                                                                "content":  {
                                                                                                                "application/json":  {
                                                                                                                                         "schema":  {
@@ -144,8 +144,8 @@
                                                                                "Reference"
                                                                            ],
                                                                   "operationId":  "deleteEventType",
-                                                                  "summary":  "Удалить тип события",
-                                                                  "description":  "Удаление запрещено, если тип используется событиями — 409 `event_type_in_use`; вместо удаления используйте деактивацию.",
+                                                                  "summary":  "Delete an event type",
+                                                                  "description":  "Deletion is not allowed when events use the type — 409 `event_type_in_use`; deactivate it instead.",
                                                                   "x-roles":  [
                                                                                   "R-4"
                                                                               ],

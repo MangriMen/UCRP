@@ -11,8 +11,8 @@
                                                                                 "Exports"
                                                                             ],
                                                                    "operationId":  "listExportMembers",
-                                                                   "summary":  "Получатели и контрольная группа (API-выгрузка для провайдера)",
-                                                                   "description":  "Возвращает только гостей с контактом нужного канала. Провайдер обращается с персональным токеном R-1. Параметр `is_control` разделяет получателей и контрольную группу.",
+                                                                   "summary":  "Recipients and control group (API export for the provider)",
+                                                                   "description":  "Returns only guests with a contact for the required channel. The provider calls this with the personal token of R-1. The `is_control` parameter separates recipients from the control group.",
                                                                    "x-roles":  [
                                                                                    "R-1"
                                                                                ],
@@ -36,7 +36,7 @@
                                                                                   ],
                                                                    "responses":  {
                                                                                      "200":  {
-                                                                                                 "description":  "Страница членов выгрузки",
+                                                                                                 "description":  "Export member page",
                                                                                                  "content":  {
                                                                                                                  "application/json":  {
                                                                                                                                           "schema":  {
@@ -68,8 +68,8 @@
                                                                                  "Exports"
                                                                              ],
                                                                     "operationId":  "downloadExport",
-                                                                    "summary":  "CSV выгрузки (только не-контрольные получатели)",
-                                                                    "description":  "Контрольная группа в файл не попадает. Если выгрузка ещё не готова — 409 `export_not_ready`.",
+                                                                    "summary":  "Export CSV (non-control recipients only)",
+                                                                    "description":  "The control group is not included in the file. If the export is not ready — 409 `export_not_ready`.",
                                                                     "x-roles":  [
                                                                                     "R-1"
                                                                                 ],
@@ -78,7 +78,7 @@
                                                                              ],
                                                                     "responses":  {
                                                                                       "200":  {
-                                                                                                  "description":  "CSV-файл",
+                                                                                                  "description":  "CSV file",
                                                                                                   "headers":  {
                                                                                                                   "Content-Disposition":  {
                                                                                                                                               "schema":  {

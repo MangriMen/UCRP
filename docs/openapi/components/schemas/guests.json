@@ -9,7 +9,7 @@
                     },
     "IdentifierType":  {
                            "type":  "string",
-                           "description":  "Тип идентификатора. `phone` и `email` — надёжные ключи склейки.",
+                           "description":  "Identifier type. `phone` and `email` are reliable merge keys.",
                            "enum":  [
                                         "phone",
                                         "email",
@@ -39,7 +39,7 @@
                                                           },
                                                "valueNormalized":  {
                                                                        "type":  "string",
-                                                                       "description":  "Нормализованное значение: телефон в E.164 без `+`, email в нижнем регистре",
+                                                                       "description":  "Normalized value: phone in E.164 without `+`, email lowercased",
                                                                        "example":  "79001234567"
                                                                    },
                                                "dataSourceId":  {
@@ -49,11 +49,11 @@
                                                "originGuestId":  {
                                                                      "type":  "string",
                                                                      "nullable":  true,
-                                                                     "description":  "Исходный владелец ключа до склейки — основа обратимости"
+                                                                     "description":  "Original key owner before the merge — the basis for reversibility"
                                                                  },
                                                "isReliable":  {
                                                                   "type":  "boolean",
-                                                                  "description":  "Ключ пригоден для автосклейки"
+                                                                  "description":  "Key is eligible for automatic merge"
                                                               },
                                                "createdAt":  {
                                                                  "type":  "string",
@@ -83,12 +83,12 @@
                                      "mergedIntoId":  {
                                                           "type":  "string",
                                                           "nullable":  true,
-                                                          "description":  "Актуальный профиль, если гость был поглощён склейкой"
+                                                          "description":  "Current profile if the guest was absorbed by a merge"
                                                       },
                                      "tenantCount":  {
                                                          "type":  "integer",
                                                          "minimum":  0,
-                                                         "description":  "Число различных арендаторов в событиях гостя"
+                                                         "description":  "Number of distinct tenants in the guest events"
                                                      },
                                      "eventCount":  {
                                                         "type":  "integer",
@@ -204,7 +204,7 @@
                                                               "totalAmountMinor":  {
                                                                                        "type":  "integer",
                                                                                        "format":  "int64",
-                                                                                       "description":  "Суммарная выручка гостя в минорных единицах"
+                                                                                       "description":  "Guest total revenue in minor units"
                                                                                    },
                                                               "currency":  {
                                                                                "type":  "string",

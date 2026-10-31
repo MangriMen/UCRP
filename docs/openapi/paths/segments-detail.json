@@ -11,8 +11,8 @@
                                                                          "Segments"
                                                                      ],
                                                             "operationId":  "getSegment",
-                                                            "summary":  "Карточка сегмента",
-                                                            "description":  "Содержит текущую версию, правило на бизнес-языке (`ruleText`), размер, статус пересчёта и `computedAt`. Пока статус `pending` или `computing`, выгрузка из сегмента возвращает 409.",
+                                                            "summary":  "Segment details",
+                                                            "description":  "Contains the current version, the rule in business language (`ruleText`), size, recompute status, and `computedAt`. While the status is `pending` or `computing`, exporting from the segment returns 409.",
                                                             "x-roles":  [
                                                                             "R-1",
                                                                             "R-2",
@@ -24,7 +24,7 @@
                                                                      ],
                                                             "responses":  {
                                                                               "200":  {
-                                                                                          "description":  "Сегмент",
+                                                                                          "description":  "Segment",
                                                                                           "content":  {
                                                                                                           "application/json":  {
                                                                                                                                    "schema":  {
@@ -49,8 +49,8 @@
                                                                          "Segments"
                                                                      ],
                                                             "operationId":  "updateSegment",
-                                                            "summary":  "Изменить правило — новая версия",
-                                                            "description":  "Каждая правка создаёт неизменяемую `segment_version` с `versionNo + 1`; прежние версии остаются доступны, выгрузки ссылаются на конкретную версию и остаются воспроизводимыми.",
+                                                            "summary":  "Change the rule — new version",
+                                                            "description":  "Each edit creates an immutable `segment_version` with `versionNo + 1`; previous versions remain available, and exports reference a specific version and stay reproducible.",
                                                             "x-roles":  [
                                                                             "R-1",
                                                                             "R-4"
@@ -71,7 +71,7 @@
                                                                             },
                                                             "responses":  {
                                                                               "200":  {
-                                                                                          "description":  "Сегмент с новой версией",
+                                                                                          "description":  "Segment with the new version",
                                                                                           "content":  {
                                                                                                           "application/json":  {
                                                                                                                                    "schema":  {
@@ -99,8 +99,8 @@
                                                                             "Segments"
                                                                         ],
                                                                "operationId":  "deleteSegment",
-                                                               "summary":  "Архивировать сегмент",
-                                                               "description":  "Если на сегмент ссылается активная кампания — 409 `segment_in_active_campaign`.",
+                                                               "summary":  "Archive a segment",
+                                                               "description":  "If an active campaign references the segment — 409 `segment_in_active_campaign`.",
                                                                "x-roles":  [
                                                                                "R-1",
                                                                                "R-4"
@@ -138,8 +138,8 @@
                                                                                  "Segments"
                                                                              ],
                                                                     "operationId":  "listSegmentMembers",
-                                                                    "summary":  "Состав сегмента",
-                                                                    "description":  "По умолчанию — текущая версия; параметр `version` позволяет посмотреть состав исторической версии.",
+                                                                    "summary":  "Segment membership",
+                                                                    "description":  "Defaults to the current version; the `version` parameter shows the membership of a historical version.",
                                                                     "x-roles":  [
                                                                                     "R-1",
                                                                                     "R-4"
@@ -157,7 +157,7 @@
                                                                                        {
                                                                                            "name":  "version",
                                                                                            "in":  "query",
-                                                                                           "description":  "Номер версии правила",
+                                                                                           "description":  "Rule version number",
                                                                                            "schema":  {
                                                                                                           "type":  "integer",
                                                                                                           "minimum":  1
@@ -166,7 +166,7 @@
                                                                                    ],
                                                                     "responses":  {
                                                                                       "200":  {
-                                                                                                  "description":  "Страница участников",
+                                                                                                  "description":  "Member page",
                                                                                                   "content":  {
                                                                                                                   "application/json":  {
                                                                                                                                            "schema":  {
@@ -198,7 +198,7 @@
                                                                                   "Segments"
                                                                               ],
                                                                      "operationId":  "listSegmentVersions",
-                                                                     "summary":  "История версий правила",
+                                                                     "summary":  "Rule version history",
                                                                      "x-roles":  [
                                                                                      "R-1",
                                                                                      "R-4"
@@ -208,7 +208,7 @@
                                                                               ],
                                                                      "responses":  {
                                                                                        "200":  {
-                                                                                                   "description":  "Версии по убыванию номера",
+                                                                                                   "description":  "Versions in descending order",
                                                                                                    "content":  {
                                                                                                                    "application/json":  {
                                                                                                                                             "schema":  {
@@ -243,8 +243,8 @@
                                                                                     "Segments"
                                                                                 ],
                                                                        "operationId":  "recomputeSegment",
-                                                                       "summary":  "Принудительный пересчёт (асинхронно)",
-                                                                       "description":  "Ставит `segment.recompute` с `dedupKey = segment:{id}:{versionNo}`. Если пересчёт этой версии уже идёт — 409 `recompute_in_progress`.",
+                                                                       "summary":  "Force a recompute (asynchronous)",
+                                                                       "description":  "Enqueues `segment.recompute` with `dedupKey = segment:{id}:{versionNo}`. If this version is already being recomputed — 409 `recompute_in_progress`.",
                                                                        "x-roles":  [
                                                                                        "R-1",
                                                                                        "R-4"
@@ -255,7 +255,7 @@
                                                                                 ],
                                                                        "responses":  {
                                                                                          "202":  {
-                                                                                                     "description":  "Пересчёт поставлен в очередь",
+                                                                                                     "description":  "Recompute queued",
                                                                                                      "content":  {
                                                                                                                      "application/json":  {
                                                                                                                                               "schema":  {

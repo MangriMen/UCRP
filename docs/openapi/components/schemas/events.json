@@ -14,7 +14,7 @@
                                      "guestId":  {
                                                      "type":  "string",
                                                      "nullable":  true,
-                                                     "description":  "null — событие ещё не привязано к гостю (знаменатель match rate)"
+                                                     "description":  "null — the event is not yet linked to a guest (match rate denominator)"
                                                  },
                                      "originGuestId":  {
                                                            "type":  "string",
@@ -64,7 +64,7 @@
                                                          "type":  "integer",
                                                          "format":  "int64",
                                                          "nullable":  true,
-                                                         "description":  "Сумма в минорных единицах (35000 = 350,00 RUB)"
+                                                         "description":  "Amount in minor units (35000 = 350.00 RUB)"
                                                      },
                                      "currency":  {
                                                       "type":  "string",

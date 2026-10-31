@@ -6,8 +6,8 @@
                                                                                  "Analytics"
                                                                              ],
                                                                     "operationId":  "getPenetration",
-                                                                    "summary":  "Распределение гостей по числу арендаторов и динамика",
-                                                                    "description":  "Для активных гостей считается число различных `event.tenantId` среди событий типов с `countsAsPresence`. Возвращает распределение 1 / 2 / 3+ и долю гостей с двумя и более арендаторами. Период не более 24 месяцев, `from \u003c= to`, иначе 400.",
+                                                                    "summary":  "Guest distribution by tenant count and its trend",
+                                                                    "description":  "For active guests, counts the number of distinct `event.tenantId` values among events of types with `countsAsPresence`. Returns the 1 / 2 / 3+ distribution and the share of guests with two or more tenants. The period must not exceed 24 months and `from <= to`, otherwise 400.",
                                                                     "x-roles":  [
                                                                                     "R-2",
                                                                                     "R-1",
@@ -29,7 +29,7 @@
                                                                                    ],
                                                                     "responses":  {
                                                                                       "200":  {
-                                                                                                  "description":  "Распределение и динамика",
+                                                                                                  "description":  "Distribution and trend",
                                                                                                   "content":  {
                                                                                                                   "application/json":  {
                                                                                                                                            "schema":  {
@@ -56,8 +56,8 @@
                                                                              "Analytics"
                                                                          ],
                                                                 "operationId":  "getDashboardMetrics",
-                                                                "summary":  "Ключевые метрики платформы",
-                                                                "description":  "Match rate (цель ≥ 70%), доля оспоренных склеек (\u003c 1%), время сегмент → выгрузка (медиана и p95, цель ≤ 5 мин), конверсия рассылки (≥ 3%), инкремент визитов. Все показатели вычисляются запросами по таблицам ER, отдельных таблиц метрик нет.",
+                                                                "summary":  "Key platform metrics",
+                                                                "description":  "Match rate (target ≥ 70%), disputed merge share (< 1%), segment → export time (median and p95, target ≤ 5 min), campaign conversion (≥ 3%), visit lift. All metrics are computed by queries over the ER tables; there are no dedicated metric tables.",
                                                                 "x-roles":  [
                                                                                 "R-2",
                                                                                 "R-1",
@@ -76,7 +76,7 @@
                                                                                ],
                                                                 "responses":  {
                                                                                   "200":  {
-                                                                                              "description":  "Метрики за период",
+                                                                                              "description":  "Metrics for the period",
                                                                                               "content":  {
                                                                                                               "application/json":  {
                                                                                                                                        "schema":  {
@@ -108,8 +108,8 @@
                                                                                    "Analytics"
                                                                                ],
                                                                       "operationId":  "getTenantAggregates",
-                                                                      "summary":  "Агрегаты арендатора",
-                                                                      "description":  "R-3 получает только собственные агрегаты: `tenantId` из пути сверяется с claim в service, несовпадение → 403 `forbidden_tenant`; repository использует только методы `...ForTenant`. В ответе нет идентификаторов гостей. Ячейки меньше k = 5 скрываются (`suppressed = true`, значение `null`). R-2, R-1, R-4 могут запросить любого арендатора.",
+                                                                      "summary":  "Tenant aggregates",
+                                                                      "description":  "R-3 receives only its own aggregates: the `tenantId` from the path is compared with the claim in the service, a mismatch → 403 `forbidden_tenant`; the repository uses only `...ForTenant` methods. The response contains no guest identifiers. Cells below k = 5 are suppressed (`suppressed = true`, value `null`). R-2, R-1, and R-4 may request any tenant.",
                                                                       "x-roles":  [
                                                                                       "R-3 (own)",
                                                                                       "R-2",
@@ -132,7 +132,7 @@
                                                                                      ],
                                                                       "responses":  {
                                                                                         "200":  {
-                                                                                                    "description":  "Агрегаты арендатора",
+                                                                                                    "description":  "Tenant aggregates",
                                                                                                     "content":  {
                                                                                                                     "application/json":  {
                                                                                                                                              "schema":  {
@@ -162,8 +162,8 @@
                                                                                 "Analytics"
                                                                             ],
                                                                    "operationId":  "listDataQualitySources",
-                                                                   "summary":  "Качество данных по источникам",
-                                                                   "description":  "По каждому источнику: дата последней успешной загрузки, доля отклонённых строк за 30 дней, число спорных профилей. Предупреждение ставится при доле отклонённых выше 10% или при данных старше 7 дней.",
+                                                                   "summary":  "Data quality by source",
+                                                                   "description":  "For each source: last successful import date, share of rejected rows over 30 days, number of disputed profiles. A warning is raised when the rejected share exceeds 10% or the data is older than 7 days.",
                                                                    "x-roles":  [
                                                                                    "R-4",
                                                                                    "R-2"
@@ -173,7 +173,7 @@
                                                                             ],
                                                                    "responses":  {
                                                                                      "200":  {
-                                                                                                 "description":  "Список источников с метриками качества",
+                                                                                                 "description":  "Sources with quality metrics",
                                                                                                  "content":  {
                                                                                                                  "application/json":  {
                                                                                                                                           "schema":  {
@@ -205,8 +205,8 @@
                                                                                      "Analytics"
                                                                                  ],
                                                                         "operationId":  "getDataQualitySource",
-                                                                        "summary":  "Детали и динамика по источнику",
-                                                                        "description":  "График отклонённых строк по загрузкам и ссылки на конкретные загрузки. Источник без загрузок — валидное состояние с пустыми рядами, не ошибка.",
+                                                                        "summary":  "Source details and trend",
+                                                                        "description":  "Chart of rejected rows per import and links to specific imports. A source without imports is a valid state with empty series, not an error.",
                                                                         "x-roles":  [
                                                                                         "R-4",
                                                                                         "R-2"
@@ -224,7 +224,7 @@
                                                                                        ],
                                                                         "responses":  {
                                                                                           "200":  {
-                                                                                                      "description":  "Детали качества источника",
+                                                                                                      "description":  "Source quality details",
                                                                                                       "content":  {
                                                                                                                       "application/json":  {
                                                                                                                                                "schema":  {

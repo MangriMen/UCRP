@@ -11,28 +11,28 @@
                       },
     "SegmentRule":  {
                         "type":  "object",
-                        "description":  "Правило сегмента (JSON DSL). Компилируется в параметризованный SQL, поэтому произвольный запрос невозможен.",
+                        "description":  "Segment rule (JSON DSL). Compiled into parameterized SQL, so arbitrary queries are impossible.",
                         "required":  [
                                          "periodDays"
                                      ],
                         "properties":  {
                                            "was":  {
                                                        "type":  "array",
-                                                       "description":  "Гость имел событие у любого из этих арендаторов",
+                                                       "description":  "Guest had an event at any of these tenants",
                                                        "items":  {
                                                                      "type":  "string"
                                                                  }
                                                    },
                                            "wasNot":  {
                                                           "type":  "array",
-                                                          "description":  "Гость не имел событий ни у одного из этих арендаторов",
+                                                          "description":  "Guest had no events at any of these tenants",
                                                           "items":  {
                                                                         "type":  "string"
                                                                     }
                                                       },
                                            "categoriesWas":  {
                                                                  "type":  "array",
-                                                                 "description":  "Гость был у арендатора из категории",
+                                                                 "description":  "Guest visited a tenant in the category",
                                                                  "items":  {
                                                                                "type":  "string"
                                                                            }
@@ -47,7 +47,7 @@
                                                               "type":  "integer",
                                                               "minimum":  1,
                                                               "maximum":  730,
-                                                              "description":  "Окно анализа в днях"
+                                                              "description":  "Analysis window in days"
                                                           },
                                            "requireContact":  {
                                                                   "type":  "string",
@@ -56,7 +56,7 @@
                                                                                "phone",
                                                                                "email"
                                                                            ],
-                                                                  "description":  "Требовать наличие контакта указанного типа"
+                                                                  "description":  "Require a contact of the given type"
                                                               },
                                            "minVisits":  {
                                                              "type":  "integer",
@@ -97,7 +97,7 @@
                                                        },
                                               "ruleText":  {
                                                                "type":  "string",
-                                                               "description":  "Правило на бизнес-языке"
+                                                               "description":  "Rule in business language"
                                                            },
                                               "status":  {
                                                              "$ref": "./segments.json#/SegmentStatus"

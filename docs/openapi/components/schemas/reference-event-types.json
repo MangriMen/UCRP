@@ -24,11 +24,11 @@
                                                   },
                                          "hasAmount":  {
                                                            "type":  "boolean",
-                                                           "description":  "У события есть денежная сумма"
+                                                           "description":  "The event carries a monetary amount"
                                                        },
                                          "countsAsPresence":  {
                                                                   "type":  "boolean",
-                                                                  "description":  "Событие считается посещением и участвует в cross-tenant penetration"
+                                                                  "description":  "The event counts as a visit and participates in cross-tenant penetration"
                                                               },
                                          "isActive":  {
                                                           "type":  "boolean"

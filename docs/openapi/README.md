@@ -1,56 +1,56 @@
-# OpenAPI 3.0 — структура спецификации
+# OpenAPI 3.0 — specification structure
 
-Точка входа — `../openapi.json`. Это индекс: `info`, `servers`, `tags`, `security` и карта
-`$ref` на внешние файлы. Каждый файл ≤ 300 строк.
+Entry point — `../openapi.json`. It is an index: `info`, `servers`, `tags`, `security`, and a `$ref`
+map to external files. Every file is ≤ 300 lines.
 
-## Проверка и сборка
+## Validate and bundle
 
 ```powershell
-# валидация (все внешние $ref разрешаются)
+# validate (all external $refs resolve)
 npx @redocly/cli lint docs/openapi.json
 
-# сборка в один файл
+# bundle into a single file
 npx @redocly/cli bundle docs/openapi.json --output docs/openapi.bundled.json
 
-# превью документации
+# preview the docs
 npx @redocly/cli preview-docs docs/openapi.json
 ```
 
-## paths/ — операции (90 эндпоинтов из `endpoint-registry.md`)
+## paths/ — operations (90 endpoints from `endpoint-registry.md`)
 
-| Файл | Раздел реестра | Эндпоинты |
+| File | Registry section | Endpoints |
 |---|---|---|
-| `auth.json` | 1. Аутентификация | login, refresh, logout, me |
-| `users.json` | 2. Пользователи | `/users`, `/users/{id}` |
-| `reference-tenants.json` | 3. Справочники | `/tenants`, `/tenants/{id}` |
-| `reference-tenant-categories.json` | 3. Справочники | `/tenant-categories*`, `/{id}/relations` |
-| `reference-projects.json` | 3. Справочники | `/projects`, `/projects/{id}` |
-| `reference-event-types.json` | 3. Справочники | `/event-types`, `/event-types/{id}` |
-| `reference-data-sources.json` | 3. Справочники | `/data-sources`, `/data-sources/{id}` |
-| `reference-data-source-types.json` | 3. Справочники | `/data-source-types`, `/{id}` |
-| `imports.json` | 4. Импорт | `/imports*`, `/data-sources/{id}/sync` |
-| `guests.json` | 5. Гости | `/guests`, `/{id}`, `/{id}/events`, `/{id}/contacts` |
-| `recommendations.json` | 5. Гости | `/{id}/recommendations*`, `/segments/{id}/recommendations` |
-| `identity-merge-candidates.json` | 6. Идентичность | `/merge-candidates*` (confirm/reject/revert) |
-| `identity-unmerge.json` | 6. Идентичность | `/guests/{id}/merge`, `/unmerge-blocks*` |
-| `segments.json` | 7. Сегменты | `/segment-templates`, `/segments`, `/segments/preview` |
-| `segments-detail.json` | 7. Сегменты | `/segments/{id}`, `/{id}/members`, `/{id}/versions`, `/{id}/recompute` |
-| `campaigns.json` | 8. Кампании | `/campaigns*`, `/{id}/results` |
-| `exports.json` | 9. Выгрузка | `/exports/preview`, `/exports`, `/exports/{id}` |
-| `exports-delivery.json` | 9. Выгрузка | `/exports/{id}/members`, `/{id}/download` |
-| `contact-limits.json` | 9. Выгрузка | `/contact-limits`, `/contact-limits/{id}` |
-| `analytics.json` | 10. Аналитика | `/dashboard/*`, `/tenants/{id}/aggregates`, `/data-quality/*` |
-| `audit.json` | 11. Аудит | `/audit-logs` |
-| `system.json` | 11. Служебные | `/healthz` |
+| `auth.json` | 1. Authentication | login, refresh, logout, me |
+| `users.json` | 2. Users | `/users`, `/users/{id}` |
+| `reference-tenants.json` | 3. Reference data | `/tenants`, `/tenants/{id}` |
+| `reference-tenant-categories.json` | 3. Reference data | `/tenant-categories*`, `/{id}/relations` |
+| `reference-projects.json` | 3. Reference data | `/projects`, `/projects/{id}` |
+| `reference-event-types.json` | 3. Reference data | `/event-types`, `/event-types/{id}` |
+| `reference-data-sources.json` | 3. Reference data | `/data-sources`, `/data-sources/{id}` |
+| `reference-data-source-types.json` | 3. Reference data | `/data-source-types`, `/{id}` |
+| `imports.json` | 4. Imports | `/imports*`, `/data-sources/{id}/sync` |
+| `guests.json` | 5. Guests | `/guests`, `/{id}`, `/{id}/events`, `/{id}/contacts` |
+| `recommendations.json` | 5. Guests | `/{id}/recommendations*`, `/segments/{id}/recommendations` |
+| `identity-merge-candidates.json` | 6. Identity | `/merge-candidates*` (confirm/reject/revert) |
+| `identity-unmerge.json` | 6. Identity | `/guests/{id}/merge`, `/unmerge-blocks*` |
+| `segments.json` | 7. Segments | `/segment-templates`, `/segments`, `/segments/preview` |
+| `segments-detail.json` | 7. Segments | `/segments/{id}`, `/{id}/members`, `/{id}/versions`, `/{id}/recompute` |
+| `campaigns.json` | 8. Campaigns | `/campaigns*`, `/{id}/results` |
+| `exports.json` | 9. Exports | `/exports/preview`, `/exports`, `/exports/{id}` |
+| `exports-delivery.json` | 9. Exports | `/exports/{id}/members`, `/{id}/download` |
+| `contact-limits.json` | 9. Exports | `/contact-limits`, `/contact-limits/{id}` |
+| `analytics.json` | 10. Analytics | `/dashboard/*`, `/tenants/{id}/aggregates`, `/data-quality/*` |
+| `audit.json` | 11. Audit | `/audit-logs` |
+| `system.json` | 11. Service | `/healthz` |
 
-## components/schemas/ — модели (113 схем)
+## components/schemas/ — models (113 schemas)
 
-| Файл | Сущности ER / назначение |
+| File | ER entities / purpose |
 |---|---|
 | `common.json` | `ErrorResponse`, `ErrorDetail`, `PageMeta`, `UserRole`, `Granularity`, `JobAccepted`, `HealthResponse` |
-| `users.json` | E-20 `User`, аутентификация (`LoginRequest`, `TokenResponse`, `MeResponse`) |
+| `users.json` | E-20 `User`, authentication (`LoginRequest`, `TokenResponse`, `MeResponse`) |
 | `reference-tenants.json` | E-4 `Tenant` + create/update/page |
-| `reference-tenant-categories.json` | E-6 `TenantCategory`, связи `adjacent`/`competitor` |
+| `reference-tenant-categories.json` | E-6 `TenantCategory`, `adjacent`/`competitor` relations |
 | `reference-projects.json` | E-7 `Project` |
 | `reference-event-types.json` | E-9 `EventType` |
 | `reference-data-sources.json` | E-5 `DataSource`, `DataSourceType`, `FieldMapping` |
@@ -60,25 +60,25 @@ npx @redocly/cli preview-docs docs/openapi.json
 | `recommendations.json` | E-15 `Recommendation`, `RecommendationFactor` |
 | `identity.json` | E-11 `MergeCandidate`, E-12 `UnmergeBlock` |
 | `segments.json` | E-3 `Segment`, `SegmentVersion`, `SegmentRule` |
-| `segment-requests.json` | E-3 запросы, preview, состав, шаблоны |
+| `segment-requests.json` | E-3 requests, preview, membership, templates |
 | `campaigns.json` | E-8 `Campaign`, `CampaignResults` |
 | `exports.json` | E-16 `Export`, preview/create |
 | `export-members.json` | E-17 `ExportMember`, E-18 `ContactLimit` |
-| `analytics.json` | Сводки: penetration, метрики |
-| `analytics-tenant.json` | Агрегаты R-3 (порог k=5), качество данных |
+| `analytics.json` | Dashboards: penetration, metrics |
+| `analytics-tenant.json` | R-3 aggregates (k = 5 threshold), data quality |
 | `audit.json` | E-21 `AuditLog` |
 
-## components/ — общие компоненты
+## components/ — shared components
 
-| Файл | Содержимое |
+| File | Contents |
 |---|---|
 | `security.json` | `bearerAuth` (JWT), `cookieAuth` (refresh) |
 | `parameters.json` | `IdPath`, `Page`, `PageSize`, `From`, `To`, `Granularity`, `IdempotencyKey` |
 | `responses.json` | `BadRequest`, `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `PayloadTooLarge`, `UnprocessableEntity`, `TooManyRequests`, `GatewayTimeout`, `NoContent` |
 
-## Правила при правках
+## Editing rules
 
-1. Новый эндпоинт — только если он есть в `endpoint-registry.md`.
-2. Схему кладём в тематический файл и добавляем строку-`$ref` в `../openapi.json`.
-3. Ссылки между файлами — относительные, с JSON Pointer: `./common.json#/PageMeta`.
-4. После правок обязательно `npx @redocly/cli lint docs/openapi.json`.
+1. Add an endpoint only if it exists in `endpoint-registry.md`.
+2. Put a schema in the matching topic file and add a `$ref` line to `../openapi.json`.
+3. Cross-file references are relative, with a JSON Pointer: `./common.json#/PageMeta`.
+4. Always run `npx @redocly/cli lint docs/openapi.json` after changes.

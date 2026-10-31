@@ -1,7 +1,7 @@
 {
     "ExportChannel":  {
                           "type":  "string",
-                          "description":  "Канал коммуникации. `sms` и `push` требуют телефон, `email` — email.",
+                          "description":  "Communication channel. `sms` and `push` require a phone, `email` requires an email.",
                           "enum":  [
                                        "sms",
                                        "push",
@@ -62,31 +62,31 @@
                                                      "inSegment":  {
                                                                        "type":  "integer",
                                                                        "minimum":  0,
-                                                                       "description":  "Всего в сегменте"
+                                                                       "description":  "Total in segment"
                                                                    },
                                                      "withContact":  {
                                                                          "type":  "integer",
                                                                          "minimum":  0,
-                                                                         "description":  "С контактом нужного канала"
+                                                                         "description":  "With a contact for the channel"
                                                                      },
                                                      "blockedByLimit":  {
                                                                             "type":  "integer",
                                                                             "minimum":  0,
-                                                                            "description":  "Исключено лимитом контактов"
+                                                                            "description":  "Excluded by contact limit"
                                                                         },
                                                      "control":  {
                                                                      "type":  "integer",
                                                                      "minimum":  0,
-                                                                     "description":  "В контрольной группе"
+                                                                     "description":  "In control group"
                                                                  },
                                                      "toSend":  {
                                                                     "type":  "integer",
                                                                     "minimum":  0,
-                                                                    "description":  "К отправке"
+                                                                    "description":  "To send"
                                                                 },
                                                      "appliedLimits":  {
                                                                            "type":  "array",
-                                                                           "description":  "Какие правила лимита применились",
+                                                                           "description":  "Which limit rules applied",
                                                                            "items":  {
                                                                                          "$ref": "./export-members.json#/ContactLimit"
                                                                                      }
@@ -174,7 +174,7 @@
                                       "controlSeed":  {
                                                           "type":  "integer",
                                                           "format":  "int64",
-                                                          "description":  "Seed детерминированного выбора контрольной группы"
+                                                          "description":  "Seed for deterministic control group selection"
                                                       },
                                       "totalInSegment":  {
                                                              "type":  "integer",
@@ -219,7 +219,7 @@
                                       "downloadUrl":  {
                                                           "type":  "string",
                                                           "nullable":  true,
-                                                          "description":  "Относительный путь к CSV, если выгрузка готова",
+                                                          "description":  "Relative CSV path when the export is ready",
                                                           "example":  "/api/v1/exports/x-1/download"
                                                       }
                                   }

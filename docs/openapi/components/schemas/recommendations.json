@@ -83,8 +83,8 @@
                                                         },
                                               "explanation":  {
                                                                   "type":  "string",
-                                                                  "description":  "Снимок текста обоснования на момент расчёта",
-                                                                  "example":  "Похожие гости ходят в Кинотеатр Синема; Спорт и Развлечения — смежные категории; 2-й этаж → 3-й"
+                                                                  "description":  "Snapshot of the explanation text at computation time",
+                                                                  "example":  "Similar guests visit Cinema; Sports and Entertainment are adjacent categories; floor 2 → floor 3"
                                                               },
                                               "algorithmVersion":  {
                                                                        "type":  "string",
@@ -147,7 +147,7 @@
                                                      "guestCount":  {
                                                                         "type":  "integer",
                                                                         "minimum":  0,
-                                                                        "description":  "Сколько гостей сегмента получили этого арендатора"
+                                                                        "description":  "How many segment guests were recommended this tenant"
                                                                     },
                                                      "avgScore":  {
                                                                       "type":  "number",

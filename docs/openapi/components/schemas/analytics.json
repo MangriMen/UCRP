@@ -10,17 +10,17 @@
                                                  "one":  {
                                                              "type":  "integer",
                                                              "minimum":  0,
-                                                             "description":  "Гостей с 1 арендатором"
+                                                             "description":  "Guests with 1 tenant"
                                                          },
                                                  "two":  {
                                                              "type":  "integer",
                                                              "minimum":  0,
-                                                             "description":  "Гостей с 2 арендаторами"
+                                                             "description":  "Guests with 2 tenants"
                                                          },
                                                  "threePlus":  {
                                                                    "type":  "integer",
                                                                    "minimum":  0,
-                                                                   "description":  "Гостей с 3 и более арендаторами"
+                                                                   "description":  "Guests with 3 or more tenants"
                                                                }
                                              }
                           },
@@ -42,7 +42,7 @@
                                                                   "penetrationRate":  {
                                                                                           "type":  "number",
                                                                                           "format":  "double",
-                                                                                          "description":  "Доля гостей с 2 и более арендаторами"
+                                                                                          "description":  "Share of guests with 2 or more tenants"
                                                                                       }
                                                               }
                                            }
@@ -76,7 +76,7 @@
                                                  "penetrationRate":  {
                                                                          "type":  "number",
                                                                          "format":  "double",
-                                                                         "description":  "Доля активных гостей с 2 и более арендаторами"
+                                                                         "description":  "Share of active guests with 2 or more tenants"
                                                                      },
                                                  "series":  {
                                                                 "type":  "array",
@@ -104,17 +104,17 @@
                                                 "matchRate":  {
                                                                   "type":  "number",
                                                                   "format":  "double",
-                                                                  "description":  "События с guestId ÷ все принятые события за период (цель ≥ 0.70)"
+                                                                  "description":  "Events with guestId ÷ all accepted events in the period (target ≥ 0.70)"
                                                               },
                                                 "disputedMergeRate":  {
                                                                           "type":  "number",
                                                                           "format":  "double",
-                                                                          "description":  "reverted ÷ (auto_merged + confirmed + reverted) (цель \u003c 0.01)"
+                                                                          "description":  "reverted ÷ (auto_merged + confirmed + reverted) (target < 0.01)"
                                                                       },
                                                 "segmentToExportMedianSeconds":  {
                                                                                      "type":  "number",
                                                                                      "format":  "double",
-                                                                                     "description":  "Медиана времени от создания версии сегмента до первой выгрузки (цель ≤ 300 с)"
+                                                                                     "description":  "Median time from segment version creation to the first export (target ≤ 300 s)"
                                                                                  },
                                                 "segmentToExportP95Seconds":  {
                                                                                   "type":  "number",
@@ -123,12 +123,12 @@
                                                 "conversionRate":  {
                                                                        "type":  "number",
                                                                        "format":  "double",
-                                                                       "description":  "Доля получателей с визитом у целевого арендатора в окне атрибуции (цель ≥ 0.03)"
+                                                                       "description":  "Share of recipients with a visit to the target tenant within the attribution window (target ≥ 0.03)"
                                                                    },
                                                 "incrementalRate":  {
                                                                         "type":  "number",
                                                                         "format":  "double",
-                                                                        "description":  "Конверсия получателей минус конверсия контрольной группы (цель \u003e 0)"
+                                                                        "description":  "Recipient conversion minus control group conversion (target > 0)"
                                                                     },
                                                 "sampleSizes":  {
                                                                     "type":  "object",

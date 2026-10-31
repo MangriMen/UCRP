@@ -6,8 +6,8 @@
                                                                       "Audit"
                                                                   ],
                                                          "operationId":  "listAuditLogs",
-                                                         "summary":  "Журнал аудита",
-                                                         "description":  "Журнал append-only. Фильтры по сущности, автору и периоду. Каждая запись содержит `requestId` для сквозной трассировки.",
+                                                         "summary":  "Audit log",
+                                                         "description":  "Append-only log. Filters by entity, actor, and period. Each record contains `requestId` for end-to-end tracing.",
                                                          "x-roles":  [
                                                                          "R-2",
                                                                          "R-4"
@@ -34,7 +34,7 @@
                                                                             {
                                                                                 "name":  "actor",
                                                                                 "in":  "query",
-                                                                                "description":  "Идентификатор пользователя-автора",
+                                                                                "description":  "Actor user identifier",
                                                                                 "schema":  {
                                                                                                "type":  "string"
                                                                                            }
@@ -62,7 +62,7 @@
                                                                         ],
                                                          "responses":  {
                                                                            "200":  {
-                                                                                       "description":  "Страница журнала",
+                                                                                       "description":  "Audit log page",
                                                                                        "content":  {
                                                                                                        "application/json":  {
                                                                                                                                 "schema":  {

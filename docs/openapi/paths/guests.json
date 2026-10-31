@@ -6,8 +6,8 @@
                                                                   "Guests"
                                                               ],
                                                      "operationId":  "searchGuests",
-                                                     "summary":  "Поиск гостей",
-                                                     "description":  "Поиск по телефону, email, карте или имени. Введённое значение нормализуется теми же правилами, что и при импорте, поэтому `+7 900 123-45-67` и `89001234567` находят одного гостя. Слитые профили (`status=merged`) в выдачу не попадают.",
+                                                     "summary":  "Search guests",
+                                                     "description":  "Searches by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Merged profiles (`status=merged`) are excluded from results.",
                                                      "x-roles":  [
                                                                      "R-1",
                                                                      "R-4"
@@ -20,7 +20,7 @@
                                                                             "name":  "q",
                                                                             "in":  "query",
                                                                             "required":  true,
-                                                                            "description":  "Телефон, email, карта или имя",
+                                                                            "description":  "Phone, email, card, or name",
                                                                             "schema":  {
                                                                                            "type":  "string",
                                                                                            "minLength":  2,
@@ -36,7 +36,7 @@
                                                                     ],
                                                      "responses":  {
                                                                        "200":  {
-                                                                                   "description":  "Страница результатов поиска",
+                                                                                   "description":  "Search result page",
                                                                                    "content":  {
                                                                                                    "application/json":  {
                                                                                                                             "schema":  {
@@ -68,8 +68,8 @@
                                                                        "Guests"
                                                                    ],
                                                           "operationId":  "getGuest",
-                                                          "summary":  "Единый профиль гостя",
-                                                          "description":  "Возвращает идентификаторы, число посещённых арендаторов (`tenantCount`), сегменты и агрегаты ленты. Если гость был поглощён склейкой, ответ 200 содержит `mergedIntoId` — интерфейс перенаправляется на актуальный профиль.",
+                                                          "summary":  "Unified guest profile",
+                                                          "description":  "Returns identifiers, the number of visited tenants (`tenantCount`), segments, and feed aggregates. If the guest was absorbed by a merge, the 200 response contains `mergedIntoId` and the UI redirects to the current profile.",
                                                           "x-roles":  [
                                                                           "R-1",
                                                                           "R-4"
@@ -79,7 +79,7 @@
                                                                    ],
                                                           "responses":  {
                                                                             "200":  {
-                                                                                        "description":  "Профиль гостя",
+                                                                                        "description":  "Guest profile",
                                                                                         "content":  {
                                                                                                         "application/json":  {
                                                                                                                                  "schema":  {
@@ -104,8 +104,8 @@
                                                                           "Guests"
                                                                       ],
                                                              "operationId":  "deleteGuest",
-                                                             "summary":  "Soft-delete гостя",
-                                                             "description":  "Ставит `status=deleted` и `deletedAt`. Физического удаления нет: события и идентификаторы сохраняются для обратимости и аудита.",
+                                                             "summary":  "Soft-delete a guest",
+                                                             "description":  "Sets `status=deleted` and `deletedAt`. There is no hard delete: events and identifiers are preserved for reversibility and audit.",
                                                              "x-roles":  [
                                                                              "R-4"
                                                                          ],
@@ -139,8 +139,8 @@
                                                                               "Guests"
                                                                           ],
                                                                  "operationId":  "listGuestEvents",
-                                                                 "summary":  "Лента событий гостя",
-                                                                 "description":  "Сортировка по `occurredAt` по убыванию. Каждая запись содержит тип, арендатора, проект, дату и сумму.",
+                                                                 "summary":  "Guest event feed",
+                                                                 "description":  "Sorted by `occurredAt` descending. Each record contains type, tenant, project, date, and amount.",
                                                                  "x-roles":  [
                                                                                  "R-1",
                                                                                  "R-4"
@@ -182,7 +182,7 @@
                                                                                 ],
                                                                  "responses":  {
                                                                                    "200":  {
-                                                                                               "description":  "Страница событий",
+                                                                                               "description":  "Event page",
                                                                                                "content":  {
                                                                                                                "application/json":  {
                                                                                                                                         "schema":  {
@@ -214,8 +214,8 @@
                                                                                 "Guests"
                                                                             ],
                                                                    "operationId":  "listGuestContacts",
-                                                                   "summary":  "История контактов гостя",
-                                                                   "description":  "Записи `contact_log` по всем выгрузкам. Контрольная группа в контакты не попадает.",
+                                                                   "summary":  "Guest contact history",
+                                                                   "description":  "`contact_log` records across all exports. The control group is not logged as contacts.",
                                                                    "x-roles":  [
                                                                                    "R-1",
                                                                                    "R-4"
@@ -234,7 +234,7 @@
                                                                                   ],
                                                                    "responses":  {
                                                                                      "200":  {
-                                                                                                 "description":  "Страница контактов",
+                                                                                                 "description":  "Contact page",
                                                                                                  "content":  {
                                                                                                                  "application/json":  {
                                                                                                                                           "schema":  {

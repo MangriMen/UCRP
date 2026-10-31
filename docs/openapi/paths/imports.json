@@ -6,8 +6,8 @@
                                                                     "Imports"
                                                                 ],
                                                        "operationId":  "createImport",
-                                                       "summary":  "Загрузить файл источника",
-                                                       "description":  "Принимает multipart-запрос, считает sha256 потоково и создаёт `ImportBatch` в статусе `queued`, ставит задание `import.process` (`dedupKey = import:{batchId}`) в одной транзакции с аудитом. Ответ 202 приходит сразу, интерфейс опрашивает `GET /imports/{id}` каждые 2 с.\n\nЕсли тот же файл (sha256) уже загружался для этого источника, возвращается 200 с существующим `batchId` и `duplicate=true`, новых событий не создаётся.\n\nОграничения: до 100 000 строк; неподдерживаемый формат или отсутствие обязательных колонок по маппингу → 422 без создания событий.",
+                                                       "summary":  "Upload a source file",
+                                                       "description":  "Accepts a multipart request, streams the sha256, and creates an `ImportBatch` with status `queued`, enqueuing the `import.process` job (`dedupKey = import:{batchId}`) in the same transaction as the audit record. The 202 response returns immediately and the UI polls `GET /imports/{id}` every 2 s.\n\nIf the same file (sha256) was already uploaded for this source, a 200 is returned with the existing `batchId` and `duplicate=true`, and no new events are created.\n\nLimits: up to 100,000 rows; an unsupported format or missing required columns per the mapping → 422 without creating events.",
                                                        "x-roles":  [
                                                                        "R-4"
                                                                    ],
@@ -27,12 +27,12 @@
                                                                                                                                       "properties":  {
                                                                                                                                                          "data_source_id":  {
                                                                                                                                                                                 "type":  "string",
-                                                                                                                                                                                "description":  "Идентификатор источника (E-5)"
+                                                                                                                                                                                "description":  "Source identifier (E-5)"
                                                                                                                                                                             },
                                                                                                                                                          "file":  {
                                                                                                                                                                       "type":  "string",
                                                                                                                                                                       "format":  "binary",
-                                                                                                                                                                      "description":  "CSV или XLSX, UTF-8"
+                                                                                                                                                                      "description":  "CSV or XLSX, UTF-8"
                                                                                                                                                                   }
                                                                                                                                                      }
                                                                                                                                   }
@@ -41,7 +41,7 @@
                                                                        },
                                                        "responses":  {
                                                                          "200":  {
-                                                                                     "description":  "Дубликат файла: возвращается существующая загрузка",
+                                                                                     "description":  "Duplicate file: the existing import is returned",
                                                                                      "content":  {
                                                                                                      "application/json":  {
                                                                                                                               "schema":  {
@@ -51,7 +51,7 @@
                                                                                                  }
                                                                                  },
                                                                          "202":  {
-                                                                                     "description":  "Файл принят и поставлен в очередь",
+                                                                                     "description":  "File accepted and queued",
                                                                                      "content":  {
                                                                                                      "application/json":  {
                                                                                                                               "schema":  {
@@ -85,7 +85,7 @@
                                                                    "Imports"
                                                                ],
                                                       "operationId":  "listImports",
-                                                      "summary":  "Список загрузок",
+                                                      "summary":  "List imports",
                                                       "x-roles":  [
                                                                       "R-4",
                                                                       "R-2"
@@ -118,7 +118,7 @@
                                                                      ],
                                                       "responses":  {
                                                                         "200":  {
-                                                                                    "description":  "Страница загрузок",
+                                                                                    "description":  "Import page",
                                                                                     "content":  {
                                                                                                     "application/json":  {
                                                                                                                              "schema":  {
@@ -147,8 +147,8 @@
                                                                         "Imports"
                                                                     ],
                                                            "operationId":  "getImport",
-                                                           "summary":  "Статус и счётчики загрузки",
-                                                           "description":  "Инвариант: `acceptedRows + rejectedRows + duplicateRows = totalRows`. Статус `completed_with_errors` ставится, если `rejectedRows \u003e 0`.",
+                                                           "summary":  "Import status and counters",
+                                                           "description":  "Invariant: `acceptedRows + rejectedRows + duplicateRows = totalRows`. Status `completed_with_errors` is set when `rejectedRows > 0`.",
                                                            "x-roles":  [
                                                                            "R-4",
                                                                            "R-2"
@@ -158,7 +158,7 @@
                                                                     ],
                                                            "responses":  {
                                                                              "200":  {
-                                                                                         "description":  "Загрузка",
+                                                                                         "description":  "Import",
                                                                                          "content":  {
                                                                                                          "application/json":  {
                                                                                                                                   "schema":  {
@@ -190,8 +190,8 @@
                                                                                       "Imports"
                                                                                   ],
                                                                          "operationId":  "listRejectedRows",
-                                                                         "summary":  "Отклонённые строки с причиной",
-                                                                         "description":  "Коды причин: `bad_date`, `no_external_id`, `bad_amount`, `unknown_event_type`, `bad_phone`. При `format=csv` возвращается файл для скачивания.",
+                                                                         "summary":  "Rejected rows with reasons",
+                                                                         "description":  "Reason codes: `bad_date`, `no_external_id`, `bad_amount`, `unknown_event_type`, `bad_phone`. With `format=csv` a downloadable file is returned.",
                                                                          "x-roles":  [
                                                                                          "R-4"
                                                                                      ],
@@ -220,7 +220,7 @@
                                                                                         ],
                                                                          "responses":  {
                                                                                            "200":  {
-                                                                                                       "description":  "Страница отклонённых строк или CSV",
+                                                                                                       "description":  "Rejected row page or CSV",
                                                                                                        "content":  {
                                                                                                                        "application/json":  {
                                                                                                                                                 "schema":  {
@@ -258,8 +258,8 @@
                                                                                    "Imports"
                                                                                ],
                                                                       "operationId":  "syncDataSource",
-                                                                      "summary":  "Ручной запуск подтягивания по API-источнику",
-                                                                      "description":  "Ставит задание `connector.pull` с `dedupKey = pull:{sourceId}:{window}`. Если для того же окна синхронизация уже идёт, возвращается 409 `sync_in_progress`.",
+                                                                      "summary":  "Manually trigger a pull from an API source",
+                                                                      "description":  "Enqueues a `connector.pull` job with `dedupKey = pull:{sourceId}:{window}`. If a sync for the same window is already running, returns 409 `sync_in_progress`.",
                                                                       "x-roles":  [
                                                                                       "R-4"
                                                                                   ],
@@ -268,7 +268,7 @@
                                                                                ],
                                                                       "responses":  {
                                                                                         "202":  {
-                                                                                                    "description":  "Синхронизация поставлена в очередь",
+                                                                                                    "description":  "Sync queued",
                                                                                                     "content":  {
                                                                                                                     "application/json":  {
                                                                                                                                              "schema":  {

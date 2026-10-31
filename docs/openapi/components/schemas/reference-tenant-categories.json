@@ -58,7 +58,7 @@
                               },
     "CategoryRelationType":  {
                                  "type":  "string",
-                                 "description":  "`adjacent` — смежная категория (повышает оценку), `competitor` — прямой конкурент (исключает кандидата)",
+                                 "description":  "`adjacent` — adjacent category (boosts the score), `competitor` — direct competitor (excludes the candidate)",
                                  "enum":  [
                                               "adjacent",
                                               "competitor"
@@ -90,7 +90,7 @@
                                                                         "minimum":  0,
                                                                         "maximum":  100,
                                                                         "nullable":  true,
-                                                                        "description":  "Вес связи в процентах для скоринга"
+                                                                        "description":  "Relation weight in percent for scoring"
                                                                     }
                                                   }
                                },
@@ -120,7 +120,7 @@
                                                   "properties":  {
                                                                      "relations":  {
                                                                                        "type":  "array",
-                                                                                       "description":  "Полный новый набор связей категории",
+                                                                                       "description":  "Complete new set of category relations",
                                                                                        "items":  {
                                                                                                      "$ref": "./reference-tenant-categories.json#/TenantCategoryRelation"
                                                                                                  }

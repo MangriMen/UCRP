@@ -15,7 +15,7 @@
                                                            "properties":  {
                                                                               "code":  {
                                                                                            "type":  "string",
-                                                                                           "description":  "Машиночитаемый код ошибки",
+                                                                                           "description":  "Machine-readable error code",
                                                                                            "enum":  [
                                                                                                         "validation_error",
                                                                                                         "invalid_credentials",
@@ -50,18 +50,18 @@
                                                                                        },
                                                                               "message":  {
                                                                                               "type":  "string",
-                                                                                              "description":  "Сообщение для пользователя на русском языке"
+                                                                                              "description":  "Human-readable message"
                                                                                           },
                                                                               "details":  {
                                                                                               "type":  "array",
-                                                                                              "description":  "Детализация по полям (для 400 и 422)",
+                                                                                              "description":  "Field-level details (for 400 and 422)",
                                                                                               "items":  {
                                                                                                             "$ref": "./common.json#/ErrorDetail"
                                                                                                         }
                                                                                           },
                                                                               "request_id":  {
                                                                                                  "type":  "string",
-                                                                                                 "description":  "Идентификатор запроса для трассировки и поддержки",
+                                                                                                 "description":  "Request identifier for tracing and support",
                                                                                                  "example":  "01J9Z6Q2X8V4M3K7T1R5N0B2CD"
                                                                                              }
                                                                           }
@@ -77,13 +77,13 @@
                         "properties":  {
                                            "field":  {
                                                          "type":  "string",
-                                                         "description":  "Путь к полю в теле запроса или имя query-параметра",
+                                                         "description":  "Path to the request body field or the query parameter name",
                                                          "example":  "rule.wasNot"
                                                      },
                                            "reason":  {
                                                           "type":  "string",
-                                                          "description":  "Причина на русском языке",
-                                                          "example":  "Арендатор указан одновременно в «был» и «не был»"
+                                                          "description":  "Reason",
+                                                          "example":  "Tenant listed in both \"was\" and \"wasNot\""
                                                       }
                                        }
                     },
@@ -121,7 +121,7 @@
                  },
     "UserRole":  {
                      "type":  "string",
-                     "description":  "Роль пользователя. `marketer` = R-1, `manager` = R-2, `tenant` = R-3, `analyst` = R-4, `system` = R-6.",
+                     "description":  "User role. `marketer` = R-1, `manager` = R-2, `tenant` = R-3, `analyst` = R-4, `system` = R-6.",
                      "enum":  [
                                   "marketer",
                                   "manager",
