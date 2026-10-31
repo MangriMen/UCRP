@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -137,6 +138,34 @@ func TestAccessGrantLifecycle(t *testing.T) {
 	getStatus(ownReferencePath, 403)
 
 	grantID := createGrant(grantBody(now.Add(-time.Minute), now.Add(time.Hour)))
+	page, err := managerClient.Get(ctx, grantPath, url.Values{"subject_type": {"tenant"}, "subject_id": {w.tenantA.ID}, "page": {"2"}, "page_size": {"1"}})
+	if err != nil {
+		t.Fatalf("list grants: %v", err)
+	}
+	s.RequireStatus(page, 200, "manager lists tenant grants")
+	var pageBody struct {
+		Items []struct {
+			ID string `json:"id"`
+		} `json:"items"`
+		Meta struct {
+			Page  int `json:"page"`
+			Total int `json:"total"`
+		} `json:"meta"`
+	}
+	if err := page.Decode(&pageBody); err != nil {
+		t.Fatalf("decode grant page: %v", err)
+	}
+	if len(pageBody.Items) != 1 || pageBody.Meta.Page != 2 || pageBody.Meta.Total != 2 {
+		t.Fatalf("grant page must report the honest total: %s", page.Snippet())
+	}
+	unknownTenant := grantBody(now.Add(-time.Minute), now.Add(time.Hour))
+	unknownTenant["subjectId"] = s.Reg.NewID()
+	unknownTenant["scopes"] = []map[string]string{{"type": "tenant", "value": unknownTenant["subjectId"].(string)}}
+	missing, err := managerClient.Post(ctx, grantPath, unknownTenant)
+	if err != nil {
+		t.Fatalf("grant for unknown tenant: %v", err)
+	}
+	s.RequireStatus(missing, 404, "grant for unknown tenant")
 	own := getStatus(ownPath, 200)
 	getStatus(ownPath+"?metrics=visits_count", 200)
 	getStatus(ownPath+"?metrics=metric.cross_tenant_distribution.read", 403)

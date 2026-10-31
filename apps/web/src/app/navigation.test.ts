@@ -67,6 +67,13 @@ describe('navigationFor', () => {
     expect(titles('tenant')).not.toContain('Сегменты')
   })
 
+  it('shows access grants to holders of access.grant.read only', () => {
+    expect(titles('manager')).toContain('Доступы')
+    expect(titles('analyst')).not.toContain('Доступы')
+    expect(titles('marketer')).not.toContain('Доступы')
+    expect(titles('tenant')).not.toContain('Доступы')
+  })
+
   it('hides the tenant entry from staff', () => {
     expect(titles('manager')).not.toContain('Мой арендатор')
   })

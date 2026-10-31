@@ -16,11 +16,14 @@ paths:
                 type: object
                 required:
                   - items
+                  - meta
                 properties:
                   items:
                     type: array
                     items:
                       $ref: ../components/schemas/access.yaml#/Grant
+                  meta:
+                    $ref: ../components/schemas/common.yaml#/PageMeta
         '400':
           $ref: ../components/responses.yaml#/BadRequest
         '401':
@@ -32,11 +35,17 @@ paths:
         '409':
           $ref: ../components/responses.yaml#/Conflict
       parameters:
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
         - name: subject_type
           in: query
           required: false
           schema:
             type: string
+            enum:
+              - user
+              - tenant
+              - role
         - name: subject_id
           in: query
           required: false
@@ -47,6 +56,12 @@ paths:
           required: false
           schema:
             type: string
+            enum:
+              - draft
+              - active
+              - suspended
+              - revoked
+              - expired
         - name: limit
           in: query
           schema:

@@ -46,9 +46,10 @@ func TestAccessAuditFiltersAndPagination(t *testing.T) {
 		}
 	}
 	api := s.As(manager.Email, manager.Password)
-	get := func(query url.Values) []struct {
+	type auditItem struct {
 		Action string `json:"action"`
-	} {
+	}
+	get := func(query url.Values) ([]auditItem, int) {
 		t.Helper()
 		response, err := api.Get(ctx, "/api/v1/access/audit", query)
 		if err != nil {
@@ -56,29 +57,33 @@ func TestAccessAuditFiltersAndPagination(t *testing.T) {
 		}
 		s.RequireStatus(response, 200, "GET access/audit")
 		var body struct {
-			Items []struct {
-				Action string `json:"action"`
-			} `json:"items"`
+			Items []auditItem `json:"items"`
+			Meta  struct {
+				Total int `json:"total"`
+			} `json:"meta"`
 		}
 		if err := response.Decode(&body); err != nil {
 			t.Fatalf("decode audit: %v", err)
 		}
-		return body.Items
+		return body.Items, body.Meta.Total
 	}
 	query := url.Values{"actor": {manager.ID}, "from": {now.Add(-3 * time.Minute).Format(time.RFC3339)},
 		"to": {now.Format(time.RFC3339)}, "limit": {"1"}, "offset": {"0"}}
-	items := get(query)
+	items, total := get(query)
 	if len(items) != 1 || items[0].Action != "access.denied" {
 		t.Fatalf("first page should contain the newest access denial: %+v", items)
 	}
+	if total != 2 {
+		t.Fatalf("audit total = %d, want 2 access entries of the actor", total)
+	}
 	query.Set("offset", "1")
-	items = get(query)
+	items, _ = get(query)
 	if len(items) != 1 || items[0].Action != "access.grant.create" {
 		t.Fatalf("second page should contain the grant event: %+v", items)
 	}
 	query.Set("offset", "0")
 	query.Set("grant_id", grantID)
-	items = get(query)
+	items, _ = get(query)
 	if len(items) != 1 || items[0].Action != "access.grant.create" {
 		t.Fatalf("grant filter included a denial or unrelated audit entry: %+v", items)
 	}

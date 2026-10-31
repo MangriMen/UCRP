@@ -115,8 +115,8 @@ func (r *grantTestRepository) GetGrant(context.Context, string) (*domain.AccessG
 	return &grant, nil
 }
 
-func (r *grantTestRepository) ListGrants(context.Context, domain.AccessGrantFilter) ([]domain.AccessGrant, error) {
-	return nil, nil
+func (r *grantTestRepository) ListGrants(context.Context, domain.AccessGrantFilter) ([]domain.AccessGrant, int, error) {
+	return nil, 0, nil
 }
 
 func (r *grantTestRepository) CreateGrant(context.Context, *domain.AccessGrant, int64, *domain.AuditLog) error {

@@ -36,7 +36,7 @@ type AccessAuditEntry struct {
 }
 
 type accessAuditLister interface {
-	ListAccessAudit(context.Context, string, string, *time.Time, *time.Time, int, int) ([]domain.AuditLog, error)
+	ListAccessAudit(context.Context, string, string, *time.Time, *time.Time, int, int) ([]domain.AuditLog, int, error)
 }
 
 func (s *AccessGrantService) Presets(ctx context.Context, actor domain.Principal) ([]AccessPreset, error) {
@@ -82,16 +82,21 @@ func (s *AccessGrantService) Presets(ctx context.Context, actor domain.Principal
 	return result, nil
 }
 
+func (s *AccessGrantService) requireTenant(ctx context.Context, tenantID string) error {
+	if s.tenants == nil {
+		return errors.New("tenant repository is required")
+	}
+	_, err := s.tenants.GetByID(ctx, tenantID)
+	return err
+}
+
 func (s *AccessGrantService) subjectPrincipal(ctx context.Context, subjectType, subjectID string) (domain.Principal, error) {
 	tenantID, err := s.subjectTenant(ctx, subjectType, subjectID)
 	if err != nil {
 		return domain.Principal{}, err
 	}
 	if subjectType == "tenant" {
-		if s.tenants == nil {
-			return domain.Principal{}, errors.New("tenant repository is required")
-		}
-		if _, err := s.tenants.GetByID(ctx, tenantID); err != nil {
+		if err := s.requireTenant(ctx, tenantID); err != nil {
 			return domain.Principal{}, err
 		}
 	}
@@ -213,33 +218,33 @@ func (s *AccessGrantService) Simulate(ctx context.Context, actor domain.Principa
 		Permissions: effectivePermissions(target, ceiling, grants, policy.now), UserGrantsIncluded: request.SubjectType == "user"}, nil
 }
 
-func (s *AccessGrantService) Audit(ctx context.Context, actor domain.Principal, grantID, actorID string, from, to *time.Time, limit, offset int) ([]AccessAuditEntry, error) {
+func (s *AccessGrantService) Audit(ctx context.Context, actor domain.Principal, grantID, actorID string, from, to *time.Time, limit, offset int) ([]AccessAuditEntry, int, error) {
 	if actor.Role != domain.RoleManager && actor.Role != domain.RoleAnalyst {
-		return nil, domain.ErrForbidden
+		return nil, 0, domain.ErrForbidden
 	}
 	decision, err := s.Authorize(ctx, actor, "audit.read", access.Resource{})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if !decision.Allowed {
-		return nil, domain.ErrForbidden
+		return nil, 0, domain.ErrForbidden
 	}
 	if s.auditRepo == nil {
-		return nil, errors.New("audit repository is required")
+		return nil, 0, errors.New("audit repository is required")
 	}
 	if from != nil && to != nil && from.After(*to) || offset < 0 || offset > 10000 {
-		return nil, domain.ErrValidation
+		return nil, 0, domain.ErrValidation
 	}
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
 	lister, ok := s.auditRepo.(accessAuditLister)
 	if !ok {
-		return nil, errors.New("access audit repository is required")
+		return nil, 0, errors.New("access audit repository is required")
 	}
-	logs, err := lister.ListAccessAudit(ctx, grantID, actorID, from, to, limit, offset)
+	logs, total, err := lister.ListAccessAudit(ctx, grantID, actorID, from, to, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	result := make([]AccessAuditEntry, 0, len(logs))
 	for _, entry := range logs {
@@ -249,5 +254,5 @@ func (s *AccessGrantService) Audit(ctx context.Context, actor domain.Principal, 
 		}
 		result = append(result, AccessAuditEntry{ID: entry.ID, ActorID: entry.ActorUserID, ActorRole: entry.ActorRole, Action: entry.Action, EntityID: entry.EntityID, Details: details, RequestID: entry.RequestID, CreatedAt: entry.CreatedAt})
 	}
-	return result, nil
+	return result, total, nil
 }

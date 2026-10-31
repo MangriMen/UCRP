@@ -77,11 +77,11 @@ func (h *AccessGrantHandler) Audit(w http.ResponseWriter, r *http.Request) {
 		}
 		to = &value
 	}
-	limit, offset := pageParams(r)
-	items, err := h.access.Audit(r.Context(), principal, query.Get("grant_id"), query.Get("actor"), from, to, limit, offset)
+	limit, offset := accessPageParams(r)
+	items, total, err := h.access.Audit(r.Context(), principal, query.Get("grant_id"), query.Get("actor"), from, to, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	writePage(w, items, limit, offset, total)
 }

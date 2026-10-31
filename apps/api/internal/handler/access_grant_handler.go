@@ -12,6 +12,11 @@ import (
 	"github.com/MangriMen/UCRP/internal/service"
 )
 
+const (
+	accessPageSize    = 50
+	maxAccessPageSize = 200
+)
+
 type AccessGrantHandler struct {
 	access *service.AccessGrantService
 }
@@ -38,15 +43,23 @@ func (h *AccessGrantHandler) List(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	limit, offset := pageParams(r)
+	limit, offset := accessPageParams(r)
 	query := r.URL.Query()
 	filter := domain.AccessGrantFilter{SubjectType: query.Get("subject_type"), SubjectID: query.Get("subject_id"), Status: query.Get("status"), Limit: limit, Offset: offset}
-	items, err := h.access.List(r.Context(), principal, filter)
+	items, total, err := h.access.List(r.Context(), principal, filter)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	writePage(w, items, limit, offset, total)
+}
+
+func accessPageParams(r *http.Request) (int, int) {
+	limit, offset := pageParams(withDefaultPageSize(r, accessPageSize))
+	if limit > maxAccessPageSize {
+		limit = maxAccessPageSize
+	}
+	return limit, offset
 }
 
 func (h *AccessGrantHandler) Get(w http.ResponseWriter, r *http.Request) {

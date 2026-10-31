@@ -136,11 +136,14 @@ paths:
                 type: object
                 required:
                   - items
+                  - meta
                 properties:
                   items:
                     type: array
                     items:
                       $ref: ../components/schemas/access-results.yaml#/AuditEntry
+                  meta:
+                    $ref: ../components/schemas/common.yaml#/PageMeta
         '400':
           $ref: ../components/responses.yaml#/BadRequest
         '401':
@@ -148,6 +151,8 @@ paths:
         '403':
           $ref: ../components/responses.yaml#/Forbidden
       parameters:
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
         - name: grant_id
           in: query
           required: false

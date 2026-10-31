@@ -99,21 +99,31 @@ func (r *AccessSQL) GetGrant(ctx context.Context, id string) (*domain.AccessGran
 	return grant, nil
 }
 
-func (r *AccessSQL) ListGrants(ctx context.Context, filter domain.AccessGrantFilter) ([]domain.AccessGrant, error) {
+const accessGrantFilterWhere = `WHERE ($1 = '' OR subject_type = $1) AND ($2 = '' OR subject_id = $2) AND ($3 = '' OR status = $3)`
+
+func (r *AccessSQL) ListGrants(ctx context.Context, filter domain.AccessGrantFilter) ([]domain.AccessGrant, int, error) {
 	if filter.Limit <= 0 || filter.Limit > 200 {
 		filter.Limit = 50
 	}
 	if filter.Offset < 0 {
 		filter.Offset = 0
 	}
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM access_grant `+accessGrantFilterWhere,
+		filter.SubjectType, filter.SubjectID, filter.Status).Scan(&total); err != nil {
+		return nil, 0, err
+	}
 	rows, err := r.db.QueryContext(ctx, `SELECT `+accessGrantColumns+`
-		FROM access_grant
-		WHERE ($1 = '' OR subject_type = $1) AND ($2 = '' OR subject_id = $2) AND ($3 = '' OR status = $3)
+		FROM access_grant `+accessGrantFilterWhere+`
 		ORDER BY created_at DESC, id LIMIT $4 OFFSET $5`, filter.SubjectType, filter.SubjectID, filter.Status, filter.Limit, filter.Offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return r.collectGrants(ctx, rows)
+	grants, err := r.collectGrants(ctx, rows)
+	if err != nil {
+		return nil, 0, err
+	}
+	return grants, total, nil
 }
 
 func (r *AccessSQL) collectGrants(ctx context.Context, rows *sql.Rows) ([]domain.AccessGrant, error) {

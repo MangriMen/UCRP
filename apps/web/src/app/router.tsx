@@ -1,6 +1,11 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router'
 import { AccessGuard } from '@/entities/user'
 import { AcceptInvitationPage } from '@/pages/accept-invitation'
+import { AccessAuditPage } from '@/pages/access-audit'
+import { AccessEffectivePage } from '@/pages/access-effective'
+import { AccessGrantDetailsPage } from '@/pages/access-grant-details'
+import { AccessGrantCreatePage, AccessGrantEditPage } from '@/pages/access-grant-form'
+import { AccessGrantsPage } from '@/pages/access-grants'
 import { AdminDictionariesPage } from '@/pages/admin-dictionaries'
 import { AdminUsersPage } from '@/pages/admin-users'
 import { AuditLogPage } from '@/pages/audit-log'
@@ -115,6 +120,26 @@ export const router = createBrowserRouter([
           {
             element: <AccessGuard permission="audit.read" />,
             children: [{ path: 'admin/audit', element: <AuditLogPage /> }],
+          },
+          {
+            element: <AccessGuard permission="access.grant.read" />,
+            children: [
+              { path: 'access', element: <Navigate to="/access/grants" replace /> },
+              { path: 'access/grants', element: <AccessGrantsPage /> },
+              { path: 'access/grants/:id', element: <AccessGrantDetailsPage /> },
+              { path: 'access/effective', element: <AccessEffectivePage /> },
+              {
+                element: <AccessGuard permission="access.grant.write" />,
+                children: [
+                  { path: 'access/grants/new', element: <AccessGrantCreatePage /> },
+                  { path: 'access/grants/:id/edit', element: <AccessGrantEditPage /> },
+                ],
+              },
+            ],
+          },
+          {
+            element: <AccessGuard permission="audit.read" />,
+            children: [{ path: 'access/audit', element: <AccessAuditPage /> }],
           },
           {
             element: <AccessGuard permission="data_quality.read" />,
