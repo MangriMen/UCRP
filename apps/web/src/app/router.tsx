@@ -19,6 +19,7 @@ import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
 import { SegmentDetailsPage } from '@/pages/segment-details'
 import { SegmentsPage } from '@/pages/segments'
+import { TenantAggregatesPage } from '@/pages/tenant-aggregates'
 import { UnmergeBlocksPage } from '@/pages/unmerge-blocks'
 import { AppLayout } from './layout/app-layout'
 import { HomeRedirect } from './layout/home-redirect'
@@ -85,6 +86,10 @@ export const router = createBrowserRouter([
           {
             element: <RoleGuard roles={['manager', 'analyst']} />,
             children: [{ path: 'admin/audit', element: <AuditLogPage /> }],
+          },
+          {
+            element: <RoleGuard roles={['tenant']} />,
+            children: [{ path: 'tenant', element: <TenantAggregatesPage /> }],
           },
           {
             element: <RoleGuard roles={['analyst']} />,
