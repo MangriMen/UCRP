@@ -21,7 +21,7 @@ export function RejectMergeButton({ candidateId }: RejectMergeButtonProps) {
       <ConfirmDialog
         open={open}
         onOpenChange={setOpen}
-        title="Отклонить склейку"
+        title="Отклонить объединение"
         description="Пара будет отклонена, автоматически её больше не склеят."
         confirmLabel="Отклонить"
         destructive={true}

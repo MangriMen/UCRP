@@ -43,10 +43,10 @@ function buildMetrics({
     },
     {
       id: 'disputedMergeRate',
-      title: 'Спорные склейки',
+      title: 'Доля оспоренных объединений',
       value: ratio(disputedMergeRate),
       target: 'Цель: менее 1%',
-      sample: sampleText('кандидатов на склейку', sampleSizes?.mergeCandidates),
+      sample: sampleText('кандидатов на объединение', sampleSizes?.mergeCandidates),
     },
     {
       id: 'segmentToExport',

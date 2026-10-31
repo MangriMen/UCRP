@@ -22,7 +22,7 @@ export function RevertMergeButton({ candidateId }: RevertMergeButtonProps) {
         open={open}
         onOpenChange={setOpen}
         title="Разъединить профили"
-        description="События вернутся исходному профилю, для пары появится запрет склейки."
+        description="События вернутся исходному профилю, для пары появится запрет объединения."
         confirmLabel="Разъединить"
         destructive={true}
         isPending={mutation.isPending}

@@ -24,8 +24,8 @@ export function DeleteMergeBlockButton({ blockId }: { blockId: string }) {
       <ConfirmDialog
         open={open}
         onOpenChange={setOpen}
-        title="Снять запрет склейки"
-        description="После снятия запрета пара снова может быть склеена автоматически."
+        title="Снять запрет объединения"
+        description="После снятия запрета пара снова может быть объединена автоматически."
         confirmLabel="Снять запрет"
         isPending={mutation.isPending}
         onConfirm={() => {

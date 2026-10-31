@@ -38,14 +38,14 @@ describe('SegmentDetailsPage', () => {
     renderAs('user-marketer')
     expect(await screen.findByRole('button', { name: 'Изменить правило' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Пересчитать' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Экспортировать' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Выгрузить' })).toBeInTheDocument()
   })
 
   it('lets the analyst edit and recompute but not export', async () => {
     renderAs('user-analyst')
     expect(await screen.findByRole('button', { name: 'Изменить правило' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Пересчитать' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Экспортировать' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Выгрузить' })).not.toBeInTheDocument()
   })
 
   it('keeps the manager read-only', async () => {
@@ -53,6 +53,6 @@ describe('SegmentDetailsPage', () => {
     expect(await screen.findByRole('link', { name: 'К списку' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Изменить правило' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Пересчитать' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Экспортировать' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Выгрузить' })).not.toBeInTheDocument()
   })
 })

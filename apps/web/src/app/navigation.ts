@@ -54,12 +54,12 @@ const navigation: NavGroup[] = [
     items: [
       { title: 'Гости', to: '/guests', icon: UserSearch, roles: ['marketer', 'analyst'] },
       {
-        title: 'Склейка профилей',
+        title: 'Объединение профилей',
         to: '/identity/merge-candidates',
         icon: GitMerge,
         roles: ['analyst', 'marketer'],
       },
-      { title: 'Запреты склейки', to: '/identity/merge-blocks', icon: Ban, roles: ['analyst'] },
+      { title: 'Запреты объединения', to: '/identity/merge-blocks', icon: Ban, roles: ['analyst'] },
       {
         title: 'Сегменты',
         to: '/segments',

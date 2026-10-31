@@ -1,4 +1,4 @@
-﻿# 04. План E2E-тестов
+# 04. План E2E-тестов
 
 Состояние на коммите `945a5a7`: план **реализован** в `apps/api/e2e/` (Go
 `testing`, 129 тестовых функций), 88 из 90 операций контракта смонтированы,
@@ -69,7 +69,7 @@
 `segment.recompute` работает, но событие не меняет сохранённый сегмент без
 явного `PUT /segments/{id}` — см. `02-contradictions.md` G3.
 
-### E2E-3. Склейка профилей: подтверждение и разъединение
+### E2E-3. Объединение профилей: подтверждение и разъединение
 
 Тест: `TestE2EIdentityMergeLifecycle` (US-11).
 
@@ -85,7 +85,7 @@
 9. В `merge_block` ровно одна запись на пару.
 
 Отдельно: `TestMergeCandidateRejectCreatesBlock`, `TestMergeCandidateRevertPendingReturns409`,
-`TestIdentityAutoMergeOnSharedPhone` (автосклейка при совпадении телефона),
+`TestIdentityAutoMergeOnSharedPhone` (автообъединение при совпадении телефона),
 `TestIdentityPendingCandidateOnSharedEmail` (спорная пара при совпадении email).
 
 ### E2E-4. Лимит контактов блокирует повторную выгрузку
@@ -249,11 +249,11 @@ apps/api/e2e/
 ├── testdata_test.go           # CSV-фикстуры
 ├── world_test.go              # категория + 3 арендатора + тип события + источник
 ├── contract_test.go           # контрактные проверки и unmounted operations
-├── business_test.go           # профиль, сегменты, рекомендации, склейки
+├── business_test.go           # профиль, сегменты, рекомендации, объединения
 ├── imports_test.go            # импорт, счётчики, rejected rows, идемпотентность
 ├── exports_test.go            # preview, create, download, журнал
 ├── contact_limits_test.go     # лимиты по каналам и контрольная группа
-├── identity_resolve_test.go   # автосклейка и очередь кандидатов
+├── identity_resolve_test.go   # автообъединение и очередь кандидатов
 ├── data_sources_test.go       # типы источников и маппинг
 ├── roles_test.go              # матрица ролей и tenant-изоляция
 ├── users_test.go              # пользователи: CRUD, дубль email, последний R-2
@@ -327,7 +327,7 @@ Suite.WaitFor(deadline, what, fn) — опрос fn до true или дедла�
 | Нет REST для `guest`, `event`, `merge_candidate` | G2         | фикстуры прямыми `INSERT`                                        |
 | `recommend.refresh` не ставится воркером         | G3         | пересчёт только через `POST .../refresh`                         |
 | `export.build` не реализован                     | G3         | выгрузка синхронная, 202/504 недостижимы                         |
-| Аудит пишется только для склейки                 | G4         | `request_id` в `audit_log` остаётся `NULL`, REQ-19.2 не проверен |
+| Аудит пишется только для объединения             | G4         | `request_id` в `audit_log` остаётся `NULL`, REQ-19.2 не проверен |
 | Нет rate limit                                   | G9         | N-39 не реализуем                                                |
 | Нет управляемой задержки                         | G10        | N-37, N-38 не реализуемы                                         |
 | `GET/POST /campaigns*` отвечают 500              | новый      | `RequireStatusOrDrift`, сценарий пропускается                    |

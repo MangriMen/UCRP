@@ -34,7 +34,7 @@ export function DashboardPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Дашборд"
-        description="Ключевые показатели потока данных, дедупликации и проникновения гостей"
+        description="Ключевые показатели потока данных, дедупликации и перехода гостей между арендаторами"
       />
       <PeriodFilter
         value={period}
@@ -60,7 +60,7 @@ export function DashboardPage() {
       )}
       <Card>
         <CardHeader>
-          <CardTitle>Проникновение: гости по числу арендаторов</CardTitle>
+          <CardTitle>Гости по числу арендаторов</CardTitle>
         </CardHeader>
         <CardContent>
           {crossTenant.error ? (

@@ -13,27 +13,27 @@
 | R-1 | Маркетолог  | `marketer`   | сегменты, рекомендации, выгрузки, лимиты, кампании, чтение профилей     |
 | R-2 | Управляющий | `manager`    | дашборды, журналы, пользователи, чтение справочников и выгрузок         |
 | R-3 | Арендатор   | `tenant`     | только свои агрегаты и своя карточка арендатора (`tenant_id` из claims) |
-| R-4 | Аналитик    | `analyst`    | импорт, склейки, справочники, качество данных, аудит                    |
+| R-4 | Аналитик    | `analyst`    | импорт, объединения, справочники, качество данных, аудит                |
 | R-5 | Гость       | —            | доступа нет, объект данных                                              |
 | R-6 | Система     | `system`     | только очередь `job_queue`, REST не использует                          |
 
 ### 1.2. Пользовательские истории и прецеденты
 
-| US    | UC    | Название                          | Приоритет   | Ключевые эндпоинты                                               |
-| ----- | ----- | --------------------------------- | ----------- | ---------------------------------------------------------------- |
-| US-1  | UC-1  | Загрузка данных арендатора        | MVP         | `POST /imports`, `GET /imports/{id}`, `/rejected-rows`           |
-| US-2  | UC-2  | Единый профиль гостя              | MVP         | `GET /guests`, `GET /guests/{id}`, `/events`, `/contacts`        |
-| US-3  | UC-3  | Сегмент без кода                  | MVP         | `POST /segments/preview`, `POST /segments`, `GET /segments/{id}` |
-| US-4  | UC-4  | Рекомендация гостю                | MVP         | `GET /guests/{id}/recommendations`, `POST .../refresh`           |
-| US-5  | UC-5  | Выгрузка сегмента в канал         | MVP         | `POST /exports/preview`, `POST /exports`, `/download`            |
-| US-6  | UC-6  | Обновление при новом событии      | MVP         | `GET /segments/{id}`, `POST /segments/{id}/recompute`            |
-| US-7  | UC-7  | Сводка управляющего               | 2-я очередь | `GET /dashboard/cross-tenant`, `/dashboard/metrics`              |
-| US-8  | UC-8  | Агрегаты арендатора               | 2-я очередь | `GET /tenants/{id}/aggregates`                                   |
-| US-9  | UC-9  | Качество данных по источникам     | 2-я очередь | `GET /data-quality/sources`, `/{id}`                             |
-| US-10 | UC-10 | Лимит контактов                   | MVP         | `/contact-limits`, `POST /exports/preview`                       |
-| US-11 | UC-11 | Подтверждение/разъединение склеек | MVP         | `/merge-candidates*`, `/merge-blocks*`                           |
+| US    | UC    | Название                               | Приоритет   | Ключевые эндпоинты                                               |
+| ----- | ----- | -------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| US-1  | UC-1  | Загрузка данных арендатора             | MVP         | `POST /imports`, `GET /imports/{id}`, `/rejected-rows`           |
+| US-2  | UC-2  | Единый профиль гостя                   | MVP         | `GET /guests`, `GET /guests/{id}`, `/events`, `/contacts`        |
+| US-3  | UC-3  | Сегмент без кода                       | MVP         | `POST /segments/preview`, `POST /segments`, `GET /segments/{id}` |
+| US-4  | UC-4  | Рекомендация гостю                     | MVP         | `GET /guests/{id}/recommendations`, `POST .../refresh`           |
+| US-5  | UC-5  | Выгрузка сегмента в канал              | MVP         | `POST /exports/preview`, `POST /exports`, `/download`            |
+| US-6  | UC-6  | Обновление при новом событии           | MVP         | `GET /segments/{id}`, `POST /segments/{id}/recompute`            |
+| US-7  | UC-7  | Сводка управляющего                    | 2-я очередь | `GET /dashboard/cross-tenant`, `/dashboard/metrics`              |
+| US-8  | UC-8  | Агрегаты арендатора                    | 2-я очередь | `GET /tenants/{id}/aggregates`                                   |
+| US-9  | UC-9  | Качество данных по источникам          | 2-я очередь | `GET /data-quality/sources`, `/{id}`                             |
+| US-10 | UC-10 | Лимит контактов                        | MVP         | `/contact-limits`, `POST /exports/preview`                       |
+| US-11 | UC-11 | Подтверждение/разъединение объединений | MVP         | `/merge-candidates*`, `/merge-blocks*`                           |
 
-Служебные: UC-12 автосклейка, UC-13 пересчёт сегментов, UC-14 pull из API,
+Служебные: UC-12 автообъединение, UC-13 пересчёт сегментов, UC-14 pull из API,
 UC-15 расчёт рекомендаций, UC-16 вход, UC-17 справочники, UC-18 пользователи,
 UC-19 аудит, UC-20 кампании.
 
@@ -62,8 +62,8 @@ UC-19 аудит, UC-20 кампании.
 | BR-15 | Сегмент не `ready` → выгрузка 409 `segment_not_ready`                                            | US-5 AC6, US-6 AC5  | частично (код есть, но `POST /segments` сразу создаёт версию `ready`)           |
 | BR-16 | Лимит контактов: применяется самое строгое правило; все исключены → 409 `contact_limit_exceeded` | US-10 AC2/AC3/AC5   | готово                                                                          |
 | BR-17 | Без правил лимита ограничение не применяется                                                     | US-10 AC1, A-12     | готово                                                                          |
-| BR-18 | Подтверждение склейки переносит события и идентификаторы за одну транзакцию                      | US-11 AC2           | готово (одна транзакция + запись в `audit_log`)                                 |
-| BR-19 | Отклонение/разъединение создаёт запрет склейки (E-12)                                            | US-11 AC3/AC4       | готово                                                                          |
+| BR-18 | Подтверждение объединения переносит события и идентификаторы за одну транзакцию                  | US-11 AC2           | готово (одна транзакция + запись в `audit_log`)                                 |
+| BR-19 | Отклонение/разъединение создаёт запрет объединения (E-12)                                        | US-11 AC3/AC4       | готово                                                                          |
 | BR-20 | Пара под запретом → 409 `merge_blocked`                                                          | US-11 AC5/AC6       | частично (`conflict`)                                                           |
 | BR-21 | Повторное решение по паре → 409 `already_resolved`                                               | US-11 AC6           | частично (`conflict`)                                                           |
 | BR-22 | R-3: чужой `tenant_id` → 403 `forbidden_tenant`                                                  | US-8 AC2, D-13      | частично (`forbidden_role`)                                                     |
@@ -74,17 +74,17 @@ UC-19 аудит, UC-20 кампании.
 | BR-27 | R-3 обязателен `tenantId` при создании пользователя                                              | UC-18, DDL CHECK    | готово (сервис валидирует обе стороны: R-3 без `tenantId` и не-R-3 с ним → 400) |
 | BR-28 | Последний R-2 нельзя деактивировать → 409                                                        | реестр `/users`     | готово                                                                          |
 | BR-29 | Удаление арендатора с событиями → 409 `tenant_has_events`                                        | реестр `/tenants`   | нет                                                                             |
-| BR-30 | Аудит: каждое изменяющее действие пишет запись                                                   | UC-19, E-21         | частично (только операции склейки)                                              |
+| BR-30 | Аудит: каждое изменяющее действие пишет запись                                                   | UC-19, E-21         | частично (только операции объединения)                                          |
 
 ### 1.4. Бизнес-правила, не проверяемые через API
 
 | ID    | Правило                                                | Причина                                                                                                                 |
 | ----- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| NB-1  | Автосклейка по надёжным ключам, порог score ≥ 80       | `identity.resolve` есть, но порог в коде другой: phone → score 90 `auto`, email → 70/75 `pending`; REST только косвенно |
+| NB-1  | Автообъединение по надёжным ключам, порог score ≥ 80   | `identity.resolve` есть, но порог в коде другой: phone → score 90 `auto`, email → 70/75 `pending`; REST только косвенно |
 | NB-2  | Пересчёт сегментов и рекомендаций по событию (≤ 1 мин) | воркер ставит `segment.recompute` после `identity.resolve`, но `recommend.refresh` не ставится никогда                  |
 | NB-3  | Схлопывание заданий по `dedup_key`                     | реализовано в `queue.Enqueue` (`ON CONFLICT` для `queued/running`), нет REST к `job_queue`                              |
 | NB-4  | Инкремент против контрольной группы                    | требует накопления событий и окна атрибуции                                                                             |
-| NB-5  | Match rate ≥ 70 %, доля оспоренных склеек < 1 %        | `GET /dashboard/metrics` отдаёт `match_rate`, `contested_merge_rate`; значения зависят от объёма данных                 |
+| NB-5  | Match rate ≥ 70 %, доля оспоренных объединений < 1 %   | `GET /dashboard/metrics` отдаёт `match_rate`, `contested_merge_rate`; значения зависят от объёма данных                 |
 | NB-6  | Время «сегмент → выгрузка» ≤ 5 мин                     | `avg_segment_to_export_minutes` в `/dashboard/metrics`                                                                  |
 | NB-7  | Понижение конкурента коэффициентом, а не исключение    | ни понижения, ни исключения нет: скоринг не читает `tenant_category_relation` (см. D1)                                  |
 | NB-8  | Soft-delete без физического удаления                   | проверяется только косвенно (`status`)                                                                                  |
@@ -93,30 +93,30 @@ UC-19 аудит, UC-20 кампании.
 
 ## 2. Бизнес-сущности
 
-| ID   | Сущность            | Таблицы                                        | Ключевые поля                                                                                     |
-| ---- | ------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| E-1  | Гость               | `guest`                                        | `status` (active/merged/deleted), `merged_into_id`, `deleted_at`                                  |
-| E-2  | Событие             | `event`                                        | `guest_id` (nullable), `tenant_id`, `event_type_id`, `external_id`, `occurred_at`, `amount_minor` |
-| E-3  | Сегмент             | `segment`, `segment_version`, `segment_member` | `current_version_no`, `rule` (JSON), `status`, `member_count`                                     |
-| E-4  | Арендатор           | `tenant`                                       | `category_id`, `kind`, `floor`, `priority`                                                        |
-| E-5  | Источник данных     | `data_source`, `data_source_type`              | `tenant_id` (nullable), `field_mapping`, `schedule_cron`                                          |
-| E-6  | Категория           | `tenant_category`, `tenant_category_relation`  | `relation_type` (adjacent/competitor), `weight_pct`                                               |
-| E-7  | Проект              | `project`                                      | `tenant_id`, `code`                                                                               |
-| E-8  | Кампания            | `campaign`                                     | `target_tenant_id`, `segment_id`, `attribution_days`, `status`                                    |
-| E-9  | Тип события         | `event_type`                                   | `code`, `counts_as_presence`, `reverses_event_type_id`                                            |
-| E-10 | Идентификатор гостя | `guest_identifier`                             | `id_type`, `value_normalized`, `origin_guest_id`                                                  |
-| E-11 | Кандидат на склейку | `merge_candidate`                              | `guest_a_id < guest_b_id`, `score`, `resolution`                                                  |
-| E-12 | Запрет склейки      | `merge_block`                                  | `reason` (manual_unmerge/rejected), `candidate_id`                                                |
-| E-13 | Загрузка            | `import_batch`                                 | `mode`, `status`, `total/accepted/rejected/duplicate_rows`, `file_hash`                           |
-| E-14 | Отклонённая строка  | `rejected_row`                                 | `row_number`, `error_code`, `error_message`                                                       |
-| E-15 | Рекомендация        | `recommendation`, `recommendation_factor`      | `rank` 1..3, `score`, `explanation`, `algorithm_version`                                          |
-| E-16 | Выгрузка            | `export_job`                                   | `channel`, `format`, `control_percent`, `idempotency_key`, счётчики                               |
-| E-17 | Член выгрузки       | `export_member`                                | `identifier_id`, `is_control`                                                                     |
-| E-18 | Лимит контактов     | `contact_limit`                                | `channel` (nullable), `max_contacts`, `period_days`                                               |
-| E-19 | Контакт             | `contact_log`                                  | `guest_id`, `export_id`, `contacted_at`                                                           |
-| E-20 | Пользователь        | `app_user`                                     | `role`, `tenant_id`, `is_active`                                                                  |
-| E-21 | Аудит               | `audit_log`                                    | `action`, `entity_type`, `entity_id`, `request_id`                                                |
-| T-1  | Очередь заданий     | `job_queue`                                    | `job_type`, `dedup_key`, `status`, `attempts`                                                     |
+| ID   | Сущность                | Таблицы                                        | Ключевые поля                                                                                     |
+| ---- | ----------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| E-1  | Гость                   | `guest`                                        | `status` (active/merged/deleted), `merged_into_id`, `deleted_at`                                  |
+| E-2  | Событие                 | `event`                                        | `guest_id` (nullable), `tenant_id`, `event_type_id`, `external_id`, `occurred_at`, `amount_minor` |
+| E-3  | Сегмент                 | `segment`, `segment_version`, `segment_member` | `current_version_no`, `rule` (JSON), `status`, `member_count`                                     |
+| E-4  | Арендатор               | `tenant`                                       | `category_id`, `kind`, `floor`, `priority`                                                        |
+| E-5  | Источник данных         | `data_source`, `data_source_type`              | `tenant_id` (nullable), `field_mapping`, `schedule_cron`                                          |
+| E-6  | Категория               | `tenant_category`, `tenant_category_relation`  | `relation_type` (adjacent/competitor), `weight_pct`                                               |
+| E-7  | Проект                  | `project`                                      | `tenant_id`, `code`                                                                               |
+| E-8  | Кампания                | `campaign`                                     | `target_tenant_id`, `segment_id`, `attribution_days`, `status`                                    |
+| E-9  | Тип события             | `event_type`                                   | `code`, `counts_as_presence`, `reverses_event_type_id`                                            |
+| E-10 | Идентификатор гостя     | `guest_identifier`                             | `id_type`, `value_normalized`, `origin_guest_id`                                                  |
+| E-11 | Кандидат на объединение | `merge_candidate`                              | `guest_a_id < guest_b_id`, `score`, `resolution`                                                  |
+| E-12 | Запрет объединения      | `merge_block`                                  | `reason` (manual_unmerge/rejected), `candidate_id`                                                |
+| E-13 | Загрузка                | `import_batch`                                 | `mode`, `status`, `total/accepted/rejected/duplicate_rows`, `file_hash`                           |
+| E-14 | Отклонённая строка      | `rejected_row`                                 | `row_number`, `error_code`, `error_message`                                                       |
+| E-15 | Рекомендация            | `recommendation`, `recommendation_factor`      | `rank` 1..3, `score`, `explanation`, `algorithm_version`                                          |
+| E-16 | Выгрузка                | `export_job`                                   | `channel`, `format`, `control_percent`, `idempotency_key`, счётчики                               |
+| E-17 | Член выгрузки           | `export_member`                                | `identifier_id`, `is_control`                                                                     |
+| E-18 | Лимит контактов         | `contact_limit`                                | `channel` (nullable), `max_contacts`, `period_days`                                               |
+| E-19 | Контакт                 | `contact_log`                                  | `guest_id`, `export_id`, `contacted_at`                                                           |
+| E-20 | Пользователь            | `app_user`                                     | `role`, `tenant_id`, `is_active`                                                                  |
+| E-21 | Аудит                   | `audit_log`                                    | `action`, `entity_type`, `entity_id`, `request_id`                                                |
+| T-1  | Очередь заданий         | `job_queue`                                    | `job_type`, `dedup_key`, `status`, `attempts`                                                     |
 
 Связи, критичные для E2E: `guest 1—N event`, `guest 1—N guest_identifier`,
 `tenant 1—N event`, `segment 1—N segment_version 1—N segment_member`,
@@ -321,7 +321,7 @@ GET /api/v1/data-quality/sources/{id} (контракт: x-roles R-4,R-2, UC-9)
 Все группы смонтированы: аутентификация (`login`, `refresh`, `logout`, `me`),
 пользователи, все справочники (`tenants`, `tenant-categories` + `relations`,
 `projects`, `event-types`, `data-source-types`, `data-sources` + `sync`), импорт,
-гости (профиль, события, контакты, рекомендации, ручная склейка, soft-delete),
+гости (профиль, события, контакты, рекомендации, ручное объединение, soft-delete),
 идентичность (`merge-candidates*`, `merge-blocks*`), сегменты (шаблоны, CRUD,
 `members`, `versions`, `recompute`, `recommendations`), выгрузки (preview, создание,
 журнал, `members`, `download`), лимиты контактов, кампании, аналитика, аудит.
@@ -334,8 +334,8 @@ GET /api/v1/data-quality/sources/{id} (контракт: x-roles R-4,R-2, UC-9)
 - Воркер обрабатывает `import.process`, `connector.pull`, `identity.resolve`,
   `segment.recompute`; после `identity.resolve` ставит пересчёт активных сегментов.
 - `identity.resolve` реализован: создаёт гостя, привязывает к существующему,
-  делает автосклейку по телефону (score 90) и ставит пару в очередь по email.
-- Склейка подтверждается одной транзакцией и пишет запись в `audit_log`.
+  делает автообъединение по телефону (score 90) и ставит пару в очередь по email.
+- Объединение подтверждается одной транзакцией и пишет запись в `audit_log`.
 - Импорт: sha256-идемпотентность, счётчики, `rejected_row`, CSV отклонённых
   строк; `connector.pull` для источников типа `api`.
 - Выгрузка: preview-счётчики, контрольная группа, идемпотентность по ключу,
