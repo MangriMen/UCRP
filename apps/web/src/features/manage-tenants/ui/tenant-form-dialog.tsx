@@ -22,10 +22,6 @@ const schema = z.object({
     .string()
     .trim()
     .regex(/^(-?\d+)?$/, 'Введите целый номер этажа или оставьте пустым'),
-  areaSqm: z
-    .string()
-    .trim()
-    .refine((v) => v === '' || Number(v) > 0, 'Введите положительную площадь'),
   priority: z
     .string()
     .regex(/^\d+$/, 'Введите число от 0 до 100')
@@ -34,6 +30,8 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+
+const DUPLICATE_CODE_ERROR = 'conflict'
 
 interface TenantFormDialogProps {
   open: boolean
@@ -61,7 +59,6 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
       categoryId: tenant?.categoryId ?? '',
       mallId: tenant?.mallId ?? '',
       floor: tenant?.floor != null ? String(tenant.floor) : '',
-      areaSqm: tenant?.areaSqm ? String(tenant.areaSqm) : '',
       priority: String(tenant?.priority ?? 50),
       isActive: tenant?.isActive ?? true,
     },
@@ -74,14 +71,13 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
       categoryId: values.categoryId,
       mallId: values.mallId,
       floor: values.floor === '' ? null : Number(values.floor),
-      areaSqm: values.areaSqm ? Number(values.areaSqm) : null,
       priority: Number(values.priority),
       isActive: values.isActive,
     }
     const options = {
       onSuccess: () => onOpenChange(false),
       onError: (error: unknown) => {
-        if (hasErrorCode(error, 'duplicate')) {
+        if (hasErrorCode(error, DUPLICATE_CODE_ERROR)) {
           setError('code', { message: 'Арендатор с таким кодом уже существует' })
         }
       },
@@ -102,7 +98,7 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
       isPending={mutation.isPending}
       onSubmit={submit}
     >
-      {mutation.error && !hasErrorCode(mutation.error, 'duplicate') && (
+      {mutation.error && !hasErrorCode(mutation.error, DUPLICATE_CODE_ERROR) && (
         <ErrorBanner error={mutation.error} />
       )}
       <FormField label="Код" error={errors.code?.message}>
@@ -145,12 +141,9 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
           />
         )}
       </FormField>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <FormField label="Этаж" hint="Пусто — без этажа" error={errors.floor?.message}>
           {(field) => <Input {...field} inputMode="numeric" {...register('floor')} />}
-        </FormField>
-        <FormField label="Площадь, м²" error={errors.areaSqm?.message}>
-          {(field) => <Input {...field} inputMode="decimal" {...register('areaSqm')} />}
         </FormField>
         <FormField label="Приоритет" error={errors.priority?.message}>
           {(field) => <Input {...field} inputMode="numeric" {...register('priority')} />}

@@ -66,7 +66,7 @@ paths:
         - Analytics
       operationId: getTenantAggregates
       summary: Tenant aggregates
-      description: A tenant with tenant.aggregates.own can request only its own tenant. Without metric.visits_count.read the response is empty. With that permission, the response contains visits_count and suppressed; visits_count is null when the number of distinct guests is below the effective k threshold (at least 5).
+      description: A tenant with tenant.aggregates.own can request only its own tenant. Without metric.visits_count.read the response is empty. With that permission the response has `visitsCount`, `suppressed` and a day-by-day `series` for the requested period; `guestsCount` accompanies `visitsCount`; `newGuestsCount` is filled with metric.new_guests_via_mall.read. A value is null when the number of distinct guests behind it is below the effective k threshold (at least 5). Without `from` and `to` the totals cover all time and `series` is empty; a period is limited to 366 days.
       x-roles:
         - R-3 (own)
         - R-2
@@ -75,6 +75,20 @@ paths:
       x-uc:
         - UC-8
       parameters:
+        - name: from
+          in: query
+          required: false
+          description: Period start, inclusive. Requires `to`.
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: Period end, inclusive. Requires `from`.
+          schema:
+            type: string
+            format: date
         - name: metrics
           in: query
           required: false
@@ -88,7 +102,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: ../components/schemas/tenant-guest.yaml#/TenantVisitAggregate
+                  - $ref: ../components/schemas/tenant-guest.yaml#/ManagementTenantAggregate
                   - $ref: ../components/schemas/tenant-guest.yaml#/EmptyTenantAggregate
         '400':
           $ref: ../components/responses.yaml#/BadRequest

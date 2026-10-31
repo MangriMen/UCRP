@@ -1,4 +1,4 @@
-import type { ImportBatch } from '@/entities/import-batch'
+import type { ImportBatch } from './types'
 
 export function latestBatchBySource(batches: ImportBatch[]): Map<string, ImportBatch> {
   const latest = new Map<string, ImportBatch>()

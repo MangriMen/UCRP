@@ -17,9 +17,9 @@ import {
 import { navigationFor } from '../navigation'
 
 export function AppSidebar() {
-  const { user, role } = useAuth()
+  const { user } = useAuth()
   const { pathname } = useLocation()
-  const groups = role ? navigationFor(role) : []
+  const groups = user ? navigationFor(user) : []
 
   return (
     <Sidebar>

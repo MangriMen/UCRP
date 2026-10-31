@@ -1,17 +1,29 @@
+import type { GuestStatus } from './types'
+
 export interface GuestSearchFilters {
   query?: string
   sourceId?: string
   tenantId?: string
   periodFrom?: string
   periodTo?: string
+  status?: GuestStatus
+  segmentId?: string
+  hasPurchases?: boolean
+  firstSeenFrom?: string
+  lastSeenTo?: string
+  sort?: string
   page?: number
   pageSize?: number
 }
 
 export interface GuestEventFilters {
+  type?: string
   from?: string
   to?: string
   tenantId?: string
+  amountMin?: number
+  amountMax?: number
+  sort?: string
   page?: number
   pageSize?: number
 }
@@ -27,6 +39,8 @@ export const guestKeys = {
   all: ['guests'] as const,
   lists: () => [...guestKeys.all, 'list'] as const,
   list: (filters: GuestSearchFilters) => [...guestKeys.lists(), filters] as const,
+  tenantList: (tenantId: string, filters: GuestSearchFilters) =>
+    [...guestKeys.lists(), 'tenant', tenantId, filters] as const,
   detail: (id: string) => [...guestKeys.all, 'detail', id] as const,
   events: (id: string, filters: GuestEventFilters) =>
     [...guestKeys.detail(id), 'events', filters] as const,

@@ -8,7 +8,7 @@ import {
   type GuestEventFilters,
   type GuestSearchFilters,
 } from '../model/keys'
-import type { GuestProfile } from '../model/types'
+import type { GuestEventSort, GuestListSort, GuestProfile } from '../model/types'
 
 export function useGuestSearch(filters: GuestSearchFilters) {
   return useQuery({
@@ -21,6 +21,34 @@ export function useGuestSearch(filters: GuestSearchFilters) {
           tenant_id: filters.tenantId,
           period_from: filters.periodFrom,
           period_to: filters.periodTo,
+          status: filters.status,
+          segment_id: filters.segmentId,
+          has_purchases: filters.hasPurchases,
+          first_seen_from: filters.firstSeenFrom,
+          last_seen_to: filters.lastSeenTo,
+          sort: filters.sort as GuestListSort | undefined,
+          page: filters.page,
+          page_size: filters.pageSize,
+        },
+      }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useTenantGuests(tenantId: string, filters: GuestSearchFilters) {
+  return useQuery({
+    queryKey: guestKeys.tenantList(tenantId, filters),
+    queryFn: () =>
+      api.get('/tenants/{id}/guests', {
+        params: { id: tenantId },
+        query: {
+          q: filters.query && filters.query.length >= MIN_SEARCH_LENGTH ? filters.query : undefined,
+          source_id: filters.sourceId,
+          period_from: filters.periodFrom,
+          period_to: filters.periodTo,
+          status: filters.status,
+          has_purchases: filters.hasPurchases,
+          sort: filters.sort as GuestListSort | undefined,
           page: filters.page,
           page_size: filters.pageSize,
         },
@@ -44,9 +72,15 @@ export function useGuestEvents(id: string, filters: GuestEventFilters = {}) {
       api.get('/guests/{id}/events', {
         params: { id },
         query: {
-          limit: filters.pageSize,
-          offset:
-            filters.page && filters.pageSize ? (filters.page - 1) * filters.pageSize : undefined,
+          type: filters.type,
+          tenant_id: filters.tenantId,
+          from: filters.from,
+          to: filters.to,
+          amount_min: filters.amountMin,
+          amount_max: filters.amountMax,
+          sort: filters.sort as GuestEventSort | undefined,
+          page: filters.page,
+          page_size: filters.pageSize,
         },
       }),
     select: (data) => narrow(data, hasKey('meta')),

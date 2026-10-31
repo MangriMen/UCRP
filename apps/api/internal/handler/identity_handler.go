@@ -13,12 +13,13 @@ import (
 )
 
 type IdentityHandler struct {
-	identity *service.IdentityService
-	profiles *service.ProfileService
+	identity   *service.IdentityService
+	profiles   *service.ProfileService
+	authorizer accessAuthorizer
 }
 
-func NewIdentityHandler(identity *service.IdentityService, profiles *service.ProfileService) *IdentityHandler {
-	return &IdentityHandler{identity: identity, profiles: profiles}
+func NewIdentityHandler(identity *service.IdentityService, profiles *service.ProfileService, authorizer accessAuthorizer) *IdentityHandler {
+	return &IdentityHandler{identity: identity, profiles: profiles, authorizer: authorizer}
 }
 
 func (h *IdentityHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -61,12 +62,17 @@ func (h *IdentityHandler) Get(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	guestA, err := h.profiles.Get(r.Context(), item.GuestAID)
+	showAmount, err := canReadGuestAmount(r, h.authorizer)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	guestB, err := h.profiles.Get(r.Context(), item.GuestBID)
+	guestA, err := h.profiles.Get(r.Context(), item.GuestAID, showAmount)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	guestB, err := h.profiles.Get(r.Context(), item.GuestBID, showAmount)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

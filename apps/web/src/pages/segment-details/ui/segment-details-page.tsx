@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { SegmentTopTenants } from '@/entities/recommendation'
 import { isSegmentComputing, RuleSummary, SegmentStatusBadge, useSegment } from '@/entities/segment'
 import { useAuth } from '@/entities/user'
@@ -7,7 +7,6 @@ import { CreateExportButton } from '@/features/create-export'
 import { RecomputeSegmentButton } from '@/features/recompute-segment'
 import { formatDateTime } from '@/shared/lib/format'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
-import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
@@ -18,31 +17,29 @@ import { VersionHistory } from './version-history'
 
 export function SegmentDetailsPage() {
   const { id = '' } = useParams()
-  const { role } = useAuth()
+  const { can } = useAuth()
   const { data: segment, error, isLoading } = useSegment(id)
 
   if (isLoading) return <Skeleton className="h-40 w-full" />
   if (error) return <ErrorBanner error={error} />
   if (!segment) return <EmptyState title="Сегмент не найден" />
 
-  const canManage = role === 'marketer' || role === 'analyst'
+  const canManage = can('segment.write')
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={segment.name}
+        breadcrumbs={[{ label: 'Сегменты', to: '/segments' }, { label: segment.name }]}
         description={segment.description ?? undefined}
         actions={
           <>
             <SegmentStatusBadge status={segment.status} />
             {canManage && <BuildSegmentButton segment={segment} />}
             {canManage && <RecomputeSegmentButton segmentId={segment.id} status={segment.status} />}
-            {role === 'marketer' && (
+            {can('export.create') && (
               <CreateExportButton segmentId={segment.id} disabled={segment.status !== 'ready'} />
             )}
-            <Button variant="outline" render={<Link to="/segments" />}>
-              К списку
-            </Button>
           </>
         }
       />

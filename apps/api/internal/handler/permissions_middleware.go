@@ -170,6 +170,7 @@ var protectedRoutes = []protectedRoute{
 	{http.MethodPost, "/contact-limits", []string{"contact_limit.write"}},
 	{http.MethodPatch, "/contact-limits/{id}", []string{"contact_limit.write"}},
 	{http.MethodDelete, "/contact-limits/{id}", []string{"contact_limit.write"}},
+	{http.MethodGet, "/tenants/{id}/guests", []string{"guest.profile.search", "guest.identifier.read", "field.guest.display_name.read", "field.guest.tenants_visited.read", "field.guest.phone.read", "field.guest.email.read", "field.guest.card.read"}},
 	{http.MethodGet, "/tenants/{id}/aggregates", []string{"tenant.aggregates.read", "metric.visits_count.read"}},
 	{http.MethodGet, "/tenants", []string{"reference.read", "field.tenant.priority.read"}},
 	{http.MethodGet, "/tenants/{id}", []string{"reference.read", "field.tenant.priority.read"}},

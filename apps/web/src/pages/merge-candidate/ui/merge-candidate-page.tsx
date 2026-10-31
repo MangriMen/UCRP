@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import {
   MergeResolutionBadge,
   useMergeCandidate,
@@ -8,7 +8,6 @@ import { useAuth } from '@/entities/user'
 import { ConfirmMergeButton } from '@/features/confirm-merge'
 import { RejectMergeButton } from '@/features/reject-merge'
 import { RevertMergeButton } from '@/features/revert-merge'
-import { Button } from '@/shared/ui/button'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { PageHeader } from '@/shared/ui/page-header'
@@ -19,25 +18,24 @@ const REVERTIBLE: MergeResolution[] = ['confirmed', 'auto_merged']
 
 export function MergeCandidatePage() {
   const { id = '' } = useParams()
-  const { role } = useAuth()
+  const { can } = useAuth()
   const { data: detail, error, isLoading } = useMergeCandidate(id)
 
   if (isLoading) return <Skeleton className="h-40 w-full" />
   if (error) return <ErrorBanner error={error} />
   if (!detail) return <EmptyState title="Заявка не найдена" />
 
-  const canResolve = role === 'analyst'
+  const canResolve = can('identity.decide')
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Сравнение профилей"
+        breadcrumbs={[
+          { label: 'Объединение профилей', to: '/identity/merge-candidates' },
+          { label: 'Сравнение профилей' },
+        ]}
         description={detail.reasonText ?? detail.reasonCode}
-        actions={
-          <Button variant="outline" render={<Link to="/identity/merge-candidates" />}>
-            К очереди
-          </Button>
-        }
       />
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <MergeResolutionBadge resolution={detail.resolution} />

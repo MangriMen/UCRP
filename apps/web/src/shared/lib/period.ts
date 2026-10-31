@@ -5,6 +5,9 @@ export interface Period {
 
 const dayOf = (date: Date) => date.toISOString().slice(0, 10)
 
+export const daysAgo = (days: number, now = new Date()) =>
+  dayOf(new Date(now.getTime() - days * 86_400_000))
+
 export function defaultPeriod(months = 6, now = new Date()): Period {
   const year = now.getUTCFullYear()
   const month = now.getUTCMonth() - months

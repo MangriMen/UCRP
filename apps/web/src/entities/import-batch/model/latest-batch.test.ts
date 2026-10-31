@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ImportBatch } from '@/entities/import-batch'
 import { latestBatchBySource } from './latest-batch'
-import { sourceKindLabel } from './source-kind'
+import type { ImportBatch } from './types'
 
 const batch = (id: string, dataSourceId: string, createdAt: string) =>
   ({ id, dataSourceId, createdAt }) as ImportBatch
@@ -16,14 +15,5 @@ describe('latestBatchBySource', () => {
     ])
     expect(latest.get('ds-1')?.id).toBe('b')
     expect(latest.get('ds-2')?.id).toBe('c')
-  })
-})
-
-describe('sourceKindLabel', () => {
-  it('maps known codes and falls back to the type name', () => {
-    expect(sourceKindLabel('crm_api', 'CRM по API')).toBe('CRM')
-    expect(sourceKindLabel('pos_api', undefined)).toBe('POS')
-    expect(sourceKindLabel('api', undefined)).toBe('API')
-    expect(sourceKindLabel('csv_excel', 'Файл CSV / Excel')).toBe('Файл CSV / Excel')
   })
 })

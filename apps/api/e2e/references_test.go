@@ -16,10 +16,15 @@ func TestTenantCreateAndPatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("fixture category: %v", err)
 	}
+	mall, err := s.Reg.Mall(ctx, "tenant-create")
+	if err != nil {
+		t.Fatalf("fixture mall: %v", err)
+	}
 	code := s.Reg.Code("api-tenant")
 	resp, err := s.API.Post(ctx, "/api/v1/tenants", map[string]any{
 		"code":       code,
 		"name":       "E2E API tenant",
+		"mallId":     mall.ID,
 		"categoryId": category.ID,
 		"priority":   70,
 	})
@@ -60,9 +65,14 @@ func TestTenantCreateDuplicateCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("fixture category: %v", err)
 	}
+	mall, err := s.Reg.Mall(ctx, "tenant-duplicate")
+	if err != nil {
+		t.Fatalf("fixture mall: %v", err)
+	}
 	payload := map[string]any{
 		"code":       s.Reg.Code("dup-tenant"),
 		"name":       "E2E duplicate tenant",
+		"mallId":     mall.ID,
 		"categoryId": category.ID,
 	}
 

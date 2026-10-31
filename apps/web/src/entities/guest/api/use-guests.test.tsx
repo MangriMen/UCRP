@@ -10,14 +10,24 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe('useGuestSearch', () => {
-  it('lists all guests without filters', async () => {
+  it('lists all guests without filters, newest first', async () => {
     const { result } = renderHook(() => useGuestSearch({}), { wrapper })
     await waitFor(() => expect(result.current.data).toBeDefined())
     expect(result.current.data?.items.map((g) => g.id)).toEqual([
-      'guest-0001',
-      'guest-0002',
       'guest-0003',
+      'guest-0002',
+      'guest-0001',
     ])
+  })
+
+  it('passes sort and statistics filters to the server', async () => {
+    const { result } = renderHook(
+      () => useGuestSearch({ sort: '-lastSeenAt', hasPurchases: true, segmentId: 'segment-0001' }),
+      { wrapper },
+    )
+    await waitFor(() => expect(result.current.data).toBeDefined())
+    expect(result.current.data?.items.map((g) => g.id)).toEqual(['guest-0001'])
+    expect(result.current.data?.meta.total).toBe(1)
   })
 
   it('ignores a query shorter than the minimum', async () => {

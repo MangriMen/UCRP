@@ -15,8 +15,8 @@ type stubEventRepo struct {
 	entries []domain.GuestActionLogEntry
 }
 
-func (s *stubEventRepo) ListByGuest(context.Context, string, int, int) ([]domain.Event, error) {
-	return nil, nil
+func (s *stubEventRepo) ListByGuest(context.Context, string, domain.EventFilter, int, int) ([]domain.GuestEvent, int, error) {
+	return nil, 0, nil
 }
 func (s *stubEventRepo) ListUnmatchedByBatch(context.Context, string, int) ([]domain.Event, error) {
 	return nil, nil

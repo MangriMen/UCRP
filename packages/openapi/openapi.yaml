@@ -186,6 +186,8 @@ paths:
     $ref: ./paths/reference-tenants.yaml#/paths/~1api~1v1~1tenants
   /api/v1/tenants/{id}:
     $ref: ./paths/reference-tenants.yaml#/paths/~1api~1v1~1tenants~1{id}
+  /api/v1/tenants/{id}/guests:
+    $ref: ./paths/reference-tenants.yaml#/paths/~1api~1v1~1tenants~1{id}~1guests
   /api/v1/segment-templates:
     $ref: ./paths/segments.yaml#/paths/~1api~1v1~1segment-templates
   /api/v1/segments:
@@ -277,8 +279,8 @@ components:
       $ref: ./components/schemas/tenant-guest.yaml#/TenantGuestEvent
     TenantGuestEvents:
       $ref: ./components/schemas/tenant-guest.yaml#/TenantGuestEvents
-    TenantVisitAggregate:
-      $ref: ./components/schemas/tenant-guest.yaml#/TenantVisitAggregate
+    TenantAggregateDay:
+      $ref: ./components/schemas/tenant-guest.yaml#/TenantAggregateDay
     EmptyTenantAggregate:
       $ref: ./components/schemas/tenant-guest.yaml#/EmptyTenantAggregate
     ManagementTenantAggregate:
@@ -439,6 +441,8 @@ components:
       $ref: ./components/schemas/reference-tenants.yaml#/TenantCreateRequest
     TenantUpdateRequest:
       $ref: ./components/schemas/reference-tenants.yaml#/TenantUpdateRequest
+    TenantListItem:
+      $ref: ./components/schemas/reference-tenants.yaml#/TenantListItem
     TenantPage:
       $ref: ./components/schemas/reference-tenants.yaml#/TenantPage
     TenantCategory:

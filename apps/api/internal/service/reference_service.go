@@ -39,6 +39,12 @@ func NewReferenceService(
 	}
 }
 
+const (
+	maxTenantCodeLength   = 64
+	maxTenantNameLength   = 200
+	defaultTenantPriority = 50
+)
+
 type TenantDTO struct {
 	ID         string    `json:"id"`
 	Code       string    `json:"code"`
@@ -70,7 +76,7 @@ type TenantCreateRequest struct {
 	CategoryID string `json:"categoryId"`
 	Kind       string `json:"kind"`
 	Floor      *int   `json:"floor"`
-	Priority   int    `json:"priority"`
+	Priority   *int   `json:"priority"`
 }
 
 type TenantUpdateRequest struct {
@@ -83,16 +89,46 @@ type TenantUpdateRequest struct {
 	IsActive   *bool         `json:"isActive"`
 }
 
-func (s *ReferenceService) ListTenants(ctx context.Context, limit, offset int) ([]TenantDTO, error) {
-	items, err := s.tenants.List(ctx, limit, offset)
+type TenantStatsAccess struct {
+	Visits    bool
+	NewGuests bool
+}
+
+type TenantListItemDTO struct {
+	TenantDTO
+	CategoryName        string `json:"categoryName"`
+	GuestsCount         *int   `json:"guestsCount"`
+	VisitsCount         *int   `json:"visitsCount"`
+	NewGuestsCount      *int   `json:"newGuestsCount"`
+	Suppressed          bool   `json:"suppressed"`
+	SourcesCount        int    `json:"sourcesCount"`
+	ProblemSourcesCount int    `json:"problemSourcesCount"`
+}
+
+func (s *ReferenceService) SearchTenants(ctx context.Context, filter domain.TenantFilter, access TenantStatsAccess, limit, offset int) ([]TenantListItemDTO, int, error) {
+	entries, total, err := s.tenants.Search(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	out := make([]TenantDTO, 0, len(items))
-	for _, t := range items {
-		out = append(out, toTenantDTO(t))
+	out := make([]TenantListItemDTO, 0, len(entries))
+	for _, e := range entries {
+		item := TenantListItemDTO{
+			TenantDTO:           toTenantDTO(e.Tenant),
+			CategoryName:        e.CategoryName,
+			SourcesCount:        e.Stats.SourcesCount,
+			ProblemSourcesCount: e.Stats.ProblemSourcesCount,
+		}
+		if access.Visits {
+			item.GuestsCount, item.VisitsCount = e.Stats.GuestsCount, e.Stats.VisitsCount
+			item.Suppressed = e.Stats.VisitsCount == nil
+		}
+		if access.NewGuests {
+			item.NewGuestsCount = e.Stats.NewGuestsCount
+			item.Suppressed = item.Suppressed || e.Stats.NewGuestsCount == nil
+		}
+		out = append(out, item)
 	}
-	return out, nil
+	return out, total, nil
 }
 
 func (s *ReferenceService) GetTenant(ctx context.Context, id string) (*TenantDTO, error) {
@@ -110,6 +146,12 @@ func (s *ReferenceService) CreateTenant(ctx context.Context, req TenantCreateReq
 	if code == "" || name == "" || req.CategoryID == "" || req.MallID == "" {
 		return nil, domain.ErrValidation
 	}
+	if len([]rune(code)) > maxTenantCodeLength || len([]rune(name)) > maxTenantNameLength {
+		return nil, domain.ErrValidation
+	}
+	if err := s.requireActiveCategory(ctx, req.CategoryID); err != nil {
+		return nil, err
+	}
 	mall, err := s.tenantMall(ctx, req.MallID)
 	if err != nil {
 		return nil, err
@@ -121,9 +163,15 @@ func (s *ReferenceService) CreateTenant(ctx context.Context, req TenantCreateReq
 	if kind == "" {
 		kind = "mall"
 	}
-	priority := req.Priority
-	if priority == 0 {
-		priority = 50
+	if !validTenantKind(kind) {
+		return nil, domain.ErrValidation
+	}
+	priority := defaultTenantPriority
+	if req.Priority != nil {
+		priority = *req.Priority
+	}
+	if !validTenantPriority(priority) {
+		return nil, domain.ErrValidation
 	}
 	now := s.clock.Now()
 	t := &domain.Tenant{
@@ -152,15 +200,25 @@ func (s *ReferenceService) UpdateTenant(ctx context.Context, id string, req Tena
 		return nil, err
 	}
 	if req.Name != "" {
-		t.Name = req.Name
+		name := strings.TrimSpace(req.Name)
+		if name == "" || len([]rune(name)) > maxTenantNameLength {
+			return nil, domain.ErrValidation
+		}
+		t.Name = name
 	}
-	if req.CategoryID != "" {
+	if req.CategoryID != "" && req.CategoryID != t.CategoryID {
+		if err := s.requireActiveCategory(ctx, req.CategoryID); err != nil {
+			return nil, err
+		}
 		t.CategoryID = req.CategoryID
 	}
 	if req.MallID != "" {
 		t.MallID = req.MallID
 	}
 	if req.Kind != "" {
+		if !validTenantKind(req.Kind) {
+			return nil, domain.ErrValidation
+		}
 		t.Kind = req.Kind
 	}
 	if req.Floor.Set {
@@ -176,6 +234,9 @@ func (s *ReferenceService) UpdateTenant(ctx context.Context, id string, req Tena
 		}
 	}
 	if req.Priority != nil {
+		if !validTenantPriority(*req.Priority) {
+			return nil, domain.ErrValidation
+		}
 		t.Priority = *req.Priority
 	}
 	if req.IsActive != nil {
@@ -187,6 +248,28 @@ func (s *ReferenceService) UpdateTenant(ctx context.Context, id string, req Tena
 	}
 	d := toTenantDTO(*t)
 	return &d, nil
+}
+
+func (s *ReferenceService) requireActiveCategory(ctx context.Context, categoryID string) error {
+	category, err := s.categories.GetByID(ctx, categoryID)
+	if errors.Is(err, domain.ErrNotFound) {
+		return domain.ErrValidation
+	}
+	if err != nil {
+		return err
+	}
+	if !category.IsActive {
+		return domain.ErrValidation
+	}
+	return nil
+}
+
+func validTenantKind(kind string) bool {
+	return kind == "mall" || kind == "external"
+}
+
+func validTenantPriority(priority int) bool {
+	return priority >= 0 && priority <= 100
 }
 
 func (s *ReferenceService) tenantMall(ctx context.Context, mallID string) (*domain.Mall, error) {
