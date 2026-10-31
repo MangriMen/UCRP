@@ -205,8 +205,6 @@ func optionalTime(w http.ResponseWriter, r *http.Request, name string) (*time.Ti
 	return &value, true
 }
 
-const defaultEventPageSize = 50
-
 var guestEventSortFields = map[string]bool{
 	"occurredAt":   true,
 	"-occurredAt":  true,
@@ -259,24 +257,13 @@ func parseEventFilter(r *http.Request) (domain.EventFilter, string) {
 	return filter, ""
 }
 
-func withDefaultPageSize(r *http.Request, size int) *http.Request {
-	query := r.URL.Query()
-	if query.Get("limit") != "" || query.Get("page_size") != "" {
-		return r
-	}
-	query.Set("page_size", strconv.Itoa(size))
-	clone := r.Clone(r.Context())
-	clone.URL.RawQuery = query.Encode()
-	return clone
-}
-
 func (h *GuestHandler) Events(w http.ResponseWriter, r *http.Request) {
 	filter, problem := parseEventFilter(r)
 	if problem != "" {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", problem)
 		return
 	}
-	limit, offset := pageParams(withDefaultPageSize(r, defaultEventPageSize))
+	limit, offset := pageParams(withDefaultPageSize(r))
 	events, total, err := h.profiles.Events(r.Context(), chi.URLParam(r, "id"), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)

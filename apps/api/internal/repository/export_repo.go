@@ -168,7 +168,7 @@ func (r *ExportSQL) List(ctx context.Context, filter domain.ExportFilter, limit,
 
 func clampPage(limit, offset int) (int, int) {
 	if limit <= 0 {
-		limit = 20
+		limit = 50
 	}
 	if limit > 200 {
 		limit = 200

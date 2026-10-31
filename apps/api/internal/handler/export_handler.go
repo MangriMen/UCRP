@@ -74,7 +74,7 @@ func (h *ExportHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ExportHandler) List(w http.ResponseWriter, r *http.Request) {
-	limit, offset := pageParams(r)
+	limit, offset := pageParams(withDefaultPageSize(r))
 	query := r.URL.Query()
 	filter := domain.ExportFilter{
 		SegmentID:  query.Get("segment_id"),

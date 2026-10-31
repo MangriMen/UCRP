@@ -12,10 +12,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/service"
 )
 
-const (
-	accessPageSize    = 50
-	maxAccessPageSize = 200
-)
+const maxAccessPageSize = 200
 
 type AccessGrantHandler struct {
 	access *service.AccessGrantService
@@ -55,7 +52,7 @@ func (h *AccessGrantHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func accessPageParams(r *http.Request) (int, int) {
-	limit, offset := pageParams(withDefaultPageSize(r, accessPageSize))
+	limit, offset := pageParams(withDefaultPageSize(r))
 	if limit > maxAccessPageSize {
 		limit = maxAccessPageSize
 	}
