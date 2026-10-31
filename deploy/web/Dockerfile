@@ -4,10 +4,14 @@ COPY package.json bun.lock turbo.jsonc ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages/api-docs/package.json packages/api-docs/package.json
+COPY packages/api-types/package.json packages/api-types/package.json
 RUN bun install --frozen-lockfile --ignore-scripts
 
 FROM deps AS builder
 COPY tsconfig.base.json ./
+COPY docs/openapi.json docs/openapi.json
+COPY docs/openapi docs/openapi
+COPY packages/api-types packages/api-types
 COPY apps/web apps/web
 ARG VERSION=dev
 ARG BUILD_TIME=unknown

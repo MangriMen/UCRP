@@ -5,6 +5,7 @@
   "globalEnv": ["NODE_ENV"],
   "tasks": {
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
@@ -15,6 +16,10 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**"],
       "env": ["NODE_ENV", "VITE_*"],
+    },
+    "@ucrp/api-types#build": {
+      "inputs": ["package.json", "$TURBO_ROOT$/docs/openapi.json", "$TURBO_ROOT$/docs/openapi/**"],
+      "outputs": ["dist/**"],
     },
     "lint": {
       "dependsOn": ["^build"],
