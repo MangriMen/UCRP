@@ -38,18 +38,18 @@ func buildExportWorld(t *testing.T, s *harness.Suite, suffix string, guestCount 
 	return &exportWorld{world: w, segment: segment, guests: guests}
 }
 
-func exportPreview(ctx context.Context, s *harness.Suite, c *client.Client, segmentID, channel string) (*client.Response, error) {
+func exportPreview(ctx context.Context, c *client.Client, segmentID, channel string) (*client.Response, error) {
 	return c.Post(ctx, "/api/v1/exports/preview", map[string]any{
 		"segment_id": segmentID,
 		"channel":    channel,
 	})
 }
 
-func exportCreate(ctx context.Context, c *client.Client, segmentID, channel, format, key string) (*client.Response, error) {
+func exportCreate(ctx context.Context, c *client.Client, segmentID, key string) (*client.Response, error) {
 	return c.Post(ctx, "/api/v1/exports", map[string]any{
 		"segment_id":      segmentID,
-		"channel":         channel,
-		"format":          format,
+		"channel":         "sms",
+		"format":          "csv",
 		"idempotency_key": key,
 	})
 }
@@ -60,7 +60,7 @@ func TestExportPreviewCounters(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := exportPreview(ctx, s, s.API, ew.segment.ID, "sms")
+	resp, err := exportPreview(ctx, s.API, ew.segment.ID, "sms")
 	if err != nil {
 		t.Fatalf("POST /api/v1/exports/preview: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestExportPreviewChannelContactFilter(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	sms, err := exportPreview(ctx, s, s.API, ew.segment.ID, "sms")
+	sms, err := exportPreview(ctx, s.API, ew.segment.ID, "sms")
 	if err != nil {
 		t.Fatalf("preview sms: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestExportPreviewChannelContactFilter(t *testing.T) {
 		t.Fatalf("sms with_contact: expected 2 (guests have phones), got %d", smsWithContact)
 	}
 
-	email, err := exportPreview(ctx, s, s.API, ew.segment.ID, "email")
+	email, err := exportPreview(ctx, s.API, ew.segment.ID, "email")
 	if err != nil {
 		t.Fatalf("preview email: %v", err)
 	}
@@ -139,7 +139,7 @@ func TestExportCreateReady(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", s.Reg.Name("key-create"))
+	resp, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("key-create"))
 	if err != nil {
 		t.Fatalf("POST /api/v1/exports: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestExportCreateReady(t *testing.T) {
 	if exportID == "" {
 		t.Fatalf("export response has no id: %s", resp.Snippet())
 	}
-	trackExport(ctx, s, exportID)
+	trackExport(s, exportID)
 
 	if status := harness.StringField(obj, "status"); status != "ready" {
 		t.Fatalf("export status: expected ready, got %q", status)
@@ -173,7 +173,7 @@ func TestExportCreateRequiresIdempotencyKey(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", "")
+	resp, err := exportCreate(ctx, s.API, ew.segment.ID, "")
 	if err != nil {
 		t.Fatalf("POST /api/v1/exports without a key: %v", err)
 	}
@@ -189,7 +189,7 @@ func TestExportCreateIsIdempotent(t *testing.T) {
 	defer cancel()
 
 	key := s.Reg.Name("key-idempotent")
-	first, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", key)
+	first, err := exportCreate(ctx, s.API, ew.segment.ID, key)
 	if err != nil {
 		t.Fatalf("first export: %v", err)
 	}
@@ -200,9 +200,9 @@ func TestExportCreateIsIdempotent(t *testing.T) {
 	}
 	firstObj, _ := firstBody.(map[string]any)
 	firstID := harness.StringField(firstObj, "id")
-	trackExport(ctx, s, firstID)
+	trackExport(s, firstID)
 
-	second, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", key)
+	second, err := exportCreate(ctx, s.API, ew.segment.ID, key)
 	if err != nil {
 		t.Fatalf("second export: %v", err)
 	}
@@ -249,7 +249,7 @@ func TestExportDownloadExcludesControlGroup(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	exportID := harness.StringField(obj, "id")
-	trackExport(ctx, s, exportID)
+	trackExport(s, exportID)
 
 	control, _ := harness.IntField(obj, "control_count", "controlCount")
 	exported, _ := harness.IntField(obj, "exported_count", "exportedCount")
@@ -282,7 +282,7 @@ func TestExportCountersInvariant(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", s.Reg.Name("key-counters"))
+	resp, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("key-counters"))
 	if err != nil {
 		t.Fatalf("POST /api/v1/exports: %v", err)
 	}
@@ -293,7 +293,7 @@ func TestExportCountersInvariant(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	exportID := harness.StringField(obj, "id")
-	trackExport(ctx, s, exportID)
+	trackExport(s, exportID)
 
 	get, err := s.API.Get(ctx, "/api/v1/exports/"+exportID, nil)
 	if err != nil {
@@ -328,7 +328,7 @@ func TestExportListJournal(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", s.Reg.Name("key-journal"))
+	resp, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("key-journal"))
 	if err != nil {
 		t.Fatalf("POST /api/v1/exports: %v", err)
 	}
@@ -339,7 +339,7 @@ func TestExportListJournal(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	exportID := harness.StringField(obj, "id")
-	trackExport(ctx, s, exportID)
+	trackExport(s, exportID)
 
 	list, err := s.API.Get(ctx, "/api/v1/exports", nil)
 	if err != nil {
@@ -385,7 +385,7 @@ func TestExportPreviewRejectsUnknownChannel(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := exportPreview(ctx, s, s.API, ew.segment.ID, "telegram")
+	resp, err := exportPreview(ctx, s.API, ew.segment.ID, "telegram")
 	if err != nil {
 		t.Fatalf("preview with an unknown channel: %v", err)
 	}
@@ -399,7 +399,7 @@ func TestExportPreviewRejectsUnknownSegment(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := exportPreview(ctx, s, s.API, "00000000-0000-0000-0000-000000000000", "sms")
+	resp, err := exportPreview(ctx, s.API, "00000000-0000-0000-0000-000000000000", "sms")
 	if err != nil {
 		t.Fatalf("preview with an unknown segment: %v", err)
 	}
@@ -408,7 +408,7 @@ func TestExportPreviewRejectsUnknownSegment(t *testing.T) {
 	s.RequireSchema("POST", "/api/v1/exports/preview", resp)
 }
 
-func trackExport(ctx context.Context, s *harness.Suite, exportID string) {
+func trackExport(s *harness.Suite, exportID string) {
 	s.T.Helper()
 	if exportID == "" {
 		return

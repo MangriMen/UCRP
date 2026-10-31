@@ -16,7 +16,7 @@ func TestContactLimitBlocksRepeatExport(t *testing.T) {
 		t.Fatalf("fixture contact limit: %v", err)
 	}
 
-	first, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", s.Reg.Name("limit-key-1"))
+	first, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("limit-key-1"))
 	if err != nil {
 		t.Fatalf("first export: %v", err)
 	}
@@ -26,9 +26,9 @@ func TestContactLimitBlocksRepeatExport(t *testing.T) {
 		t.Fatalf("decode first export: %v", err)
 	}
 	firstObj, _ := firstBody.(map[string]any)
-	trackExport(ctx, s, harness.StringField(firstObj, "id"))
+	trackExport(s, harness.StringField(firstObj, "id"))
 
-	preview, err := exportPreview(ctx, s, s.API, ew.segment.ID, "sms")
+	preview, err := exportPreview(ctx, s.API, ew.segment.ID, "sms")
 	if err != nil {
 		t.Fatalf("preview after export: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestContactLimitStrictestRuleWins(t *testing.T) {
 		t.Fatalf("fixture strict limit: %v", err)
 	}
 
-	first, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", s.Reg.Name("strict-key-1"))
+	first, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("strict-key-1"))
 	if err != nil {
 		t.Fatalf("first export: %v", err)
 	}
@@ -72,9 +72,9 @@ func TestContactLimitStrictestRuleWins(t *testing.T) {
 		t.Fatalf("decode first export: %v", err)
 	}
 	firstObj, _ := firstBody.(map[string]any)
-	trackExport(ctx, s, harness.StringField(firstObj, "id"))
+	trackExport(s, harness.StringField(firstObj, "id"))
 
-	preview, err := exportPreview(ctx, s, s.API, ew.segment.ID, "sms")
+	preview, err := exportPreview(ctx, s.API, ew.segment.ID, "sms")
 	if err != nil {
 		t.Fatalf("preview: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestContactLimitIsChannelScoped(t *testing.T) {
 		t.Fatalf("fixture sms limit: %v", err)
 	}
 
-	first, err := exportCreate(ctx, s.API, ew.segment.ID, "sms", "csv", s.Reg.Name("channel-key-1"))
+	first, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("channel-key-1"))
 	if err != nil {
 		t.Fatalf("first export: %v", err)
 	}
@@ -110,9 +110,9 @@ func TestContactLimitIsChannelScoped(t *testing.T) {
 		t.Fatalf("decode first export: %v", err)
 	}
 	firstObj, _ := firstBody.(map[string]any)
-	trackExport(ctx, s, harness.StringField(firstObj, "id"))
+	trackExport(s, harness.StringField(firstObj, "id"))
 
-	preview, err := exportPreview(ctx, s, s.API, ew.segment.ID, "sms")
+	preview, err := exportPreview(ctx, s.API, ew.segment.ID, "sms")
 	if err != nil {
 		t.Fatalf("preview: %v", err)
 	}
@@ -151,7 +151,7 @@ func TestContactLimitControlGroupNotLogged(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	exportID := harness.StringField(obj, "id")
-	trackExport(ctx, s, exportID)
+	trackExport(s, exportID)
 
 	control, _ := harness.IntField(obj, "control_count", "controlCount")
 	exported, _ := harness.IntField(obj, "exported_count", "exportedCount")

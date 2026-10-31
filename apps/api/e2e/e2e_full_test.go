@@ -29,7 +29,7 @@ func TestE2EImportToExport(t *testing.T) {
 	}
 	obj, _ := body.(map[string]any)
 	batchID := harness.StringField(obj, "batch_id", "batchId")
-	trackImport(ctx, s, batchID)
+	trackImport(s, batchID)
 
 	var guestID string
 	s.WaitFor(s.Cfg.ImportTimeout, "step 2 identity resolution to create the guest", func(ctx context.Context) (bool, error) {
@@ -37,7 +37,7 @@ func TestE2EImportToExport(t *testing.T) {
 		err := s.DB.QueryRowContext(ctx, `
 			SELECT guest_id FROM guest_identifier WHERE id_type = 'phone' AND value_normalized = $1`, phone).Scan(&id)
 		if err != nil {
-			return false, nil
+			return false, err
 		}
 		guestID = id
 		return true, nil
@@ -96,7 +96,7 @@ func TestE2EImportToExport(t *testing.T) {
 	s.RequireStatus(refresh, 200, "step 6: refresh recommendations")
 
 	marketer := s.Marketer()
-	preview, err := exportPreview(ctx, s, marketer, segmentID, "sms")
+	preview, err := exportPreview(ctx, marketer, segmentID, "sms")
 	if err != nil {
 		t.Fatalf("step 7 preview export: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestE2EImportToExport(t *testing.T) {
 		t.Fatalf("step 7: the imported guest must be exportable, to_send=%d", toSend)
 	}
 
-	exportResp, err := exportCreate(ctx, marketer, segmentID, "sms", "csv", s.Reg.Name("e2e-full-key"))
+	exportResp, err := exportCreate(ctx, marketer, segmentID, s.Reg.Name("e2e-full-key"))
 	if err != nil {
 		t.Fatalf("step 8 create export: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestE2EImportToExport(t *testing.T) {
 	}
 	exportObj, _ := exportBody.(map[string]any)
 	exportID := harness.StringField(exportObj, "id")
-	trackExport(ctx, s, exportID)
+	trackExport(s, exportID)
 
 	download, err := marketer.Get(ctx, "/api/v1/exports/"+exportID+"/download", nil)
 	if err != nil {
@@ -158,14 +158,14 @@ func TestE2ENewEventChangesSegmentAndRecommendations(t *testing.T) {
 		t.Fatalf("step 1 decode import: %v", err)
 	}
 	obj, _ := body.(map[string]any)
-	trackImport(ctx, s, harness.StringField(obj, "batch_id", "batchId"))
+	trackImport(s, harness.StringField(obj, "batch_id", "batchId"))
 
 	var guestID string
 	s.WaitFor(s.Cfg.ImportTimeout, "step 2 guest resolution", func(ctx context.Context) (bool, error) {
 		var id string
 		if err := s.DB.QueryRowContext(ctx, `
 			SELECT guest_id FROM guest_identifier WHERE id_type = 'phone' AND value_normalized = $1`, phone).Scan(&id); err != nil {
-			return false, nil
+			return false, err
 		}
 		guestID = id
 		return true, nil
@@ -196,7 +196,7 @@ func TestE2ENewEventChangesSegmentAndRecommendations(t *testing.T) {
 	}
 	obj2, _ := body2.(map[string]any)
 	batch2 := harness.StringField(obj2, "batch_id", "batchId")
-	trackImport(ctx, s, batch2)
+	trackImport(s, batch2)
 
 	s.WaitFor(s.Cfg.ImportTimeout, "step 5 second event to attach", func(ctx context.Context) (bool, error) {
 		n, err := s.DB.Count(ctx, `SELECT COUNT(*) FROM event WHERE import_batch_id = $1 AND guest_id = $2`, batch2, guestID)
