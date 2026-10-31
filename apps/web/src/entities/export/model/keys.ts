@@ -12,5 +12,4 @@ export const exportKeys = {
   all: ['exports'] as const,
   lists: () => [...exportKeys.all, 'list'] as const,
   list: (filters: ExportListFilters) => [...exportKeys.lists(), filters] as const,
-  detail: (id: string) => [...exportKeys.all, 'detail', id] as const,
 }

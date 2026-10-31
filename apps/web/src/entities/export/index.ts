@@ -1,4 +1,4 @@
-export { useExport, useExports } from './api/use-exports'
+export { useExports } from './api/use-exports'
 export { useDownloadExport } from './api/use-download-export'
 export { DownloadExportButton } from './ui/download-export-button'
 export { ExportStatusBadge } from './ui/export-status-badge'
