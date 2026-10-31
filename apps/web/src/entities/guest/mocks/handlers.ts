@@ -5,12 +5,13 @@ import {
   emptyProfile,
   mockGuestContacts,
   mockGuestEvents,
+  mockGuestMaskedIdentifiers,
   mockGuestMovement,
   mockGuestProfileExtras,
   mockGuestSegmentMembers,
   mockGuests,
 } from './fixtures'
-import type { Guest } from '../model/types'
+import type { Guest, GuestListItem } from '../model/types'
 
 const digits = (value: string) => value.replace(/\D/g, '')
 
@@ -95,6 +96,10 @@ const listGuests = (request: Request, tenantId: string | null) => {
         }),
     )
     .sort(compareBySort(params.get('sort') ?? '-createdAt'))
+    .map((guest): GuestListItem => ({
+      ...guest,
+      maskedIdentifiers: mockGuestMaskedIdentifiers[guest.id] ?? [],
+    }))
   return HttpResponse.json(paged(request, matched))
 }
 

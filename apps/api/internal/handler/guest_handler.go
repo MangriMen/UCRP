@@ -25,7 +25,10 @@ func NewGuestHandler(profiles *service.ProfileService, authorizer accessAuthoriz
 	return &GuestHandler{profiles: profiles, authorizer: authorizer}
 }
 
-const guestAmountPermission = "field.guest.total_amount.read"
+const (
+	guestAmountPermission      = "field.guest.total_amount.read"
+	guestIdentifiersPermission = "field.guest.identifiers.read"
+)
 
 var guestListSortFields = map[string]bool{
 	"createdAt":         true,
@@ -106,12 +109,12 @@ func parseGuestFilter(r *http.Request) (domain.GuestFilter, string) {
 	return filter, ""
 }
 
-func canReadGuestAmount(r *http.Request, authorizer accessAuthorizer) (bool, error) {
+func canReadGuestField(r *http.Request, authorizer accessAuthorizer, permission string) (bool, error) {
 	principal, ok := auth.PrincipalFrom(r.Context())
 	if !ok || authorizer == nil {
 		return false, nil
 	}
-	decision, err := authorizer.Authorize(r.Context(), principal, guestAmountPermission, access.Resource{})
+	decision, err := authorizer.Authorize(r.Context(), principal, permission, access.Resource{})
 	if err != nil {
 		return false, err
 	}
@@ -131,7 +134,7 @@ func (h *GuestHandler) search(w http.ResponseWriter, r *http.Request, tenantID s
 	if tenantID != "" {
 		filter.TenantID = tenantID
 	}
-	showAmount, err := canReadGuestAmount(r, h.authorizer)
+	showAmount, err := canReadGuestField(r, h.authorizer, guestAmountPermission)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
@@ -140,8 +143,14 @@ func (h *GuestHandler) search(w http.ResponseWriter, r *http.Request, tenantID s
 		httpx.WriteError(w, r, http.StatusForbidden, "forbidden_permission", "Нет доступа к сумме покупок")
 		return
 	}
+	showIdentifiers, err := canReadGuestField(r, h.authorizer, guestIdentifiersPermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
 	limit, offset := pageParams(r)
-	page, err := h.profiles.Search(r.Context(), filter, limit, offset, showAmount)
+	fields := service.GuestListAccess{Amount: showAmount, Identifiers: showIdentifiers}
+	page, err := h.profiles.Search(r.Context(), filter, limit, offset, fields)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
@@ -150,7 +159,7 @@ func (h *GuestHandler) search(w http.ResponseWriter, r *http.Request, tenantID s
 }
 
 func (h *GuestHandler) Get(w http.ResponseWriter, r *http.Request) {
-	showAmount, err := canReadGuestAmount(r, h.authorizer)
+	showAmount, err := canReadGuestField(r, h.authorizer, guestAmountPermission)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

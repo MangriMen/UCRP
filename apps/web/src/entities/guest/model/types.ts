@@ -1,6 +1,8 @@
 import type { Schema } from '@/shared/api/types'
 
 export type Guest = Schema<'Guest'>
+export type GuestListItem = Schema<'GuestListItem'>
+export type MaskedGuestIdentifier = Schema<'MaskedGuestIdentifier'>
 export type GuestStatus = Schema<'GuestStatus'>
 export type GuestEvent = Schema<'Event'>
 export type GuestMovementStep = Schema<'MovementStep'>

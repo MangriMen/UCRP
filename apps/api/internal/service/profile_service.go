@@ -35,19 +35,30 @@ type PageMeta struct {
 }
 
 type GuestListItem struct {
-	ID               string  `json:"id"`
-	DisplayName      string  `json:"displayName"`
-	Status           string  `json:"status"`
-	MergedIntoID     string  `json:"mergedIntoId,omitempty"`
-	TenantCount      int     `json:"tenantCount"`
-	EventCount       int     `json:"eventCount"`
-	FirstSeenAt      *string `json:"firstSeenAt"`
-	LastSeenAt       *string `json:"lastSeenAt"`
-	PurchaseCount    int     `json:"purchaseCount"`
-	TotalAmountMinor *int64  `json:"totalAmountMinor,omitempty"`
-	Currency         string  `json:"currency,omitempty"`
-	CreatedAt        string  `json:"createdAt"`
-	UpdatedAt        string  `json:"updatedAt"`
+	ID                string                  `json:"id"`
+	DisplayName       string                  `json:"displayName"`
+	Status            string                  `json:"status"`
+	MergedIntoID      string                  `json:"mergedIntoId,omitempty"`
+	TenantCount       int                     `json:"tenantCount"`
+	EventCount        int                     `json:"eventCount"`
+	FirstSeenAt       *string                 `json:"firstSeenAt"`
+	LastSeenAt        *string                 `json:"lastSeenAt"`
+	PurchaseCount     int                     `json:"purchaseCount"`
+	TotalAmountMinor  *int64                  `json:"totalAmountMinor,omitempty"`
+	Currency          string                  `json:"currency,omitempty"`
+	MaskedIdentifiers []MaskedGuestIdentifier `json:"maskedIdentifiers,omitzero"`
+	CreatedAt         string                  `json:"createdAt"`
+	UpdatedAt         string                  `json:"updatedAt"`
+}
+
+type MaskedGuestIdentifier struct {
+	IDType      string `json:"idType"`
+	ValueMasked string `json:"valueMasked"`
+}
+
+type GuestListAccess struct {
+	Amount      bool
+	Identifiers bool
 }
 
 type GuestPage struct {
@@ -160,7 +171,7 @@ func (s *ProfileService) Movement(ctx context.Context, guestID string, from, to 
 	return out, nil
 }
 
-func (s *ProfileService) Search(ctx context.Context, filter domain.GuestFilter, limit, offset int, showAmount bool) (*GuestPage, error) {
+func (s *ProfileService) Search(ctx context.Context, filter domain.GuestFilter, limit, offset int, fields GuestListAccess) (*GuestPage, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
@@ -172,22 +183,30 @@ func (s *ProfileService) Search(ctx context.Context, filter domain.GuestFilter, 
 	if err != nil {
 		return nil, err
 	}
+	var identifiers map[string][]MaskedGuestIdentifier
+	if fields.Identifiers {
+		identifiers, err = s.maskedIdentifiers(ctx, entries)
+		if err != nil {
+			return nil, err
+		}
+	}
 	out := make([]GuestListItem, 0, len(entries))
 	for _, e := range entries {
 		item := GuestListItem{
-			ID:            e.ID,
-			DisplayName:   e.DisplayName,
-			Status:        string(e.Status),
-			MergedIntoID:  e.MergedIntoID,
-			TenantCount:   e.TenantCount,
-			EventCount:    e.Stats.EventCount,
-			FirstSeenAt:   formatTimePtr(e.Stats.FirstSeenAt),
-			LastSeenAt:    formatTimePtr(e.Stats.LastSeenAt),
-			PurchaseCount: e.Stats.PurchaseCount,
-			CreatedAt:     e.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-			UpdatedAt:     e.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+			ID:                e.ID,
+			DisplayName:       e.DisplayName,
+			Status:            string(e.Status),
+			MergedIntoID:      e.MergedIntoID,
+			TenantCount:       e.TenantCount,
+			EventCount:        e.Stats.EventCount,
+			FirstSeenAt:       formatTimePtr(e.Stats.FirstSeenAt),
+			LastSeenAt:        formatTimePtr(e.Stats.LastSeenAt),
+			PurchaseCount:     e.Stats.PurchaseCount,
+			MaskedIdentifiers: identifiers[e.ID],
+			CreatedAt:         e.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:         e.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		}
-		if showAmount {
+		if fields.Amount {
 			amount := e.Stats.PurchaseTotal
 			item.TotalAmountMinor = &amount
 			item.Currency = e.Stats.Currency
@@ -207,6 +226,26 @@ func (s *ProfileService) Search(ctx context.Context, filter domain.GuestFilter, 
 			TotalPages: totalPages,
 		},
 	}, nil
+}
+
+func (s *ProfileService) maskedIdentifiers(ctx context.Context, entries []domain.GuestListEntry) (map[string][]MaskedGuestIdentifier, error) {
+	byGuest := make(map[string][]MaskedGuestIdentifier, len(entries))
+	guestIDs := make([]string, 0, len(entries))
+	for _, e := range entries {
+		byGuest[e.ID] = []MaskedGuestIdentifier{}
+		guestIDs = append(guestIDs, e.ID)
+	}
+	rows, err := s.identifiers.ListByGuests(ctx, guestIDs)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		byGuest[row.GuestID] = append(byGuest[row.GuestID], MaskedGuestIdentifier{
+			IDType:      row.IDType,
+			ValueMasked: domain.MaskIdentifierValue(row.IDType, row.ValueNormalized),
+		})
+	}
+	return byGuest, nil
 }
 
 func normalizeQuery(q string) string {

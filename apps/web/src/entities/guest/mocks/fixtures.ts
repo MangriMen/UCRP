@@ -4,6 +4,7 @@ import type {
   GuestEvent,
   GuestMovementStep,
   GuestProfile,
+  MaskedGuestIdentifier,
 } from '../model/types'
 
 export const mockGuests: Guest[] = [
@@ -62,6 +63,16 @@ export const mockGuests: Guest[] = [
     updatedAt: '2026-09-20T08:00:00Z',
   },
 ]
+
+export const mockGuestMaskedIdentifiers: Record<string, MaskedGuestIdentifier[]> = {
+  'guest-0001': [
+    { idType: 'phone', valueMasked: '***4567' },
+    { idType: 'email', valueMasked: 'i***@example.com' },
+    { idType: 'card', valueMasked: '***1234' },
+  ],
+  'guest-0002': [{ idType: 'phone', valueMasked: '***8899' }],
+  'guest-0004': [{ idType: 'loyalty_id', valueMasked: '***0042' }],
+}
 
 export const mockGuestSegmentMembers: Record<string, string[]> = {
   'segment-0001': ['guest-0001', 'guest-0002'],

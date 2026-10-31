@@ -373,6 +373,10 @@ components:
       $ref: ./components/schemas/guests.yaml#/GuestSegmentSummary
     GuestProfile:
       $ref: ./components/schemas/guests.yaml#/GuestProfile
+    MaskedGuestIdentifier:
+      $ref: ./components/schemas/guests.yaml#/MaskedGuestIdentifier
+    GuestListItem:
+      $ref: ./components/schemas/guests.yaml#/GuestListItem
     GuestPage:
       $ref: ./components/schemas/guests.yaml#/GuestPage
     Event:
