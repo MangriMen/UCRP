@@ -4,15 +4,15 @@ Project documentation for UCRP, a unified recommendation platform for shopping c
 
 ## Where things live
 
-| Location                   | What belongs there                                                                          | Lifecycle                   |
-| -------------------------- | ------------------------------------------------------------------------------------------- | --------------------------- |
-| `../ARCHITECTURE.md`       | Stable technical rules: layers, dependency direction, module boundaries                     | Changes rarely              |
-| `requirements/`            | What the system must do: customer input, assumptions, use cases, open questions             | Updated when scope changes  |
-| `design/`                  | How it is designed: data model, diagrams, CRUD matrix, traceability, registry               | Updated together with code  |
-| `openapi.json`, `openapi/` | API contract, the **source of truth** for paths, schemas and roles                          | Updated with every endpoint |
-| `proposals/`               | Ideas not accepted yet. Move to `design/` once agreed, delete if rejected                   | Short-lived                 |
-| `e2e/`                     | E2E test analysis and plan. Kept as is until its fate is decided                            | Not maintained              |
-| `../archive/`              | Finished planning artifacts kept for history. Frozen; live docs may cite it only as history | Never updated               |
+| Location               | What belongs there                                                                          | Lifecycle                   |
+| ---------------------- | ------------------------------------------------------------------------------------------- | --------------------------- |
+| `../ARCHITECTURE.md`   | Stable technical rules: layers, dependency direction, module boundaries                     | Changes rarely              |
+| `requirements/`        | What the system must do: customer input, assumptions, use cases, open questions             | Updated when scope changes  |
+| `design/`              | How it is designed: data model, diagrams, CRUD matrix, traceability, registry               | Updated together with code  |
+| `../packages/openapi/` | API contract in YAML, the **source of truth** for paths, schemas and roles                  | Updated with every endpoint |
+| `proposals/`           | Ideas not accepted yet. Move to `design/` once agreed, delete if rejected                   | Short-lived                 |
+| `e2e/`                 | E2E test analysis and plan. Kept as is until its fate is decided                            | Not maintained              |
+| `../archive/`          | Finished planning artifacts kept for history. Frozen; live docs may cite it only as history | Never updated               |
 
 Rule of thumb: a document that describes the system as it is or must be goes to `requirements/` or `design/`. A document about how the work was planned or analyzed, once that work is done, goes to `archive/`.
 

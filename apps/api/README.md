@@ -2,7 +2,7 @@
 
 Go backend for UCRP: HTTP API (`cmd/api`), background workers (`cmd/worker`) and a demo data generator (`cmd/seed`). Module: `github.com/MangriMen/UCRP`.
 
-Layering and dependency rules are in [ARCHITECTURE.md](../../ARCHITECTURE.md). The API contract is `docs/openapi.json`; the data model is explained in `docs/design/05-er-data-model.md`.
+Layering and dependency rules are in [ARCHITECTURE.md](../../ARCHITECTURE.md). The API contract is `packages/openapi/`; the data model is explained in `docs/design/05-er-data-model.md`.
 
 ## Commands
 

@@ -25,9 +25,9 @@ Other commands: `bun run build`, `bun run lint`, `bun run test`, `bun run format
 ```text
 apps/api/           Go HTTP API and workers
 apps/web/           React + Vite + TypeScript SPA
-packages/           shared packages (currently api-docs: Swagger UI)
+packages/           openapi (API contract), api-docs (Swagger UI)
 deploy/             Dockerfiles and compose files
-docs/               requirements, design and the OpenAPI contract
+docs/               requirements and design
 archive/            finished planning artifacts
 scripts/            go-check.sh, run-on-tree.sh used by hooks and CI
 ```
@@ -48,4 +48,4 @@ scripts/            go-check.sh, run-on-tree.sh used by hooks and CI
 
 ## Contract changes
 
-`docs/openapi.json` with `docs/openapi/` is the source of truth. After changing it, run `bun run gen:api` in `apps/web` and update `docs/design/endpoint-registry.md`.
+`packages/openapi/` is the source of truth. After changing it, run `bun run gen:api` in `apps/web` and update `docs/design/endpoint-registry.md`.

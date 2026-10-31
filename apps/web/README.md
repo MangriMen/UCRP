@@ -11,4 +11,4 @@ bun run build      # type-check and production build
 bun run gen:api    # regenerate src/shared/api/schema.d.ts from docs/openapi.json
 ```
 
-API types are generated from the OpenAPI contract; after changing `docs/openapi.json` or `docs/openapi/`, run `gen:api` and commit the result.
+API types are generated from the OpenAPI contract; after changing `packages/openapi/`, run `gen:api` and commit the result.
