@@ -1,0 +1,88 @@
+{
+    "Project":  {
+                    "type":  "object",
+                    "required":  [
+                                     "id",
+                                     "tenantId",
+                                     "code",
+                                     "name",
+                                     "isActive"
+                                 ],
+                    "properties":  {
+                                       "id":  {
+                                                  "type":  "string"
+                                              },
+                                       "tenantId":  {
+                                                        "type":  "string"
+                                                    },
+                                       "tenantName":  {
+                                                          "type":  "string",
+                                                          "readOnly":  true
+                                                      },
+                                       "code":  {
+                                                    "type":  "string",
+                                                    "maxLength":  64
+                                                },
+                                       "name":  {
+                                                    "type":  "string",
+                                                    "maxLength":  200
+                                                },
+                                       "isActive":  {
+                                                        "type":  "boolean"
+                                                    },
+                                       "createdAt":  {
+                                                         "type":  "string",
+                                                         "format":  "date-time"
+                                                     },
+                                       "updatedAt":  {
+                                                         "type":  "string",
+                                                         "format":  "date-time"
+                                                     }
+                                   }
+                },
+    "ProjectRequest":  {
+                           "type":  "object",
+                           "required":  [
+                                            "tenantId",
+                                            "code",
+                                            "name"
+                                        ],
+                           "properties":  {
+                                              "tenantId":  {
+                                                               "type":  "string"
+                                                           },
+                                              "code":  {
+                                                           "type":  "string",
+                                                           "minLength":  1,
+                                                           "maxLength":  64
+                                                       },
+                                              "name":  {
+                                                           "type":  "string",
+                                                           "minLength":  1,
+                                                           "maxLength":  200
+                                                       },
+                                              "isActive":  {
+                                                               "type":  "boolean",
+                                                               "default":  true
+                                                           }
+                                          }
+                       },
+    "ProjectPage":  {
+                        "type":  "object",
+                        "required":  [
+                                         "items",
+                                         "meta"
+                                     ],
+                        "properties":  {
+                                           "items":  {
+                                                         "type":  "array",
+                                                         "items":  {
+                                                                       "$ref": "./reference-projects.json#/Project"
+                                                                   }
+                                                     },
+                                           "meta":  {
+                                                        "$ref": "./common.json#/PageMeta"
+                                                    }
+                                       }
+                    }
+}

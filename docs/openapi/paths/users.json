@@ -1,0 +1,236 @@
+{
+    "paths":  {
+                  "/api/v1/users":  {
+                                        "get":  {
+                                                    "tags":  [
+                                                                 "Users"
+                                                             ],
+                                                    "operationId":  "listUsers",
+                                                    "summary":  "Список пользователей",
+                                                    "x-roles":  [
+                                                                    "R-2"
+                                                                ],
+                                                    "x-uc":  [
+                                                                 "UC-18"
+                                                             ],
+                                                    "parameters":  [
+                                                                       {
+                                                                           "$ref": "../components/parameters.json#/Page"
+                                                                       },
+                                                                       {
+                                                                           "$ref": "../components/parameters.json#/PageSize"
+                                                                       },
+                                                                       {
+                                                                           "name":  "role",
+                                                                           "in":  "query",
+                                                                           "schema":  {
+                                                                                          "$ref": "../components/schemas/common.json#/UserRole"
+                                                                                      }
+                                                                       },
+                                                                       {
+                                                                           "name":  "is_active",
+                                                                           "in":  "query",
+                                                                           "schema":  {
+                                                                                          "type":  "boolean"
+                                                                                      }
+                                                                       },
+                                                                       {
+                                                                           "name":  "q",
+                                                                           "in":  "query",
+                                                                           "description":  "Поиск по email или имени",
+                                                                           "schema":  {
+                                                                                          "type":  "string",
+                                                                                          "maxLength":  200
+                                                                                      }
+                                                                       }
+                                                                   ],
+                                                    "responses":  {
+                                                                      "200":  {
+                                                                                  "description":  "Страница пользователей",
+                                                                                  "content":  {
+                                                                                                  "application/json":  {
+                                                                                                                           "schema":  {
+                                                                                                                                          "$ref": "../components/schemas/users.json#/UserPage"
+                                                                                                                                      }
+                                                                                                                       }
+                                                                                              }
+                                                                              },
+                                                                      "401":  {
+                                                                                  "$ref": "../components/responses.json#/Unauthorized"
+                                                                              },
+                                                                      "403":  {
+                                                                                  "$ref": "../components/responses.json#/Forbidden"
+                                                                              }
+                                                                  }
+                                                },
+                                        "post":  {
+                                                     "tags":  [
+                                                                  "Users"
+                                                              ],
+                                                     "operationId":  "createUser",
+                                                     "summary":  "Создать пользователя",
+                                                     "description":  "Для роли `tenant` (R-3) обязателен `tenantId`; CHECK-ограничение БД связывает роль и арендатора. Пароль задаётся администратором и передаётся вне API (или ссылкой сброса).",
+                                                     "x-roles":  [
+                                                                     "R-2"
+                                                                 ],
+                                                     "x-uc":  [
+                                                                  "UC-18"
+                                                              ],
+                                                     "requestBody":  {
+                                                                         "required":  true,
+                                                                         "content":  {
+                                                                                         "application/json":  {
+                                                                                                                  "schema":  {
+                                                                                                                                 "$ref": "../components/schemas/users.json#/UserCreateRequest"
+                                                                                                                             }
+                                                                                                              }
+                                                                                     }
+                                                                     },
+                                                     "responses":  {
+                                                                       "201":  {
+                                                                                   "description":  "Пользователь создан",
+                                                                                   "content":  {
+                                                                                                   "application/json":  {
+                                                                                                                            "schema":  {
+                                                                                                                                           "$ref": "../components/schemas/users.json#/User"
+                                                                                                                                       }
+                                                                                                                        }
+                                                                                               }
+                                                                               },
+                                                                       "400":  {
+                                                                                   "$ref": "../components/responses.json#/BadRequest"
+                                                                               },
+                                                                       "401":  {
+                                                                                   "$ref": "../components/responses.json#/Unauthorized"
+                                                                               },
+                                                                       "403":  {
+                                                                                   "$ref": "../components/responses.json#/Forbidden"
+                                                                               },
+                                                                       "409":  {
+                                                                                   "$ref": "../components/responses.json#/Conflict"
+                                                                               }
+                                                                   }
+                                                 }
+                                    },
+                  "/api/v1/users/{id}":  {
+                                             "parameters":  [
+                                                                {
+                                                                    "$ref": "../components/parameters.json#/IdPath"
+                                                                }
+                                                            ],
+                                             "get":  {
+                                                         "tags":  [
+                                                                      "Users"
+                                                                  ],
+                                                         "operationId":  "getUser",
+                                                         "summary":  "Карточка пользователя",
+                                                         "x-roles":  [
+                                                                         "R-2"
+                                                                     ],
+                                                         "x-uc":  [
+                                                                      "UC-18"
+                                                                  ],
+                                                         "responses":  {
+                                                                           "200":  {
+                                                                                       "description":  "Пользователь",
+                                                                                       "content":  {
+                                                                                                       "application/json":  {
+                                                                                                                                "schema":  {
+                                                                                                                                               "$ref": "../components/schemas/users.json#/User"
+                                                                                                                                           }
+                                                                                                                            }
+                                                                                                   }
+                                                                                   },
+                                                                           "401":  {
+                                                                                       "$ref": "../components/responses.json#/Unauthorized"
+                                                                                   },
+                                                                           "403":  {
+                                                                                       "$ref": "../components/responses.json#/Forbidden"
+                                                                                   },
+                                                                           "404":  {
+                                                                                       "$ref": "../components/responses.json#/NotFound"
+                                                                                   }
+                                                                       }
+                                                     },
+                                             "patch":  {
+                                                           "tags":  [
+                                                                        "Users"
+                                                                    ],
+                                                           "operationId":  "updateUser",
+                                                           "summary":  "Изменить роль, активность, сбросить пароль",
+                                                           "description":  "Частичное обновление. Смена роли на `tenant` требует `tenantId`. Сброс пароля инвалидирует refresh-токены пользователя.",
+                                                           "x-roles":  [
+                                                                           "R-2"
+                                                                       ],
+                                                           "x-uc":  [
+                                                                        "UC-18"
+                                                                    ],
+                                                           "requestBody":  {
+                                                                               "required":  true,
+                                                                               "content":  {
+                                                                                               "application/json":  {
+                                                                                                                        "schema":  {
+                                                                                                                                       "$ref": "../components/schemas/users.json#/UserUpdateRequest"
+                                                                                                                                   }
+                                                                                                                    }
+                                                                                           }
+                                                                           },
+                                                           "responses":  {
+                                                                             "200":  {
+                                                                                         "description":  "Обновлённый пользователь",
+                                                                                         "content":  {
+                                                                                                         "application/json":  {
+                                                                                                                                  "schema":  {
+                                                                                                                                                 "$ref": "../components/schemas/users.json#/User"
+                                                                                                                                             }
+                                                                                                                              }
+                                                                                                     }
+                                                                                     },
+                                                                             "400":  {
+                                                                                         "$ref": "../components/responses.json#/BadRequest"
+                                                                                     },
+                                                                             "401":  {
+                                                                                         "$ref": "../components/responses.json#/Unauthorized"
+                                                                                     },
+                                                                             "403":  {
+                                                                                         "$ref": "../components/responses.json#/Forbidden"
+                                                                                     },
+                                                                             "404":  {
+                                                                                         "$ref": "../components/responses.json#/NotFound"
+                                                                                     }
+                                                                         }
+                                                       },
+                                             "delete":  {
+                                                            "tags":  [
+                                                                         "Users"
+                                                                     ],
+                                                            "operationId":  "deactivateUser",
+                                                            "summary":  "Деактивация пользователя (soft)",
+                                                            "description":  "Физического удаления нет: `isActive=false`, refresh-токены отзываются. Нельзя деактивировать последнего активного R-2 — 409.",
+                                                            "x-roles":  [
+                                                                            "R-2"
+                                                                        ],
+                                                            "x-uc":  [
+                                                                         "UC-18"
+                                                                     ],
+                                                            "responses":  {
+                                                                              "204":  {
+                                                                                          "$ref": "../components/responses.json#/NoContent"
+                                                                                      },
+                                                                              "401":  {
+                                                                                          "$ref": "../components/responses.json#/Unauthorized"
+                                                                                      },
+                                                                              "403":  {
+                                                                                          "$ref": "../components/responses.json#/Forbidden"
+                                                                                      },
+                                                                              "404":  {
+                                                                                          "$ref": "../components/responses.json#/NotFound"
+                                                                                      },
+                                                                              "409":  {
+                                                                                          "$ref": "../components/responses.json#/Conflict"
+                                                                                      }
+                                                                          }
+                                                        }
+                                         }
+              }
+}

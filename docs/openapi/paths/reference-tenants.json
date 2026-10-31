@@ -1,0 +1,245 @@
+{
+    "paths":  {
+                  "/api/v1/tenants":  {
+                                          "get":  {
+                                                      "tags":  [
+                                                                   "Reference"
+                                                               ],
+                                                      "operationId":  "listTenants",
+                                                      "summary":  "Список арендаторов",
+                                                      "description":  "R-3 видит только собственную запись: фильтр `tenant_id = :claimTenant` применяется в repository, значение из запроса игнорируется.",
+                                                      "x-roles":  [
+                                                                      "R-1",
+                                                                      "R-2",
+                                                                      "R-4",
+                                                                      "R-3 (own)"
+                                                                  ],
+                                                      "x-uc":  [
+                                                                   "UC-17",
+                                                                   "UC-8"
+                                                               ],
+                                                      "parameters":  [
+                                                                         {
+                                                                             "$ref": "../components/parameters.json#/Page"
+                                                                         },
+                                                                         {
+                                                                             "$ref": "../components/parameters.json#/PageSize"
+                                                                         },
+                                                                         {
+                                                                             "name":  "q",
+                                                                             "in":  "query",
+                                                                             "schema":  {
+                                                                                            "type":  "string",
+                                                                                            "maxLength":  200
+                                                                                        }
+                                                                         },
+                                                                         {
+                                                                             "name":  "category_id",
+                                                                             "in":  "query",
+                                                                             "schema":  {
+                                                                                            "type":  "string"
+                                                                                        }
+                                                                         },
+                                                                         {
+                                                                             "name":  "is_active",
+                                                                             "in":  "query",
+                                                                             "schema":  {
+                                                                                            "type":  "boolean"
+                                                                                        }
+                                                                         }
+                                                                     ],
+                                                      "responses":  {
+                                                                        "200":  {
+                                                                                    "description":  "Страница арендаторов",
+                                                                                    "content":  {
+                                                                                                    "application/json":  {
+                                                                                                                             "schema":  {
+                                                                                                                                            "$ref": "../components/schemas/reference-tenants.json#/TenantPage"
+                                                                                                                                        }
+                                                                                                                         }
+                                                                                                }
+                                                                                },
+                                                                        "401":  {
+                                                                                    "$ref": "../components/responses.json#/Unauthorized"
+                                                                                },
+                                                                        "403":  {
+                                                                                    "$ref": "../components/responses.json#/Forbidden"
+                                                                                }
+                                                                    }
+                                                  },
+                                          "post":  {
+                                                       "tags":  [
+                                                                    "Reference"
+                                                                ],
+                                                       "operationId":  "createTenant",
+                                                       "summary":  "Создать арендатора",
+                                                       "x-roles":  [
+                                                                       "R-4"
+                                                                   ],
+                                                       "x-uc":  [
+                                                                    "UC-17"
+                                                                ],
+                                                       "requestBody":  {
+                                                                           "required":  true,
+                                                                           "content":  {
+                                                                                           "application/json":  {
+                                                                                                                    "schema":  {
+                                                                                                                                   "$ref": "../components/schemas/reference-tenants.json#/TenantCreateRequest"
+                                                                                                                               }
+                                                                                                                }
+                                                                                       }
+                                                                       },
+                                                       "responses":  {
+                                                                         "201":  {
+                                                                                     "description":  "Арендатор создан",
+                                                                                     "content":  {
+                                                                                                     "application/json":  {
+                                                                                                                              "schema":  {
+                                                                                                                                             "$ref": "../components/schemas/reference-tenants.json#/Tenant"
+                                                                                                                                         }
+                                                                                                                          }
+                                                                                                 }
+                                                                                 },
+                                                                         "400":  {
+                                                                                     "$ref": "../components/responses.json#/BadRequest"
+                                                                                 },
+                                                                         "401":  {
+                                                                                     "$ref": "../components/responses.json#/Unauthorized"
+                                                                                 },
+                                                                         "403":  {
+                                                                                     "$ref": "../components/responses.json#/Forbidden"
+                                                                                 },
+                                                                         "409":  {
+                                                                                     "$ref": "../components/responses.json#/Conflict"
+                                                                                 }
+                                                                     }
+                                                   }
+                                      },
+                  "/api/v1/tenants/{id}":  {
+                                               "parameters":  [
+                                                                  {
+                                                                      "$ref": "../components/parameters.json#/IdPath"
+                                                                  }
+                                                              ],
+                                               "get":  {
+                                                           "tags":  [
+                                                                        "Reference"
+                                                                    ],
+                                                           "operationId":  "getTenant",
+                                                           "summary":  "Карточка арендатора",
+                                                           "description":  "R-3 допускается только к собственной записи; чужой `id` → 403 `forbidden_tenant`.",
+                                                           "x-roles":  [
+                                                                           "R-1",
+                                                                           "R-2",
+                                                                           "R-4",
+                                                                           "R-3 (own)"
+                                                                       ],
+                                                           "x-uc":  [
+                                                                        "UC-17",
+                                                                        "UC-8"
+                                                                    ],
+                                                           "responses":  {
+                                                                             "200":  {
+                                                                                         "description":  "Арендатор",
+                                                                                         "content":  {
+                                                                                                         "application/json":  {
+                                                                                                                                  "schema":  {
+                                                                                                                                                 "$ref": "../components/schemas/reference-tenants.json#/Tenant"
+                                                                                                                                             }
+                                                                                                                              }
+                                                                                                     }
+                                                                                     },
+                                                                             "401":  {
+                                                                                         "$ref": "../components/responses.json#/Unauthorized"
+                                                                                     },
+                                                                             "403":  {
+                                                                                         "$ref": "../components/responses.json#/Forbidden"
+                                                                                     },
+                                                                             "404":  {
+                                                                                         "$ref": "../components/responses.json#/NotFound"
+                                                                                     }
+                                                                         }
+                                                       },
+                                               "patch":  {
+                                                             "tags":  [
+                                                                          "Reference"
+                                                                      ],
+                                                             "operationId":  "updateTenant",
+                                                             "summary":  "Изменить арендатора",
+                                                             "description":  "R-1 вправе менять только поле `priority` (приоритет в скоринге рекомендаций); попытка изменить любое другое поле → 403 `forbidden_field`.",
+                                                             "x-roles":  [
+                                                                             "R-4",
+                                                                             "R-1 (priority)"
+                                                                         ],
+                                                             "x-uc":  [
+                                                                          "UC-17"
+                                                                      ],
+                                                             "requestBody":  {
+                                                                                 "required":  true,
+                                                                                 "content":  {
+                                                                                                 "application/json":  {
+                                                                                                                          "schema":  {
+                                                                                                                                         "$ref": "../components/schemas/reference-tenants.json#/TenantUpdateRequest"
+                                                                                                                                     }
+                                                                                                                      }
+                                                                                             }
+                                                                             },
+                                                             "responses":  {
+                                                                               "200":  {
+                                                                                           "description":  "Обновлённый арендатор",
+                                                                                           "content":  {
+                                                                                                           "application/json":  {
+                                                                                                                                    "schema":  {
+                                                                                                                                                   "$ref": "../components/schemas/reference-tenants.json#/Tenant"
+                                                                                                                                               }
+                                                                                                                                }
+                                                                                                       }
+                                                                                       },
+                                                                               "400":  {
+                                                                                           "$ref": "../components/responses.json#/BadRequest"
+                                                                                       },
+                                                                               "401":  {
+                                                                                           "$ref": "../components/responses.json#/Unauthorized"
+                                                                                       },
+                                                                               "403":  {
+                                                                                           "$ref": "../components/responses.json#/Forbidden"
+                                                                                       },
+                                                                               "404":  {
+                                                                                           "$ref": "../components/responses.json#/NotFound"
+                                                                                       }
+                                                                           }
+                                                         },
+                                               "delete":  {
+                                                              "tags":  [
+                                                                           "Reference"
+                                                                       ],
+                                                              "operationId":  "deleteTenant",
+                                                              "summary":  "Soft-delete арендатора",
+                                                              "description":  "Удаление запрещено, если у арендатора есть события — 409 `tenant_has_events`.",
+                                                              "x-roles":  [
+                                                                              "R-4"
+                                                                          ],
+                                                              "x-uc":  [
+                                                                           "UC-17"
+                                                                       ],
+                                                              "responses":  {
+                                                                                "204":  {
+                                                                                            "$ref": "../components/responses.json#/NoContent"
+                                                                                        },
+                                                                                "401":  {
+                                                                                            "$ref": "../components/responses.json#/Unauthorized"
+                                                                                        },
+                                                                                "403":  {
+                                                                                            "$ref": "../components/responses.json#/Forbidden"
+                                                                                        },
+                                                                                "404":  {
+                                                                                            "$ref": "../components/responses.json#/NotFound"
+                                                                                        },
+                                                                                "409":  {
+                                                                                            "$ref": "../components/responses.json#/Conflict"
+                                                                                        }
+                                                                            }
+                                                          }
+                                           }
+              }
+}

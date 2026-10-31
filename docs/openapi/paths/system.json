@@ -1,0 +1,45 @@
+{
+    "paths":  {
+                  "/healthz":  {
+                                   "get":  {
+                                               "tags":  [
+                                                            "System"
+                                                        ],
+                                               "operationId":  "getHealth",
+                                               "summary":  "Проверка живости",
+                                               "description":  "Вне префикса `/api/v1`, без аутентификации. Проверяет доступность БД и очереди.",
+                                               "security":  [
+
+                                                            ],
+                                               "x-roles":  [
+                                                               "pub"
+                                                           ],
+                                               "responses":  {
+                                                                 "200":  {
+                                                                             "description":  "Сервис жив",
+                                                                             "content":  {
+                                                                                             "application/json":  {
+                                                                                                                      "schema":  {
+                                                                                                                                     "$ref": "../components/schemas/common.json#/HealthResponse"
+                                                                                                                                 }
+                                                                                                                  }
+                                                                                         }
+                                                                         },
+                                                                 "503":  {
+                                                                             "description":  "Сервис не готов",
+                                                                             "content":  {
+                                                                                             "application/json":  {
+                                                                                                                      "schema":  {
+                                                                                                                                     "$ref": "../components/schemas/common.json#/HealthResponse"
+                                                                                                                                 }
+                                                                                                                  }
+                                                                                         }
+                                                                         },
+                                                                 "429":  {
+                                                                             "$ref": "../components/responses.json#/TooManyRequests"
+                                                                         }
+                                                             }
+                                           }
+                               }
+              }
+}

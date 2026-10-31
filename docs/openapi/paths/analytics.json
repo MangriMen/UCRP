@@ -1,0 +1,249 @@
+{
+    "paths":  {
+                  "/api/v1/dashboard/penetration":  {
+                                                        "get":  {
+                                                                    "tags":  [
+                                                                                 "Analytics"
+                                                                             ],
+                                                                    "operationId":  "getPenetration",
+                                                                    "summary":  "Распределение гостей по числу арендаторов и динамика",
+                                                                    "description":  "Для активных гостей считается число различных `event.tenantId` среди событий типов с `countsAsPresence`. Возвращает распределение 1 / 2 / 3+ и долю гостей с двумя и более арендаторами. Период не более 24 месяцев, `from \u003c= to`, иначе 400.",
+                                                                    "x-roles":  [
+                                                                                    "R-2",
+                                                                                    "R-1",
+                                                                                    "R-4"
+                                                                                ],
+                                                                    "x-uc":  [
+                                                                                 "UC-7"
+                                                                             ],
+                                                                    "parameters":  [
+                                                                                       {
+                                                                                           "$ref": "../components/parameters.json#/From"
+                                                                                       },
+                                                                                       {
+                                                                                           "$ref": "../components/parameters.json#/To"
+                                                                                       },
+                                                                                       {
+                                                                                           "$ref": "../components/parameters.json#/Granularity"
+                                                                                       }
+                                                                                   ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Распределение и динамика",
+                                                                                                  "content":  {
+                                                                                                                  "application/json":  {
+                                                                                                                                           "schema":  {
+                                                                                                                                                          "$ref": "../components/schemas/analytics.json#/PenetrationReport"
+                                                                                                                                                      }
+                                                                                                                                       }
+                                                                                                              }
+                                                                                              },
+                                                                                      "400":  {
+                                                                                                  "$ref": "../components/responses.json#/BadRequest"
+                                                                                              },
+                                                                                      "401":  {
+                                                                                                  "$ref": "../components/responses.json#/Unauthorized"
+                                                                                              },
+                                                                                      "403":  {
+                                                                                                  "$ref": "../components/responses.json#/Forbidden"
+                                                                                              }
+                                                                                  }
+                                                                }
+                                                    },
+                  "/api/v1/dashboard/metrics":  {
+                                                    "get":  {
+                                                                "tags":  [
+                                                                             "Analytics"
+                                                                         ],
+                                                                "operationId":  "getDashboardMetrics",
+                                                                "summary":  "Ключевые метрики платформы",
+                                                                "description":  "Match rate (цель ≥ 70%), доля оспоренных склеек (\u003c 1%), время сегмент → выгрузка (медиана и p95, цель ≤ 5 мин), конверсия рассылки (≥ 3%), инкремент визитов. Все показатели вычисляются запросами по таблицам ER, отдельных таблиц метрик нет.",
+                                                                "x-roles":  [
+                                                                                "R-2",
+                                                                                "R-1",
+                                                                                "R-4"
+                                                                            ],
+                                                                "x-uc":  [
+                                                                             "UC-7"
+                                                                         ],
+                                                                "parameters":  [
+                                                                                   {
+                                                                                       "$ref": "../components/parameters.json#/From"
+                                                                                   },
+                                                                                   {
+                                                                                       "$ref": "../components/parameters.json#/To"
+                                                                                   }
+                                                                               ],
+                                                                "responses":  {
+                                                                                  "200":  {
+                                                                                              "description":  "Метрики за период",
+                                                                                              "content":  {
+                                                                                                              "application/json":  {
+                                                                                                                                       "schema":  {
+                                                                                                                                                      "$ref": "../components/schemas/analytics.json#/DashboardMetrics"
+                                                                                                                                                  }
+                                                                                                                                   }
+                                                                                                          }
+                                                                                          },
+                                                                                  "400":  {
+                                                                                              "$ref": "../components/responses.json#/BadRequest"
+                                                                                          },
+                                                                                  "401":  {
+                                                                                              "$ref": "../components/responses.json#/Unauthorized"
+                                                                                          },
+                                                                                  "403":  {
+                                                                                              "$ref": "../components/responses.json#/Forbidden"
+                                                                                          }
+                                                                              }
+                                                            }
+                                                },
+                  "/api/v1/tenants/{id}/aggregates":  {
+                                                          "parameters":  [
+                                                                             {
+                                                                                 "$ref": "../components/parameters.json#/IdPath"
+                                                                             }
+                                                                         ],
+                                                          "get":  {
+                                                                      "tags":  [
+                                                                                   "Analytics"
+                                                                               ],
+                                                                      "operationId":  "getTenantAggregates",
+                                                                      "summary":  "Агрегаты арендатора",
+                                                                      "description":  "R-3 получает только собственные агрегаты: `tenantId` из пути сверяется с claim в service, несовпадение → 403 `forbidden_tenant`; repository использует только методы `...ForTenant`. В ответе нет идентификаторов гостей. Ячейки меньше k = 5 скрываются (`suppressed = true`, значение `null`). R-2, R-1, R-4 могут запросить любого арендатора.",
+                                                                      "x-roles":  [
+                                                                                      "R-3 (own)",
+                                                                                      "R-2",
+                                                                                      "R-1",
+                                                                                      "R-4"
+                                                                                  ],
+                                                                      "x-uc":  [
+                                                                                   "UC-8"
+                                                                               ],
+                                                                      "parameters":  [
+                                                                                         {
+                                                                                             "$ref": "../components/parameters.json#/From"
+                                                                                         },
+                                                                                         {
+                                                                                             "$ref": "../components/parameters.json#/To"
+                                                                                         },
+                                                                                         {
+                                                                                             "$ref": "../components/parameters.json#/Granularity"
+                                                                                         }
+                                                                                     ],
+                                                                      "responses":  {
+                                                                                        "200":  {
+                                                                                                    "description":  "Агрегаты арендатора",
+                                                                                                    "content":  {
+                                                                                                                    "application/json":  {
+                                                                                                                                             "schema":  {
+                                                                                                                                                            "$ref": "../components/schemas/analytics-tenant.json#/TenantAggregates"
+                                                                                                                                                        }
+                                                                                                                                         }
+                                                                                                                }
+                                                                                                },
+                                                                                        "400":  {
+                                                                                                    "$ref": "../components/responses.json#/BadRequest"
+                                                                                                },
+                                                                                        "401":  {
+                                                                                                    "$ref": "../components/responses.json#/Unauthorized"
+                                                                                                },
+                                                                                        "403":  {
+                                                                                                    "$ref": "../components/responses.json#/Forbidden"
+                                                                                                },
+                                                                                        "404":  {
+                                                                                                    "$ref": "../components/responses.json#/NotFound"
+                                                                                                }
+                                                                                    }
+                                                                  }
+                                                      },
+                  "/api/v1/data-quality/sources":  {
+                                                       "get":  {
+                                                                   "tags":  [
+                                                                                "Analytics"
+                                                                            ],
+                                                                   "operationId":  "listDataQualitySources",
+                                                                   "summary":  "Качество данных по источникам",
+                                                                   "description":  "По каждому источнику: дата последней успешной загрузки, доля отклонённых строк за 30 дней, число спорных профилей. Предупреждение ставится при доле отклонённых выше 10% или при данных старше 7 дней.",
+                                                                   "x-roles":  [
+                                                                                   "R-4",
+                                                                                   "R-2"
+                                                                               ],
+                                                                   "x-uc":  [
+                                                                                "UC-9"
+                                                                            ],
+                                                                   "responses":  {
+                                                                                     "200":  {
+                                                                                                 "description":  "Список источников с метриками качества",
+                                                                                                 "content":  {
+                                                                                                                 "application/json":  {
+                                                                                                                                          "schema":  {
+                                                                                                                                                         "type":  "array",
+                                                                                                                                                         "items":  {
+                                                                                                                                                                       "$ref": "../components/schemas/analytics-tenant.json#/DataQualitySource"
+                                                                                                                                                                   }
+                                                                                                                                                     }
+                                                                                                                                      }
+                                                                                                             }
+                                                                                             },
+                                                                                     "401":  {
+                                                                                                 "$ref": "../components/responses.json#/Unauthorized"
+                                                                                             },
+                                                                                     "403":  {
+                                                                                                 "$ref": "../components/responses.json#/Forbidden"
+                                                                                             }
+                                                                                 }
+                                                               }
+                                                   },
+                  "/api/v1/data-quality/sources/{id}":  {
+                                                            "parameters":  [
+                                                                               {
+                                                                                   "$ref": "../components/parameters.json#/IdPath"
+                                                                               }
+                                                                           ],
+                                                            "get":  {
+                                                                        "tags":  [
+                                                                                     "Analytics"
+                                                                                 ],
+                                                                        "operationId":  "getDataQualitySource",
+                                                                        "summary":  "Детали и динамика по источнику",
+                                                                        "description":  "График отклонённых строк по загрузкам и ссылки на конкретные загрузки. Источник без загрузок — валидное состояние с пустыми рядами, не ошибка.",
+                                                                        "x-roles":  [
+                                                                                        "R-4",
+                                                                                        "R-2"
+                                                                                    ],
+                                                                        "x-uc":  [
+                                                                                     "UC-9"
+                                                                                 ],
+                                                                        "parameters":  [
+                                                                                           {
+                                                                                               "$ref": "../components/parameters.json#/From"
+                                                                                           },
+                                                                                           {
+                                                                                               "$ref": "../components/parameters.json#/To"
+                                                                                           }
+                                                                                       ],
+                                                                        "responses":  {
+                                                                                          "200":  {
+                                                                                                      "description":  "Детали качества источника",
+                                                                                                      "content":  {
+                                                                                                                      "application/json":  {
+                                                                                                                                               "schema":  {
+                                                                                                                                                              "$ref": "../components/schemas/analytics-tenant.json#/DataQualitySourceDetail"
+                                                                                                                                                          }
+                                                                                                                                           }
+                                                                                                                  }
+                                                                                                  },
+                                                                                          "401":  {
+                                                                                                      "$ref": "../components/responses.json#/Unauthorized"
+                                                                                                  },
+                                                                                          "403":  {
+                                                                                                      "$ref": "../components/responses.json#/Forbidden"
+                                                                                                  },
+                                                                                          "404":  {
+                                                                                                      "$ref": "../components/responses.json#/NotFound"
+                                                                                                  }
+                                                                                      }
+                                                                    }
+                                                        }
+              }
+}

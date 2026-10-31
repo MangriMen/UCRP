@@ -1,0 +1,283 @@
+{
+    "paths":  {
+                  "/api/v1/segments/{id}":  {
+                                                "parameters":  [
+                                                                   {
+                                                                       "$ref": "../components/parameters.json#/IdPath"
+                                                                   }
+                                                               ],
+                                                "get":  {
+                                                            "tags":  [
+                                                                         "Segments"
+                                                                     ],
+                                                            "operationId":  "getSegment",
+                                                            "summary":  "Карточка сегмента",
+                                                            "description":  "Содержит текущую версию, правило на бизнес-языке (`ruleText`), размер, статус пересчёта и `computedAt`. Пока статус `pending` или `computing`, выгрузка из сегмента возвращает 409.",
+                                                            "x-roles":  [
+                                                                            "R-1",
+                                                                            "R-2",
+                                                                            "R-4"
+                                                                        ],
+                                                            "x-uc":  [
+                                                                         "UC-3",
+                                                                         "UC-6"
+                                                                     ],
+                                                            "responses":  {
+                                                                              "200":  {
+                                                                                          "description":  "Сегмент",
+                                                                                          "content":  {
+                                                                                                          "application/json":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "$ref": "../components/schemas/segments.json#/Segment"
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                      }
+                                                                                      },
+                                                                              "401":  {
+                                                                                          "$ref": "../components/responses.json#/Unauthorized"
+                                                                                      },
+                                                                              "403":  {
+                                                                                          "$ref": "../components/responses.json#/Forbidden"
+                                                                                      },
+                                                                              "404":  {
+                                                                                          "$ref": "../components/responses.json#/NotFound"
+                                                                                      }
+                                                                          }
+                                                        },
+                                                "put":  {
+                                                            "tags":  [
+                                                                         "Segments"
+                                                                     ],
+                                                            "operationId":  "updateSegment",
+                                                            "summary":  "Изменить правило — новая версия",
+                                                            "description":  "Каждая правка создаёт неизменяемую `segment_version` с `versionNo + 1`; прежние версии остаются доступны, выгрузки ссылаются на конкретную версию и остаются воспроизводимыми.",
+                                                            "x-roles":  [
+                                                                            "R-1",
+                                                                            "R-4"
+                                                                        ],
+                                                            "x-uc":  [
+                                                                         "UC-3",
+                                                                         "UC-13"
+                                                                     ],
+                                                            "requestBody":  {
+                                                                                "required":  true,
+                                                                                "content":  {
+                                                                                                "application/json":  {
+                                                                                                                         "schema":  {
+                                                                                                                                        "$ref": "../components/schemas/segment-requests.json#/SegmentUpdateRequest"
+                                                                                                                                    }
+                                                                                                                     }
+                                                                                            }
+                                                                            },
+                                                            "responses":  {
+                                                                              "200":  {
+                                                                                          "description":  "Сегмент с новой версией",
+                                                                                          "content":  {
+                                                                                                          "application/json":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "$ref": "../components/schemas/segments.json#/Segment"
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                      }
+                                                                                      },
+                                                                              "400":  {
+                                                                                          "$ref": "../components/responses.json#/BadRequest"
+                                                                                      },
+                                                                              "401":  {
+                                                                                          "$ref": "../components/responses.json#/Unauthorized"
+                                                                                      },
+                                                                              "403":  {
+                                                                                          "$ref": "../components/responses.json#/Forbidden"
+                                                                                      },
+                                                                              "404":  {
+                                                                                          "$ref": "../components/responses.json#/NotFound"
+                                                                                      }
+                                                                          }
+                                                        },
+                                                "delete":  {
+                                                               "tags":  [
+                                                                            "Segments"
+                                                                        ],
+                                                               "operationId":  "deleteSegment",
+                                                               "summary":  "Архивировать сегмент",
+                                                               "description":  "Если на сегмент ссылается активная кампания — 409 `segment_in_active_campaign`.",
+                                                               "x-roles":  [
+                                                                               "R-1",
+                                                                               "R-4"
+                                                                           ],
+                                                               "x-uc":  [
+                                                                            "UC-3"
+                                                                        ],
+                                                               "responses":  {
+                                                                                 "204":  {
+                                                                                             "$ref": "../components/responses.json#/NoContent"
+                                                                                         },
+                                                                                 "401":  {
+                                                                                             "$ref": "../components/responses.json#/Unauthorized"
+                                                                                         },
+                                                                                 "403":  {
+                                                                                             "$ref": "../components/responses.json#/Forbidden"
+                                                                                         },
+                                                                                 "404":  {
+                                                                                             "$ref": "../components/responses.json#/NotFound"
+                                                                                         },
+                                                                                 "409":  {
+                                                                                             "$ref": "../components/responses.json#/Conflict"
+                                                                                         }
+                                                                             }
+                                                           }
+                                            },
+                  "/api/v1/segments/{id}/members":  {
+                                                        "parameters":  [
+                                                                           {
+                                                                               "$ref": "../components/parameters.json#/IdPath"
+                                                                           }
+                                                                       ],
+                                                        "get":  {
+                                                                    "tags":  [
+                                                                                 "Segments"
+                                                                             ],
+                                                                    "operationId":  "listSegmentMembers",
+                                                                    "summary":  "Состав сегмента",
+                                                                    "description":  "По умолчанию — текущая версия; параметр `version` позволяет посмотреть состав исторической версии.",
+                                                                    "x-roles":  [
+                                                                                    "R-1",
+                                                                                    "R-4"
+                                                                                ],
+                                                                    "x-uc":  [
+                                                                                 "UC-3"
+                                                                             ],
+                                                                    "parameters":  [
+                                                                                       {
+                                                                                           "$ref": "../components/parameters.json#/Page"
+                                                                                       },
+                                                                                       {
+                                                                                           "$ref": "../components/parameters.json#/PageSize"
+                                                                                       },
+                                                                                       {
+                                                                                           "name":  "version",
+                                                                                           "in":  "query",
+                                                                                           "description":  "Номер версии правила",
+                                                                                           "schema":  {
+                                                                                                          "type":  "integer",
+                                                                                                          "minimum":  1
+                                                                                                      }
+                                                                                       }
+                                                                                   ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Страница участников",
+                                                                                                  "content":  {
+                                                                                                                  "application/json":  {
+                                                                                                                                           "schema":  {
+                                                                                                                                                          "$ref": "../components/schemas/segment-requests.json#/SegmentMemberPage"
+                                                                                                                                                      }
+                                                                                                                                       }
+                                                                                                              }
+                                                                                              },
+                                                                                      "401":  {
+                                                                                                  "$ref": "../components/responses.json#/Unauthorized"
+                                                                                              },
+                                                                                      "403":  {
+                                                                                                  "$ref": "../components/responses.json#/Forbidden"
+                                                                                              },
+                                                                                      "404":  {
+                                                                                                  "$ref": "../components/responses.json#/NotFound"
+                                                                                              }
+                                                                                  }
+                                                                }
+                                                    },
+                  "/api/v1/segments/{id}/versions":  {
+                                                         "parameters":  [
+                                                                            {
+                                                                                "$ref": "../components/parameters.json#/IdPath"
+                                                                            }
+                                                                        ],
+                                                         "get":  {
+                                                                     "tags":  [
+                                                                                  "Segments"
+                                                                              ],
+                                                                     "operationId":  "listSegmentVersions",
+                                                                     "summary":  "История версий правила",
+                                                                     "x-roles":  [
+                                                                                     "R-1",
+                                                                                     "R-4"
+                                                                                 ],
+                                                                     "x-uc":  [
+                                                                                  "UC-3"
+                                                                              ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Версии по убыванию номера",
+                                                                                                   "content":  {
+                                                                                                                   "application/json":  {
+                                                                                                                                            "schema":  {
+                                                                                                                                                           "type":  "array",
+                                                                                                                                                           "items":  {
+                                                                                                                                                                         "$ref": "../components/schemas/segments.json#/SegmentVersion"
+                                                                                                                                                                     }
+                                                                                                                                                       }
+                                                                                                                                        }
+                                                                                                               }
+                                                                                               },
+                                                                                       "401":  {
+                                                                                                   "$ref": "../components/responses.json#/Unauthorized"
+                                                                                               },
+                                                                                       "403":  {
+                                                                                                   "$ref": "../components/responses.json#/Forbidden"
+                                                                                               },
+                                                                                       "404":  {
+                                                                                                   "$ref": "../components/responses.json#/NotFound"
+                                                                                               }
+                                                                                   }
+                                                                 }
+                                                     },
+                  "/api/v1/segments/{id}/recompute":  {
+                                                          "parameters":  [
+                                                                             {
+                                                                                 "$ref": "../components/parameters.json#/IdPath"
+                                                                             }
+                                                                         ],
+                                                          "post":  {
+                                                                       "tags":  [
+                                                                                    "Segments"
+                                                                                ],
+                                                                       "operationId":  "recomputeSegment",
+                                                                       "summary":  "Принудительный пересчёт (асинхронно)",
+                                                                       "description":  "Ставит `segment.recompute` с `dedupKey = segment:{id}:{versionNo}`. Если пересчёт этой версии уже идёт — 409 `recompute_in_progress`.",
+                                                                       "x-roles":  [
+                                                                                       "R-1",
+                                                                                       "R-4"
+                                                                                   ],
+                                                                       "x-uc":  [
+                                                                                    "UC-13",
+                                                                                    "UC-6"
+                                                                                ],
+                                                                       "responses":  {
+                                                                                         "202":  {
+                                                                                                     "description":  "Пересчёт поставлен в очередь",
+                                                                                                     "content":  {
+                                                                                                                     "application/json":  {
+                                                                                                                                              "schema":  {
+                                                                                                                                                             "$ref": "../components/schemas/common.json#/JobAccepted"
+                                                                                                                                                         }
+                                                                                                                                          }
+                                                                                                                 }
+                                                                                                 },
+                                                                                         "401":  {
+                                                                                                     "$ref": "../components/responses.json#/Unauthorized"
+                                                                                                 },
+                                                                                         "403":  {
+                                                                                                     "$ref": "../components/responses.json#/Forbidden"
+                                                                                                 },
+                                                                                         "404":  {
+                                                                                                     "$ref": "../components/responses.json#/NotFound"
+                                                                                                 },
+                                                                                         "409":  {
+                                                                                                     "$ref": "../components/responses.json#/Conflict"
+                                                                                                 }
+                                                                                     }
+                                                                   }
+                                                      }
+              }
+}

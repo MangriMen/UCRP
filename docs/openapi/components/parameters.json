@@ -1,0 +1,45 @@
+{
+  "IdPath": {
+    "name": "id",
+    "in": "path",
+    "required": true,
+    "description": "Идентификатор ресурса (UUIDv7)",
+    "schema": { "type": "string" }
+  },
+  "Page": {
+    "name": "page",
+    "in": "query",
+    "description": "Номер страницы, начиная с 1",
+    "schema": { "type": "integer", "minimum": 1, "default": 1 }
+  },
+  "PageSize": {
+    "name": "page_size",
+    "in": "query",
+    "description": "Размер страницы",
+    "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 }
+  },
+  "From": {
+    "name": "from",
+    "in": "query",
+    "description": "Начало периода (включительно), UTC",
+    "schema": { "type": "string", "format": "date-time" }
+  },
+  "To": {
+    "name": "to",
+    "in": "query",
+    "description": "Конец периода (включительно), UTC",
+    "schema": { "type": "string", "format": "date-time" }
+  },
+  "Granularity": {
+    "name": "granularity",
+    "in": "query",
+    "schema": { "$ref": "./schemas/common.json#/Granularity" }
+  },
+  "IdempotencyKey": {
+    "name": "Idempotency-Key",
+    "in": "header",
+    "required": true,
+    "description": "Ключ идемпотентности выгрузки. Уникален в паре с автором (UNIQUE(created_by, idempotency_key)). Повтор с тем же ключом возвращает существующую выгрузку.",
+    "schema": { "type": "string", "minLength": 8, "maxLength": 128 }
+  }
+}

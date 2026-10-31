@@ -1,0 +1,218 @@
+{
+    "SegmentCreateRequest":  {
+                                 "type":  "object",
+                                 "required":  [
+                                                  "name",
+                                                  "rule"
+                                              ],
+                                 "properties":  {
+                                                    "name":  {
+                                                                 "type":  "string",
+                                                                 "minLength":  1,
+                                                                 "maxLength":  200
+                                                             },
+                                                    "description":  {
+                                                                        "type":  "string",
+                                                                        "nullable":  true,
+                                                                        "maxLength":  1000
+                                                                    },
+                                                    "templateCode":  {
+                                                                         "type":  "string",
+                                                                         "nullable":  true,
+                                                                         "description":  "Если задан, параметры шаблона подставляются в правило"
+                                                                     },
+                                                    "rule":  {
+                                                                 "$ref": "./segments.json#/SegmentRule"
+                                                             }
+                                                }
+                             },
+    "SegmentUpdateRequest":  {
+                                 "type":  "object",
+                                 "required":  [
+                                                  "rule"
+                                              ],
+                                 "properties":  {
+                                                    "name":  {
+                                                                 "type":  "string",
+                                                                 "minLength":  1,
+                                                                 "maxLength":  200
+                                                             },
+                                                    "description":  {
+                                                                        "type":  "string",
+                                                                        "nullable":  true,
+                                                                        "maxLength":  1000
+                                                                    },
+                                                    "rule":  {
+                                                                 "$ref": "./segments.json#/SegmentRule"
+                                                             }
+                                                }
+                             },
+    "SegmentPreviewRequest":  {
+                                  "type":  "object",
+                                  "required":  [
+                                                   "rule"
+                                               ],
+                                  "properties":  {
+                                                     "rule":  {
+                                                                  "$ref": "./segments.json#/SegmentRule"
+                                                              },
+                                                     "limit":  {
+                                                                   "type":  "integer",
+                                                                   "minimum":  1,
+                                                                   "maximum":  100,
+                                                                   "default":  20,
+                                                                   "description":  "Сколько примеров вернуть"
+                                                               }
+                                                 }
+                              },
+    "SegmentPreviewExample":  {
+                                  "type":  "object",
+                                  "required":  [
+                                                   "guestId"
+                                               ],
+                                  "properties":  {
+                                                     "guestId":  {
+                                                                     "type":  "string"
+                                                                 },
+                                                     "displayName":  {
+                                                                         "type":  "string",
+                                                                         "nullable":  true
+                                                                     },
+                                                     "tenantCount":  {
+                                                                         "type":  "integer",
+                                                                         "minimum":  0
+                                                                     },
+                                                     "lastSeenAt":  {
+                                                                        "type":  "string",
+                                                                        "format":  "date-time",
+                                                                        "nullable":  true
+                                                                    }
+                                                 }
+                              },
+    "SegmentPreviewResponse":  {
+                                   "type":  "object",
+                                   "required":  [
+                                                    "size",
+                                                    "examples",
+                                                    "cached"
+                                                ],
+                                   "properties":  {
+                                                      "size":  {
+                                                                   "type":  "integer",
+                                                                   "minimum":  0
+                                                               },
+                                                      "examples":  {
+                                                                       "type":  "array",
+                                                                       "items":  {
+                                                                                     "$ref": "./segment-requests.json#/SegmentPreviewExample"
+                                                                                 }
+                                                                   },
+                                                      "cached":  {
+                                                                     "type":  "boolean",
+                                                                     "description":  "Результат взят из кэша по хэшу правила"
+                                                                 },
+                                                      "computedInMs":  {
+                                                                           "type":  "integer",
+                                                                           "minimum":  0
+                                                                       }
+                                                  }
+                               },
+    "SegmentMember":  {
+                          "type":  "object",
+                          "required":  [
+                                           "guestId"
+                                       ],
+                          "properties":  {
+                                             "guestId":  {
+                                                             "type":  "string"
+                                                         },
+                                             "displayName":  {
+                                                                 "type":  "string",
+                                                                 "nullable":  true
+                                                             },
+                                             "tenantCount":  {
+                                                                 "type":  "integer",
+                                                                 "minimum":  0
+                                                             },
+                                             "lastSeenAt":  {
+                                                                "type":  "string",
+                                                                "format":  "date-time",
+                                                                "nullable":  true
+                                                            },
+                                             "addedAt":  {
+                                                             "type":  "string",
+                                                             "format":  "date-time"
+                                                         }
+                                         }
+                      },
+    "SegmentMemberPage":  {
+                              "type":  "object",
+                              "required":  [
+                                               "items",
+                                               "meta"
+                                           ],
+                              "properties":  {
+                                                 "items":  {
+                                                               "type":  "array",
+                                                               "items":  {
+                                                                             "$ref": "./segment-requests.json#/SegmentMember"
+                                                                         }
+                                                           },
+                                                 "meta":  {
+                                                              "$ref": "./common.json#/PageMeta"
+                                                          }
+                                             }
+                          },
+    "SegmentPage":  {
+                        "type":  "object",
+                        "required":  [
+                                         "items",
+                                         "meta"
+                                     ],
+                        "properties":  {
+                                           "items":  {
+                                                         "type":  "array",
+                                                         "items":  {
+                                                                       "$ref": "./segments.json#/Segment"
+                                                                   }
+                                                     },
+                                           "meta":  {
+                                                        "$ref": "./common.json#/PageMeta"
+                                                    }
+                                       }
+                    },
+    "SegmentTemplate":  {
+                            "type":  "object",
+                            "required":  [
+                                             "code",
+                                             "name",
+                                             "rule"
+                                         ],
+                            "properties":  {
+                                               "code":  {
+                                                            "type":  "string",
+                                                            "enum":  [
+                                                                         "sleeping_neighbor",
+                                                                         "single_store",
+                                                                         "churn_risk",
+                                                                         "newcomer",
+                                                                         "high_value"
+                                                                     ]
+                                                        },
+                                               "name":  {
+                                                            "type":  "string",
+                                                            "example":  "Спящий сосед"
+                                                        },
+                                               "description":  {
+                                                                   "type":  "string"
+                                                               },
+                                               "rule":  {
+                                                            "$ref": "./segments.json#/SegmentRule"
+                                                        },
+                                               "defaultPeriodDays":  {
+                                                                         "type":  "integer",
+                                                                         "minimum":  1
+                                                                     }
+                                           }
+                        }
+}
