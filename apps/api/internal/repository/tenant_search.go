@@ -9,11 +9,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/domain"
 )
 
-const (
-	defaultTenantPageSize = 50
-	maxTenantPageSize     = 200
-	minTenantThreshold    = 5
-)
+const minTenantThreshold = 5
 
 var tenantSorts = map[string]string{
 	"name":            "t.name ASC",
@@ -33,15 +29,7 @@ var tenantSorts = map[string]string{
 }
 
 func (r *TenantSQL) Search(ctx context.Context, filter domain.TenantFilter, limit, offset int) ([]domain.TenantListEntry, int, error) {
-	if limit <= 0 {
-		limit = defaultTenantPageSize
-	}
-	if limit > maxTenantPageSize {
-		limit = maxTenantPageSize
-	}
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset = clampPage(limit, offset)
 	order, ok := tenantSorts[filter.Sort]
 	if !ok {
 		order = tenantSorts["name"]

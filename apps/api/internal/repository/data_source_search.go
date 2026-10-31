@@ -9,11 +9,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/domain"
 )
 
-const (
-	defaultDataSourcePageSize = 50
-	maxDataSourcePageSize     = 200
-	noImportStatus            = "none"
-)
+const noImportStatus = "none"
 
 var dataSourceSorts = map[string]string{
 	"name":          "d.name ASC",
@@ -29,15 +25,7 @@ var dataSourceSorts = map[string]string{
 }
 
 func (r *DataSourceSQL) Search(ctx context.Context, filter domain.DataSourceFilter, limit, offset int) ([]domain.DataSourceListEntry, int, error) {
-	if limit <= 0 {
-		limit = defaultDataSourcePageSize
-	}
-	if limit > maxDataSourcePageSize {
-		limit = maxDataSourcePageSize
-	}
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset = clampPage(limit, offset)
 	order, ok := dataSourceSorts[filter.Sort]
 	if !ok {
 		order = dataSourceSorts["-createdAt"]
