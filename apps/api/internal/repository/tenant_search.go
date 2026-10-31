@@ -60,6 +60,9 @@ func (r *TenantSQL) Search(ctx context.Context, filter domain.TenantFilter, limi
 	if q := strings.TrimSpace(filter.Query); q != "" {
 		add("(t.name ILIKE '%%' || $%[1]d || '%%' OR t.code ILIKE '%%' || $%[1]d || '%%')", escapeLike(q))
 	}
+	if filter.MallID != "" {
+		add("t.mall_id = $%d", filter.MallID)
+	}
 	if filter.CategoryID != "" {
 		add("t.category_id = $%d", filter.CategoryID)
 	}

@@ -75,6 +75,7 @@ func parseTenantFilter(r *http.Request) (domain.TenantFilter, string) {
 	query := r.URL.Query()
 	filter := domain.TenantFilter{
 		Query:      strings.TrimSpace(query.Get("q")),
+		MallID:     strings.TrimSpace(query.Get("mall_id")),
 		CategoryID: strings.TrimSpace(query.Get("category_id")),
 		Sort:       query.Get("sort"),
 	}

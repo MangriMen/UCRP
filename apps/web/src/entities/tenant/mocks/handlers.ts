@@ -35,6 +35,7 @@ export const tenantHandlers = [
   http.get(`${API}/tenants`, ({ request }) => {
     const params = new URL(request.url).searchParams
     const q = params.get('q')?.toLowerCase()
+    const mallId = params.get('mall_id')
     const categoryId = params.get('category_id')
     const floor = params.get('floor')
     const isActive = params.get('is_active')
@@ -42,6 +43,7 @@ export const tenantHandlers = [
       .filter(
         (t) =>
           (!q || `${t.code} ${t.name}`.toLowerCase().includes(q)) &&
+          (!mallId || t.mallId === mallId) &&
           (!categoryId || t.categoryId === categoryId) &&
           (floor === null || String(t.floor) === floor) &&
           (isActive === null || String(t.isActive) === isActive),

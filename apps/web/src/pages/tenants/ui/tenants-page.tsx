@@ -110,6 +110,7 @@ export function TenantsPage() {
 
   const tenants = useTenants({
     q: get('q') || undefined,
+    mallId: get('mall_id') || undefined,
     categoryId: get('category_id') || undefined,
     floor: floor === '' ? undefined : Number(floor),
     isActive: isActive ? isActive === 'true' : undefined,

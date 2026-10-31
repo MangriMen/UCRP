@@ -90,6 +90,7 @@ type EventType struct {
 
 type TenantFilter struct {
 	Query      string
+	MallID     string
 	CategoryID string
 	Floor      *int
 	IsActive   *bool

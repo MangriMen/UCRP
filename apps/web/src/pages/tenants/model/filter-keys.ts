@@ -1,5 +1,6 @@
 export const TENANT_FILTER_KEYS = [
   'q',
+  'mall_id',
   'category_id',
   'floor',
   'is_active',

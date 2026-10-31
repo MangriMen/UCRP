@@ -83,6 +83,21 @@ describe('TenantsPage', () => {
     expect(await screen.findByText('Заря')).toBeInTheDocument()
   })
 
+  it('filters by mall and keeps the mall in the URL', async () => {
+    renderPage()
+    await screen.findByText('Заря')
+    await userEvent.click(screen.getByLabelText('ТЦ'))
+    await userEvent.click(await screen.findByRole('option', { name: 'Северный ТЦ' }))
+    expect(screen.getByTestId('search')).toHaveTextContent('mall_id=mall-0002')
+    expect(await screen.findByText('Арендаторы по фильтрам не найдены')).toBeInTheDocument()
+  })
+
+  it('restores the mall filter from the URL', async () => {
+    renderPage('/tenants?mall_id=mall-0001')
+    expect(await screen.findByText('Заря')).toBeInTheDocument()
+    expect(screen.getByLabelText('ТЦ')).toHaveTextContent('Центральный ТЦ')
+  })
+
   it('searches by name', async () => {
     renderPage()
     await userEvent.type(screen.getByLabelText('Поиск арендаторов'), 'кино')

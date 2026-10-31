@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useMalls } from '@/entities/mall'
 import { useTenantCategories } from '@/entities/tenant-category'
 import type { ListParams } from '@/shared/lib/list-params'
 import { ALL_OPTION } from '@/shared/lib/search-params'
@@ -25,6 +26,7 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
   const { get, update } = params
   const [input, setInput] = useState(get('q'))
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const malls = useMalls()
   const categories = useTenantCategories()
 
   useEffect(() => () => clearTimeout(timer.current), [])
@@ -41,6 +43,10 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
     onReset()
   }
 
+  const mallItems: Option[] = [
+    { value: ALL_OPTION, label: 'Все ТЦ' },
+    ...(malls.data ?? []).map((mall) => ({ value: mall.id, label: mall.name })),
+  ]
   const categoryItems: Option[] = [
     { value: ALL_OPTION, label: 'Все категории' },
     ...(categories.data ?? []).map((category) => ({ value: category.id, label: category.name })),
@@ -62,6 +68,13 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
           placeholder="Название или код"
           aria-label="Поиск арендаторов"
           className="max-w-xs"
+        />
+        <OptionSelect
+          ariaLabel="ТЦ"
+          className="w-48"
+          items={mallItems}
+          value={selectValue('mall_id')}
+          onValueChange={changeSelect('mall_id')}
         />
         <OptionSelect
           ariaLabel="Категория"

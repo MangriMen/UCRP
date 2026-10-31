@@ -70,6 +70,37 @@ func TestTenantList_FiltersSortsAndReportsExactTotal(t *testing.T) {
 	s.RequireStatus(bad, 400, "GET /api/v1/tenants with an unknown sort")
 }
 
+func TestTenantList_FiltersByMall(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	w := buildWorld(t, s, "tenant-mall")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	mall, err := s.Reg.Mall(ctx, "tenant-mall")
+	if err != nil {
+		t.Fatalf("fixture mall: %v", err)
+	}
+	inMall, err := s.Reg.TenantInZone(ctx, "tenant-mall-zone", w.category.ID, mall.ID, 1)
+	if err != nil {
+		t.Fatalf("fixture tenant in mall: %v", err)
+	}
+
+	resp, err := s.API.Get(ctx, "/api/v1/tenants", url.Values{"q": {"E2E tenant tenant-mall"}, "mall_id": {mall.ID}})
+	if err != nil {
+		t.Fatalf("GET /api/v1/tenants mall_id: %v", err)
+	}
+	s.RequireStatus(resp, 200, "GET /api/v1/tenants with mall_id")
+	s.RequireSchema("GET", "/api/v1/tenants", resp)
+
+	byID := tenantListItems(t, mustJSON(t, resp, "tenants of a mall"))
+	if len(byID) != 1 || byID[inMall.ID] == nil {
+		t.Fatalf("mall_id must keep only the tenant of that mall: %s", resp.Snippet())
+	}
+	if got := harness.StringField(byID[inMall.ID], "mallId"); got != mall.ID {
+		t.Fatalf("mallId = %s, want %s", got, mall.ID)
+	}
+}
+
 func TestTenantList_ReportsPeriodStatisticsAndSuppressesSmallGroups(t *testing.T) {
 	s := harness.New(t).WithDB().WithAdmin()
 	w := buildWorld(t, s, "tenant-stats")
