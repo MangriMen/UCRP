@@ -71,11 +71,11 @@ ErrorDetail:
     field:
       type: string
       description: Path to the request body field or the query parameter name
-      example: rule.wasNot
+      example: rule.excludedTenantIds
     reason:
       type: string
       description: Reason
-      example: Tenant listed in both "was" and "wasNot"
+      example: Tenant listed in both "visitedTenantIds" and "excludedTenantIds"
 PageMeta:
   type: object
   required:

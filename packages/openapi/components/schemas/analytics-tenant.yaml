@@ -33,7 +33,7 @@ TenantAggregates:
     to:
       type: string
       format: date-time
-    newGuestsViaComplex:
+    newGuestsViaMall:
       type: integer
       nullable: true
       description: New guests acquired through the complex (A-13). null when the value is < k
@@ -55,9 +55,9 @@ DataQualityListItem:
   required:
     - dataSourceId
     - name
-    - rejectedRate
-    - pendingMerges
-    - warning
+    - rejectedShare30d
+    - pendingMergeCandidates
+    - hasWarning
     - suppressed
   properties:
     dataSourceId:
@@ -67,13 +67,13 @@ DataQualityListItem:
     lastImportAt:
       type: string
       format: date-time
-    rejectedRate:
+    rejectedShare30d:
       type: number
       nullable: true
-    pendingMerges:
+    pendingMergeCandidates:
       type: integer
       nullable: true
-    warning:
+    hasWarning:
       type: boolean
       nullable: true
     suppressed:

@@ -217,7 +217,7 @@ func (r *MergeSQL) candidate(ctx context.Context, id string) (*domain.MergeCandi
 func (r *MergeSQL) hasBlock(ctx context.Context, guestA, guestB string) (bool, error) {
 	var n int
 	err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM unmerge_block
+		SELECT COUNT(*) FROM merge_block
 		WHERE (guest_a_id = $1 AND guest_b_id = $2) OR (guest_a_id = $2 AND guest_b_id = $1)`,
 		guestA, guestB).Scan(&n)
 	return n > 0, err
@@ -251,7 +251,7 @@ func insertBlockTx(ctx context.Context, tx *sql.Tx, c *domain.MergeCandidate, re
 	}
 	var n int
 	if err := tx.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM unmerge_block
+		SELECT COUNT(*) FROM merge_block
 		WHERE (guest_a_id = $1 AND guest_b_id = $2) OR (guest_a_id = $2 AND guest_b_id = $1)`, a, b).Scan(&n); err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func insertBlockTx(ctx context.Context, tx *sql.Tx, c *domain.MergeCandidate, re
 		return nil
 	}
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO unmerge_block (id, guest_a_id, guest_b_id, reason, candidate_id, created_by, created_at)
+		INSERT INTO merge_block (id, guest_a_id, guest_b_id, reason, candidate_id, created_by, created_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7)`, id, a, b, reason, c.ID, actor, now)
 	return err
 }

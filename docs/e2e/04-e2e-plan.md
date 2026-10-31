@@ -82,7 +82,7 @@
 6. `GET /guests/{winner}/events` → оба события; `tenantCount = 2`.
 7. Повторный `confirm` → 409.
 8. `POST .../revert` → 200; события вернулись поглощённому профилю.
-9. В `unmerge_block` ровно одна запись на пару.
+9. В `merge_block` ровно одна запись на пару.
 
 Отдельно: `TestMergeCandidateRejectCreatesBlock`, `TestMergeCandidateRevertPendingReturns409`,
 `TestIdentityAutoMergeOnSharedPhone` (автосклейка при совпадении телефона),
@@ -151,47 +151,47 @@
 
 ## 3. Негативные сценарии (подтверждённые документацией)
 
-| #    | Сценарий                                                  | Ожидание                             | Источник               |
-| ---- | --------------------------------------------------------- | ------------------------------------ | ---------------------- |
-| N-1  | `POST /auth/login` с неверным паролем                     | 401 `invalid_credentials`            | SD-1                   |
-| N-2  | Приватный запрос без `Authorization`                      | 401 `unauthorized`                   | реестр                 |
-| N-3  | Битый/просроченный JWT                                    | 401                                  | SD-1                   |
-| N-4  | R-3 на `/guests`                                          | 403 `forbidden_role`                 | US-8 AC3               |
-| N-5  | R-3 на чужой `tenant_id`                                  | 403 `forbidden_tenant`               | US-8 AC2               |
-| N-6  | R-1 на `POST /imports`                                    | 403                                  | US-1 AC7               |
-| N-7  | R-2/R-3/R-4 на `POST /exports`                            | 403                                  | US-5 AC6               |
-| N-8  | R-4 на изменение `/contact-limits`                        | 403                                  | US-10 AC5              |
-| N-9  | R-1 на `POST .../confirm`                                 | 403                                  | US-11 AC6              |
-| N-10 | `GET /guests?q=a`                                         | 400                                  | OpenAPI `minLength: 2` |
-| N-11 | `GET /guests/{unknown}`                                   | 404                                  | US-2 AC5               |
-| N-12 | `POST /segments/preview` с арендатором в `was` и `wasNot` | 400, `details[].field = rule.wasNot` | US-3 AC5               |
-| N-13 | `POST /segments` без `name`                               | 400                                  | OpenAPI required       |
-| N-14 | `POST /imports` файл > 100 000 строк                      | 413                                  | US-1 AC7               |
-| N-15 | `POST /imports` без обязательных колонок                  | 422                                  | US-1 AC7               |
-| N-16 | `POST /imports` несуществующий `data_source_id`           | 404                                  | SD-2                   |
-| N-17 | `POST /exports` без `Idempotency-Key`                     | 400                                  | US-5 AC6               |
-| N-18 | `POST /exports` из сегмента в статусе `computing`         | 409 `segment_not_ready`              | US-5 AC6               |
-| N-19 | `POST /exports` когда лимит исключил всех                 | 409 `contact_limit_exceeded`         | US-10 AC5              |
-| N-20 | `GET /exports/{id}/download` до готовности                | 409 `export_not_ready`               | OpenAPI                |
-| N-21 | `POST /contact-limits` `maxContacts = 0`                  | 400                                  | US-10 AC5              |
-| N-22 | `POST /contact-limits` `periodDays = 0`                   | 400                                  | US-10 AC5              |
-| N-23 | Повторный `confirm` по решённой паре                      | 409 `already_resolved`               | US-11 AC6              |
-| N-24 | `revert` пары в статусе `pending`                         | 409                                  | OpenAPI                |
-| N-25 | `POST /guests/{id}/merge` пара под запретом               | 409 `merge_blocked`                  | US-11 AC6              |
-| N-26 | `POST /guests/{id}/merge` с собой                         | 400                                  | OpenAPI                |
-| N-27 | `DELETE /tenants/{id}` с событиями                        | 409 `tenant_has_events`              | реестр                 |
-| N-28 | `DELETE /segments/{id}` при активной кампании             | 409 `segment_in_active_campaign`     | OpenAPI                |
-| N-29 | `DELETE /campaigns/{id}` с выгрузками                     | 409 `campaign_has_exports`           | реестр                 |
-| N-30 | `DELETE /users/{id}` последнего R-2                       | 409                                  | реестр                 |
-| N-31 | `POST /users` роль `tenant` без `tenantId`                | 400                                  | UC-18, DDL CHECK       |
-| N-32 | `POST /users` дубль email                                 | 409                                  | реестр                 |
-| N-33 | `GET /dashboard/penetration` `from > to`                  | 400                                  | US-7 AC4               |
-| N-34 | `GET /dashboard/penetration` период > 24 мес              | 400                                  | US-7 AC4               |
-| N-35 | `POST /data-sources/{id}/sync` при идущей синхронизации   | 409 `sync_in_progress`               | SD-3                   |
-| N-36 | `POST /segments/{id}/recompute` при идущем пересчёте      | 409 `recompute_in_progress`          | реестр                 |
-| N-37 | `POST /segments/preview` дольше 10 с                      | 504 `timeout`                        | US-3 AC5               |
-| N-38 | `POST /guests/{id}/recommendations/refresh` дольше 10 с   | 504                                  | OpenAPI                |
-| N-39 | `POST /auth/login` при переборе                           | 429 `rate_limited`                   | SD-1                   |
+| #    | Сценарий                                                                          | Ожидание                                        | Источник               |
+| ---- | --------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------- |
+| N-1  | `POST /auth/login` с неверным паролем                                             | 401 `invalid_credentials`                       | SD-1                   |
+| N-2  | Приватный запрос без `Authorization`                                              | 401 `unauthorized`                              | реестр                 |
+| N-3  | Битый/просроченный JWT                                                            | 401                                             | SD-1                   |
+| N-4  | R-3 на `/guests`                                                                  | 403 `forbidden_role`                            | US-8 AC3               |
+| N-5  | R-3 на чужой `tenant_id`                                                          | 403 `forbidden_tenant`                          | US-8 AC2               |
+| N-6  | R-1 на `POST /imports`                                                            | 403                                             | US-1 AC7               |
+| N-7  | R-2/R-3/R-4 на `POST /exports`                                                    | 403                                             | US-5 AC6               |
+| N-8  | R-4 на изменение `/contact-limits`                                                | 403                                             | US-10 AC5              |
+| N-9  | R-1 на `POST .../confirm`                                                         | 403                                             | US-11 AC6              |
+| N-10 | `GET /guests?q=a`                                                                 | 400                                             | OpenAPI `minLength: 2` |
+| N-11 | `GET /guests/{unknown}`                                                           | 404                                             | US-2 AC5               |
+| N-12 | `POST /segments/preview` с арендатором в `visitedTenantIds` и `excludedTenantIds` | 400, `details[].field = rule.excludedTenantIds` | US-3 AC5               |
+| N-13 | `POST /segments` без `name`                                                       | 400                                             | OpenAPI required       |
+| N-14 | `POST /imports` файл > 100 000 строк                                              | 413                                             | US-1 AC7               |
+| N-15 | `POST /imports` без обязательных колонок                                          | 422                                             | US-1 AC7               |
+| N-16 | `POST /imports` несуществующий `data_source_id`                                   | 404                                             | SD-2                   |
+| N-17 | `POST /exports` без `Idempotency-Key`                                             | 400                                             | US-5 AC6               |
+| N-18 | `POST /exports` из сегмента в статусе `computing`                                 | 409 `segment_not_ready`                         | US-5 AC6               |
+| N-19 | `POST /exports` когда лимит исключил всех                                         | 409 `contact_limit_exceeded`                    | US-10 AC5              |
+| N-20 | `GET /exports/{id}/download` до готовности                                        | 409 `export_not_ready`                          | OpenAPI                |
+| N-21 | `POST /contact-limits` `maxContacts = 0`                                          | 400                                             | US-10 AC5              |
+| N-22 | `POST /contact-limits` `periodDays = 0`                                           | 400                                             | US-10 AC5              |
+| N-23 | Повторный `confirm` по решённой паре                                              | 409 `already_resolved`                          | US-11 AC6              |
+| N-24 | `revert` пары в статусе `pending`                                                 | 409                                             | OpenAPI                |
+| N-25 | `POST /guests/{id}/merge` пара под запретом                                       | 409 `merge_blocked`                             | US-11 AC6              |
+| N-26 | `POST /guests/{id}/merge` с собой                                                 | 400                                             | OpenAPI                |
+| N-27 | `DELETE /tenants/{id}` с событиями                                                | 409 `tenant_has_events`                         | реестр                 |
+| N-28 | `DELETE /segments/{id}` при активной кампании                                     | 409 `segment_in_active_campaign`                | OpenAPI                |
+| N-29 | `DELETE /campaigns/{id}` с выгрузками                                             | 409 `campaign_has_exports`                      | реестр                 |
+| N-30 | `DELETE /users/{id}` последнего R-2                                               | 409                                             | реестр                 |
+| N-31 | `POST /users` роль `tenant` без `tenantId`                                        | 400                                             | UC-18, DDL CHECK       |
+| N-32 | `POST /users` дубль email                                                         | 409                                             | реестр                 |
+| N-33 | `GET /dashboard/cross-tenant` `from > to`                                         | 400                                             | US-7 AC4               |
+| N-34 | `GET /dashboard/cross-tenant` период > 24 мес                                     | 400                                             | US-7 AC4               |
+| N-35 | `POST /data-sources/{id}/sync` при идущей синхронизации                           | 409 `sync_in_progress`                          | SD-3                   |
+| N-36 | `POST /segments/{id}/recompute` при идущем пересчёте                              | 409 `recompute_in_progress`                     | реестр                 |
+| N-37 | `POST /segments/preview` дольше 10 с                                              | 504 `timeout`                                   | US-3 AC5               |
+| N-38 | `POST /guests/{id}/recommendations/refresh` дольше 10 с                           | 504                                             | OpenAPI                |
+| N-39 | `POST /auth/login` при переборе                                                   | 429 `rate_limited`                              | SD-1                   |
 
 N-37, N-38, N-39 нереализуемы без тестового режима задержки и rate limiter
 (см. `02-contradictions.md` G9, G10). Остальные проверки покрыты тестами;
@@ -258,7 +258,7 @@ apps/api/e2e/
 ├── roles_test.go              # матрица ролей и tenant-изоляция
 ├── users_test.go              # пользователи: CRUD, дубль email, последний R-2
 ├── references_test.go         # арендаторы, категории, проекты, типы событий
-├── analytics_test.go          # penetration, metrics, aggregates, data quality
+├── analytics_test.go          # cross-tenant, metrics, aggregates, data quality
 ├── segments_test.go           # версии, участники, архив, пересчёт, шаблоны
 ├── guests_test.go             # контакты, soft-delete, роли
 ├── campaigns_test.go          # кампании: создание, окно атрибуции, удаление
@@ -304,7 +304,7 @@ docker compose -f apps/api/docker/docker-compose.yml up -d db
   `app_user` и `contact_limit`.
 - **Очистка:** `Registry.Cleanup` удаляет по `t.Cleanup` в порядке, обратном
   FK: `contact_log → export_member → export_job → campaign → contact_limit →
-  segment_member → segment_version → segment → recommendation → unmerge_block →
+  segment_member → segment_version → segment → recommendation → merge_block →
   merge_candidate → event → guest_identifier → guest → rejected_row →
   import_batch → data_source → project → app_user → tenant →
   tenant_category_relation → tenant_category → event_type → data_source_type →
@@ -350,18 +350,18 @@ Suite.WaitFor(deadline, what, fn) — опрос fn до true или дедла�
 Последний полный прогон (живой API + воркер + Postgres): **129 тестов,
 0 падений, 10 пропусков, 12 записей в отчёте о расхождениях**.
 
-| Пропущенный тест                              | Причина                                       |
-| --------------------------------------------- | --------------------------------------------- |
-| `TestCampaignCreateRequiresTenantAndSegment`  | `POST /campaigns` → 500 (колонка `tenant_id`) |
-| `TestCampaignCreateDefaultsAttributionWindow` | то же                                         |
-| `TestCampaignDeleteWithExportsReturns409`     | то же                                         |
-| `TestCampaignDeleteWithoutExports`            | то же                                         |
-| `TestPenetrationBucketsContract`              | `share = NULL` на пустых данных → 500         |
-| `TestDashboardMetricsFields`                  | `match_rate = NULL` на пустых данных → 500    |
-| `TestUserCreateDuplicateEmail`                | 500 вместо 409                                |
-| `TestUserDeleteLastManagerReturns409`         | в БД больше одного активного manager          |
-| `TestSegmentPreviewRejectsConflictingTenant`  | нет `details[].field = rule.wasNot`           |
-| `TestUnmountedOperationsAreReported`          | фиксирует два несмонтированных маршрута       |
+| Пропущенный тест                              | Причина                                        |
+| --------------------------------------------- | ---------------------------------------------- |
+| `TestCampaignCreateRequiresTenantAndSegment`  | `POST /campaigns` → 500 (колонка `tenant_id`)  |
+| `TestCampaignCreateDefaultsAttributionWindow` | то же                                          |
+| `TestCampaignDeleteWithExportsReturns409`     | то же                                          |
+| `TestCampaignDeleteWithoutExports`            | то же                                          |
+| `TestCrossTenantDistributionsContract`        | `share = NULL` на пустых данных → 500          |
+| `TestDashboardMetricsFields`                  | `match_rate = NULL` на пустых данных → 500     |
+| `TestUserCreateDuplicateEmail`                | 500 вместо 409                                 |
+| `TestUserDeleteLastManagerReturns409`         | в БД больше одного активного manager           |
+| `TestSegmentPreviewRejectsConflictingTenant`  | нет `details[].field = rule.excludedTenantIds` |
+| `TestUnmountedOperationsAreReported`          | фиксирует два несмонтированных маршрута        |
 
 ## 9. Открытые вопросы к заказчику и команде
 
@@ -370,7 +370,7 @@ Suite.WaitFor(deadline, what, fn) — опрос fn до true или дедла�
    отчётом и валит тест только в строгом режиме.
 2. **D1** — конкурент в рекомендациях: понижение (A-18) или исключение (OpenAPI)?
 3. **D2** — разделять ли `SegmentStatus` и `SegmentVersionStatus`?
-4. **D3** — верный enum `UnmergeBlock.reason`?
+4. **D3** — верный enum `MergeBlock.reason`?
 5. **D5** — `camelCase` или `snake_case` в JSON-полях?
 6. **Кампании** — исправить `campaign.tenant_id` → `target_tenant_id`
    в репозитории: сейчас все операции отдают 500.

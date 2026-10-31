@@ -123,7 +123,7 @@ classDiagram
   class MergeCandidateRepo {
     <<interface>>
   }
-  class UnmergeBlockRepo {
+  class MergeBlockRepo {
     <<interface>>
     +Exists(ctx, a, b) bool
   }
@@ -135,13 +135,13 @@ classDiagram
   DefaultResolver --> Policy
   DefaultResolver --> MergeExecutor
   DefaultResolver --> GuestIdentifierRepo
-  DefaultResolver --> UnmergeBlockRepo
+  DefaultResolver --> MergeBlockRepo
   IdentityService --> MergeExecutor
   IdentityService --> MergeCandidateRepo
   MergeExecutor --> MergeCandidateRepo
 ```
 
-Пояснение. `IdentityResolver` вызывается воркером для чанка событий; `Policy` инкапсулирует правила надёжных ключей и порог конфликта (Q-12), поэтому смена порога не затрагивает схему. `MergeExecutor` — единственный код, который переписывает `guest_id` и выставляет `origin_guest_id`; им пользуются и автосклейка, и ручные операции `IdentityService`, что гарантирует одинаковую обратимость (D-5, D-25). `UnmergeBlockRepo.Exists` проверяется перед любой склейкой. Все изменения идут в одной транзакции вместе с записью аудита.
+Пояснение. `IdentityResolver` вызывается воркером для чанка событий; `Policy` инкапсулирует правила надёжных ключей и порог конфликта (Q-12), поэтому смена порога не затрагивает схему. `MergeExecutor` — единственный код, который переписывает `guest_id` и выставляет `origin_guest_id`; им пользуются и автосклейка, и ручные операции `IdentityService`, что гарантирует одинаковую обратимость (D-5, D-25). `MergeBlockRepo.Exists` проверяется перед любой склейкой. Все изменения идут в одной транзакции вместе с записью аудита.
 
 ## CL-4. Segments и Recommend
 

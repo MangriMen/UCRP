@@ -76,8 +76,8 @@ paths:
     $ref: ./paths/access-grants.yaml#/paths/~1api~1v1~1access~1grants~1{id}~1suspend
   /api/v1/access/grants/{id}/revoke:
     $ref: ./paths/access-grants.yaml#/paths/~1api~1v1~1access~1grants~1{id}~1revoke
-  /api/v1/dashboard/penetration:
-    $ref: ./paths/analytics.yaml#/paths/~1api~1v1~1dashboard~1penetration
+  /api/v1/dashboard/cross-tenant:
+    $ref: ./paths/analytics.yaml#/paths/~1api~1v1~1dashboard~1cross-tenant
   /api/v1/dashboard/metrics:
     $ref: ./paths/analytics.yaml#/paths/~1api~1v1~1dashboard~1metrics
   /api/v1/tenants/{id}/aggregates:
@@ -141,11 +141,11 @@ paths:
   /api/v1/merge-candidates/{id}/revert:
     $ref: ./paths/identity-merge-candidates.yaml#/paths/~1api~1v1~1merge-candidates~1{id}~1revert
   /api/v1/guests/{id}/merge:
-    $ref: ./paths/identity-unmerge.yaml#/paths/~1api~1v1~1guests~1{id}~1merge
-  /api/v1/unmerge-blocks:
-    $ref: ./paths/identity-unmerge.yaml#/paths/~1api~1v1~1unmerge-blocks
-  /api/v1/unmerge-blocks/{id}:
-    $ref: ./paths/identity-unmerge.yaml#/paths/~1api~1v1~1unmerge-blocks~1{id}
+    $ref: ./paths/identity-merge.yaml#/paths/~1api~1v1~1guests~1{id}~1merge
+  /api/v1/merge-blocks:
+    $ref: ./paths/identity-merge.yaml#/paths/~1api~1v1~1merge-blocks
+  /api/v1/merge-blocks/{id}:
+    $ref: ./paths/identity-merge.yaml#/paths/~1api~1v1~1merge-blocks~1{id}
   /api/v1/imports:
     $ref: ./paths/imports.yaml#/paths/~1api~1v1~1imports
   /api/v1/imports/{id}:
@@ -277,12 +277,12 @@ components:
       $ref: ./components/schemas/tenant-guest.yaml#/EmptyTenantAggregate
     ManagementTenantAggregate:
       $ref: ./components/schemas/tenant-guest.yaml#/ManagementTenantAggregate
-    PenetrationBucket:
-      $ref: ./components/schemas/analytics.yaml#/PenetrationBucket
-    PenetrationPoint:
-      $ref: ./components/schemas/analytics.yaml#/PenetrationPoint
-    PenetrationReport:
-      $ref: ./components/schemas/analytics.yaml#/PenetrationReport
+    CrossTenantDistribution:
+      $ref: ./components/schemas/analytics.yaml#/CrossTenantDistribution
+    CrossTenantPoint:
+      $ref: ./components/schemas/analytics.yaml#/CrossTenantPoint
+    CrossTenantReport:
+      $ref: ./components/schemas/analytics.yaml#/CrossTenantReport
     DashboardMetrics:
       $ref: ./components/schemas/analytics.yaml#/DashboardMetrics
     TenantAggregatePoint:
@@ -397,10 +397,10 @@ components:
       $ref: ./components/schemas/identity.yaml#/MergeRequest
     MergeResult:
       $ref: ./components/schemas/identity.yaml#/MergeResult
-    UnmergeBlock:
-      $ref: ./components/schemas/identity.yaml#/UnmergeBlock
-    UnmergeBlockPage:
-      $ref: ./components/schemas/identity.yaml#/UnmergeBlockPage
+    MergeBlock:
+      $ref: ./components/schemas/identity.yaml#/MergeBlock
+    MergeBlockPage:
+      $ref: ./components/schemas/identity.yaml#/MergeBlockPage
     ImportStatus:
       $ref: ./components/schemas/imports.yaml#/ImportStatus
     ImportMode:

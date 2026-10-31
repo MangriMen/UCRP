@@ -11,18 +11,18 @@ type entry struct {
 }
 
 type Memory struct {
-	mu   sync.RWMutex
-	data map[string]entry
+	mu      sync.RWMutex
+	entries map[string]entry
 }
 
 func NewMemory() *Memory {
-	return &Memory{data: make(map[string]entry)}
+	return &Memory{entries: make(map[string]entry)}
 }
 
 func (m *Memory) Get(key string) (any, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	e, ok := m.data[key]
+	e, ok := m.entries[key]
 	if !ok {
 		return nil, false
 	}
@@ -38,12 +38,12 @@ func (m *Memory) Set(key string, value any, ttlSeconds int) {
 		expires = time.Now().Add(time.Duration(ttlSeconds) * time.Second)
 	}
 	m.mu.Lock()
-	m.data[key] = entry{value: value, expiresAt: expires}
+	m.entries[key] = entry{value: value, expiresAt: expires}
 	m.mu.Unlock()
 }
 
 func (m *Memory) Delete(key string) {
 	m.mu.Lock()
-	delete(m.data, key)
+	delete(m.entries, key)
 	m.mu.Unlock()
 }

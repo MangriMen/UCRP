@@ -76,22 +76,22 @@
 
 ## 3. US-3 / UC-3. Сегмент без кода
 
-| ID       | Требование                                 | UC   | US   | Endpoint                      | Тест                                                                                                                  | Тип | EP  | T    | P   | N   | B   | E2E   |
-| -------- | ------------------------------------------ | ---- | ---- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- | --- | --- | ---- | --- | --- | --- | ----- |
-| REQ-3.1  | Preview: размер и примеры, без записи в БД | UC-3 | US-3 | `POST /segments/preview`      | `segments.preview.no-write`, `segments.preview.counts`, `segments.preview.contract`, `segments.preview.empty-was-not` | P,B | ✓   | код  | ✓   | —   | ✓   | E2E-1 |
-| REQ-3.2  | Арендатор в `was` и `wasNot` → 400         | UC-3 | US-3 | `POST /segments/preview`      | `segments.preview.conflicting-tenant`                                                                                 | N,B | ✓   | код  | —   | ✓   | ✓   | —     |
-| REQ-3.3  | Пустой `was` → 400                         | UC-3 | US-3 | `POST /segments/preview`      | `segments.preview.empty-was`                                                                                          | N   | ✓   | код  | —   | ✓   | —   | —     |
-| REQ-3.4  | Preview дольше 10 с → 504                  | UC-3 | US-3 | `POST /segments/preview`      | `segments.preview.timeout`                                                                                            | N   | ✓   | —    | —   | —   | —   | —     |
-| REQ-3.5  | Создание сегмента, версия 1                | UC-3 | US-3 | `POST /segments`              | `segments.create.version-1`, `segments.create.contract`                                                               | P,C | ✓   | код  | ✓   | —   | —   | E2E-1 |
-| REQ-3.6  | Создание без `name` → 400                  | UC-3 | US-3 | `POST /segments`              | `segments.create.no-name`                                                                                             | N   | ✓   | код  | —   | ✓   | —   | —     |
-| REQ-3.7  | Правка правила создаёт версию 2            | UC-3 | US-3 | `PUT /segments/{id}`          | `segments.update.new-version`                                                                                         | P,B | ✓   | план | ✓   | —   | ✓   | —     |
-| REQ-3.8  | История версий доступна                    | UC-3 | US-3 | `GET /segments/{id}/versions` | `segments.versions.list`                                                                                              | P,C | ✓   | план | ✓   | —   | —   | —     |
-| REQ-3.9  | Постраничный состав сегмента               | UC-3 | US-3 | `GET /segments/{id}/members`  | `segments.members.paged`                                                                                              | P,C | ✓   | план | ✓   | —   | —   | E2E-1 |
-| REQ-3.10 | Пять предустановленных шаблонов            | UC-3 | US-3 | `GET /segment-templates`      | `segments.templates.five`                                                                                             | P,C | ✓   | план | ✓   | —   | —   | —     |
-| REQ-3.11 | Архивирование сегмента                     | UC-3 | US-3 | `DELETE /segments/{id}`       | `segments.delete.archive`                                                                                             | P   | ✓   | план | ✓   | —   | —   | —     |
-| REQ-3.12 | Архив при активной кампании → 409          | UC-3 | —    | `DELETE /segments/{id}`       | `segments.delete.active-campaign`                                                                                     | N,B | ✓   | план | —   | ✓   | ✓   | —     |
-| REQ-3.13 | Список сегментов с размером и `computedAt` | UC-3 | US-3 | `GET /segments`               | `segments.list.size`, `segments.get.ready-version`, `segments.get.contract`                                           | P,C | ✓   | код  | ✓   | —   | —   | —     |
-| REQ-3.14 | R-3 → 403                                  | UC-3 | US-3 | `/segments*`                  | `segments.forbidden-tenant-role` (`roles.tenant-blocked`)                                                             | N,S | ✓   | код  | —   | ✓   | —   | —     |
+| ID       | Требование                                                 | UC   | US   | Endpoint                      | Тест                                                                                                                  | Тип | EP  | T    | P   | N   | B   | E2E   |
+| -------- | ---------------------------------------------------------- | ---- | ---- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- | --- | --- | ---- | --- | --- | --- | ----- |
+| REQ-3.1  | Preview: размер и примеры, без записи в БД                 | UC-3 | US-3 | `POST /segments/preview`      | `segments.preview.no-write`, `segments.preview.counts`, `segments.preview.contract`, `segments.preview.empty-was-not` | P,B | ✓   | код  | ✓   | —   | ✓   | E2E-1 |
+| REQ-3.2  | Арендатор в `visitedTenantIds` и `excludedTenantIds` → 400 | UC-3 | US-3 | `POST /segments/preview`      | `segments.preview.conflicting-tenant`                                                                                 | N,B | ✓   | код  | —   | ✓   | ✓   | —     |
+| REQ-3.3  | Пустой `visitedTenantIds` → 400                            | UC-3 | US-3 | `POST /segments/preview`      | `segments.preview.empty-was`                                                                                          | N   | ✓   | код  | —   | ✓   | —   | —     |
+| REQ-3.4  | Preview дольше 10 с → 504                                  | UC-3 | US-3 | `POST /segments/preview`      | `segments.preview.timeout`                                                                                            | N   | ✓   | —    | —   | —   | —   | —     |
+| REQ-3.5  | Создание сегмента, версия 1                                | UC-3 | US-3 | `POST /segments`              | `segments.create.version-1`, `segments.create.contract`                                                               | P,C | ✓   | код  | ✓   | —   | —   | E2E-1 |
+| REQ-3.6  | Создание без `name` → 400                                  | UC-3 | US-3 | `POST /segments`              | `segments.create.no-name`                                                                                             | N   | ✓   | код  | —   | ✓   | —   | —     |
+| REQ-3.7  | Правка правила создаёт версию 2                            | UC-3 | US-3 | `PUT /segments/{id}`          | `segments.update.new-version`                                                                                         | P,B | ✓   | план | ✓   | —   | ✓   | —     |
+| REQ-3.8  | История версий доступна                                    | UC-3 | US-3 | `GET /segments/{id}/versions` | `segments.versions.list`                                                                                              | P,C | ✓   | план | ✓   | —   | —   | —     |
+| REQ-3.9  | Постраничный состав сегмента                               | UC-3 | US-3 | `GET /segments/{id}/members`  | `segments.members.paged`                                                                                              | P,C | ✓   | план | ✓   | —   | —   | E2E-1 |
+| REQ-3.10 | Пять предустановленных шаблонов                            | UC-3 | US-3 | `GET /segment-templates`      | `segments.templates.five`                                                                                             | P,C | ✓   | план | ✓   | —   | —   | —     |
+| REQ-3.11 | Архивирование сегмента                                     | UC-3 | US-3 | `DELETE /segments/{id}`       | `segments.delete.archive`                                                                                             | P   | ✓   | план | ✓   | —   | —   | —     |
+| REQ-3.12 | Архив при активной кампании → 409                          | UC-3 | —    | `DELETE /segments/{id}`       | `segments.delete.active-campaign`                                                                                     | N,B | ✓   | план | —   | ✓   | ✓   | —     |
+| REQ-3.13 | Список сегментов с размером и `computedAt`                 | UC-3 | US-3 | `GET /segments`               | `segments.list.size`, `segments.get.ready-version`, `segments.get.contract`                                           | P,C | ✓   | код  | ✓   | —   | —   | —     |
+| REQ-3.14 | R-3 → 403                                                  | UC-3 | US-3 | `/segments*`                  | `segments.forbidden-tenant-role` (`roles.tenant-blocked`)                                                             | N,S | ✓   | код  | —   | ✓   | —   | —     |
 
 ## 4. US-4 / UC-4. Рекомендация гостю
 
@@ -140,14 +140,14 @@ REQ-5.6 — отдельный тест не создаётся, чтобы не
 
 ## 7. US-7 / UC-7. Сводка управляющего
 
-| ID      | Требование                                | UC   | US   | Endpoint                     | Тест                                                       | Тип | EP  | T    | P   | N   | B   | E2E |
-| ------- | ----------------------------------------- | ---- | ---- | ---------------------------- | ---------------------------------------------------------- | --- | --- | ---- | --- | --- | --- | --- |
-| REQ-7.1 | Распределение гостей 1 / 2 / 3+           | UC-7 | US-7 | `GET /dashboard/penetration` | `dashboard.penetration.buckets`                            | P,C | ✓   | план | ✓   | —   | —   | —   |
-| REQ-7.2 | Динамика по гранулярности                 | UC-7 | US-7 | `GET /dashboard/penetration` | `dashboard.penetration.series`                             | P   | ✓   | план | ✓   | —   | —   | —   |
-| REQ-7.3 | `from > to` → 400                         | UC-7 | US-7 | `GET /dashboard/penetration` | `dashboard.penetration.bad-period`                         | N,B | ✓   | план | —   | ✓   | ✓   | —   |
-| REQ-7.4 | Период больше 24 месяцев → 400            | UC-7 | US-7 | `GET /dashboard/penetration` | `dashboard.penetration.period-limit`                       | N,B | ✓   | план | —   | ✓   | ✓   | —   |
-| REQ-7.5 | Метрики: match rate, конверсия, инкремент | UC-7 | US-7 | `GET /dashboard/metrics`     | `dashboard.metrics.fields`                                 | P,C | ✓   | план | ✓   | —   | —   | —   |
-| REQ-7.6 | R-3 → 403                                 | UC-7 | US-7 | `/dashboard/*`               | `dashboard.forbidden-tenant-role` (`roles.tenant-blocked`) | N,S | ✓   | код  | —   | ✓   | —   | —   |
+| ID      | Требование                                | UC   | US   | Endpoint                      | Тест                                                       | Тип | EP  | T    | P   | N   | B   | E2E |
+| ------- | ----------------------------------------- | ---- | ---- | ----------------------------- | ---------------------------------------------------------- | --- | --- | ---- | --- | --- | --- | --- |
+| REQ-7.1 | Распределение гостей 1 / 2 / 3+           | UC-7 | US-7 | `GET /dashboard/cross-tenant` | `dashboard.crossTenant.buckets`                            | P,C | ✓   | план | ✓   | —   | —   | —   |
+| REQ-7.2 | Динамика по гранулярности                 | UC-7 | US-7 | `GET /dashboard/cross-tenant` | `dashboard.crossTenant.series`                             | P   | ✓   | план | ✓   | —   | —   | —   |
+| REQ-7.3 | `from > to` → 400                         | UC-7 | US-7 | `GET /dashboard/cross-tenant` | `dashboard.crossTenant.bad-period`                         | N,B | ✓   | план | —   | ✓   | ✓   | —   |
+| REQ-7.4 | Период больше 24 месяцев → 400            | UC-7 | US-7 | `GET /dashboard/cross-tenant` | `dashboard.crossTenant.period-limit`                       | N,B | ✓   | план | —   | ✓   | ✓   | —   |
+| REQ-7.5 | Метрики: match rate, конверсия, инкремент | UC-7 | US-7 | `GET /dashboard/metrics`      | `dashboard.metrics.fields`                                 | P,C | ✓   | план | ✓   | —   | —   | —   |
+| REQ-7.6 | R-3 → 403                                 | UC-7 | US-7 | `/dashboard/*`                | `dashboard.forbidden-tenant-role` (`roles.tenant-blocked`) | N,S | ✓   | код  | —   | ✓   | —   | —   |
 
 ## 8. US-8 / UC-8. Агрегаты арендатора
 
@@ -195,22 +195,22 @@ REQ-5.6 — отдельный тест не создаётся, чтобы не
 
 ## 11. US-11 / UC-11. Подтверждение и разъединение склеек
 
-| ID        | Требование                                   | UC    | US    | Endpoint                                             | Тест                                          | Тип | EP  | T    | P   | N   | B   | E2E   |
-| --------- | -------------------------------------------- | ----- | ----- | ---------------------------------------------------- | --------------------------------------------- | --- | --- | ---- | --- | --- | --- | ----- |
-| REQ-11.1  | Очередь с причиной совпадения и `score`      | UC-11 | US-11 | `GET /merge-candidates`                              | `merge.queue.pending`, `merge.queue.contract` | P,C | ✓   | код  | ✓   | —   | —   | E2E-3 |
-| REQ-11.2  | Фильтр по `resolution`                       | UC-11 | US-11 | `GET /merge-candidates?resolution=`                  | `merge.queue.filter`                          | P   | ✓   | код  | ✓   | —   | —   | —     |
-| REQ-11.3  | Детали пары: два профиля рядом               | UC-11 | US-11 | `GET /merge-candidates/{id}`                         | `merge.detail.two-profiles`                   | P,C | ✓   | код  | ✓   | —   | —   | E2E-3 |
-| REQ-11.4  | Confirm переносит события и идентификаторы   | UC-11 | US-11 | `POST /merge-candidates/{id}/confirm`                | `merge.confirm.moves-data`                    | P,B | ✓   | код  | ✓   | —   | ✓   | E2E-3 |
-| REQ-11.5  | Поглощённый профиль получает `status=merged` | UC-11 | US-11 | `GET /guests/{id}`                                   | `merge.confirm.loser-merged`                  | B   | ✓   | код  | ✓   | —   | ✓   | E2E-3 |
-| REQ-11.6  | Повторное решение → 409 `already_resolved`   | UC-11 | US-11 | `POST /merge-candidates/{id}/confirm`                | `merge.confirm.already-resolved`              | N,B | ✓   | код  | —   | ✓   | ✓   | E2E-3 |
-| REQ-11.7  | Reject создаёт запрет склейки                | UC-11 | US-11 | `POST /merge-candidates/{id}/reject`                 | `merge.reject.creates-block`                  | P,B | ✓   | код  | ✓   | —   | ✓   | E2E-3 |
-| REQ-11.8  | Revert возвращает данные по `originGuestId`  | UC-11 | US-11 | `POST /merge-candidates/{id}/revert`                 | `merge.revert.restores`                       | P,B | ✓   | код  | ✓   | —   | ✓   | E2E-3 |
-| REQ-11.9  | Revert нерешённой пары → 409                 | UC-11 | —     | `POST /merge-candidates/{id}/revert`                 | `merge.revert.not-merged`                     | N   | ✓   | код  | —   | ✓   | —   | —     |
-| REQ-11.10 | Пара под запретом → 409 `merge_blocked`      | UC-11 | US-11 | `POST /guests/{id}/merge`                            | `merge.manual.blocked`                        | N,B | ✓   | план | —   | ✓   | ✓   | E2E-3 |
-| REQ-11.11 | Ручное объединение с собой → 400             | UC-11 | —     | `POST /guests/{id}/merge`                            | `merge.manual.self`                           | N   | ✓   | план | —   | ✓   | —   | —     |
-| REQ-11.12 | Список запретов и снятие запрета             | UC-11 | US-11 | `GET /unmerge-blocks`, `DELETE /unmerge-blocks/{id}` | `merge.blocks.list-delete`                    | P   | ✓   | план | ✓   | —   | —   | E2E-3 |
-| REQ-11.13 | Решение по склейке пишется в аудит           | UC-11 | US-11 | `GET /audit-logs`                                    | `merge.confirm.audit`                         | B   | ✓   | план | ✓   | —   | ✓   | —     |
-| REQ-11.14 | R-1 только читает очередь                    | UC-11 | US-11 | `POST /merge-candidates/{id}/confirm`                | `merge.r1.read-only` (`roles.*`)              | N,S | ✓   | код  | —   | ✓   | —   | —     |
+| ID        | Требование                                   | UC    | US    | Endpoint                                         | Тест                                          | Тип | EP  | T    | P   | N   | B   | E2E   |
+| --------- | -------------------------------------------- | ----- | ----- | ------------------------------------------------ | --------------------------------------------- | --- | --- | ---- | --- | --- | --- | ----- |
+| REQ-11.1  | Очередь с причиной совпадения и `score`      | UC-11 | US-11 | `GET /merge-candidates`                          | `merge.queue.pending`, `merge.queue.contract` | P,C | ✓   | код  | ✓   | —   | —   | E2E-3 |
+| REQ-11.2  | Фильтр по `resolution`                       | UC-11 | US-11 | `GET /merge-candidates?resolution=`              | `merge.queue.filter`                          | P   | ✓   | код  | ✓   | —   | —   | —     |
+| REQ-11.3  | Детали пары: два профиля рядом               | UC-11 | US-11 | `GET /merge-candidates/{id}`                     | `merge.detail.two-profiles`                   | P,C | ✓   | код  | ✓   | —   | —   | E2E-3 |
+| REQ-11.4  | Confirm переносит события и идентификаторы   | UC-11 | US-11 | `POST /merge-candidates/{id}/confirm`            | `merge.confirm.moves-data`                    | P,B | ✓   | код  | ✓   | —   | ✓   | E2E-3 |
+| REQ-11.5  | Поглощённый профиль получает `status=merged` | UC-11 | US-11 | `GET /guests/{id}`                               | `merge.confirm.loser-merged`                  | B   | ✓   | код  | ✓   | —   | ✓   | E2E-3 |
+| REQ-11.6  | Повторное решение → 409 `already_resolved`   | UC-11 | US-11 | `POST /merge-candidates/{id}/confirm`            | `merge.confirm.already-resolved`              | N,B | ✓   | код  | —   | ✓   | ✓   | E2E-3 |
+| REQ-11.7  | Reject создаёт запрет склейки                | UC-11 | US-11 | `POST /merge-candidates/{id}/reject`             | `merge.reject.creates-block`                  | P,B | ✓   | код  | ✓   | —   | ✓   | E2E-3 |
+| REQ-11.8  | Revert возвращает данные по `originGuestId`  | UC-11 | US-11 | `POST /merge-candidates/{id}/revert`             | `merge.revert.restores`                       | P,B | ✓   | код  | ✓   | —   | ✓   | E2E-3 |
+| REQ-11.9  | Revert нерешённой пары → 409                 | UC-11 | —     | `POST /merge-candidates/{id}/revert`             | `merge.revert.not-merged`                     | N   | ✓   | код  | —   | ✓   | —   | —     |
+| REQ-11.10 | Пара под запретом → 409 `merge_blocked`      | UC-11 | US-11 | `POST /guests/{id}/merge`                        | `merge.manual.blocked`                        | N,B | ✓   | план | —   | ✓   | ✓   | E2E-3 |
+| REQ-11.11 | Ручное объединение с собой → 400             | UC-11 | —     | `POST /guests/{id}/merge`                        | `merge.manual.self`                           | N   | ✓   | план | —   | ✓   | —   | —     |
+| REQ-11.12 | Список запретов и снятие запрета             | UC-11 | US-11 | `GET /merge-blocks`, `DELETE /merge-blocks/{id}` | `merge.blocks.list-delete`                    | P   | ✓   | план | ✓   | —   | —   | E2E-3 |
+| REQ-11.13 | Решение по склейке пишется в аудит           | UC-11 | US-11 | `GET /audit-logs`                                | `merge.confirm.audit`                         | B   | ✓   | план | ✓   | —   | ✓   | —     |
+| REQ-11.14 | R-1 только читает очередь                    | UC-11 | US-11 | `POST /merge-candidates/{id}/confirm`            | `merge.r1.read-only` (`roles.*`)              | N,S | ✓   | код  | —   | ✓   | —   | —     |
 
 ## 12. UC-12. Автосклейка профилей
 
@@ -250,7 +250,7 @@ REQ-5.6 — отдельный тест не создаётся, чтобы не
 | REQ-17.3  | R-1 меняет только `priority`             | UC-17 | —    | `PATCH /tenants/{id}`                               | `tenants.patch.marketer-priority-only`                 | N,B | ✓   | план | —   | ✓   | ✓   | —     |
 | REQ-17.4  | Удаление арендатора с событиями → 409    | UC-17 | —    | `DELETE /tenants/{id}`                              | `tenants.delete.with-events`                           | N,B | ✓   | план | —   | ✓   | ✓   | —     |
 | REQ-17.5  | Смежность и конкуренция категорий        | UC-17 | US-4 | `PUT /tenant-categories/{id}/relations`             | `categories.relations.replace`                         | P,B | ✓   | план | ✓   | —   | ✓   | —     |
-| REQ-17.6  | `top_up` и `usage` не считаются визитом  | UC-17 | —    | `POST /event-types`                                 | `event-types.counts-as-presence`                       | P,B | ✓   | план | ✓   | —   | ✓   | —     |
+| REQ-17.6  | `top_up` и `spend` не считаются визитом  | UC-17 | —    | `POST /event-types`                                 | `event-types.counts-as-presence`                       | P,B | ✓   | план | ✓   | —   | ✓   | —     |
 | REQ-17.7  | Источник с маппингом полей               | UC-17 | US-1 | `POST /data-sources`                                | `data-sources.create.mapping`                          | P,C | ✓   | код  | ✓   | —   | —   | E2E-1 |
 | REQ-17.8  | Деактивация источника с загрузками → 409 | UC-17 | —    | `DELETE /data-sources/{id}`                         | `data-sources.delete.with-imports`                     | N,B | ✓   | план | —   | ✓   | ✓   | —     |
 | REQ-17.9  | Проекты арендатора                       | UC-17 | US-2 | `GET /projects`, `POST /projects`                   | `projects.crud`                                        | P,C | ✓   | план | ✓   | —   | —   | —     |

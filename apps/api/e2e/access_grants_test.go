@@ -139,7 +139,7 @@ func TestAccessGrantLifecycle(t *testing.T) {
 	grantID := createGrant(grantBody(now.Add(-time.Minute), now.Add(time.Hour)))
 	own := getStatus(ownPath, 200)
 	getStatus(ownPath+"?metrics=visits_count", 200)
-	getStatus(ownPath+"?metrics=metric.penetration.read", 403)
+	getStatus(ownPath+"?metrics=metric.cross_tenant_distribution.read", 403)
 	getStatus(otherPath, 403)
 	getStatus(otherReferencePath, 403)
 	list := getStatus("/api/v1/tenants", 200)

@@ -60,9 +60,9 @@ func (s *AccessGrantService) Presets(ctx context.Context, actor domain.Principal
 		permissions []string
 	}{
 		{"tenant.none", nil},
-		{"tenant.self_aggregates", []string{"tenant.aggregates.own", "metric.new_guests_via_complex.read", "metric.repeat_visits.read", "metric.visits_count.read", "reference.read"}},
-		{"tenant.self_aggregates_extended", []string{"tenant.aggregates.own", "metric.new_guests_via_complex.read", "metric.repeat_visits.read", "metric.visits_count.read", "reference.read", "metric.segment_size.read", "metric.export_counts.read", "metric.contact_frequency.read"}},
-		{"tenant.recommendations_inbound", []string{"tenant.aggregates.own", "metric.new_guests_via_complex.read"}},
+		{"tenant.self_aggregates", []string{"tenant.aggregates.own", "metric.new_guests_via_mall.read", "metric.repeat_visits.read", "metric.visits_count.read", "reference.read"}},
+		{"tenant.self_aggregates_extended", []string{"tenant.aggregates.own", "metric.new_guests_via_mall.read", "metric.repeat_visits.read", "metric.visits_count.read", "reference.read", "metric.segment_size.read", "metric.export_counts.read", "metric.contact_frequency.read"}},
+		{"tenant.recommendations_inbound", []string{"tenant.aggregates.own", "metric.new_guests_via_mall.read"}},
 		{"tenant.campaign_participant", []string{"campaign.read", "metric.campaign_results.read"}},
 		{"tenant.own_events", []string{"guest.event.read", "field.event.amount.read"}},
 		{"tenant.full_profile_read", []string{"guest.profile.read", "guest.identifier.read", "field.guest.identifiers.read", "field.guest.phone.read"}},

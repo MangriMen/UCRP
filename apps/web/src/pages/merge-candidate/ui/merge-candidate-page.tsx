@@ -34,7 +34,7 @@ export function MergeCandidatePage() {
         title="Сравнение профилей"
         description={detail.reasonText ?? detail.reasonCode}
         actions={
-          <Button variant="outline" render={<Link to="/identity/queue" />}>
+          <Button variant="outline" render={<Link to="/identity/merge-candidates" />}>
             К очереди
           </Button>
         }

@@ -34,7 +34,7 @@ TenantGuestProfile:
     displayName:
       type: string
       nullable: true
-      description: "Always null: no tenant-specific name provenance is recorded."
+      description: 'Always null: no tenant-specific name provenance is recorded.'
     status:
       type: string
       enum:
@@ -119,9 +119,9 @@ ManagementTenantAggregate:
   type: object
   required:
     - newGuests
-    - hidden
+    - suppressed
   properties:
     newGuests:
       type: integer
-    hidden:
+    suppressed:
       type: boolean

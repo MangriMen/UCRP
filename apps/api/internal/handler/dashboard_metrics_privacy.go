@@ -9,12 +9,12 @@ func dashboardMetricsResponse(metrics *service.MetricsResponse) map[string]any {
 		"segmentToExportMedianSeconds": nil, "segmentToExportP95Seconds": nil,
 		"suppressed": true,
 	}
-	if metrics.DisputedSafe {
-		result["disputedMergeRate"] = metrics.ContestedMergeRate
+	if metrics.DisputedRateReliable {
+		result["disputedMergeRate"] = metrics.DisputedMergeRate
 	}
-	if metrics.ExportLatencySafe {
-		result["segmentToExportMedianSeconds"] = metrics.AvgSegmentToExport
-		result["segmentToExportP95Seconds"] = metrics.SegmentToExportP95
+	if metrics.ExportLatencyReliable {
+		result["segmentToExportMedianSeconds"] = metrics.SegmentToExportMedianSeconds
+		result["segmentToExportP95Seconds"] = metrics.SegmentToExportP95Seconds
 	}
 	return result
 }

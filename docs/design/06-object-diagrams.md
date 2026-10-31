@@ -131,7 +131,7 @@ classDiagram
   mc1 --> g2002 : guest_b_id
 ```
 
-Пояснение. Два профиля созданы из разных источников и делят один телефон, но имена различаются (например, один номер на семью). Резолвер не имеет права сливать такую пару автоматически, поэтому создал `merge_candidate` со статусом `pending`, причиной и оценкой 55; пара видна в очереди `/identity/queue` и не меняет профили. События и идентификаторы пока остаются у своих гостей, так что рассылка по телефону не придёт «чужому» человеку с чужой историей. Индекс очереди — `ix_merge_resolution (resolution, created_at)`.
+Пояснение. Два профиля созданы из разных источников и делят один телефон, но имена различаются (например, один номер на семью). Резолвер не имеет права сливать такую пару автоматически, поэтому создал `merge_candidate` со статусом `pending`, причиной и оценкой 55; пара видна в очереди `/identity/merge-candidates` и не меняет профили. События и идентификаторы пока остаются у своих гостей, так что рассылка по телефону не придёт «чужому» человеку с чужой историей. Индекс очереди — `ix_merge_resolution (resolution, created_at)`.
 
 ### (b2) Состояние: объединили, затем разъединили вручную
 
@@ -161,7 +161,7 @@ classDiagram
     winner_guest_id: g-2001
     merged_guest_id: g-2002
   }
-  class ub1["unmerge_block ub-1"] {
+  class ub1["merge_block ub-1"] {
     guest_a_id: g-2001
     guest_b_id: g-2002
     reason: manual_unmerge
@@ -183,7 +183,7 @@ classDiagram
   g2002 --> ev2 : guest_id
 ```
 
-Пояснение. Хронология: R-4 подтвердил пару (`POST /merge-candidates/mc-1/confirm`) — g-2002 стал `merged` с `merged_into_id = g-2001`, а e-22 и i-12 перешли к g-2001 (`origin_guest_id` остался g-2002); в `audit_log` появилась запись `merge.confirm` (a-1). Затем аналитик понял, что это разные люди, и вызвал `POST /merge-candidates/mc-1/revert`: строки с `origin_guest_id = g-2002` вернулись к g-2002, профиль снова `active`, кандидат получил `resolution = reverted`, создан `unmerge_block ub-1` и запись `merge.revert` (a-2) — всё в одной транзакции. На диаграмме показано конечное состояние. Новая загрузка с тем же общим телефоном пару не склеит и в очередь не вернёт, пока запрет не снят `DELETE /unmerge-blocks/ub-1`.
+Пояснение. Хронология: R-4 подтвердил пару (`POST /merge-candidates/mc-1/confirm`) — g-2002 стал `merged` с `merged_into_id = g-2001`, а e-22 и i-12 перешли к g-2001 (`origin_guest_id` остался g-2002); в `audit_log` появилась запись `merge.confirm` (a-1). Затем аналитик понял, что это разные люди, и вызвал `POST /merge-candidates/mc-1/revert`: строки с `origin_guest_id = g-2002` вернулись к g-2002, профиль снова `active`, кандидат получил `resolution = reverted`, создан `merge_block ub-1` и запись `merge.revert` (a-2) — всё в одной транзакции. На диаграмме показано конечное состояние. Новая загрузка с тем же общим телефоном пару не склеит и в очередь не вернёт, пока запрет не снят `DELETE /merge-blocks/ub-1`.
 
 ---
 
@@ -202,7 +202,7 @@ classDiagram
   }
   class sv1["segment_version sv-1"] {
     version_no: 1
-    rule: was Кофейня и ФитЗона, was_not Кино, 90 дней, phone
+    rule: visitedTenantIds Кофейня и ФитЗона, excluded_tenant_ids Кино, 90 дней, phone
     member_count: 5
     status: ready
   }

@@ -9,9 +9,9 @@ function renderPage(id: string) {
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
-      <MemoryRouter initialEntries={[`/identity/queue/${id}`]}>
+      <MemoryRouter initialEntries={[`/identity/merge-candidates/${id}`]}>
         <Routes>
-          <Route path="/identity/queue/:id" element={<MergeCandidatePage />} />
+          <Route path="/identity/merge-candidates/:id" element={<MergeCandidatePage />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,

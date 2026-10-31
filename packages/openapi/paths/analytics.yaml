@@ -1,9 +1,9 @@
 paths:
-  /api/v1/dashboard/penetration:
+  /api/v1/dashboard/cross-tenant:
     get:
       tags:
         - Analytics
-      operationId: getPenetration
+      operationId: getCrossTenantReport
       summary: Guest distribution by tenant count and its trend
       description: For active guests, counts the number of distinct `event.tenantId` values among events of types with `countsAsPresence`. Returns the 1 / 2 / 3+ distribution and the share of guests with two or more tenants. The period must not exceed 24 months and `from <= to`, otherwise 400.
       x-roles:
@@ -22,7 +22,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ../components/schemas/analytics.yaml#/PenetrationReport
+                $ref: ../components/schemas/analytics.yaml#/CrossTenantReport
         '400':
           $ref: ../components/responses.yaml#/BadRequest
         '401':

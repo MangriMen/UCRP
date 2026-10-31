@@ -10,24 +10,24 @@ import (
 	"github.com/google/uuid"
 )
 
-type UnmergeBlockSQL struct {
+type MergeBlockSQL struct {
 	db *sql.DB
 }
 
-func NewUnmergeBlockSQL(db *sql.DB) *UnmergeBlockSQL {
-	return &UnmergeBlockSQL{db: db}
+func NewMergeBlockSQL(db *sql.DB) *MergeBlockSQL {
+	return &MergeBlockSQL{db: db}
 }
 
-func (r *UnmergeBlockSQL) HasBlock(ctx context.Context, guestA, guestB string) (bool, error) {
+func (r *MergeBlockSQL) HasBlock(ctx context.Context, guestA, guestB string) (bool, error) {
 	var n int
 	err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM unmerge_block
+		SELECT COUNT(*) FROM merge_block
 		WHERE (guest_a_id = $1 AND guest_b_id = $2) OR (guest_a_id = $2 AND guest_b_id = $1)`,
 		guestA, guestB).Scan(&n)
 	return n > 0, err
 }
 
-func (r *UnmergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain.UnmergeBlock, error) {
+func (r *MergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain.MergeBlock, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -36,14 +36,14 @@ func (r *UnmergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain
 	}
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, guest_a_id, guest_b_id, reason, COALESCE(candidate_id, ''), COALESCE(created_by, ''), created_at
-		FROM unmerge_block ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+		FROM merge_block ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
-	out := make([]domain.UnmergeBlock, 0)
+	out := make([]domain.MergeBlock, 0)
 	for rows.Next() {
-		var b domain.UnmergeBlock
+		var b domain.MergeBlock
 		if err := rows.Scan(&b.ID, &b.GuestAID, &b.GuestBID, &b.Reason, &b.CandidateID, &b.CreatedBy, &b.CreatedAt); err != nil {
 			return nil, err
 		}
@@ -52,11 +52,11 @@ func (r *UnmergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain
 	return out, rows.Err()
 }
 
-func (r *UnmergeBlockSQL) GetByID(ctx context.Context, id string) (*domain.UnmergeBlock, error) {
-	var b domain.UnmergeBlock
+func (r *MergeBlockSQL) GetByID(ctx context.Context, id string) (*domain.MergeBlock, error) {
+	var b domain.MergeBlock
 	err := r.db.QueryRowContext(ctx, `
 		SELECT id, guest_a_id, guest_b_id, reason, COALESCE(candidate_id, ''), COALESCE(created_by, ''), created_at
-		FROM unmerge_block WHERE id = $1`, id).
+		FROM merge_block WHERE id = $1`, id).
 		Scan(&b.ID, &b.GuestAID, &b.GuestBID, &b.Reason, &b.CandidateID, &b.CreatedBy, &b.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, domain.ErrNotFound
@@ -64,8 +64,8 @@ func (r *UnmergeBlockSQL) GetByID(ctx context.Context, id string) (*domain.Unmer
 	return &b, err
 }
 
-func (r *UnmergeBlockSQL) Delete(ctx context.Context, id string) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM unmerge_block WHERE id = $1`, id)
+func (r *MergeBlockSQL) Delete(ctx context.Context, id string) error {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM merge_block WHERE id = $1`, id)
 	if err != nil {
 		return err
 	}
@@ -75,13 +75,13 @@ func (r *UnmergeBlockSQL) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *UnmergeBlockSQL) Insert(ctx context.Context, b *domain.UnmergeBlock) error {
+func (r *MergeBlockSQL) Insert(ctx context.Context, b *domain.MergeBlock) error {
 	a, c := b.GuestAID, b.GuestBID
 	if a > c {
 		a, c = c, a
 	}
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO unmerge_block (id, guest_a_id, guest_b_id, reason, candidate_id, created_by, created_at)
+		INSERT INTO merge_block (id, guest_a_id, guest_b_id, reason, candidate_id, created_by, created_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7)
 		ON CONFLICT DO NOTHING`,
 		b.ID, a, c, b.Reason, nullIfEmpty(b.CandidateID), nullIfEmpty(b.CreatedBy), b.CreatedAt,
@@ -93,7 +93,7 @@ func (r *MergeSQL) ManualMerge(ctx context.Context, guestA, guestB, actorUserID 
 	if guestA == "" || guestB == "" || guestA == guestB {
 		return nil, domain.ErrValidation
 	}
-	blocked, err := (&UnmergeBlockSQL{db: r.db}).HasBlock(ctx, guestA, guestB)
+	blocked, err := (&MergeBlockSQL{db: r.db}).HasBlock(ctx, guestA, guestB)
 	if err != nil {
 		return nil, err
 	}

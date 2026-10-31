@@ -105,7 +105,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 	tenantGuestSvc := service.NewTenantGuestService(repository.NewTenantGuestSQL(store.DB), accessSvc)
 	tenantGuestHandler := handler.NewTenantGuestHandler(tenantGuestSvc, guestHandler)
 	mergeSQL := repository.NewMergeSQL(store.DB)
-	blocks := repository.NewUnmergeBlockSQL(store.DB)
+	blocks := repository.NewMergeBlockSQL(store.DB)
 	identitySvc := service.NewIdentityService(mergeSQL, blocks, mergeSQL, q)
 	identityHandler := handler.NewIdentityHandler(identitySvc)
 	segmentRepo := repository.NewSegmentSQL(store.DB)
@@ -196,7 +196,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/reject", identityHandler.Reject)
 				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/revert", identityHandler.Revert)
 			})
-			priv.Route("/unmerge-blocks", func(u chi.Router) {
+			priv.Route("/merge-blocks", func(u chi.Router) {
 				u.With(auth.RequireRole(domain.RoleAnalyst)).Get("/", identityHandler.ListBlocks)
 				u.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", identityHandler.DeleteBlock)
 			})
@@ -290,7 +290,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 				c.With(auth.RequireRole(domain.RoleMarketer)).Delete("/{id}", campaignHandler.Delete)
 			})
 			priv.Route("/dashboard", func(d chi.Router) {
-				d.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/penetration", analyticsHandler.Penetration)
+				d.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/cross-tenant", analyticsHandler.CrossTenantReport)
 				d.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/metrics", analyticsHandler.Metrics)
 			})
 			priv.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/tenants/{id}/aggregates", tenantAccessHandler.Aggregates)

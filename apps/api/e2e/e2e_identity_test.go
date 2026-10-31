@@ -152,14 +152,14 @@ func TestE2EIdentityMergeLifecycle(t *testing.T) {
 	}
 
 	blocks, err := s.DB.Count(ctx, `
-		SELECT COUNT(*) FROM unmerge_block
+		SELECT COUNT(*) FROM merge_block
 		WHERE (guest_a_id = $1 AND guest_b_id = $2) OR (guest_a_id = $2 AND guest_b_id = $1)`,
 		winnerID, loserID)
 	if err != nil {
-		t.Fatalf("step 10 count unmerge blocks: %v", err)
+		t.Fatalf("step 10 count merge block: %v", err)
 	}
 	if blocks != 1 {
-		t.Fatalf("step 10: revert must leave exactly one unmerge_block for the pair, got %d", blocks)
+		t.Fatalf("step 10: revert must leave exactly one merge_block for the pair, got %d", blocks)
 	}
 }
 
@@ -189,8 +189,8 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 	w.visit(t, s, guest.ID, w.tenantA.ID, "e2e-segment-reco-a", 3)
 
 	preview, err := s.PostContractShape(ctx, "/api/v1/segments/preview",
-		map[string]any{"rule": map[string]any{"was": []string{w.tenantA.ID}, "wasNot": []string{w.tenantC.ID}, "periodDays": 90}},
-		map[string]any{"was": []string{w.tenantA.ID}, "wasNot": []string{w.tenantC.ID}, "periodDays": 90})
+		map[string]any{"rule": map[string]any{"visitedTenantIds": []string{w.tenantA.ID}, "excludedTenantIds": []string{w.tenantC.ID}, "periodDays": 90}},
+		map[string]any{"visitedTenantIds": []string{w.tenantA.ID}, "excludedTenantIds": []string{w.tenantC.ID}, "periodDays": 90})
 	if err != nil {
 		t.Fatalf("step 1 preview: %v", err)
 	}
@@ -206,8 +206,8 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 	}
 
 	create, err := s.PostContractShape(ctx, "/api/v1/segments",
-		map[string]any{"name": s.Reg.Name("e2e-segment"), "rule": map[string]any{"was": []string{w.tenantA.ID}, "wasNot": []string{w.tenantC.ID}, "periodDays": 90}},
-		map[string]any{"name": s.Reg.Name("e2e-segment"), "was": []string{w.tenantA.ID}, "wasNot": []string{w.tenantC.ID}, "periodDays": 90})
+		map[string]any{"name": s.Reg.Name("e2e-segment"), "rule": map[string]any{"visitedTenantIds": []string{w.tenantA.ID}, "excludedTenantIds": []string{w.tenantC.ID}, "periodDays": 90}},
+		map[string]any{"name": s.Reg.Name("e2e-segment"), "visitedTenantIds": []string{w.tenantA.ID}, "excludedTenantIds": []string{w.tenantC.ID}, "periodDays": 90})
 	if err != nil {
 		t.Fatalf("step 2 create segment: %v", err)
 	}

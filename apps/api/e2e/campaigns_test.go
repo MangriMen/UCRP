@@ -163,7 +163,7 @@ func mustSegment(t *testing.T, s *harness.Suite, w *world, suffix string) *segme
 		}
 		members = append(members, guest.ID)
 	}
-	created, err := s.Reg.Segment(ctx, suffix, `{"was":[],"was_not":[],"period_days":90}`, members)
+	created, err := s.Reg.Segment(ctx, suffix, `{"visitedTenantIds":[],"excluded_tenant_ids":[],"period_days":90}`, members)
 	if err != nil {
 		t.Fatalf("fixture segment: %v", err)
 	}

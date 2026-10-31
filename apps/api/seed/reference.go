@@ -176,7 +176,7 @@ func (s *Seeder) ensureEventTypes(ctx context.Context) error {
 		{"purchase", "Покупка", true, true},
 		{"booking", "Бронь", true, false},
 		{"top_up", "Пополнение", true, false},
-		{"usage", "Списание", true, false},
+		{"spend", "Списание", true, false},
 		{"reversal", "Возврат/отмена", true, false},
 	}
 	for _, d := range defaults {

@@ -1,6 +1,6 @@
 import type { Schema } from '@/shared/api/types'
 
 export type DashboardMetrics = Schema<'DashboardMetrics'>
-export type PenetrationReport = Schema<'PenetrationReport'>
-export type PenetrationPoint = Schema<'PenetrationPoint'>
+export type CrossTenantReport = Schema<'CrossTenantReport'>
+export type CrossTenantPoint = Schema<'CrossTenantPoint'>
 export type Granularity = Schema<'Granularity'>

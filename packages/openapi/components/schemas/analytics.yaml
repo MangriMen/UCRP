@@ -1,4 +1,4 @@
-PenetrationBucket:
+CrossTenantDistribution:
   type: object
   required:
     - one
@@ -22,9 +22,9 @@ PenetrationBucket:
       description: Guests with 3 or more tenants
     suppressed:
       type: boolean
-PenetrationPoint:
+CrossTenantPoint:
   allOf:
-    - $ref: ./analytics.yaml#/PenetrationBucket
+    - $ref: ./analytics.yaml#/CrossTenantDistribution
     - type: object
       required:
         - period
@@ -32,19 +32,19 @@ PenetrationPoint:
         period:
           type: string
           example: 2026-09
-        penetrationRate:
+        crossTenantRate:
           type: number
           nullable: true
           format: double
           description: Share of guests with 2 or more tenants
-PenetrationReport:
+CrossTenantReport:
   type: object
   required:
     - from
     - to
     - granularity
     - distribution
-    - penetrationRate
+    - crossTenantRate
     - series
   properties:
     from:
@@ -56,8 +56,8 @@ PenetrationReport:
     granularity:
       $ref: ./common.yaml#/Granularity
     distribution:
-      $ref: ./analytics.yaml#/PenetrationBucket
-    penetrationRate:
+      $ref: ./analytics.yaml#/CrossTenantDistribution
+    crossTenantRate:
       type: number
       nullable: true
       format: double
@@ -67,7 +67,7 @@ PenetrationReport:
     series:
       type: array
       items:
-        $ref: ./analytics.yaml#/PenetrationPoint
+        $ref: ./analytics.yaml#/CrossTenantPoint
 DashboardMetrics:
   type: object
   required:
@@ -105,7 +105,7 @@ DashboardMetrics:
       type: number
       format: double
       description: Share of recipients with a visit to the target tenant within the attribution window (target ≥ 0.03)
-    incrementalRate:
+    conversionLift:
       type: number
       format: double
       description: Recipient conversion minus control group conversion (target > 0)

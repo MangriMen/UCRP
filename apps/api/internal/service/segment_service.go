@@ -27,36 +27,36 @@ func NewSegmentService(repo domain.SegmentRepo, evaluator domain.SegmentEvaluato
 	}
 }
 
-type SegmentRuleBody struct {
-	Was            []string `json:"was"`
-	WasNot         []string `json:"wasNot"`
-	PeriodDays     int      `json:"periodDays"`
-	RequireContact string   `json:"requireContact"`
+type SegmentRuleInput struct {
+	VisitedTenantIDs  []string `json:"visitedTenantIds"`
+	ExcludedTenantIDs []string `json:"excludedTenantIds"`
+	PeriodDays        int      `json:"periodDays"`
+	RequireContact    string   `json:"requireContact"`
 }
 
 type SegmentPreviewRequest struct {
-	Rule           *SegmentRuleBody `json:"rule"`
-	Was            []string         `json:"was"`
-	WasNot         []string         `json:"wasNot"`
-	PeriodDays     int              `json:"periodDays"`
-	RequireContact string           `json:"requireContact"`
-	Limit          int              `json:"limit"`
+	Rule              *SegmentRuleInput `json:"rule"`
+	VisitedTenantIDs  []string          `json:"visitedTenantIds"`
+	ExcludedTenantIDs []string          `json:"excludedTenantIds"`
+	PeriodDays        int               `json:"periodDays"`
+	RequireContact    string            `json:"requireContact"`
+	Limit             int               `json:"limit"`
 }
 
 func (r SegmentPreviewRequest) toRule() domain.SegmentRule {
 	if r.Rule != nil {
 		return domain.SegmentRule{
-			Was:            r.Rule.Was,
-			WasNot:         r.Rule.WasNot,
-			PeriodDays:     r.Rule.PeriodDays,
-			RequireContact: r.Rule.RequireContact,
+			VisitedTenantIDs:  r.Rule.VisitedTenantIDs,
+			ExcludedTenantIDs: r.Rule.ExcludedTenantIDs,
+			PeriodDays:        r.Rule.PeriodDays,
+			RequireContact:    r.Rule.RequireContact,
 		}
 	}
 	return domain.SegmentRule{
-		Was:            r.Was,
-		WasNot:         r.WasNot,
-		PeriodDays:     r.PeriodDays,
-		RequireContact: r.RequireContact,
+		VisitedTenantIDs:  r.VisitedTenantIDs,
+		ExcludedTenantIDs: r.ExcludedTenantIDs,
+		PeriodDays:        r.PeriodDays,
+		RequireContact:    r.RequireContact,
 	}
 }
 
@@ -71,30 +71,30 @@ type SegmentPreviewResponse struct {
 }
 
 type SegmentCreateRequest struct {
-	Name           string           `json:"name"`
-	Description    string           `json:"description"`
-	TemplateCode   string           `json:"templateCode"`
-	Rule           *SegmentRuleBody `json:"rule"`
-	Was            []string         `json:"was"`
-	WasNot         []string         `json:"wasNot"`
-	PeriodDays     int              `json:"periodDays"`
-	RequireContact string           `json:"requireContact"`
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	TemplateCode      string            `json:"templateCode"`
+	Rule              *SegmentRuleInput `json:"rule"`
+	VisitedTenantIDs  []string          `json:"visitedTenantIds"`
+	ExcludedTenantIDs []string          `json:"excludedTenantIds"`
+	PeriodDays        int               `json:"periodDays"`
+	RequireContact    string            `json:"requireContact"`
 }
 
 func (r SegmentCreateRequest) toRule() domain.SegmentRule {
 	if r.Rule != nil {
 		return domain.SegmentRule{
-			Was:            r.Rule.Was,
-			WasNot:         r.Rule.WasNot,
-			PeriodDays:     r.Rule.PeriodDays,
-			RequireContact: r.Rule.RequireContact,
+			VisitedTenantIDs:  r.Rule.VisitedTenantIDs,
+			ExcludedTenantIDs: r.Rule.ExcludedTenantIDs,
+			PeriodDays:        r.Rule.PeriodDays,
+			RequireContact:    r.Rule.RequireContact,
 		}
 	}
 	return domain.SegmentRule{
-		Was:            r.Was,
-		WasNot:         r.WasNot,
-		PeriodDays:     r.PeriodDays,
-		RequireContact: r.RequireContact,
+		VisitedTenantIDs:  r.VisitedTenantIDs,
+		ExcludedTenantIDs: r.ExcludedTenantIDs,
+		PeriodDays:        r.PeriodDays,
+		RequireContact:    r.RequireContact,
 	}
 }
 

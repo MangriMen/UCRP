@@ -20,10 +20,10 @@ const leafFields = z.object({
     .refine((value) => isIntegerInRange(value, 1, MAX_PERIOD_DAYS), {
       message: `Целое число от 1 до ${MAX_PERIOD_DAYS}`,
     }),
-  was: z.array(z.string()),
-  wasNot: z.array(z.string()),
-  categoriesWas: z.array(z.string()),
-  categoriesWasNot: z.array(z.string()),
+  visitedTenantIds: z.array(z.string()),
+  excludedTenantIds: z.array(z.string()),
+  visitedCategoryIds: z.array(z.string()),
+  excludedCategoryIds: z.array(z.string()),
   requireContact: z.enum(contactOptions),
   minVisits: z
     .string()
@@ -42,10 +42,10 @@ const leafFields = z.object({
 type LeafValues = z.infer<typeof leafFields>
 
 const rejectTenantOverlap = (values: LeafValues, context: z.RefinementCtx) => {
-  if (values.was.some((id) => values.wasNot.includes(id))) {
+  if (values.visitedTenantIds.some((id) => values.excludedTenantIds.includes(id))) {
     context.addIssue({
       code: 'custom',
-      path: ['wasNot'],
+      path: ['excludedTenantIds'],
       message: 'Арендатор не может быть одновременно в «был» и «не был»',
     })
   }
@@ -89,10 +89,10 @@ export type SegmentFormValues = z.infer<typeof segmentFormSchema>
 
 export const emptyLeafValues: LeafFormValues = {
   periodDays: '90',
-  was: [],
-  wasNot: [],
-  categoriesWas: [],
-  categoriesWasNot: [],
+  visitedTenantIds: [],
+  excludedTenantIds: [],
+  visitedCategoryIds: [],
+  excludedCategoryIds: [],
   requireContact: 'none',
   minVisits: '',
   minAmount: '',
@@ -109,10 +109,10 @@ const nonEmpty = (ids: string[]) => (ids.length > 0 ? ids : undefined)
 function toLeaf(values: LeafFormValues): SegmentRule {
   return {
     periodDays: Number(values.periodDays),
-    was: nonEmpty(values.was),
-    wasNot: nonEmpty(values.wasNot),
-    categoriesWas: nonEmpty(values.categoriesWas),
-    categoriesWasNot: nonEmpty(values.categoriesWasNot),
+    visitedTenantIds: nonEmpty(values.visitedTenantIds),
+    excludedTenantIds: nonEmpty(values.excludedTenantIds),
+    visitedCategoryIds: nonEmpty(values.visitedCategoryIds),
+    excludedCategoryIds: nonEmpty(values.excludedCategoryIds),
     requireContact: values.requireContact === 'none' ? undefined : values.requireContact,
     minVisits: values.minVisits === '' ? undefined : Number(values.minVisits),
     minAmountMinor:
@@ -132,10 +132,10 @@ export function toRule(values: GroupValues): SegmentRuleNode {
 function toLeafValues(rule: SegmentRule): LeafFormValues {
   return {
     periodDays: String(rule.periodDays),
-    was: rule.was ?? [],
-    wasNot: rule.wasNot ?? [],
-    categoriesWas: rule.categoriesWas ?? [],
-    categoriesWasNot: rule.categoriesWasNot ?? [],
+    visitedTenantIds: rule.visitedTenantIds ?? [],
+    excludedTenantIds: rule.excludedTenantIds ?? [],
+    visitedCategoryIds: rule.visitedCategoryIds ?? [],
+    excludedCategoryIds: rule.excludedCategoryIds ?? [],
     requireContact: rule.requireContact ?? 'none',
     minVisits: rule.minVisits == null ? '' : String(rule.minVisits),
     minAmount: rule.minAmountMinor == null ? '' : String(rule.minAmountMinor / MINOR_PER_MAJOR),

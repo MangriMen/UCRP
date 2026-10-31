@@ -210,9 +210,9 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 	for _, c := range demoMergeCandidates() {
 		candidateIDs = append(candidateIDs, demoID("merge_candidate", c.Key))
 	}
-	blockIDs := make([]string, 0, len(demoUnmergeBlocks()))
-	for _, b := range demoUnmergeBlocks() {
-		blockIDs = append(blockIDs, demoID("unmerge_block", b.Key))
+	blockIDs := make([]string, 0, len(demoMergeBlocks()))
+	for _, b := range demoMergeBlocks() {
+		blockIDs = append(blockIDs, demoID("merge_block", b.Key))
 	}
 	auditIDs := make([]string, 0, len(demoAuditEntries()))
 	for _, a := range demoAuditEntries() {
@@ -255,7 +255,7 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 		{`DELETE FROM segment_version WHERE segment_id = ANY($1)`, []any{segmentIDs}},
 		{`DELETE FROM segment WHERE id = ANY($1)`, []any{segmentIDs}},
 		{`DELETE FROM recommendation WHERE guest_id = ANY($1) OR tenant_id = ANY($2)`, []any{guestIDs, tenantIDs}},
-		{`DELETE FROM unmerge_block WHERE id = ANY($1)`, []any{blockIDs}},
+		{`DELETE FROM merge_block WHERE id = ANY($1)`, []any{blockIDs}},
 		{`DELETE FROM merge_candidate WHERE id = ANY($1)`, []any{candidateIDs}},
 		{`UPDATE event SET reverses_event_id = NULL WHERE data_source_id = ANY($1)`, []any{sourceIDs}},
 		{`DELETE FROM event WHERE data_source_id = ANY($1)`, []any{sourceIDs}},

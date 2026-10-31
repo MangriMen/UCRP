@@ -154,7 +154,7 @@ CampaignResults:
     controlConversionRate:
       type: number
       format: double
-    incrementalRate:
+    conversionLift:
       type: number
       format: double
       description: 'Conversion difference: recipients minus control group'

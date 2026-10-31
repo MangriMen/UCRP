@@ -20,13 +20,12 @@ func NewSegmentSQL(db *sql.DB) *SegmentSQL {
 func (r *SegmentSQL) EnsureTemplates(ctx context.Context, clock domain.Clock, idGen domain.IDGen) error {
 	templates := []struct {
 		code, name, desc string
-		was              int
 	}{
-		{"sleep_neighbor", "Спящий сосед", "Был у одного арендатора, не был у соседей", 1},
-		{"single_tenant", "Один магазин", "Посещал только один арендатор", 1},
-		{"churn_risk", "Риск ухода", "Давно не посещал выбранных арендаторов", 1},
-		{"newcomer", "Новичок", "Мало истории посещений", 1},
-		{"high_value", "Высокая ценность", "Высокая частота посещений", 1},
+		{"sleep_neighbor", "Спящий сосед", "Был у одного арендатора, не был у соседей"},
+		{"single_tenant", "Один магазин", "Посещал только один арендатор"},
+		{"churn_risk", "Риск ухода", "Давно не посещал выбранных арендаторов"},
+		{"newcomer", "Новичок", "Мало истории посещений"},
+		{"high_value", "Высокая ценность", "Высокая частота посещений"},
 	}
 	now := clock.Now()
 	for _, t := range templates {
@@ -39,7 +38,7 @@ func (r *SegmentSQL) EnsureTemplates(ctx context.Context, clock domain.Clock, id
 			return err
 		}
 		segID := idGen.NewID(ctx)
-		rule := `{"was":[],"wasNot":[],"periodDays":30}`
+		rule := `{"visitedTenantIds":[],"excludedTenantIds":[],"periodDays":30}`
 		tx, err := r.db.BeginTx(ctx, nil)
 		if err != nil {
 			return err
@@ -140,17 +139,17 @@ func (r *SegmentSQL) List(ctx context.Context, limit, offset int) ([]domain.Segm
 	out := make([]domain.Segment, 0)
 	for rows.Next() {
 		var (
-			s    domain.Segment
-			desc string
-			tmpl string
-			stat string
+			s      domain.Segment
+			desc   string
+			tmpl   string
+			status string
 		)
-		if err := rows.Scan(&s.ID, &s.Name, &desc, &tmpl, &s.IsTemplate, &s.CurrentVersionNo, &stat, &s.CreatedBy, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Name, &desc, &tmpl, &s.IsTemplate, &s.CurrentVersionNo, &status, &s.CreatedBy, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
 		s.Description = desc
 		s.TemplateCode = tmpl
-		s.Status = domain.SegmentStatus(stat)
+		s.Status = domain.SegmentStatus(status)
 		out = append(out, s)
 	}
 	return out, rows.Err()
@@ -193,17 +192,17 @@ func (r *SegmentSQL) ListTemplates(ctx context.Context) ([]domain.Segment, error
 	out := make([]domain.Segment, 0)
 	for rows.Next() {
 		var (
-			s    domain.Segment
-			desc string
-			tmpl string
-			stat string
+			s      domain.Segment
+			desc   string
+			tmpl   string
+			status string
 		)
-		if err := rows.Scan(&s.ID, &s.Name, &desc, &tmpl, &s.IsTemplate, &s.CurrentVersionNo, &stat, &s.CreatedBy, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Name, &desc, &tmpl, &s.IsTemplate, &s.CurrentVersionNo, &status, &s.CreatedBy, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
 		s.Description = desc
 		s.TemplateCode = tmpl
-		s.Status = domain.SegmentStatus(stat)
+		s.Status = domain.SegmentStatus(status)
 		out = append(out, s)
 	}
 	return out, rows.Err()
@@ -220,14 +219,14 @@ func (r *SegmentSQL) ListVersions(ctx context.Context, segmentID string) ([]doma
 	out := make([]domain.SegmentVersion, 0)
 	for rows.Next() {
 		var (
-			v     domain.SegmentVersion
-			stat  string
-			count sql.NullInt64
+			v      domain.SegmentVersion
+			status string
+			count  sql.NullInt64
 		)
-		if err := rows.Scan(&v.ID, &v.SegmentID, &v.VersionNo, &v.Rule, &stat, &count, &v.ComputedAt, &v.CreatedBy, &v.CreatedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.SegmentID, &v.VersionNo, &v.Rule, &status, &count, &v.ComputedAt, &v.CreatedBy, &v.CreatedAt); err != nil {
 			return nil, err
 		}
-		v.Status = domain.SegmentVersionStatus(stat)
+		v.Status = domain.SegmentVersionStatus(status)
 		if count.Valid {
 			n := int(count.Int64)
 			v.MemberCount = &n

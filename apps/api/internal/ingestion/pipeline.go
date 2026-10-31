@@ -135,7 +135,7 @@ func (p *Pipeline) parseRow(ctx context.Context, row Row, mapping FieldMapping, 
 
 	occurredAt, err := parseDate(get(row, mapping.OccurredAt))
 	if err != nil {
-		return nil, &rowError{"bad_date", "Не распознана дата"}
+		return nil, &rowError{"invalid_date", "Не распознана дата"}
 	}
 
 	eventTypeCode := strings.ToLower(strings.TrimSpace(get(row, mapping.EventType)))
@@ -167,7 +167,7 @@ func (p *Pipeline) parseRow(ctx context.Context, row Row, mapping FieldMapping, 
 
 	amountMinor, err := parseAmount(get(row, mapping.Amount))
 	if err != nil {
-		return nil, &rowError{"bad_amount", "Не распознана сумма"}
+		return nil, &rowError{"invalid_amount", "Не распознана сумма"}
 	}
 	currency := strings.ToUpper(strings.TrimSpace(get(row, mapping.Currency)))
 	if currency == "" {
@@ -225,7 +225,7 @@ func (p *Pipeline) resolveTenant(ctx context.Context, row Row, mapping FieldMapp
 				return "", &rowError{"internal", "Ошибка справочника арендаторов"}
 			}
 			if !ok {
-				return "", &rowError{"bad_tenant", "Неизвестный арендатор: " + code}
+				return "", &rowError{"invalid_tenant", "Неизвестный арендатор: " + code}
 			}
 			return id, nil
 		}

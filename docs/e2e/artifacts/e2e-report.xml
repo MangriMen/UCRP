@@ -86,7 +86,7 @@
   <testcase name="TestSegmentCreateRequiresName" classname="TestSegmentCreateRequiresName" time="0.094"></testcase>
   <testcase name="TestSegmentGetContract" classname="TestSegmentGetContract" time="0.132"></testcase>
   <testcase name="TestSegmentGetReportsReadyVersion" classname="TestSegmentGetReportsReadyVersion" time="0.242"></testcase>
-  <testcase name="TestSegmentPreviewAcceptsEmptyWasNot" classname="TestSegmentPreviewAcceptsEmptyWasNot" time="0.189">
+  <testcase name="TestSegmentPreviewAcceptsEmptyExcludedTenantIds" classname="TestSegmentPreviewAcceptsEmptyExcludedTenantIds" time="0.189">
     <skipped message=""></skipped>
   </testcase>
   <testcase name="TestSegmentPreviewContract" classname="TestSegmentPreviewContract" time="0.137"></testcase>

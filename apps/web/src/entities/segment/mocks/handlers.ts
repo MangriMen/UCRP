@@ -99,9 +99,14 @@ export const segmentHandlers = [
   http.post(`${API}/segments/preview`, async ({ request }) => {
     const body = (await request.json()) as { rule: SegmentRuleNode; limit: number }
     const overlap = collectLeaves(body.rule).some((leaf) =>
-      leaf.was?.some((id) => leaf.wasNot?.includes(id)),
+      leaf.visitedTenantIds?.some((id) => leaf.excludedTenantIds?.includes(id)),
     )
-    if (overlap) return apiError(400, 'validation_error', 'Арендатор указан в was и wasNot')
+    if (overlap)
+      return apiError(
+        400,
+        'validation_error',
+        'Арендатор указан в visitedTenantIds и excludedTenantIds',
+      )
     return HttpResponse.json(previewFor(body.rule, body.limit))
   }),
 

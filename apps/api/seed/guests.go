@@ -175,7 +175,7 @@ func demoPersonas() []guestSpec {
 			Identifiers: []identifierSpec{{"phone", demoPhone(14), "crm-fit"}},
 			Events: []eventSpec{
 				{GuestKey: "g-topup", Tenant: "fit-zone", Project: "gym", Type: "top_up", Source: "crm-fit", DaysAgo: 35, Hour: 9, Minute: 0, Amount: 500000, HasAmount: true, ExternalID: "TOP-100090", Keys: []string{"phone"}},
-				{GuestKey: "g-topup", Tenant: "fit-zone", Project: "gym", Type: "usage", Source: "crm-fit", DaysAgo: 21, Hour: 18, Minute: 30, Amount: 120000, HasAmount: true, ExternalID: "USE-100091", Keys: []string{"phone"}},
+				{GuestKey: "g-topup", Tenant: "fit-zone", Project: "gym", Type: "spend", Source: "crm-fit", DaysAgo: 21, Hour: 18, Minute: 30, Amount: 120000, HasAmount: true, ExternalID: "USE-100091", Keys: []string{"phone"}},
 			},
 		},
 	}

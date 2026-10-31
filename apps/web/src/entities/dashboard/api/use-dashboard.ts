@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/api/api'
-import { dashboardKeys, type MetricsFilters, type PenetrationFilters } from '../model/keys'
+import { dashboardKeys, type MetricsFilters, type CrossTenantFilters } from '../model/keys'
 
 export function useDashboardMetrics(filters: MetricsFilters, enabled = true) {
   return useQuery({
@@ -10,10 +10,10 @@ export function useDashboardMetrics(filters: MetricsFilters, enabled = true) {
   })
 }
 
-export function usePenetration(filters: PenetrationFilters, enabled = true) {
+export function useCrossTenantReport(filters: CrossTenantFilters, enabled = true) {
   return useQuery({
-    queryKey: dashboardKeys.penetration(filters),
-    queryFn: () => api.get('/dashboard/penetration', { query: filters }),
+    queryKey: dashboardKeys.crossTenant(filters),
+    queryFn: () => api.get('/dashboard/cross-tenant', { query: filters }),
     enabled,
   })
 }

@@ -66,8 +66,8 @@ func TestE2EImportToExport(t *testing.T) {
 
 	segmentName := s.Reg.Name("e2e-full-segment")
 	create, err := s.PostContractShape(ctx, "/api/v1/segments",
-		map[string]any{"name": segmentName, "rule": map[string]any{"was": []string{iw.world.tenantA.ID}, "wasNot": []string{iw.world.tenantC.ID}, "periodDays": 365}},
-		map[string]any{"name": segmentName, "was": []string{iw.world.tenantA.ID}, "wasNot": []string{iw.world.tenantC.ID}, "periodDays": 365})
+		map[string]any{"name": segmentName, "rule": map[string]any{"visitedTenantIds": []string{iw.world.tenantA.ID}, "excludedTenantIds": []string{iw.world.tenantC.ID}, "periodDays": 365}},
+		map[string]any{"name": segmentName, "visitedTenantIds": []string{iw.world.tenantA.ID}, "excludedTenantIds": []string{iw.world.tenantC.ID}, "periodDays": 365})
 	if err != nil {
 		t.Fatalf("step 5 create segment: %v", err)
 	}

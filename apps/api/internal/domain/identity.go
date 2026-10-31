@@ -31,7 +31,7 @@ type MergeCandidate struct {
 	CreatedAt     time.Time
 }
 
-type UnmergeBlock struct {
+type MergeBlock struct {
 	ID          string
 	GuestAID    string
 	GuestBID    string
@@ -51,11 +51,11 @@ type MergeCandidateRepo interface {
 	Revert(ctx context.Context, id, actorUserID string, now time.Time) (*MergeCandidate, error)
 }
 
-type UnmergeBlockRepo interface {
+type MergeBlockRepo interface {
 	HasBlock(ctx context.Context, guestA, guestB string) (bool, error)
-	Insert(ctx context.Context, b *UnmergeBlock) error
-	List(ctx context.Context, limit, offset int) ([]UnmergeBlock, error)
-	GetByID(ctx context.Context, id string) (*UnmergeBlock, error)
+	Insert(ctx context.Context, b *MergeBlock) error
+	List(ctx context.Context, limit, offset int) ([]MergeBlock, error)
+	GetByID(ctx context.Context, id string) (*MergeBlock, error)
 	Delete(ctx context.Context, id string) error
 }
 

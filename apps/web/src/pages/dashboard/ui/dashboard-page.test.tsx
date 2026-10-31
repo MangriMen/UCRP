@@ -14,7 +14,7 @@ function renderPage() {
 }
 
 describe('DashboardPage', () => {
-  it('shows metrics with sample sizes and the penetration chart', async () => {
+  it('shows metrics with sample sizes and the cross-tenant chart', async () => {
     renderPage()
     expect(await screen.findByTestId('metric-matchRate')).toHaveTextContent('74')
     expect(screen.getByText('событий: 48 200')).toBeInTheDocument()

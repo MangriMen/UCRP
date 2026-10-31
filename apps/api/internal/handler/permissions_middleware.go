@@ -56,7 +56,7 @@ func PermissionMiddleware(authorizer policyAuthorizer) func(http.Handler) http.H
 			for _, permission := range permissions {
 				segmentCount := len(parts) > 0 && parts[0] == "segments"
 				exportCount := len(parts) > 0 && len(parts) <= 2 && parts[0] == "exports"
-				dashboard := r.Method == http.MethodGet && len(parts) == 2 && parts[0] == "dashboard" && (parts[1] == "penetration" || parts[1] == "metrics")
+				dashboard := r.Method == http.MethodGet && len(parts) == 2 && parts[0] == "dashboard" && (parts[1] == "cross-tenant" || parts[1] == "metrics")
 				dataQuality := r.Method == http.MethodGet && len(parts) == 2 && parts[0] == "data-quality" && parts[1] == "sources"
 				if strings.HasPrefix(permission, "metric.") && !segmentCount && !exportCount && !dashboard && !dataQuality && (len(parts) != 3 || parts[0] != "tenants" || parts[2] != "aggregates") {
 					httpx.WriteError(w, r, http.StatusForbidden, "forbidden_permission", "Нет доступа")
@@ -146,8 +146,8 @@ var protectedRoutes = []protectedRoute{
 	{http.MethodPost, "/merge-candidates/{id}/confirm", []string{"identity.decide"}},
 	{http.MethodPost, "/merge-candidates/{id}/reject", []string{"identity.decide"}},
 	{http.MethodPost, "/merge-candidates/{id}/revert", []string{"identity.decide"}},
-	{http.MethodGet, "/unmerge-blocks", []string{"identity.queue.read"}},
-	{http.MethodDelete, "/unmerge-blocks/{id}", []string{"identity.decide"}},
+	{http.MethodGet, "/merge-blocks", []string{"identity.queue.read"}},
+	{http.MethodDelete, "/merge-blocks/{id}", []string{"identity.decide"}},
 	{http.MethodGet, "/segments/templates", []string{"segment.read"}},
 	{http.MethodPost, "/segments/preview", []string{"segment.preview", "metric.segment_size.read"}},
 	{http.MethodGet, "/segments", []string{"segment.read", "metric.segment_size.read"}},
@@ -215,7 +215,7 @@ var protectedRoutes = []protectedRoute{
 	{http.MethodGet, "/campaigns/{id}", []string{"campaign.read"}},
 	{http.MethodPatch, "/campaigns/{id}", []string{"campaign.write"}},
 	{http.MethodDelete, "/campaigns/{id}", []string{"campaign.write"}},
-	{http.MethodGet, "/dashboard/penetration", []string{"dashboard.read", "metric.penetration.read", "metric.penetration_rate.read"}},
+	{http.MethodGet, "/dashboard/cross-tenant", []string{"dashboard.read", "metric.cross_tenant_distribution.read", "metric.cross_tenant_rate.read"}},
 	{http.MethodGet, "/dashboard/metrics", []string{"dashboard.read", "metric.match_rate.read", "metric.disputed_merge_rate.read", "metric.segment_to_export_time.read"}},
 	{http.MethodGet, "/data-quality/sources", []string{"data_quality.read", "metric.data_quality.read", "metric.merge_queue_size.read"}},
 }
