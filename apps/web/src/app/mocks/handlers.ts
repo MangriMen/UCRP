@@ -8,6 +8,7 @@ import { mergeCandidateHandlers } from '@/entities/merge-candidate/mocks'
 import { recommendationHandlers } from '@/entities/recommendation/mocks'
 import { campaignHandlers } from '@/entities/campaign/mocks'
 import { segmentHandlers } from '@/entities/segment/mocks'
+import { tenantCategoryHandlers } from '@/entities/tenant-category/mocks'
 import { unmergeBlockHandlers } from '@/entities/unmerge-block/mocks'
 import { userHandlers } from '@/entities/user/mocks'
 
@@ -23,4 +24,5 @@ export const handlers: RequestHandler[] = [
   ...exportHandlers,
   ...contactLimitHandlers,
   ...campaignHandlers,
+  ...tenantCategoryHandlers,
 ]

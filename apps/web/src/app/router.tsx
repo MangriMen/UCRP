@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import { RoleGuard } from '@/entities/user'
+import { AdminDictionariesPage } from '@/pages/admin-dictionaries'
 import { CampaignDetailsPage } from '@/pages/campaign-details'
 import { CampaignsPage } from '@/pages/campaigns'
 import { ContactLimitsPage } from '@/pages/contact-limits'
@@ -63,6 +64,10 @@ export const router = createBrowserRouter([
               { path: 'campaigns/:id', element: <CampaignDetailsPage /> },
               { path: 'settings/contact-limits', element: <ContactLimitsPage /> },
             ],
+          },
+          {
+            element: <RoleGuard roles={['marketer', 'analyst', 'manager']} />,
+            children: [{ path: 'admin/dictionaries', element: <AdminDictionariesPage /> }],
           },
           {
             element: <RoleGuard roles={['analyst']} />,
