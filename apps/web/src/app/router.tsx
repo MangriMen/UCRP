@@ -6,6 +6,7 @@ import { AuditLogPage } from '@/pages/audit-log'
 import { CampaignDetailsPage } from '@/pages/campaign-details'
 import { CampaignsPage } from '@/pages/campaigns'
 import { ContactLimitsPage } from '@/pages/contact-limits'
+import { DashboardPage } from '@/pages/dashboard'
 import { DataSourcesPage } from '@/pages/data-sources'
 import { ExportsPage } from '@/pages/exports'
 import { GuestProfilePage } from '@/pages/guest-profile'
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
         ),
         children: [
           { index: true, element: <HomeRedirect /> },
+          {
+            element: <RoleGuard roles={['manager', 'marketer', 'analyst']} />,
+            children: [{ path: 'dashboard', element: <DashboardPage /> }],
+          },
           {
             element: <RoleGuard roles={['analyst', 'manager']} />,
             children: [

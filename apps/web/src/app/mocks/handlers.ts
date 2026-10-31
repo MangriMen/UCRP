@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'msw'
 import { auditLogHandlers } from '@/entities/audit-log/mocks'
 import { contactLimitHandlers } from '@/entities/contact-limit/mocks'
+import { dashboardHandlers } from '@/entities/dashboard/mocks'
 import { dataSourceHandlers } from '@/entities/data-source/mocks'
 import { exportHandlers } from '@/entities/export/mocks'
 import { guestHandlers } from '@/entities/guest/mocks'
@@ -35,4 +36,5 @@ export const handlers: RequestHandler[] = [
   ...eventTypeHandlers,
   ...projectHandlers,
   ...tenantHandlers,
+  ...dashboardHandlers,
 ]
