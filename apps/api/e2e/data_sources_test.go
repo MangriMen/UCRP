@@ -68,9 +68,9 @@ func TestDataSourceCreate(t *testing.T) {
 	}
 
 	resp, err := s.API.Post(ctx, "/api/v1/data-sources", map[string]any{
-		"tenant_id": w.tenantA.ID,
-		"type_id":   csvTypeID,
-		"name":      s.Reg.Name("source-created"),
+		"tenantId": w.tenantA.ID,
+		"typeId":   csvTypeID,
+		"name":     s.Reg.Name("source-created"),
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/data-sources: %v", err)
@@ -90,10 +90,10 @@ func TestDataSourceCreate(t *testing.T) {
 	}
 	trackDataSource(s, sourceID)
 
-	if active, ok := obj["is_active"].(bool); !ok || !active {
-		t.Fatalf("created data source must be active, got %v", obj["is_active"])
+	if active, ok := obj["isActive"].(bool); !ok || !active {
+		t.Fatalf("created data source must be active, got %v", obj["isActive"])
 	}
-	if code := harness.StringField(obj, "type_code", "typeCode"); code != "csv_excel" {
+	if code := harness.StringField(obj, "typeCode"); code != "csv_excel" {
 		t.Fatalf("type_code: expected csv_excel, got %q", code)
 	}
 }
@@ -103,7 +103,7 @@ func TestDataSourceCreateRequiresName(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	resp, err := s.API.Post(ctx, "/api/v1/data-sources", map[string]any{"type_id": "00000000-0000-0000-0000-000000000000"})
+	resp, err := s.API.Post(ctx, "/api/v1/data-sources", map[string]any{"typeId": "00000000-0000-0000-0000-000000000000"})
 	if err != nil {
 		t.Fatalf("POST /api/v1/data-sources without name: %v", err)
 	}
@@ -119,10 +119,10 @@ func TestDataSourceCreateRejectsBadMapping(t *testing.T) {
 	defer cancel()
 
 	resp, err := s.API.Post(ctx, "/api/v1/data-sources", map[string]any{
-		"tenant_id":     w.tenantA.ID,
-		"type_id":       w.source.ID,
-		"name":          s.Reg.Name("source-bad-mapping"),
-		"field_mapping": "{not-json",
+		"tenantId":     w.tenantA.ID,
+		"typeId":       w.source.ID,
+		"name":         s.Reg.Name("source-bad-mapping"),
+		"fieldMapping": "{not-json",
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/data-sources with a broken mapping: %v", err)

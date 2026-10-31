@@ -69,33 +69,33 @@ func NewImportService(
 
 type ImportDTO struct {
 	ID           string     `json:"id"`
-	DataSourceID string     `json:"data_source_id"`
+	DataSourceID string     `json:"dataSourceId"`
 	Mode         string     `json:"mode"`
 	Status       string     `json:"status"`
-	FileName     string     `json:"file_name,omitempty"`
+	FileName     string     `json:"fileName,omitempty"`
 	Total        int        `json:"total"`
 	Accepted     int        `json:"accepted"`
 	Rejected     int        `json:"rejected"`
 	Duplicate    int        `json:"duplicate"`
-	ErrorMessage string     `json:"error_message,omitempty"`
-	CreatedBy    string     `json:"created_by,omitempty"`
-	CreatedAt    time.Time  `json:"created_at"`
-	StartedAt    *time.Time `json:"started_at,omitempty"`
-	FinishedAt   *time.Time `json:"finished_at,omitempty"`
+	ErrorMessage string     `json:"errorMessage,omitempty"`
+	CreatedBy    string     `json:"createdBy,omitempty"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	StartedAt    *time.Time `json:"startedAt,omitempty"`
+	FinishedAt   *time.Time `json:"finishedAt,omitempty"`
 }
 
 type CreateImportResult struct {
-	BatchID    string `json:"batch_id"`
+	BatchID    string `json:"batchId"`
 	Status     string `json:"status"`
 	Duplicate  bool   `json:"duplicate"`
 	HTTPStatus int    `json:"-"`
 }
 
 type RejectedRowDTO struct {
-	RowNumber    int    `json:"row_number"`
-	ErrorCode    string `json:"error_code"`
-	ErrorMessage string `json:"error_message"`
-	RawLine      string `json:"raw_line"`
+	RowNumber    int    `json:"rowNumber"`
+	ErrorCode    string `json:"errorCode"`
+	ErrorMessage string `json:"errorMessage"`
+	RawLine      string `json:"rawLine"`
 }
 
 type CreateImportInput struct {

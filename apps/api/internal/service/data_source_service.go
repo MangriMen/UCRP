@@ -28,35 +28,35 @@ func NewDataSourceService(sources domain.DataSourceRepo, types domain.DataSource
 
 type DataSourceDTO struct {
 	ID           string     `json:"id"`
-	TenantID     string     `json:"tenant_id,omitempty"`
-	TypeID       string     `json:"type_id"`
-	TypeCode     string     `json:"type_code"`
+	TenantID     string     `json:"tenantId,omitempty"`
+	TypeID       string     `json:"typeId"`
+	TypeCode     string     `json:"typeCode"`
 	Name         string     `json:"name"`
 	Config       string     `json:"config,omitempty"`
-	FieldMapping string     `json:"field_mapping,omitempty"`
-	ScheduleCron string     `json:"schedule_cron,omitempty"`
-	IsActive     bool       `json:"is_active"`
-	LastImportAt *time.Time `json:"last_import_at,omitempty"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
+	FieldMapping string     `json:"fieldMapping,omitempty"`
+	ScheduleCron string     `json:"scheduleCron,omitempty"`
+	IsActive     bool       `json:"isActive"`
+	LastImportAt *time.Time `json:"lastImportAt,omitempty"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
 }
 
 type CreateDataSourceRequest struct {
-	TenantID     string `json:"tenant_id"`
-	TypeID       string `json:"type_id"`
+	TenantID     string `json:"tenantId"`
+	TypeID       string `json:"typeId"`
 	Name         string `json:"name"`
 	Config       string `json:"config"`
-	FieldMapping string `json:"field_mapping"`
-	ScheduleCron string `json:"schedule_cron"`
+	FieldMapping string `json:"fieldMapping"`
+	ScheduleCron string `json:"scheduleCron"`
 }
 
 type DataSourceTypeDTO struct {
 	ID           string `json:"id"`
 	Code         string `json:"code"`
 	Name         string `json:"name"`
-	ConnectorKey string `json:"connector_key"`
-	SupportsFile bool   `json:"supports_file"`
-	SupportsPull bool   `json:"supports_pull"`
+	ConnectorKey string `json:"connectorKey"`
+	SupportsFile bool   `json:"supportsFile"`
+	SupportsPull bool   `json:"supportsPull"`
 }
 
 func (s *DataSourceService) Create(ctx context.Context, req CreateDataSourceRequest) (*DataSourceDTO, error) {
@@ -96,9 +96,9 @@ func (s *DataSourceService) Create(ctx context.Context, req CreateDataSourceRequ
 type DataSourceUpdateRequest struct {
 	Name         string `json:"name"`
 	Config       string `json:"config"`
-	FieldMapping string `json:"field_mapping"`
-	ScheduleCron string `json:"schedule_cron"`
-	IsActive     *bool  `json:"is_active"`
+	FieldMapping string `json:"fieldMapping"`
+	ScheduleCron string `json:"scheduleCron"`
+	IsActive     *bool  `json:"isActive"`
 }
 
 func (s *DataSourceService) Update(ctx context.Context, id string, req DataSourceUpdateRequest) (*DataSourceDTO, error) {
@@ -160,9 +160,9 @@ func (s *DataSourceService) List(ctx context.Context, limit, offset int) ([]Data
 type DataSourceTypeRequest struct {
 	Code         string `json:"code"`
 	Name         string `json:"name"`
-	ConnectorKey string `json:"connector_key"`
-	SupportsFile bool   `json:"supports_file"`
-	SupportsPull bool   `json:"supports_pull"`
+	ConnectorKey string `json:"connectorKey"`
+	SupportsFile bool   `json:"supportsFile"`
+	SupportsPull bool   `json:"supportsPull"`
 }
 
 func (s *DataSourceService) CreateType(ctx context.Context, req DataSourceTypeRequest) (*DataSourceTypeDTO, error) {

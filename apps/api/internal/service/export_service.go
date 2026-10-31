@@ -38,40 +38,40 @@ func NewExportService(
 }
 
 type ExportPreviewRequest struct {
-	SegmentID      string `json:"segment_id"`
+	SegmentID      string `json:"segmentId"`
 	Channel        string `json:"channel"`
-	ControlPercent int    `json:"control_percent"`
-	IdempotencyKey string `json:"idempotency_key"`
+	ControlPercent int    `json:"controlPercent"`
+	IdempotencyKey string `json:"idempotencyKey"`
 }
 
 type ExportPreviewResponse struct {
-	InSegment      int `json:"in_segment"`
-	WithContact    int `json:"with_contact"`
-	BlockedByLimit int `json:"blocked_by_limit"`
+	InSegment      int `json:"inSegment"`
+	WithContact    int `json:"withContact"`
+	BlockedByLimit int `json:"blockedByLimit"`
 	Control        int `json:"control"`
-	ToSend         int `json:"to_send"`
+	ToSend         int `json:"toSend"`
 }
 
 type ExportCreateRequest struct {
-	SegmentID      string `json:"segment_id"`
+	SegmentID      string `json:"segmentId"`
 	Channel        string `json:"channel"`
 	Format         string `json:"format"`
-	ControlPercent int    `json:"control_percent"`
-	CampaignID     string `json:"campaign_id"`
-	IdempotencyKey string `json:"idempotency_key"`
+	ControlPercent int    `json:"controlPercent"`
+	CampaignID     string `json:"campaignId"`
+	IdempotencyKey string `json:"idempotencyKey"`
 }
 
 type ExportDTO struct {
 	ID                  string `json:"id"`
-	SegmentID           string `json:"segment_id"`
+	SegmentID           string `json:"segmentId"`
 	Channel             string `json:"channel"`
 	Format              string `json:"format"`
 	Status              string `json:"status"`
-	TotalInSegment      int    `json:"total_in_segment"`
-	NoContactCount      int    `json:"no_contact_count"`
-	BlockedByLimitCount int    `json:"blocked_by_limit_count"`
-	ControlCount        int    `json:"control_count"`
-	ExportedCount       int    `json:"exported_count"`
+	TotalInSegment      int    `json:"totalInSegment"`
+	NoContactCount      int    `json:"noContactCount"`
+	BlockedByLimitCount int    `json:"blockedByLimitCount"`
+	ControlCount        int    `json:"controlCount"`
+	ExportedCount       int    `json:"exportedCount"`
 }
 
 type memberCandidate struct {

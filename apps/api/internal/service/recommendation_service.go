@@ -19,15 +19,15 @@ func NewRecommendationService(guests domain.GuestRepo, repo domain.Recommendatio
 
 type RecommendationDTO struct {
 	Rank             int     `json:"rank"`
-	TenantID         string  `json:"tenant_id"`
+	TenantID         string  `json:"tenantId"`
 	Score            float64 `json:"score"`
 	Explanation      string  `json:"explanation"`
-	AlgorithmVersion string  `json:"algorithm_version"`
-	ComputedAt       string  `json:"computed_at"`
+	AlgorithmVersion string  `json:"algorithmVersion"`
+	ComputedAt       string  `json:"computedAt"`
 }
 
 type SegmentRecommendationDTO struct {
-	TenantID string  `json:"tenant_id"`
+	TenantID string  `json:"tenantId"`
 	Score    float64 `json:"score"`
 	Guests   int     `json:"guests"`
 }

@@ -60,26 +60,26 @@ func (s *AuthService) GetUser(ctx context.Context, id string) (*UserDTO, error) 
 type UserDTO struct {
 	ID          string `json:"id"`
 	Email       string `json:"email"`
-	DisplayName string `json:"display_name"`
+	DisplayName string `json:"displayName"`
 	Role        string `json:"role"`
-	TenantID    string `json:"tenant_id,omitempty"`
-	IsActive    bool   `json:"is_active"`
+	TenantID    string `json:"tenantId,omitempty"`
+	IsActive    bool   `json:"isActive"`
 }
 
 type UserCreateRequest struct {
 	Email       string `json:"email"`
 	Password    string `json:"password"`
-	DisplayName string `json:"display_name"`
+	DisplayName string `json:"displayName"`
 	Role        string `json:"role"`
-	TenantID    string `json:"tenant_id"`
+	TenantID    string `json:"tenantId"`
 }
 
 type UserUpdateRequest struct {
-	DisplayName string `json:"display_name"`
+	DisplayName string `json:"displayName"`
 	Role        string `json:"role"`
-	TenantID    string `json:"tenant_id"`
+	TenantID    string `json:"tenantId"`
 	Password    string `json:"password"`
-	IsActive    *bool  `json:"is_active"`
+	IsActive    *bool  `json:"isActive"`
 }
 
 func (s *AuthService) CreateUserService(ctx context.Context, req UserCreateRequest) (*UserDTO, error) {
@@ -167,12 +167,12 @@ func NewAuditService(audit domain.AuditRepo) *AuditService {
 
 type AuditDTO struct {
 	ID         string `json:"id"`
-	Actor      string `json:"actor_user_id,omitempty"`
-	Role       string `json:"actor_role"`
+	Actor      string `json:"actorUserId,omitempty"`
+	Role       string `json:"actorRole"`
 	Action     string `json:"action"`
-	EntityType string `json:"entity_type"`
-	EntityID   string `json:"entity_id"`
-	CreatedAt  string `json:"created_at"`
+	EntityType string `json:"entityType"`
+	EntityID   string `json:"entityId"`
+	CreatedAt  string `json:"createdAt"`
 }
 
 func (s *AuditService) List(ctx context.Context, entityType, entityID, actor string, limit, offset int) ([]AuditDTO, error) {
@@ -204,17 +204,17 @@ func NewCampaignService(campaigns domain.CampaignRepo) *CampaignService {
 type CampaignDTO struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
-	TenantID        string `json:"tenant_id"`
-	SegmentID       string `json:"segment_id"`
-	AttributionDays int    `json:"attribution_days"`
+	TenantID        string `json:"tenantId"`
+	SegmentID       string `json:"segmentId"`
+	AttributionDays int    `json:"attributionDays"`
 	Status          string `json:"status"`
 }
 
 type CampaignRequest struct {
 	Name            string `json:"name"`
-	TenantID        string `json:"tenant_id"`
-	SegmentID       string `json:"segment_id"`
-	AttributionDays int    `json:"attribution_days"`
+	TenantID        string `json:"tenantId"`
+	SegmentID       string `json:"segmentId"`
+	AttributionDays int    `json:"attributionDays"`
 	Status          string `json:"status"`
 }
 

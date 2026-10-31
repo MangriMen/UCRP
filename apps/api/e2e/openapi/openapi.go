@@ -151,10 +151,7 @@ func (s *Spec) resolveNode(node any) (map[string]any, bool) {
 }
 
 func (s *Spec) lookup(ref string) (map[string]any, bool) {
-	file, fragment := ref, ""
-	if i := strings.Index(ref, "#"); i >= 0 {
-		file, fragment = ref[:i], ref[i+1:]
-	}
+	file, fragment, _ := strings.Cut(ref, "#")
 	var current any
 	if file == "" {
 		current = s.raw
