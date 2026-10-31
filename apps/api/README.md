@@ -2,7 +2,7 @@
 
 Модуль: `github.com/MangriMen/UCRP`.
 Слои: `handler → service → domain ← repository`; capability-пакеты зависят только от `domain` / `platform/*`.
-Правила — `docs/ARCHITECTURE.md`, дерево — `docs/appendix/go-package-tree.md`, API — `docs/appendix/endpoint-registry.md`.
+Правила — `ARCHITECTURE.md`, дерево — `docs/appendix/go-package-tree.md`, API — `docs/endpoint-registry.md`.
 
 ## Структура
 

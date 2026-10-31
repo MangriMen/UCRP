@@ -7,4 +7,4 @@
 | `api/`  | Go                        | HTTP API (`cmd/api`), воркеры (`cmd/worker`), миграции goose     |
 | `web/`  | React + Vite + TypeScript | SPA: импорт, профили, сегменты, рекомендации, выгрузка, дашборды |
 
-`web/` инициализирован (Vite, Tailwind, shadcn, Vitest); `api/` пока нет. Правила структуры — в [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
+`web/` инициализирован (Vite, Tailwind, shadcn, Vitest); `api/` пока нет. Правила структуры — в [../ARCHITECTURE.md](../ARCHITECTURE.md).

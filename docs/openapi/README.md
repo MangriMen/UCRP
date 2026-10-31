@@ -16,7 +16,7 @@ npx @redocly/cli bundle docs/openapi.json --output docs/openapi.bundled.json
 npx @redocly/cli preview-docs docs/openapi.json
 ```
 
-## paths/ — operations (104 operations from `appendix/endpoint-registry.md`)
+## paths/ — operations (104 operations from `endpoint-registry.md`)
 
 | File                                | Registry section    | Endpoints                                                              |
 | ----------------------------------- | ------------------- | ---------------------------------------------------------------------- |
@@ -82,7 +82,7 @@ npx @redocly/cli preview-docs docs/openapi.json
 
 ## Editing rules
 
-1. Add an endpoint only if it exists in `appendix/endpoint-registry.md`.
+1. Add an endpoint only if it exists in `endpoint-registry.md`.
 2. Put a schema in the matching topic file and add a `$ref` line to `../openapi.json`.
 3. Cross-file references are relative, with a JSON Pointer: `./common.json#/PageMeta`.
 4. Always run `npx @redocly/cli lint docs/openapi.json` after changes.

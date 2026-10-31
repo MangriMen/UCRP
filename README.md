@@ -37,7 +37,7 @@
 └── lefthook.yml        # Git-хуки: Go-проверки, линт JS/TS, Conventional Commits
 ```
 
-Подробнее о границах модулей и правилах зависимостей — в [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Подробнее о границах модулей и правилах зависимостей — в [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### Стек
 
@@ -117,7 +117,7 @@ cp .env.example .env
 bun run dev
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module boundaries and dependency rules.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for module boundaries and dependency rules.
 
 ### Conventions
 

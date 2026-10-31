@@ -1,6 +1,6 @@
 # 14. Таблица трассируемости
 
-Цепочка: `US/UC → Activity (AD-*) → Sequence (SD-*) → ER-таблицы → CRUD (сущность: роли и операции) → C4-компонент (CMP-n, уровень C4) → API-эндпоинт`. Источники: `03-use-cases.md`, `04-user-stories.md`, `08-activity-diagrams.md`, `09-sequence-diagrams.md`, `05-er-data-model.md`, `07-crud-matrix.md`, `11-component-diagram.md`, `12-c4.md`, `appendix/endpoint-registry.md`. Ячеек с пустым значением нет: где у служебного UC нет собственной диаграммы или REST-эндпоинта, указана причина (пометка «Причина»). Коды CRUD: C, R, U, D, A (агрегаты), own (только свой `tenant_id`), \* (по запросу пользователя пишет система).
+Цепочка: `US/UC → Activity (AD-*) → Sequence (SD-*) → ER-таблицы → CRUD (сущность: роли и операции) → C4-компонент (CMP-n, уровень C4) → API-эндпоинт`. Источники: `03-use-cases.md`, `04-user-stories.md`, `08-activity-diagrams.md`, `09-sequence-diagrams.md`, `05-er-data-model.md`, `07-crud-matrix.md`, `11-component-diagram.md`, `12-c4.md`, `endpoint-registry.md`. Ячеек с пустым значением нет: где у служебного UC нет собственной диаграммы или REST-эндпоинта, указана причина (пометка «Причина»). Коды CRUD: C, R, U, D, A (агрегаты), own (только свой `tenant_id`), \* (по запросу пользователя пишет система).
 
 ## 1. Основная таблица (UC-1…UC-11 ≡ US-1…US-11)
 
