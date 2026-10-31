@@ -12,7 +12,11 @@ FROM alpine:3.21 AS runner
 RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 COPY --from=build /out/server /app/server
-RUN mkdir -p /data/uploads
+RUN addgroup -S -g 10001 ucrp \
+    && adduser -S -u 10001 -G ucrp ucrp \
+    && mkdir -p /data/uploads \
+    && chown -R ucrp:ucrp /data
+USER ucrp
 ENV UCRP_HTTP_ADDR=:8080 \
     UCRP_UPLOAD_DIR=/data/uploads \
     UCRP_LOG_LEVEL=info \
