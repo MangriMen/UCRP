@@ -28,4 +28,13 @@ export const mockDataSourceTypes: DataSourceType[] = [
     supportsPull: true,
     isActive: false,
   },
+  {
+    id: 'ds-type-0004',
+    code: 'api',
+    name: 'Произвольный API',
+    connectorKey: 'generic_api',
+    supportsFile: false,
+    supportsPull: true,
+    isActive: true,
+  },
 ]

@@ -1,3 +1,4 @@
 export { useDataSources } from './api/use-data-sources'
 export { dataSourceKeys } from './model/keys'
-export type { DataSource } from './model/types'
+export type { DataSourceListFilters } from './model/keys'
+export type { DataSource, DataSourceCreateRequest, DataSourceUpdateRequest } from './model/types'
