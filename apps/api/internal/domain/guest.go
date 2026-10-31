@@ -66,9 +66,15 @@ type Event struct {
 }
 
 type GuestTenantSummary struct {
-	TenantID   string
-	TenantName string
-	EventCount int
+	TenantID      string
+	TenantName    string
+	CategoryName  string
+	Floor         int
+	EventCount    int
+	PurchaseCount int
+	PurchaseTotal int64
+	Currency      string
+	LastVisitAt   *time.Time
 }
 
 type GuestSegmentSummary struct {
@@ -88,6 +94,32 @@ type MovementStep struct {
 	OccurredAt    time.Time
 }
 
+type EventFilter struct {
+	TypeCode  string
+	TenantID  string
+	From      *time.Time
+	To        *time.Time
+	AmountMin *int64
+	AmountMax *int64
+	Sort      string
+}
+
+type GuestEvent struct {
+	Event
+	EventTypeCode string
+	TenantName    string
+	ProjectName   string
+}
+
+type GuestStats struct {
+	EventCount    int
+	FirstSeenAt   *time.Time
+	LastSeenAt    *time.Time
+	PurchaseCount int
+	PurchaseTotal int64
+	Currency      string
+}
+
 type GuestRepo interface {
 	GetByID(ctx context.Context, id string) (*Guest, error)
 	Search(ctx context.Context, q string, limit, offset int) ([]Guest, error)
@@ -95,6 +127,7 @@ type GuestRepo interface {
 	TenantCount(ctx context.Context, guestID string) (int, error)
 	TenantNames(ctx context.Context, guestID string) ([]string, error)
 	TenantSummaries(ctx context.Context, guestID string) ([]GuestTenantSummary, error)
+	Stats(ctx context.Context, guestID string) (GuestStats, error)
 	SegmentSummaries(ctx context.Context, guestID string) ([]GuestSegmentSummary, error)
 	MarkMerged(ctx context.Context, loserID, winnerID string) error
 	MarkActive(ctx context.Context, guestID string) error
@@ -110,7 +143,7 @@ type GuestIdentifierRepo interface {
 }
 
 type EventRepo interface {
-	ListByGuest(ctx context.Context, guestID string, limit, offset int) ([]Event, error)
+	ListByGuest(ctx context.Context, guestID string, filter EventFilter, limit, offset int) ([]GuestEvent, int, error)
 	ListMovement(ctx context.Context, guestID string, from, to *time.Time, limit int) ([]MovementStep, error)
 	ListUnmatchedByBatch(ctx context.Context, batchID string, limit int) ([]Event, error)
 	Insert(ctx context.Context, e *Event) error

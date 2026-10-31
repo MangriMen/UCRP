@@ -153,12 +153,18 @@ func (r *GuestSQL) SoftDelete(ctx context.Context, id string, now time.Time) err
 
 func (r *GuestSQL) TenantSummaries(ctx context.Context, guestID string) ([]domain.GuestTenantSummary, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT t.id, t.name, COUNT(*)
+		SELECT t.id, t.name, c.name, t.floor,
+			COUNT(*) FILTER (WHERE et.counts_as_presence),
+			COUNT(*) FILTER (WHERE et.code = 'purchase'),
+			COALESCE(SUM(e.amount_minor) FILTER (WHERE et.code = 'purchase'), 0),
+			COALESCE(MAX(e.currency) FILTER (WHERE et.code = 'purchase'), ''),
+			MAX(e.occurred_at) FILTER (WHERE et.counts_as_presence)
 		FROM event e
-		JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+		JOIN event_type et ON et.id = e.event_type_id
 		JOIN tenant t ON t.id = e.tenant_id
+		JOIN tenant_category c ON c.id = t.category_id
 		WHERE e.guest_id = $1
-		GROUP BY t.id, t.name
+		GROUP BY t.id, t.name, c.name, t.floor
 		ORDER BY t.name`, guestID)
 	if err != nil {
 		return nil, err
@@ -166,9 +172,15 @@ func (r *GuestSQL) TenantSummaries(ctx context.Context, guestID string) ([]domai
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.GuestTenantSummary, 0)
 	for rows.Next() {
-		var s domain.GuestTenantSummary
-		if err := rows.Scan(&s.TenantID, &s.TenantName, &s.EventCount); err != nil {
+		var (
+			s         domain.GuestTenantSummary
+			lastVisit sql.NullTime
+		)
+		if err := rows.Scan(&s.TenantID, &s.TenantName, &s.CategoryName, &s.Floor, &s.EventCount, &s.PurchaseCount, &s.PurchaseTotal, &s.Currency, &lastVisit); err != nil {
 			return nil, err
+		}
+		if lastVisit.Valid {
+			s.LastVisitAt = &lastVisit.Time
 		}
 		out = append(out, s)
 	}
@@ -196,4 +208,30 @@ func (r *GuestSQL) SegmentSummaries(ctx context.Context, guestID string) ([]doma
 		out = append(out, s)
 	}
 	return out, rows.Err()
+}
+
+func (r *GuestSQL) Stats(ctx context.Context, guestID string) (domain.GuestStats, error) {
+	var (
+		stats       domain.GuestStats
+		first, last sql.NullTime
+	)
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*), MIN(e.occurred_at), MAX(e.occurred_at),
+			COUNT(*) FILTER (WHERE et.code = 'purchase'),
+			COALESCE(SUM(e.amount_minor) FILTER (WHERE et.code = 'purchase'), 0),
+			COALESCE(MAX(e.currency) FILTER (WHERE et.code = 'purchase'), '')
+		FROM event e
+		JOIN event_type et ON et.id = e.event_type_id
+		WHERE e.guest_id = $1`, guestID).
+		Scan(&stats.EventCount, &first, &last, &stats.PurchaseCount, &stats.PurchaseTotal, &stats.Currency)
+	if err != nil {
+		return domain.GuestStats{}, err
+	}
+	if first.Valid {
+		stats.FirstSeenAt = &first.Time
+	}
+	if last.Valid {
+		stats.LastSeenAt = &last.Time
+	}
+	return stats, nil
 }

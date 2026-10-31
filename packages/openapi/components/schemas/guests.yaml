@@ -109,6 +109,16 @@ GuestTenantSummary:
     eventCount:
       type: integer
       minimum: 0
+    purchaseCount:
+      type: integer
+      minimum: 0
+    totalAmountMinor:
+      type: integer
+      format: int64
+      description: Sum of `purchase` events at this tenant in minor units
+    currency:
+      type: string
+      example: RUB
     lastVisitAt:
       type: string
       format: date-time
@@ -146,10 +156,14 @@ GuestProfile:
           type: array
           items:
             $ref: ./guests.yaml#/GuestSegmentSummary
+        purchaseCount:
+          type: integer
+          minimum: 0
+          description: Number of `purchase` events
         totalAmountMinor:
           type: integer
           format: int64
-          description: Guest total revenue in minor units
+          description: Sum of `purchase` events in minor units
         currency:
           type: string
           example: RUB

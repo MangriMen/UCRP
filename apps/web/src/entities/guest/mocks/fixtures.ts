@@ -167,7 +167,7 @@ export const mockGuestContacts: GuestContact[] = [
 ]
 
 type ProfileExtras = Pick<GuestProfile, 'identifiers' | 'tenants' | 'segments'> &
-  Partial<Pick<GuestProfile, 'totalAmountMinor' | 'currency'>>
+  Partial<Pick<GuestProfile, 'purchaseCount' | 'totalAmountMinor' | 'currency'>>
 
 export const emptyProfile: ProfileExtras = { identifiers: [], tenants: [], segments: [] }
 
@@ -196,6 +196,9 @@ export const mockGuestProfileExtras: Record<string, ProfileExtras> = {
         categoryName: 'Продукты',
         floor: 1,
         eventCount: 9,
+        purchaseCount: 3,
+        totalAmountMinor: 950000,
+        currency: 'RUB',
         lastVisitAt: '2026-10-28T18:20:00Z',
       },
       {
@@ -204,10 +207,14 @@ export const mockGuestProfileExtras: Record<string, ProfileExtras> = {
         categoryName: 'Одежда',
         floor: 2,
         eventCount: 5,
+        purchaseCount: 1,
+        totalAmountMinor: 300000,
+        currency: 'RUB',
         lastVisitAt: '2026-10-20T12:00:00Z',
       },
     ],
     segments: [{ segmentId: 'segment-0001', name: 'Постоянные гости', versionNo: 2 }],
+    purchaseCount: 4,
     totalAmountMinor: 1250000,
     currency: 'RUB',
   },

@@ -13,6 +13,7 @@ export function useUrlTab<T extends string>(tabs: readonly T[], fallback: T) {
       setSearchParams(
         (current) => {
           const params = new URLSearchParams(current)
+          params.delete('page')
           if (next === fallback) params.delete(TAB_PARAM)
           else params.set(TAB_PARAM, next)
           return params

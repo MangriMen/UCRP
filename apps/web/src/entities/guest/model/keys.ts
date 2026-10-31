@@ -9,9 +9,13 @@ export interface GuestSearchFilters {
 }
 
 export interface GuestEventFilters {
+  type?: string
   from?: string
   to?: string
   tenantId?: string
+  amountMin?: number
+  amountMax?: number
+  sort?: string
   page?: number
   pageSize?: number
 }

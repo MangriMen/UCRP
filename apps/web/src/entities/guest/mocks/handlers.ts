@@ -67,11 +67,39 @@ export const guestHandlers = [
     return HttpResponse.json({ ...emptyProfile, ...guest, ...mockGuestProfileExtras[guest.id] })
   }),
 
+  http.delete(`${API}/guests/:id`, ({ params }) =>
+    mockGuests.some((g) => g.id === params.id)
+      ? new HttpResponse(null, { status: 204 })
+      : apiError(404, 'not_found', 'Гость не найден'),
+  ),
+
   http.get(`${API}/guests/:id/events`, ({ params, request }) => {
-    const tenantId = new URL(request.url).searchParams.get('tenant_id')
-    const events = mockGuestEvents.filter(
-      (e) => e.guestId === params.id && (!tenantId || e.tenantId === tenantId),
-    )
+    const query = new URL(request.url).searchParams
+    const type = query.get('type')
+    const tenantId = query.get('tenant_id')
+    const from = query.get('from')
+    const to = query.get('to')
+    const amountMin = query.has('amount_min') ? Number(query.get('amount_min')) : null
+    const amountMax = query.has('amount_max') ? Number(query.get('amount_max')) : null
+    const sort = query.get('sort') ?? '-occurredAt'
+    const direction = sort.startsWith('-') ? -1 : 1
+    const field = sort.replace('-', '') === 'amountMinor' ? 'amountMinor' : 'occurredAt'
+    const events = mockGuestEvents
+      .filter(
+        (e) =>
+          e.guestId === params.id &&
+          (!type || e.eventTypeCode === type) &&
+          (!tenantId || e.tenantId === tenantId) &&
+          (!from || e.occurredAt.slice(0, 10) >= from) &&
+          (!to || e.occurredAt.slice(0, 10) <= to) &&
+          (amountMin === null || (e.amountMinor ?? -1) >= amountMin) &&
+          (amountMax === null || (e.amountMinor != null && e.amountMinor <= amountMax)),
+      )
+      .sort((a, b) => {
+        const left = field === 'amountMinor' ? (a.amountMinor ?? -1) : a.occurredAt
+        const right = field === 'amountMinor' ? (b.amountMinor ?? -1) : b.occurredAt
+        return left < right ? -direction : left > right ? direction : 0
+      })
     return HttpResponse.json(paged(request, events))
   }),
 

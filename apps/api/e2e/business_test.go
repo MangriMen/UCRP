@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/MangriMen/UCRP/e2e/harness"
 	"github.com/MangriMen/UCRP/e2e/report"
@@ -821,4 +822,81 @@ func TestMergeCandidateUnknownReturns404(t *testing.T) {
 	s.RequireStatus(resp, 404, "GET unknown merge candidate")
 	s.RequireDeclaredStatus("GET", "/api/v1/merge-candidates/{id}", resp)
 	s.RequireSchema("GET", "/api/v1/merge-candidates/{id}", resp)
+}
+
+func TestGuestEventsFilterSortAndCount(t *testing.T) {
+	s := harness.New(t).WithAdmin().WithDB()
+	w := buildWorld(t, s, "events-filter")
+
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	guest, err := s.Reg.Guest(ctx, "events-filter")
+	if err != nil {
+		t.Fatalf("fixture guest: %v", err)
+	}
+	cheap, expensive := int64(10000), int64(50000)
+	now := time.Now().UTC()
+	if _, err := s.Reg.Event(ctx, guest.ID, w.tenantA.ID, w.eventType.ID, w.source.ID, "filter-cheap", now.AddDate(0, 0, -3), &cheap); err != nil {
+		t.Fatalf("fixture event: %v", err)
+	}
+	if _, err := s.Reg.Event(ctx, guest.ID, w.tenantB.ID, w.eventType.ID, w.source.ID, "filter-expensive", now.AddDate(0, 0, -1), &expensive); err != nil {
+		t.Fatalf("fixture event: %v", err)
+	}
+
+	fetch := func(query map[string][]string) (map[string]any, []any) {
+		t.Helper()
+		resp, err := s.API.Get(ctx, "/api/v1/guests/"+guest.ID+"/events", query)
+		if err != nil {
+			t.Fatalf("GET /api/v1/guests/{id}/events: %v", err)
+		}
+		s.RequireStatus(resp, 200, "GET /api/v1/guests/{id}/events")
+		body, err := resp.JSON()
+		if err != nil {
+			t.Fatalf("decode events: %v", err)
+		}
+		page, _ := body.(map[string]any)
+		items, ok := harness.Items(body)
+		if !ok {
+			t.Fatalf("event feed has no items array: %s", resp.Snippet())
+		}
+		return page, items
+	}
+
+	page, items := fetch(map[string][]string{"limit": {"1"}})
+	meta, _ := page["meta"].(map[string]any)
+	if total, _ := harness.IntField(meta, "total"); total != 2 || len(items) != 1 {
+		t.Fatalf("expected total 2 with one item on the page, got total=%d items=%d", total, len(items))
+	}
+
+	_, items = fetch(map[string][]string{"tenant_id": {w.tenantA.ID}})
+	if len(items) != 1 {
+		t.Fatalf("tenant filter: expected 1 event, got %d", len(items))
+	}
+
+	_, items = fetch(map[string][]string{"amount_min": {"20000"}})
+	if len(items) != 1 {
+		t.Fatalf("amount_min filter: expected 1 event, got %d", len(items))
+	}
+
+	_, items = fetch(map[string][]string{"type": {w.eventType.Code}})
+	if len(items) != 2 {
+		t.Fatalf("type filter: expected 2 events, got %d", len(items))
+	}
+	first, _ := items[0].(map[string]any)
+	if harness.StringField(first, "eventTypeCode") != w.eventType.Code || harness.StringField(first, "tenantName") == "" {
+		t.Fatalf("event must carry eventTypeCode and tenantName: %v", first)
+	}
+
+	_, items = fetch(map[string][]string{"sort": {"amountMinor"}})
+	first, _ = items[0].(map[string]any)
+	if amount, _ := harness.IntField(first, "amountMinor"); amount != int(cheap) {
+		t.Fatalf("sort=amountMinor must start with the cheapest event, got %v", first)
+	}
+
+	resp, err := s.API.Get(ctx, "/api/v1/guests/"+guest.ID+"/events", map[string][]string{"sort": {"bogus"}})
+	if err != nil {
+		t.Fatalf("GET with bad sort: %v", err)
+	}
+	s.RequireStatus(resp, 400, "GET /api/v1/guests/{id}/events with invalid sort")
 }

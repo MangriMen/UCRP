@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+	"fmt"
+	"strings"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 )
@@ -16,37 +18,85 @@ func NewEventSQL(db *sql.DB) *EventSQL {
 	return &EventSQL{db: db}
 }
 
-func (r *EventSQL) ListByGuest(ctx context.Context, guestID string, limit, offset int) ([]domain.Event, error) {
+var guestEventSorts = map[string]string{
+	"occurredAt":   "e.occurred_at ASC, e.id ASC",
+	"-occurredAt":  "e.occurred_at DESC, e.id DESC",
+	"amountMinor":  "e.amount_minor ASC NULLS LAST, e.id ASC",
+	"-amountMinor": "e.amount_minor DESC NULLS LAST, e.id DESC",
+}
+
+func (r *EventSQL) ListByGuest(ctx context.Context, guestID string, filter domain.EventFilter, limit, offset int) ([]domain.GuestEvent, int, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
 	if offset < 0 {
 		offset = 0
 	}
+	order, ok := guestEventSorts[filter.Sort]
+	if !ok {
+		order = guestEventSorts["-occurredAt"]
+	}
+	where := []string{"e.guest_id = $1"}
+	args := []any{guestID}
+	add := func(condition string, value any) {
+		args = append(args, value)
+		where = append(where, fmt.Sprintf(condition, len(args)))
+	}
+	if filter.TypeCode != "" {
+		add("et.code = $%d", filter.TypeCode)
+	}
+	if filter.TenantID != "" {
+		add("e.tenant_id = $%d", filter.TenantID)
+	}
+	if filter.From != nil {
+		add("e.occurred_at >= $%d", *filter.From)
+	}
+	if filter.To != nil {
+		add("e.occurred_at < $%d", *filter.To)
+	}
+	if filter.AmountMin != nil {
+		add("e.amount_minor >= $%d", *filter.AmountMin)
+	}
+	if filter.AmountMax != nil {
+		add("e.amount_minor <= $%d", *filter.AmountMax)
+	}
+	condition := strings.Join(where, " AND ")
+	from := `
+		FROM event e
+		JOIN event_type et ON et.id = e.event_type_id
+		JOIN tenant t ON t.id = e.tenant_id
+		LEFT JOIN project p ON p.id = e.project_id
+		WHERE ` + condition
+
+	var total int
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) "+from, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	args = append(args, limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, COALESCE(guest_id, ''), COALESCE(origin_guest_id, ''), tenant_id, COALESCE(project_id, ''),
-			event_type_id, data_source_id, COALESCE(import_batch_id, ''), external_id, occurred_at,
-			amount_minor, currency, COALESCE(match_keys, ''), COALESCE(raw_payload, ''), created_at
-		FROM event
-		WHERE guest_id = $1
-		ORDER BY occurred_at DESC
-		LIMIT $2 OFFSET $3`, guestID, limit, offset)
+		SELECT e.id, COALESCE(e.guest_id, ''), COALESCE(e.origin_guest_id, ''), e.tenant_id, COALESCE(e.project_id, ''),
+			e.event_type_id, e.data_source_id, COALESCE(e.import_batch_id, ''), e.external_id, e.occurred_at,
+			e.amount_minor, e.currency, COALESCE(e.match_keys, ''), COALESCE(e.raw_payload, ''), e.created_at,
+			et.code, t.name, COALESCE(p.name, '')`+from+`
+		ORDER BY `+order+fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)-1, len(args)), args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() { _ = rows.Close() }()
-	out := make([]domain.Event, 0)
+	out := make([]domain.GuestEvent, 0)
 	for rows.Next() {
 		var (
-			e      domain.Event
+			e      domain.GuestEvent
 			amount sql.NullInt64
 		)
 		if err := rows.Scan(
 			&e.ID, &e.GuestID, &e.OriginGuestID, &e.TenantID, &e.ProjectID,
 			&e.EventTypeID, &e.DataSourceID, &e.ImportBatchID, &e.ExternalID, &e.OccurredAt,
 			&amount, &e.Currency, &e.MatchKeys, &e.RawPayload, &e.CreatedAt,
+			&e.EventTypeCode, &e.TenantName, &e.ProjectName,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		if amount.Valid {
 			v := amount.Int64
@@ -54,7 +104,7 @@ func (r *EventSQL) ListByGuest(ctx context.Context, guestID string, limit, offse
 		}
 		out = append(out, e)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 func (r *EventSQL) ListMovement(ctx context.Context, guestID string, from, to *time.Time, limit int) ([]domain.MovementStep, error) {

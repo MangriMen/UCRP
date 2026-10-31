@@ -121,7 +121,7 @@ paths:
         - Guests
       operationId: listGuestEvents
       summary: Guest event feed
-      description: Sorted by `occurredAt` descending. Tenant users with guest.event.read receive only events for their own tenant in the permitted period. Amount and external ID require separate field permissions; raw payload is not returned.
+      description: Sorted by `occurredAt` descending unless `sort` is given. Filters apply to the feed of non-tenant roles. Tenant users with guest.event.read receive only events for their own tenant in the permitted period. Amount and external ID require separate field permissions; raw payload is not returned.
       x-roles:
         - R-1
         - R-2
@@ -131,17 +131,53 @@ paths:
         - UC-2
         - UC-6
       parameters:
-        - name: limit
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
+        - name: type
+          in: query
+          description: Event type code from the event-type dictionary, for example `purchase`
+          schema:
+            type: string
+        - name: tenant_id
           in: query
           schema:
-            type: integer
-            minimum: 1
-            maximum: 200
-        - name: offset
+            type: string
+        - name: from
           in: query
+          description: Inclusive start date
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: Inclusive end date
+          schema:
+            type: string
+            format: date
+        - name: amount_min
+          in: query
+          description: Minimum amount in minor units
           schema:
             type: integer
+            format: int64
             minimum: 0
+        - name: amount_max
+          in: query
+          description: Maximum amount in minor units
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+        - name: sort
+          in: query
+          description: '`occurredAt` or `amountMinor`; prefix `-` for descending. Default `-occurredAt`.'
+          schema:
+            type: string
+            enum:
+              - occurredAt
+              - -occurredAt
+              - amountMinor
+              - -amountMinor
       responses:
         '200':
           description: Event page

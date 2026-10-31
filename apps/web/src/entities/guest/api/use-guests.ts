@@ -8,7 +8,7 @@ import {
   type GuestEventFilters,
   type GuestSearchFilters,
 } from '../model/keys'
-import type { GuestProfile } from '../model/types'
+import type { GuestEventSort, GuestProfile } from '../model/types'
 
 export function useGuestSearch(filters: GuestSearchFilters) {
   return useQuery({
@@ -44,9 +44,15 @@ export function useGuestEvents(id: string, filters: GuestEventFilters = {}) {
       api.get('/guests/{id}/events', {
         params: { id },
         query: {
-          limit: filters.pageSize,
-          offset:
-            filters.page && filters.pageSize ? (filters.page - 1) * filters.pageSize : undefined,
+          type: filters.type,
+          tenant_id: filters.tenantId,
+          from: filters.from,
+          to: filters.to,
+          amount_min: filters.amountMin,
+          amount_max: filters.amountMax,
+          sort: filters.sort as GuestEventSort | undefined,
+          page: filters.page,
+          page_size: filters.pageSize,
         },
       }),
     select: (data) => narrow(data, hasKey('meta')),
