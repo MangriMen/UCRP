@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useAuth } from '@/entities/user'
 import { DataSourceTypesManager } from '@/features/manage-data-source-types'
 import { EventTypesManager } from '@/features/manage-event-types'
@@ -9,8 +9,21 @@ import { Button } from '@/shared/ui/button'
 import { PageHeader } from '@/shared/ui/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
+const RELATIONS_PARAM = 'relations'
+
 export function AdminDictionariesPage() {
   const { can } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const setRelationsCategory = (categoryId: string | null) =>
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current)
+        if (categoryId) params.set(RELATIONS_PARAM, categoryId)
+        else params.delete(RELATIONS_PARAM)
+        return params
+      },
+      { replace: true },
+    )
   const canEditReference = can('reference.write')
   const canEditSourceTypes = can('data_source.write')
 
@@ -30,7 +43,11 @@ export function AdminDictionariesPage() {
           <TabsTrigger value="data-source-types">Типы источников</TabsTrigger>
         </TabsList>
         <TabsContent value="categories">
-          <TenantCategoriesManager canEdit={canEditReference} />
+          <TenantCategoriesManager
+            canEdit={canEditReference}
+            relationsCategoryId={searchParams.get(RELATIONS_PARAM)}
+            onRelationsCategoryChange={setRelationsCategory}
+          />
         </TabsContent>
         <TabsContent value="tenants" className="flex flex-col items-start gap-3 pt-4">
           <p className="text-sm text-muted-foreground">

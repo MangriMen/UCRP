@@ -64,10 +64,11 @@ type TenantCategory struct {
 }
 
 type CategoryRelation struct {
-	CategoryID        string
-	RelatedCategoryID string
-	RelationType      string
-	WeightPct         int
+	CategoryID          string
+	RelatedCategoryID   string
+	RelatedCategoryName string
+	RelationType        string
+	WeightPct           int
 }
 
 type Project struct {

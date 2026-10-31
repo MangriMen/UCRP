@@ -42,7 +42,7 @@ TenantCategoryRequest:
       maxLength: 1000
 CategoryRelationType:
   type: string
-  description: '`adjacent` — adjacent category (boosts the score), `competitor` — direct competitor (excludes the candidate)'
+  description: '`adjacent` — adjacent category (boosts the score), `competitor` — direct competitor (lowers the score by the competitor penalty, D-34)'
   enum:
     - adjacent
     - competitor
@@ -67,7 +67,7 @@ TenantCategoryRelation:
       minimum: 0
       maximum: 100
       nullable: true
-      description: Relation weight in percent for scoring
+      description: Relation weight in percent for scoring adjacent categories; omitted or null in a request means 100
 TenantCategoryRelations:
   type: object
   required:

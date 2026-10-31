@@ -1,4 +1,4 @@
-import type { TenantCategory } from '../model/types'
+import type { TenantCategory, TenantCategoryRelation } from '../model/types'
 
 export const CATEGORY_IN_USE_ID = 'category-0001'
 
@@ -26,5 +26,14 @@ export const mockTenantCategories: TenantCategory[] = [
     description: 'Кинотеатр, детские зоны',
     createdAt: '2026-01-10T09:00:00Z',
     updatedAt: '2026-02-01T09:00:00Z',
+  },
+]
+
+export const mockTenantCategoryRelations: TenantCategoryRelation[] = [
+  {
+    categoryId: 'category-0003',
+    relatedCategoryId: 'category-0001',
+    relationType: 'adjacent',
+    weightPct: 70,
   },
 ]

@@ -116,7 +116,7 @@ paths:
         - Reference
       operationId: getTenantCategoryRelations
       summary: Category adjacency and competition
-      description: 'Returns the category relations in both directions. Used by recommendation scoring: `adjacent` boosts the score, `competitor` excludes the candidate.'
+      description: 'Returns every relation the category takes part in, in both directions. Relations are symmetric, so each entry is given from the side of the path category (`categoryId` is the path id) and a pair stored in both directions is returned once. Used by recommendation scoring: `adjacent` boosts the score, `competitor` lowers it by the competitor penalty (D-34).'
       x-roles:
         - R-1
         - R-2
@@ -142,7 +142,7 @@ paths:
         - Reference
       operationId: replaceTenantCategoryRelations
       summary: Replace the category relation set
-      description: Full set replacement (idempotent). Self-relations and duplicate pairs are rejected — 400.
+      description: 'Replaces every relation the category takes part in, in both directions (idempotent); an empty list removes them all. Each entry must have `categoryId` equal to the path id. Rejected with 400: a self-relation, more than one relation to the same category, an unknown related category, a new relation to an inactive category (an existing one may be kept), `weightPct` outside 0..100.'
       x-roles:
         - R-4
       x-uc:
