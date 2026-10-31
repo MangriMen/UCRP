@@ -13,11 +13,13 @@ describe('request', () => {
   it('throws ApiError with the backend error body on 4xx', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(json(403, { error: { code: 'forbidden', message: 'нет прав' } })),
+      vi
+        .fn()
+        .mockResolvedValue(json(403, { error: { code: 'forbidden_role', message: 'нет прав' } })),
     )
     await expect(request('/x')).rejects.toMatchObject({
       status: 403,
-      body: { code: 'forbidden' },
+      body: { code: 'forbidden_role' },
     })
     await expect(request('/x')).rejects.toBeInstanceOf(ApiError)
   })
@@ -25,7 +27,8 @@ describe('request', () => {
   it('refreshes once and retries when two requests get 401 at the same time', async () => {
     setAccessToken('old')
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-      if (url.endsWith('/auth/refresh')) return json(200, { access_token: 'new' })
+      if (url.endsWith('/auth/refresh'))
+        return json(200, { accessToken: 'new', tokenType: 'Bearer', expiresIn: 900 })
       const auth = new Headers(init?.headers).get('Authorization')
       return auth === 'Bearer new' ? json(200, { ok: true }) : json(401)
     })
