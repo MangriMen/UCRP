@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { roleLabels, useUsers, type Role, type User } from '@/entities/user'
+import { roleLabels, useMe, useUsers, type Role, type User } from '@/entities/user'
 import { formatDateTime } from '@/shared/lib/format'
 import { ActiveBadge } from '@/shared/ui/active-badge'
 import { Button } from '@/shared/ui/button'
@@ -34,6 +34,7 @@ export function UsersManager() {
     role: isRole(roleFilter) ? roleFilter : undefined,
     page,
   })
+  const me = useMe()
   const remove = useDeleteUser()
   const [form, setForm] = useState<FormState | null>(null)
   const [deleting, setDeleting] = useState<User | null>(null)
@@ -57,7 +58,12 @@ export function UsersManager() {
           <Button variant="outline" size="sm" onClick={() => setForm({ user: u })}>
             Изменить
           </Button>
-          <Button variant="outline" size="sm" disabled={!u.isActive} onClick={() => setDeleting(u)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!u.isActive || u.id === me.data?.userId}
+            onClick={() => setDeleting(u)}
+          >
             Деактивировать
           </Button>
         </div>

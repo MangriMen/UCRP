@@ -2,13 +2,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { userKeys } from '@/entities/user'
+import { mockUsers } from '@/entities/user/mocks'
 import { UsersManager } from './users-manager'
 
-function renderManager() {
+function renderManager(sessionUserId?: string) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const sessionUser = mockUsers.find((u) => u.userId === sessionUserId)
+  if (sessionUser) client.setQueryData(userKeys.me, sessionUser)
   render(
-    <QueryClientProvider
-      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-    >
+    <QueryClientProvider client={client}>
       <UsersManager />
     </QueryClientProvider>,
   )
@@ -49,5 +52,13 @@ describe('UsersManager', () => {
     expect(
       await within(dialog).findByText('Пользователь с таким email уже существует'),
     ).toBeInTheDocument()
+  })
+
+  it('does not let the current user deactivate themselves', async () => {
+    renderManager('user-manager')
+    const ownRow = (await screen.findByText('manager@ucrp.test')).closest('tr') as HTMLElement
+    const otherRow = (await screen.findByText('analyst@ucrp.test')).closest('tr') as HTMLElement
+    expect(within(ownRow).getByRole('button', { name: 'Деактивировать' })).toBeDisabled()
+    expect(within(otherRow).getByRole('button', { name: 'Деактивировать' })).toBeEnabled()
   })
 })
