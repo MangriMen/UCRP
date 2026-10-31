@@ -47,6 +47,21 @@ func TestValidateRule_RejectsInvalidZones(t *testing.T) {
 	}
 }
 
+func TestValidateRule_AcceptsGroundFloorZone(t *testing.T) {
+	rule := domain.SegmentRule{PurchasedZones: []domain.ZoneRef{{MallID: "m1", Floor: 0}}}
+	if err := validateRule(rule, 0); err != nil {
+		t.Fatalf("floor 0 zone rejected: %v", err)
+	}
+}
+
+func TestBuildQuery_SkipsInactiveMalls(t *testing.T) {
+	rule := domain.SegmentRule{PurchasedZones: []domain.ZoneRef{{MallID: "m1", Floor: 1}}}
+	query, _ := buildQuery(rule, time.Unix(0, 0))
+	if !strings.Contains(query, "mz.is_active") {
+		t.Fatalf("zone query must exclude inactive malls: %s", query)
+	}
+}
+
 func TestBuildQuery_UsesPurchasesOnlyForZones(t *testing.T) {
 	rule := domain.SegmentRule{PurchasedZones: []domain.ZoneRef{{MallID: "m1", Floor: 2}, {MallID: "m1", Floor: 3}}}
 	query, args := buildQuery(rule, time.Unix(0, 0))
