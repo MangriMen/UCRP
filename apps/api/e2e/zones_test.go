@@ -273,7 +273,7 @@ func TestMallCrud_RejectsDeleteWhileTenantsExist(t *testing.T) {
 		"name":       "E2E mall tenant",
 		"mallId":     mallID,
 		"categoryId": category.ID,
-		"floor":      2,
+		"floor":      1,
 	})
 	if err != nil {
 		t.Fatalf("POST /api/v1/tenants: %v", err)
