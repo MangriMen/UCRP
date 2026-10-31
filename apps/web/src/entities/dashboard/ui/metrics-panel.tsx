@@ -30,8 +30,9 @@ function buildMetrics({
   segmentToExportP95Seconds,
   sampleSizes,
 }: DashboardMetrics): Metric[] {
-  const ratio = (value: number | undefined) => (value === undefined ? '—' : formatPercent(value))
-  const duration = (value: number | undefined) => (value === undefined ? '—' : formatSeconds(value))
+  const ratio = (value: number | null | undefined) => (value == null ? '—' : formatPercent(value))
+  const duration = (value: number | null | undefined) =>
+    value == null ? '—' : formatSeconds(value)
   return [
     {
       id: 'matchRate',

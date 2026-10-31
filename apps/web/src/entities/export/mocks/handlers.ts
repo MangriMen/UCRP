@@ -26,6 +26,7 @@ function preview(controlPercent: number): ExportPreview {
     blockedByLimit: BLOCKED_BY_LIMIT,
     control,
     toSend: WITH_CONTACT - BLOCKED_BY_LIMIT - control,
+    suppressed: false,
     appliedLimits: [],
   }
 }
@@ -86,12 +87,13 @@ export const exportHandlers = [
       controlPercent: body.controlPercent ?? 0,
       totalInSegment: counts.inSegment,
       withContactCount: counts.withContact,
-      noContactCount: counts.inSegment - counts.withContact,
+      noContactCount: (counts.inSegment ?? 0) - (counts.withContact ?? 0),
       blockedByLimitCount: counts.blockedByLimit,
       controlCount: counts.control,
       exportedCount: 0,
       createdAt: new Date().toISOString(),
       finishedAt: null,
+      suppressed: false,
       downloadUrl: null,
     }
     exports.unshift(item)

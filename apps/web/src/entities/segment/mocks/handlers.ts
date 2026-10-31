@@ -35,6 +35,7 @@ function previewFor(rule: SegmentRuleNode, limit: number): SegmentPreview {
       lastSeenAt: '2026-10-28T18:20:00Z',
     })),
     cached: false,
+    suppressed: false,
     computedInMs: 12,
   }
 }
@@ -53,7 +54,7 @@ function advance(segment: Segment) {
 }
 
 const members = (segment: Segment): SegmentMember[] =>
-  Array.from({ length: segment.memberCount }, (_, index) => ({
+  Array.from({ length: segment.memberCount ?? 0 }, (_, index) => ({
     guestId: `guest-${String(index + 1).padStart(4, '0')}`,
     displayName: `Гость ${index + 1}`,
     tenantCount: (index % 4) + 1,
@@ -85,6 +86,7 @@ export const segmentHandlers = [
       currentVersionNo: 1,
       status: 'pending',
       memberCount: 0,
+      suppressed: false,
       computedAt: null,
       rule: body.rule,
       createdAt: now,

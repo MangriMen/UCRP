@@ -25,7 +25,7 @@ interface PenetrationChartProps {
 
 function describePoint(point: PenetrationPoint) {
   const rate =
-    point.penetrationRate === undefined
+    point.penetrationRate == null
       ? ''
       : `, доля двух и более: ${formatPercent(point.penetrationRate)}`
   return `${point.period}: ${point.one} / ${point.two} / ${point.threePlus}${rate}`
@@ -53,7 +53,7 @@ export function PenetrationChart({ series }: PenetrationChartProps) {
               <ChartTooltipContent
                 labelFormatter={(label, payload) => {
                   const point = payload[0]?.payload as PenetrationPoint | undefined
-                  if (point?.penetrationRate === undefined) return label
+                  if (point?.penetrationRate == null) return label
                   return `${label}, доля двух и более: ${formatPercent(point.penetrationRate)}`
                 }}
               />

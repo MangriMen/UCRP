@@ -5,8 +5,8 @@ import type { SegmentRecommendation } from '../model/types'
 
 const columns: Column<SegmentRecommendation>[] = [
   { id: 'tenant', header: 'Арендатор', cell: (t) => t.tenantName },
-  { id: 'category', header: 'Категория', cell: (t) => t.categoryName ?? '—' },
-  { id: 'guestCount', header: 'Гостей', cell: (t) => t.guestCount, className: 'text-right' },
+  { id: 'category', header: 'Категория', cell: (t) => t.categoryId ?? '—' },
+  { id: 'guests', header: 'Гостей', cell: (t) => t.guests ?? '—', className: 'text-right' },
 ]
 
 interface SegmentTopTenantsProps {

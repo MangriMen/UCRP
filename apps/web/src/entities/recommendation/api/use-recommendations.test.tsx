@@ -21,6 +21,6 @@ describe('recommendation hooks', () => {
       wrapper,
     })
     await waitFor(() => expect(result.current.data).toBeDefined())
-    expect(result.current.data?.items[0].guestCount).toBe(64)
+    expect(result.current.data?.items[0].guests).toBe(64)
   })
 })

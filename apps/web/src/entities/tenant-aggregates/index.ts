@@ -1,5 +1,5 @@
 export { useTenantAggregates } from './api/use-tenant-aggregates'
 export { tenantAggregatesKeys } from './model/keys'
-export type { TenantAggregatesFilters } from './model/keys'
 export { formatAggregateCell } from './model/format'
-export type { Granularity, TenantAggregatePoint, TenantAggregates } from './model/types'
+export { isVisitAggregate } from './model/types'
+export type { EmptyTenantAggregate, TenantAggregate, TenantVisitAggregate } from './model/types'
