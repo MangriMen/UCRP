@@ -205,24 +205,6 @@ func TestSegmentRuleGroups_RejectsEmptyGroup(t *testing.T) {
 	s.RequireStatus(resp, 400, "POST /api/v1/segments/preview with empty group")
 }
 
-func TestSegmentPurchasedZones_RejectsFloorZero(t *testing.T) {
-	s := harness.New(t).WithDB().WithAdmin()
-	w := buildZoneWorld(t, s, "zone-invalid")
-	ctx, cancel := s.Ctx()
-	defer cancel()
-
-	resp, err := s.API.Post(ctx, "/api/v1/segments/preview", map[string]any{
-		"rule": map[string]any{
-			"periodDays":     30,
-			"purchasedZones": []map[string]any{{"mallId": w.mallA, "floor": 0}},
-		},
-	})
-	if err != nil {
-		t.Fatalf("POST /api/v1/segments/preview: %v", err)
-	}
-	s.RequireStatus(resp, 400, "POST /api/v1/segments/preview with floor 0")
-}
-
 func TestGuestMovement_ListsPresenceEventsWithMallAndFloor(t *testing.T) {
 	s := harness.New(t).WithDB().WithAdmin()
 	w := buildZoneWorld(t, s, "movement")

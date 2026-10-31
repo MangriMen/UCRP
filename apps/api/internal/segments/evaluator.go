@@ -188,6 +188,7 @@ func purchasesInZones(args *queryArgs, zones []domain.ZoneRef, sinceArg string) 
 	return `FROM event ep
 				JOIN event_type ept ON ept.id = ep.event_type_id AND ept.code = '` + purchaseEventCode + `'
 				JOIN tenant tz ON tz.id = ep.tenant_id
+				JOIN mall mz ON mz.id = tz.mall_id AND mz.is_active
 				WHERE ep.occurred_at >= ` + sinceArg + `
 					AND (` + strings.Join(pairs, " OR ") + `)`
 }
@@ -236,7 +237,7 @@ func validateLeaf(rule domain.SegmentRule) error {
 func validZones(zones []domain.ZoneRef) bool {
 	seen := make(map[domain.ZoneRef]struct{}, len(zones))
 	for _, zone := range zones {
-		if zone.MallID == "" || zone.Floor == 0 {
+		if zone.MallID == "" {
 			return false
 		}
 		if _, duplicate := seen[zone]; duplicate {

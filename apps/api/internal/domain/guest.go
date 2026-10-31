@@ -84,7 +84,7 @@ type MovementStep struct {
 	TenantName    string
 	MallID        string
 	MallName      string
-	Floor         int
+	Floor         *int
 	OccurredAt    time.Time
 }
 

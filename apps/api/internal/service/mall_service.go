@@ -12,6 +12,9 @@ type MallDTO struct {
 	Code     string `json:"code"`
 	Name     string `json:"name"`
 	IsActive bool   `json:"isActive"`
+	FloorMin int    `json:"floorMin"`
+	FloorMax int    `json:"floorMax"`
+	HasZero  bool   `json:"hasZeroFloor"`
 	Floors   []int  `json:"floors"`
 }
 
@@ -19,6 +22,25 @@ type MallRequest struct {
 	Code     string `json:"code"`
 	Name     string `json:"name"`
 	IsActive *bool  `json:"isActive"`
+	FloorMin *int   `json:"floorMin"`
+	FloorMax *int   `json:"floorMax"`
+	HasZero  *bool  `json:"hasZeroFloor"`
+}
+
+func (r MallRequest) applyFloors(m *domain.Mall) error {
+	if r.FloorMin != nil {
+		m.FloorMin = *r.FloorMin
+	}
+	if r.FloorMax != nil {
+		m.FloorMax = *r.FloorMax
+	}
+	if r.HasZero != nil {
+		m.HasZero = *r.HasZero
+	}
+	if !m.ValidFloorRange() {
+		return domain.ErrValidation
+	}
+	return nil
 }
 
 func (s *ReferenceService) ListMalls(ctx context.Context) ([]MallDTO, error) {
@@ -44,8 +66,12 @@ func (s *ReferenceService) CreateMall(ctx context.Context, req MallRequest) (*Ma
 		Code:      code,
 		Name:      name,
 		IsActive:  true,
-		Floors:    []int{},
+		FloorMin:  1,
+		FloorMax:  1,
 		CreatedAt: s.clock.Now(),
+	}
+	if err := req.applyFloors(m); err != nil {
+		return nil, err
 	}
 	if err := s.malls.Insert(ctx, m); err != nil {
 		return nil, err
@@ -65,6 +91,9 @@ func (s *ReferenceService) UpdateMall(ctx context.Context, id string, req MallRe
 	if req.IsActive != nil {
 		m.IsActive = *req.IsActive
 	}
+	if err := req.applyFloors(m); err != nil {
+		return nil, err
+	}
 	if err := s.malls.Update(ctx, m); err != nil {
 		return nil, err
 	}
@@ -77,5 +106,8 @@ func (s *ReferenceService) DeleteMall(ctx context.Context, id string) error {
 }
 
 func toMallDTO(m domain.Mall) MallDTO {
-	return MallDTO{ID: m.ID, Code: m.Code, Name: m.Name, IsActive: m.IsActive, Floors: m.Floors}
+	return MallDTO{
+		ID: m.ID, Code: m.Code, Name: m.Name, IsActive: m.IsActive,
+		FloorMin: m.FloorMin, FloorMax: m.FloorMax, HasZero: m.HasZero, Floors: m.Floors(),
+	}
 }

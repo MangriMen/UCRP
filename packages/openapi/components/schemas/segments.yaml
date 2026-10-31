@@ -17,7 +17,7 @@ ZoneRef:
       type: string
     floor:
       type: integer
-      description: Mall floor; 0 (no floor) is not a valid zone
+      description: Mall floor
 SegmentRule:
   type: object
   description: Segment rule (JSON DSL). Compiled into parameterized SQL, so arbitrary queries are impossible.

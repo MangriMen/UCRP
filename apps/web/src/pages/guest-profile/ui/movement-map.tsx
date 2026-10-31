@@ -7,7 +7,7 @@ import { ErrorBanner } from '@/shared/ui/error-banner'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { groupMovement, type MovementLeg } from '../lib/group-movement'
 
-const floorLabel = (floor: number) => (floor === 0 ? 'Без этажа' : `${floor} этаж`)
+const floorLabel = (floor: number | null) => (floor === null ? 'Без этажа' : `${floor} этаж`)
 
 const timeRange = (leg: MovementLeg) =>
   leg.startedAt === leg.endedAt

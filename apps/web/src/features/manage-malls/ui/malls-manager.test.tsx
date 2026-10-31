@@ -18,7 +18,7 @@ describe('MallsManager', () => {
   it('lists malls with floors and hides editing controls for read-only roles', async () => {
     renderManager(false)
     expect(await screen.findByText('Центральный ТЦ')).toBeInTheDocument()
-    expect(screen.getByText('1, 2, 3, 4')).toBeInTheDocument()
+    expect(screen.getByText('-1, 1, 2, 3, 4')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Добавить ТЦ' })).not.toBeInTheDocument()
   })
 

@@ -18,7 +18,10 @@ const schema = z.object({
   name: z.string().trim().min(1, 'Введите название').max(200, 'Не более 200 символов'),
   categoryId: z.string().min(1, 'Выберите категорию'),
   mallId: z.string().min(1, 'Выберите ТЦ'),
-  floor: z.string().regex(/^-?\d+$/, 'Введите целый номер этажа'),
+  floor: z
+    .string()
+    .trim()
+    .regex(/^(-?\d+)?$/, 'Введите целый номер этажа или оставьте пустым'),
   areaSqm: z
     .string()
     .trim()
@@ -57,7 +60,7 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
       name: tenant?.name ?? '',
       categoryId: tenant?.categoryId ?? '',
       mallId: tenant?.mallId ?? '',
-      floor: tenant ? String(tenant.floor) : '',
+      floor: tenant?.floor != null ? String(tenant.floor) : '',
       areaSqm: tenant?.areaSqm ? String(tenant.areaSqm) : '',
       priority: String(tenant?.priority ?? 50),
       isActive: tenant?.isActive ?? true,
@@ -70,7 +73,7 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
       name: values.name,
       categoryId: values.categoryId,
       mallId: values.mallId,
-      floor: Number(values.floor),
+      floor: values.floor === '' ? null : Number(values.floor),
       areaSqm: values.areaSqm ? Number(values.areaSqm) : null,
       priority: Number(values.priority),
       isActive: values.isActive,
@@ -143,7 +146,7 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
         )}
       </FormField>
       <div className="grid grid-cols-3 gap-3">
-        <FormField label="Этаж" error={errors.floor?.message}>
+        <FormField label="Этаж" hint="Пусто — без этажа" error={errors.floor?.message}>
           {(field) => <Input {...field} inputMode="numeric" {...register('floor')} />}
         </FormField>
         <FormField label="Площадь, м²" error={errors.areaSqm?.message}>

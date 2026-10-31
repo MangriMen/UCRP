@@ -34,7 +34,7 @@ export function TenantsManager({ canEdit }: TenantsManagerProps) {
       header: 'ТЦ',
       cell: (t) => malls.data?.find((m) => m.id === t.mallId)?.name ?? '—',
     },
-    { id: 'floor', header: 'Этаж', cell: (t) => t.floor, className: 'text-right' },
+    { id: 'floor', header: 'Этаж', cell: (t) => t.floor ?? '—', className: 'text-right' },
     { id: 'priority', header: 'Приоритет', cell: (t) => t.priority, className: 'text-right' },
     { id: 'status', header: 'Статус', cell: (t) => <ActiveBadge isActive={t.isActive} /> },
     ...(canEdit

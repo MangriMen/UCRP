@@ -38,7 +38,6 @@ func TestValidateRule_AcceptsZonesWithoutTenants(t *testing.T) {
 func TestValidateRule_RejectsInvalidZones(t *testing.T) {
 	cases := map[string][]domain.ZoneRef{
 		"empty mall":     {{MallID: "", Floor: 1}},
-		"floor zero":     {{MallID: "m1", Floor: 0}},
 		"duplicate zone": {{MallID: "m1", Floor: 1}, {MallID: "m1", Floor: 1}},
 	}
 	for name, zones := range cases {

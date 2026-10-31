@@ -5,6 +5,9 @@ Mall:
     - code
     - name
     - isActive
+    - floorMin
+    - floorMax
+    - hasZeroFloor
     - floors
   properties:
     id:
@@ -17,10 +20,19 @@ Mall:
       maxLength: 200
     isActive:
       type: boolean
+    floorMin:
+      type: integer
+      description: Lowest floor of the mall, may be negative.
+    floorMax:
+      type: integer
+      description: Highest floor of the mall.
+    hasZeroFloor:
+      type: boolean
+      description: Whether floor 0 is a real floor of the mall. Otherwise 0 is skipped in the range.
     floors:
       type: array
       readOnly: true
-      description: Distinct non-zero floors of the mall's active tenants, ascending. A zone is a pair of a mall and one of these floors.
+      description: Floors from floorMin to floorMax, ascending, with 0 included only when hasZeroFloor is set. A zone is a pair of a mall and one of these floors.
       items:
         type: integer
 MallCreateRequest:
@@ -37,6 +49,15 @@ MallCreateRequest:
       type: string
       minLength: 1
       maxLength: 200
+    floorMin:
+      type: integer
+      default: 1
+    floorMax:
+      type: integer
+      default: 1
+    hasZeroFloor:
+      type: boolean
+      default: false
 MallUpdateRequest:
   type: object
   properties:
@@ -45,4 +66,10 @@ MallUpdateRequest:
       minLength: 1
       maxLength: 200
     isActive:
+      type: boolean
+    floorMin:
+      type: integer
+    floorMax:
+      type: integer
+    hasZeroFloor:
       type: boolean

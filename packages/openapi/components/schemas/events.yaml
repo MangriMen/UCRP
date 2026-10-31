@@ -96,7 +96,8 @@ MovementStep:
       type: string
     floor:
       type: integer
-      description: 0 when the tenant has no floor
+      nullable: true
+      description: null when the tenant has no floor
     occurredAt:
       type: string
       format: date-time

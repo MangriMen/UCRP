@@ -34,12 +34,14 @@ export function LeafFields({ path }: LeafFieldsProps) {
   const malls = useMalls()
   const tenantItems = (tenants.data?.items ?? []).map((t) => ({ value: t.id, label: t.name }))
   const categoryItems = (categories.data ?? []).map((c) => ({ value: c.id, label: c.name }))
-  const zoneItems = (malls.data ?? []).flatMap((mall) =>
-    mall.floors.map((floor) => ({
-      value: zoneKey({ mallId: mall.id, floor }),
-      label: `${mall.name} · ${floor} этаж`,
-    })),
-  )
+  const zoneItems = (malls.data ?? [])
+    .filter((mall) => mall.isActive)
+    .flatMap((mall) =>
+      mall.floors.map((floor) => ({
+        value: zoneKey({ mallId: mall.id, floor }),
+        label: `${mall.name} · ${floor} этаж`,
+      })),
+    )
   const fieldName = (name: string) => `${path}.${name}` as 'conditions.0.periodDays'
   const errorOf = (name: string): string | undefined =>
     (get(formState.errors, `${path}.${name}`) as { message?: string } | undefined)?.message

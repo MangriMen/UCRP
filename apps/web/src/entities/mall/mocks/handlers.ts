@@ -8,6 +8,19 @@ const malls: Mall[] = structuredClone(mockMalls)
 
 const isCodeTaken = (code: string) => malls.some((m) => m.code === code)
 
+const withFloors = ({
+  floorMin,
+  floorMax,
+  hasZeroFloor,
+}: Pick<Mall, 'floorMin' | 'floorMax' | 'hasZeroFloor'>) => ({
+  floorMin,
+  floorMax,
+  hasZeroFloor,
+  floors: Array.from({ length: floorMax - floorMin + 1 }, (_, i) => floorMin + i).filter(
+    (floor) => floor !== 0 || hasZeroFloor,
+  ),
+})
+
 export const mallHandlers = [
   http.get(`${API}/malls`, () => HttpResponse.json(malls)),
 
@@ -21,7 +34,11 @@ export const mallHandlers = [
       code: body.code,
       name: body.name,
       isActive: true,
-      floors: [],
+      ...withFloors({
+        floorMin: body.floorMin ?? 1,
+        floorMax: body.floorMax ?? 1,
+        hasZeroFloor: body.hasZeroFloor ?? false,
+      }),
     }
     malls.push(mall)
     return HttpResponse.json(mall, { status: 201 })
@@ -32,6 +49,7 @@ export const mallHandlers = [
     if (!mall) return apiError(404, 'not_found', 'ТЦ не найден')
     const body = (await request.json()) as MallUpdateRequest
     Object.assign(mall, body)
+    Object.assign(mall, withFloors(mall))
     return HttpResponse.json(mall)
   }),
 

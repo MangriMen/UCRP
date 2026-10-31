@@ -19,7 +19,7 @@ type Candidate struct {
 	Name       string
 	CategoryID string
 	Priority   int
-	Floor      int
+	Floor      *int
 }
 
 type FactorValue struct {

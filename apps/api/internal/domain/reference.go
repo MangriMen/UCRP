@@ -10,8 +10,34 @@ type Mall struct {
 	Code      string
 	Name      string
 	IsActive  bool
-	Floors    []int
+	FloorMin  int
+	FloorMax  int
+	HasZero   bool
 	CreatedAt time.Time
+}
+
+const maxFloorSpan = 200
+
+func (m Mall) Floors() []int {
+	out := make([]int, 0, m.FloorMax-m.FloorMin+1)
+	for floor := m.FloorMin; floor <= m.FloorMax; floor++ {
+		if floor == 0 && !m.HasZero {
+			continue
+		}
+		out = append(out, floor)
+	}
+	return out
+}
+
+func (m Mall) ValidFloorRange() bool {
+	return m.FloorMin <= m.FloorMax && m.FloorMax-m.FloorMin < maxFloorSpan
+}
+
+func (m Mall) HasFloor(floor int) bool {
+	if floor == 0 && !m.HasZero {
+		return false
+	}
+	return floor >= m.FloorMin && floor <= m.FloorMax
 }
 
 type Tenant struct {
@@ -21,7 +47,7 @@ type Tenant struct {
 	MallID     string
 	CategoryID string
 	Kind       string
-	Floor      int
+	Floor      *int
 	Priority   int
 	IsActive   bool
 	CreatedAt  time.Time

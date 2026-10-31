@@ -30,7 +30,8 @@ Tenant:
       readOnly: true
     floor:
       type: integer
-      description: Mall floor; 0 means the tenant has no floor and cannot be used as a zone
+      nullable: true
+      description: Mall floor; null means the tenant has no floor and cannot be used as a zone
     areaSqm:
       type: number
       format: double
@@ -87,6 +88,7 @@ TenantOwnReference:
       type: string
     floor:
       type: integer
+      nullable: true
     isActive:
       type: boolean
 TenantOwnReferencePage:
@@ -122,6 +124,7 @@ TenantCreateRequest:
       type: string
     floor:
       type: integer
+      nullable: true
     areaSqm:
       type: number
       format: double
@@ -159,6 +162,7 @@ TenantUpdateRequest:
       type: string
     floor:
       type: integer
+      nullable: true
     areaSqm:
       type: number
       format: double

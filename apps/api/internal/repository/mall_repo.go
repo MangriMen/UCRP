@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strconv"
-	"strings"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 )
@@ -19,14 +17,7 @@ func NewMallSQL(db *sql.DB) *MallSQL {
 }
 
 const mallSelect = `
-	SELECT m.id, m.code, m.name, m.is_active, m.created_at,
-		COALESCE((
-			SELECT string_agg(f.floor::text, ',' ORDER BY f.floor)
-			FROM (
-				SELECT DISTINCT t.floor FROM tenant t
-				WHERE t.mall_id = m.id AND t.deleted_at IS NULL AND t.floor <> 0
-			) f
-		), '')
+	SELECT m.id, m.code, m.name, m.is_active, m.floor_min, m.floor_max, m.has_zero_floor, m.created_at
 	FROM mall m`
 
 func (r *MallSQL) List(ctx context.Context) ([]domain.Mall, error) {
@@ -56,8 +47,9 @@ func (r *MallSQL) GetByID(ctx context.Context, id string) (*domain.Mall, error) 
 
 func (r *MallSQL) Insert(ctx context.Context, m *domain.Mall) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO mall (id, code, name, is_active, created_at) VALUES ($1,$2,$3,$4,$5)`,
-		m.ID, m.Code, m.Name, m.IsActive, m.CreatedAt,
+		INSERT INTO mall (id, code, name, is_active, floor_min, floor_max, has_zero_floor, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+		m.ID, m.Code, m.Name, m.IsActive, m.FloorMin, m.FloorMax, m.HasZero, m.CreatedAt,
 	)
 	if isDuplicate(err) {
 		return domain.ErrConflict
@@ -66,8 +58,20 @@ func (r *MallSQL) Insert(ctx context.Context, m *domain.Mall) error {
 }
 
 func (r *MallSQL) Update(ctx context.Context, m *domain.Mall) error {
+	var outside int
+	if err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM tenant
+		WHERE mall_id = $1 AND deleted_at IS NULL AND floor IS NOT NULL
+				AND (floor < $2 OR floor > $3 OR (floor = 0 AND NOT $4))`,
+		m.ID, m.FloorMin, m.FloorMax, m.HasZero).Scan(&outside); err != nil {
+		return err
+	}
+	if outside > 0 {
+		return domain.ErrConflict
+	}
 	res, err := r.db.ExecContext(ctx, `
-		UPDATE mall SET name = $2, is_active = $3 WHERE id = $1`, m.ID, m.Name, m.IsActive)
+		UPDATE mall SET name = $2, is_active = $3, floor_min = $4, floor_max = $5, has_zero_floor = $6 WHERE id = $1`,
+		m.ID, m.Name, m.IsActive, m.FloorMin, m.FloorMax, m.HasZero)
 	if err != nil {
 		return err
 	}
@@ -96,29 +100,9 @@ func (r *MallSQL) Delete(ctx context.Context, id string) error {
 }
 
 func scanMall(s scanner) (*domain.Mall, error) {
-	var (
-		m      domain.Mall
-		floors string
-	)
-	if err := s.Scan(&m.ID, &m.Code, &m.Name, &m.IsActive, &m.CreatedAt, &floors); err != nil {
+	var m domain.Mall
+	if err := s.Scan(&m.ID, &m.Code, &m.Name, &m.IsActive, &m.FloorMin, &m.FloorMax, &m.HasZero, &m.CreatedAt); err != nil {
 		return nil, err
 	}
-	m.Floors = parseFloors(floors)
 	return &m, nil
-}
-
-func parseFloors(list string) []int {
-	if list == "" {
-		return []int{}
-	}
-	parts := strings.Split(list, ",")
-	out := make([]int, 0, len(parts))
-	for _, part := range parts {
-		floor, err := strconv.Atoi(part)
-		if err != nil {
-			continue
-		}
-		out = append(out, floor)
-	}
-	return out
 }

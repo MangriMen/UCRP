@@ -65,7 +65,7 @@ func (r *EventSQL) ListMovement(ctx context.Context, guestID string, from, to *t
 			FROM event e
 			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
 			JOIN tenant t ON t.id = e.tenant_id
-			JOIN mall m ON m.id = t.mall_id
+			JOIN mall m ON m.id = t.mall_id AND m.is_active
 			WHERE e.guest_id = $1
 				AND ($2::timestamp IS NULL OR e.occurred_at >= $2)
 				AND ($3::timestamp IS NULL OR e.occurred_at < $3)

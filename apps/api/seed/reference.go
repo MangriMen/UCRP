@@ -33,14 +33,16 @@ type tenantSpec struct {
 }
 
 type mallSpec struct {
-	Code string
-	Name string
+	Code     string
+	Name     string
+	FloorMin int
+	FloorMax int
 }
 
 func demoMalls() []mallSpec {
 	return []mallSpec{
-		{"central", "Центральный ТЦ"},
-		{"north", "Северный ТЦ"},
+		{"central", "Центральный ТЦ", -1, 3},
+		{"north", "Северный ТЦ", 1, 3},
 	}
 }
 
@@ -159,9 +161,9 @@ func (s *Seeder) seedReference(ctx context.Context) error {
 	}
 	for _, m := range demoMalls() {
 		if err := s.exec(ctx, `
-			INSERT INTO mall (id, code, name, is_active, created_at)
-			VALUES ($1, $2, $3, TRUE, $4)
-			ON CONFLICT (id) DO NOTHING`, demoID("mall", m.Code), m.Code, m.Name, s.now); err != nil {
+			INSERT INTO mall (id, code, name, is_active, floor_min, floor_max, created_at)
+			VALUES ($1, $2, $3, TRUE, $4, $5, $6)
+			ON CONFLICT (id) DO NOTHING`, demoID("mall", m.Code), m.Code, m.Name, m.FloorMin, m.FloorMax, s.now); err != nil {
 			return err
 		}
 	}
@@ -176,7 +178,7 @@ func (s *Seeder) seedReference(ctx context.Context) error {
 			INSERT INTO tenant (id, code, name, mall_id, category_id, kind, floor, x_m, y_m, priority, is_active, created_at, updated_at, deleted_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $13)
 			ON CONFLICT (id) DO NOTHING`,
-			id, t.Code, t.Name, demoID("mall", demoMallCode(t.Code)), s.categories[t.Category], t.Kind, t.Floor, t.X, t.Y, t.Priority, t.Active, s.now, deletedAt); err != nil {
+			id, t.Code, t.Name, demoID("mall", demoMallCode(t.Code)), s.categories[t.Category], t.Kind, sql.NullInt16{Int16: int16(t.Floor), Valid: t.Floor != 0}, t.X, t.Y, t.Priority, t.Active, s.now, deletedAt); err != nil {
 			return err
 		}
 	}

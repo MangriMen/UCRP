@@ -5,7 +5,7 @@ export interface MovementLeg {
   key: string
   mallId: string
   mallName: string
-  floor: number
+  floor: number | null
   startedAt: string
   endedAt: string
   tenantNames: string[]

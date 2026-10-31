@@ -99,7 +99,7 @@ type MovementStepDTO struct {
 	TenantName    string `json:"tenantName"`
 	MallID        string `json:"mallId"`
 	MallName      string `json:"mallName"`
-	Floor         int    `json:"floor"`
+	Floor         *int   `json:"floor"`
 	OccurredAt    string `json:"occurredAt"`
 }
 
