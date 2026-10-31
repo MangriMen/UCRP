@@ -29,7 +29,7 @@ export function CampaignDetailsPage() {
   if (error) return <ErrorBanner error={error} />
   if (!campaign) return <EmptyState title="Кампания не найдена" />
 
-  const canSeeResults = role === 'marketer' || role === 'analyst'
+  const canSeeResults = role === 'marketer' || role === 'manager'
 
   return (
     <div className="flex flex-col gap-6">
