@@ -87,6 +87,9 @@ func run(log *slog.Logger, cfg config.Config) error {
 	identitySvc := service.NewIdentityService(repository.NewMergeSQL(store.DB))
 	identityHandler := handler.NewIdentityHandler(identitySvc)
 	segmentRepo := repository.NewSegmentSQL(store.DB)
+	if err := segmentRepo.EnsureTemplates(ctx, clock, idg); err != nil {
+		return err
+	}
 	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), q)
 	segmentHandler := handler.NewSegmentHandler(segmentSvc)
 	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), recommend.NewWeightedRecommender(store.DB))

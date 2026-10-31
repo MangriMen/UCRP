@@ -17,6 +17,54 @@ func NewSegmentSQL(db *sql.DB) *SegmentSQL {
 	return &SegmentSQL{db: db}
 }
 
+func (r *SegmentSQL) EnsureTemplates(ctx context.Context, clock domain.Clock, idGen domain.IDGen) error {
+	templates := []struct {
+		code, name, desc string
+		was              int
+	}{
+		{"sleep_neighbor", "Спящий сосед", "Был у одного арендатора, не был у соседей", 1},
+		{"single_tenant", "Один магазин", "Посещал только один арендатор", 1},
+		{"churn_risk", "Риск ухода", "Давно не посещал выбранных арендаторов", 1},
+		{"newcomer", "Новичок", "Мало истории посещений", 1},
+		{"high_value", "Высокая ценность", "Высокая частота посещений", 1},
+	}
+	now := clock.Now()
+	for _, t := range templates {
+		var exists int
+		err := r.db.QueryRowContext(ctx, `SELECT 1 FROM segment WHERE template_code = $1`, t.code).Scan(&exists)
+		if err == nil {
+			continue
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		segID := idGen.NewID(ctx)
+		rule := `{"was":[],"was_not":[],"period_days":30}`
+		tx, err := r.db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO segment (id, name, description, template_code, is_template, current_version_no, status, created_by, created_at, updated_at)
+			VALUES ($1,$2,$3,$4,TRUE,1,'active',NULL,$5,$5)`,
+			segID, t.name, t.desc, t.code, now); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO segment_version (id, segment_id, version_no, rule, status, member_count, computed_at, created_by, created_at)
+			VALUES ($1,$2,1,$3,'ready',0,$4,NULL,$4)`,
+			idGen.NewID(ctx), segID, rule, now); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *SegmentSQL) Insert(ctx context.Context, s *domain.Segment, v *domain.SegmentVersion) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
