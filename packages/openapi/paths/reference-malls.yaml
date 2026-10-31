@@ -1,0 +1,112 @@
+paths:
+  /api/v1/malls:
+    get:
+      tags:
+        - Reference
+      operationId: listMalls
+      summary: List malls
+      description: Malls of the management company with the floors that have active tenants. A zone is a pair of a mall and a floor.
+      x-roles:
+        - R-1
+        - R-2
+        - R-4
+      x-uc:
+        - UC-17
+        - UC-3
+      responses:
+        '200':
+          description: Malls
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../components/schemas/reference-malls.yaml#/Mall
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+    post:
+      tags:
+        - Reference
+      operationId: createMall
+      summary: Create a mall
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-17
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/reference-malls.yaml#/MallCreateRequest
+      responses:
+        '201':
+          description: Mall created
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/reference-malls.yaml#/Mall
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+  /api/v1/malls/{id}:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    patch:
+      tags:
+        - Reference
+      operationId: updateMall
+      summary: Update a mall
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-17
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/reference-malls.yaml#/MallUpdateRequest
+      responses:
+        '200':
+          description: Updated mall
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/reference-malls.yaml#/Mall
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+    delete:
+      tags:
+        - Reference
+      operationId: deleteMall
+      summary: Delete a mall
+      description: Deletion is not allowed while the mall has active tenants — 409 `conflict`.
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-17
+      responses:
+        '204':
+          $ref: ../components/responses.yaml#/NoContent
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict

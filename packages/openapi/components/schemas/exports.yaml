@@ -10,6 +10,7 @@ ExportFormat:
   enum:
     - csv
     - api
+    - xlsx
 ExportStatus:
   type: string
   enum:

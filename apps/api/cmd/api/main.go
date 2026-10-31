@@ -142,6 +142,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 	dataSourceHandler := handler.NewDataSourceHandler(dataSourceSvc)
 	refSvc := service.NewReferenceService(
 		repository.NewTenantSQL(store.DB),
+		repository.NewMallSQL(store.DB),
 		repository.NewTenantCategorySQL(store.DB),
 		repository.NewProjectSQL(store.DB),
 		repository.NewEventTypeSQL(store.DB),
@@ -184,6 +185,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", guestHandler.Search)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/{id}", tenantGuestHandler.Get)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/{id}/events", tenantGuestHandler.Events)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}/movement", guestHandler.Movement)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}/contacts", guestHandler.Contacts)
 				g.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/merge", identityHandler.Merge)
 				g.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", guestHandler.Delete)
@@ -234,6 +236,12 @@ func run(log *slog.Logger, cfg config.Config) error {
 				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/{id}", tenantReferenceHandler.Get)
 				t.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/{id}", refHandler.UpdateTenant)
 				t.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", refHandler.DeleteTenant)
+			})
+			priv.Route("/malls", func(m chi.Router) {
+				m.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", refHandler.ListMalls)
+				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", refHandler.CreateMall)
+				m.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/{id}", refHandler.UpdateMall)
+				m.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", refHandler.DeleteMall)
 			})
 			priv.Route("/tenant-categories", func(c chi.Router) {
 				c.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", refHandler.ListCategories)

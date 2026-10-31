@@ -18,6 +18,8 @@ describe('TenantsManager', () => {
   it('lists tenants with their category', async () => {
     renderManager(false)
     expect(await screen.findByText('Бистро «Уголок»')).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'ТЦ' })).toBeInTheDocument()
+    expect((await screen.findAllByText('Центральный ТЦ')).length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: 'Добавить арендатора' })).not.toBeInTheDocument()
   })
 
@@ -28,12 +30,15 @@ describe('TenantsManager', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Создать' }))
     expect(await within(dialog).findByText('Введите код')).toBeInTheDocument()
     expect(within(dialog).getByText('Выберите категорию')).toBeInTheDocument()
+    expect(within(dialog).getByText('Выберите ТЦ')).toBeInTheDocument()
 
     await userEvent.type(within(dialog).getByLabelText('Код'), 'books')
     await userEvent.type(within(dialog).getByLabelText('Название'), 'Книжный')
     await userEvent.type(within(dialog).getByLabelText('Этаж'), '2')
     await userEvent.click(within(dialog).getByLabelText('Категория'))
     await userEvent.click(await screen.findByRole('option', { name: 'Питание' }))
+    await userEvent.click(within(dialog).getByLabelText('ТЦ'))
+    await userEvent.click(await screen.findByRole('option', { name: 'Северный ТЦ' }))
     await userEvent.click(within(dialog).getByRole('button', { name: 'Создать' }))
     expect(await screen.findByText('Книжный')).toBeInTheDocument()
   })

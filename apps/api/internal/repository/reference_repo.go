@@ -73,9 +73,9 @@ func (r *TenantSQL) GetByID(ctx context.Context, id string) (*domain.Tenant, err
 
 func (r *TenantSQL) Insert(ctx context.Context, t *domain.Tenant) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO tenant (id, code, name, category_id, kind, floor, priority, is_active, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-		t.ID, t.Code, t.Name, t.CategoryID, t.Kind, t.Floor, t.Priority, t.IsActive, t.CreatedAt, t.UpdatedAt,
+		INSERT INTO tenant (id, code, name, mall_id, category_id, kind, floor, priority, is_active, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+		t.ID, t.Code, t.Name, t.MallID, t.CategoryID, t.Kind, t.Floor, t.Priority, t.IsActive, t.CreatedAt, t.UpdatedAt,
 	)
 	if err != nil && strings.Contains(err.Error(), "duplicate key") {
 		return domain.ErrConflict
@@ -85,9 +85,9 @@ func (r *TenantSQL) Insert(ctx context.Context, t *domain.Tenant) error {
 
 func (r *TenantSQL) Update(ctx context.Context, t *domain.Tenant) error {
 	res, err := r.db.ExecContext(ctx, `
-		UPDATE tenant SET name = $2, category_id = $3, kind = $4, floor = $5, priority = $6, is_active = $7, updated_at = $8
+		UPDATE tenant SET name = $2, mall_id = $3, category_id = $4, kind = $5, floor = $6, priority = $7, is_active = $8, updated_at = $9
 		WHERE id = $1 AND deleted_at IS NULL`,
-		t.ID, t.Name, t.CategoryID, t.Kind, t.Floor, t.Priority, t.IsActive, t.UpdatedAt,
+		t.ID, t.Name, t.MallID, t.CategoryID, t.Kind, t.Floor, t.Priority, t.IsActive, t.UpdatedAt,
 	)
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func (r *TenantSQL) SoftDelete(ctx context.Context, id string, now time.Time) er
 }
 
 const tenantSelect = `
-	SELECT id, code, name, category_id, kind, floor, priority, is_active, created_at, updated_at, deleted_at
+	SELECT id, code, name, mall_id, category_id, kind, floor, priority, is_active, created_at, updated_at, deleted_at
 	FROM tenant`
 
 func scanTenants(rows *sql.Rows) ([]domain.Tenant, error) {
@@ -138,7 +138,7 @@ func scanTenant(s scanner) (*domain.Tenant, error) {
 		t   domain.Tenant
 		del sql.NullTime
 	)
-	if err := s.Scan(&t.ID, &t.Code, &t.Name, &t.CategoryID, &t.Kind, &t.Floor, &t.Priority, &t.IsActive, &t.CreatedAt, &t.UpdatedAt, &del); err != nil {
+	if err := s.Scan(&t.ID, &t.Code, &t.Name, &t.MallID, &t.CategoryID, &t.Kind, &t.Floor, &t.Priority, &t.IsActive, &t.CreatedAt, &t.UpdatedAt, &del); err != nil {
 		return nil, err
 	}
 	if del.Valid {

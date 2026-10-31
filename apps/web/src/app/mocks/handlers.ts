@@ -15,6 +15,7 @@ import { dataSourceTypeHandlers } from '@/entities/data-source-type/mocks'
 import { eventTypeHandlers } from '@/entities/event-type/mocks'
 import { projectHandlers } from '@/entities/project/mocks'
 import { tenantAggregatesHandlers } from '@/entities/tenant-aggregates/mocks'
+import { mallHandlers } from '@/entities/mall/mocks'
 import { tenantHandlers } from '@/entities/tenant/mocks'
 import { tenantCategoryHandlers } from '@/entities/tenant-category/mocks'
 import { mergeBlockHandlers } from '@/entities/merge-block/mocks'
@@ -38,6 +39,7 @@ export const handlers: RequestHandler[] = [
   ...eventTypeHandlers,
   ...projectHandlers,
   ...tenantHandlers,
+  ...mallHandlers,
   ...dashboardHandlers,
   ...tenantAggregatesHandlers,
   ...dataQualityHandlers,

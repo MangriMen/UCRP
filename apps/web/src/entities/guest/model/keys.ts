@@ -30,6 +30,7 @@ export const guestKeys = {
   detail: (id: string) => [...guestKeys.all, 'detail', id] as const,
   events: (id: string, filters: GuestEventFilters) =>
     [...guestKeys.detail(id), 'events', filters] as const,
+  movement: (id: string) => [...guestKeys.detail(id), 'movement'] as const,
   contacts: (id: string, filters: GuestContactFilters) =>
     [...guestKeys.detail(id), 'contacts', filters] as const,
 }

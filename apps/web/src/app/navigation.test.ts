@@ -20,9 +20,9 @@ describe('navigationFor', () => {
   })
 
   it('lets only the analyst manage merge blocks', () => {
-    expect(titles('analyst')).toContain('Запреты склейки')
-    expect(titles('marketer')).toContain('Склейка профилей')
-    expect(titles('marketer')).not.toContain('Запреты склейки')
+    expect(titles('analyst')).toContain('Запреты объединения')
+    expect(titles('marketer')).toContain('Объединение профилей')
+    expect(titles('marketer')).not.toContain('Запреты объединения')
   })
 
   it('hides segment and export write entries from the tenant', () => {

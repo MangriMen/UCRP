@@ -69,6 +69,48 @@ EventPage:
         $ref: ./events.yaml#/Event
     meta:
       $ref: ./common.yaml#/PageMeta
+MovementStep:
+  type: object
+  description: One presence event of a guest placed on the mall plan (mall and floor of the event's tenant).
+  required:
+    - eventId
+    - eventTypeCode
+    - tenantId
+    - tenantName
+    - mallId
+    - mallName
+    - floor
+    - occurredAt
+  properties:
+    eventId:
+      type: string
+    eventTypeCode:
+      type: string
+    tenantId:
+      type: string
+    tenantName:
+      type: string
+    mallId:
+      type: string
+    mallName:
+      type: string
+    floor:
+      type: integer
+      nullable: true
+      description: null when the tenant has no floor
+    occurredAt:
+      type: string
+      format: date-time
+MovementList:
+  type: object
+  required:
+    - items
+  properties:
+    items:
+      type: array
+      description: Ascending by `occurredAt`
+      items:
+        $ref: ./events.yaml#/MovementStep
 ContactLog:
   type: object
   required:

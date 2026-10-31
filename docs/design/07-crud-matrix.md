@@ -12,14 +12,15 @@
 | E-2 Событие                     | R                        | A                                            | A own         | R                 | — (объект) | C, U                    |
 | E-3 Сегмент                     | C, R, U, D               | R                                            | —             | C, R, U, D        | —          | U (пересчёт, состав)    |
 | E-4 Арендатор                   | R, U (только `priority`) | R                                            | R own         | C, R, U, D        | —          | R                       |
+| E-22 ТЦ                         | R                        | R                                            | —             | C, R, U, D        | —          | R                       |
 | E-5 Источник данных             | R                        | R                                            | —             | C, R, U, D        | —          | R, U (`last_import_at`) |
 | E-6 Категория арендатора        | R                        | R                                            | —             | C, R, U, D        | —          | R                       |
 | E-7 Проект                      | R                        | R                                            | —             | C, R, U, D        | —          | R                       |
 | E-8 Кампания                    | C, R, U, D               | R                                            | —             | R                 | —          | R, U (статус)           |
 | E-9 Тип события                 | R                        | R                                            | —             | C, R, U, D        | —          | R                       |
 | E-10 Идентификатор гостя        | R                        | —                                            | —             | R                 | — (объект) | C, U                    |
-| E-11 Кандидат на склейку        | R                        | A                                            | —             | C, R, U           | —          | C, U                    |
-| E-12 Запрет склейки             | —                        | —                                            | —             | C, R, D           | —          | R                       |
+| E-11 Кандидат на объединение    | R                        | A                                            | —             | C, R, U           | —          | C, U                    |
+| E-12 Запрет объединения         | —                        | —                                            | —             | C, R, D           | —          | R                       |
 | E-13 Загрузка                   | —                        | R                                            | —             | C, R              | —          | C (pull), U             |
 | E-14 Отклонённая строка         | —                        | A                                            | —             | R                 | —          | C                       |
 | E-15 Рекомендация               | R, U\*                   | —                                            | —             | R, U\*            | —          | C, U, D (замена набора) |
@@ -44,6 +45,7 @@
 | E-1      | R: `GET /guests`, `GET /guests/{id}` (R-1, R-4); D: `DELETE /guests/{id}` (R-4); A: `GET /dashboard/cross-tenant` (R-2, R-1, R-4)                                                                                                                                                                |
 | E-2      | R: `GET /guests/{id}/events` (R-1, R-4); A: `GET /dashboard/cross-tenant`, `GET /dashboard/metrics`, `GET /tenants/{id}/aggregates` (R-3 own)                                                                                                                                                    |
 | E-3      | `GET /segment-templates`, `GET /segments`, `GET /segments/{id}`, `/members`, `/versions` (R-1, R-4; R-2 — `GET /segments`, `GET /segments/{id}`); C: `POST /segments`, `POST /segments/preview`; U: `PUT /segments/{id}`, `POST /segments/{id}/recompute`; D: `DELETE /segments/{id}` (R-1, R-4) |
+| E-22     | `GET /malls` (R-1, R-2, R-4); C/U/D: `POST`, `PATCH /malls/{id}`, `DELETE /malls/{id}` (R-4); карта передвижения гостя — `GET /guests/{id}/movement` (R-1, R-2, R-4)                                                                                                                             |
 | E-4      | `GET /tenants`, `GET /tenants/{id}` (R-1, R-2, R-4; R-3 own); C/D: `POST`, `DELETE` (R-4); U: `PATCH /tenants/{id}` (R-4; R-1 — `priority`)                                                                                                                                                      |
 | E-5      | `GET /data-sources`, `GET /data-sources/{id}`, `GET /data-source-types` (R-1, R-2, R-4); CUD: `POST/PATCH/DELETE /data-sources`, `POST/PATCH /data-source-types` (R-4)                                                                                                                           |
 | E-6      | R: `GET /tenant-categories`, `GET .../relations` (R-1, R-2, R-4); CUD: `POST/PATCH/DELETE`, `PUT .../relations` (R-4)                                                                                                                                                                            |
@@ -123,7 +125,7 @@
 
 ## 5. Проверка прав по данным R-6 и R-5
 
-| Субъект | Правило                                                                                                                                                                                   |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R-6     | Нет входа в REST; воркеры запускаются процессом `cmd/worker` с системным `Principal{role: system}`; все записи воркера аудируются (`actor_user_id = NULL`) для склейки, импорта, выгрузки |
-| R-5     | Прямых прав нет; данные — предмет защиты: выгрузка содержит только контакт нужного канала, лимит контактов защищает от спама; удаление гостя — только R-4 (soft-delete)                   |
+| Субъект | Правило                                                                                                                                                                                       |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R-6     | Нет входа в REST; воркеры запускаются процессом `cmd/worker` с системным `Principal{role: system}`; все записи воркера аудируются (`actor_user_id = NULL`) для объединения, импорта, выгрузки |
+| R-5     | Прямых прав нет; данные — предмет защиты: выгрузка содержит только контакт нужного канала, лимит контактов защищает от спама; удаление гостя — только R-4 (soft-delete)                       |

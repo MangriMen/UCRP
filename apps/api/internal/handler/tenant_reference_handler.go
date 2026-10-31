@@ -29,7 +29,7 @@ type tenantOwnReference struct {
 	Name       string `json:"name"`
 	CategoryID string `json:"categoryId"`
 	Kind       string `json:"kind"`
-	Floor      int    `json:"floor"`
+	Floor      *int   `json:"floor"`
 	IsActive   bool   `json:"isActive"`
 }
 

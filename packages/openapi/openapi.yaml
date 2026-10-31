@@ -122,6 +122,8 @@ paths:
     $ref: ./paths/guests.yaml#/paths/~1api~1v1~1guests~1{id}
   /api/v1/guests/{id}/events:
     $ref: ./paths/guests.yaml#/paths/~1api~1v1~1guests~1{id}~1events
+  /api/v1/guests/{id}/movement:
+    $ref: ./paths/guests.yaml#/paths/~1api~1v1~1guests~1{id}~1movement
   /api/v1/guests/{id}/contacts:
     $ref: ./paths/guests.yaml#/paths/~1api~1v1~1guests~1{id}~1contacts
   /api/v1/guests/{id}/recommendations:
@@ -170,6 +172,10 @@ paths:
     $ref: ./paths/reference-projects.yaml#/paths/~1api~1v1~1projects
   /api/v1/projects/{id}:
     $ref: ./paths/reference-projects.yaml#/paths/~1api~1v1~1projects~1{id}
+  /api/v1/malls:
+    $ref: ./paths/reference-malls.yaml#/paths/~1api~1v1~1malls
+  /api/v1/malls/{id}:
+    $ref: ./paths/reference-malls.yaml#/paths/~1api~1v1~1malls~1{id}
   /api/v1/tenant-categories:
     $ref: ./paths/reference-tenant-categories.yaml#/paths/~1api~1v1~1tenant-categories
   /api/v1/tenant-categories/{id}:
@@ -371,6 +377,10 @@ components:
       $ref: ./components/schemas/events.yaml#/Event
     EventPage:
       $ref: ./components/schemas/events.yaml#/EventPage
+    MovementStep:
+      $ref: ./components/schemas/events.yaml#/MovementStep
+    MovementList:
+      $ref: ./components/schemas/events.yaml#/MovementList
     ContactLog:
       $ref: ./components/schemas/events.yaml#/ContactLog
     ContactLogPage:
@@ -417,6 +427,12 @@ components:
       $ref: ./components/schemas/imports.yaml#/RejectedRowPage
     SyncAccepted:
       $ref: ./components/schemas/imports.yaml#/SyncAccepted
+    Mall:
+      $ref: ./components/schemas/reference-malls.yaml#/Mall
+    MallCreateRequest:
+      $ref: ./components/schemas/reference-malls.yaml#/MallCreateRequest
+    MallUpdateRequest:
+      $ref: ./components/schemas/reference-malls.yaml#/MallUpdateRequest
     Tenant:
       $ref: ./components/schemas/reference-tenants.yaml#/Tenant
     TenantCreateRequest:
@@ -463,6 +479,8 @@ components:
       $ref: ./components/schemas/reference-data-sources.yaml#/DataSourcePage
     SegmentStatus:
       $ref: ./components/schemas/segments.yaml#/SegmentStatus
+    ZoneRef:
+      $ref: ./components/schemas/segments.yaml#/ZoneRef
     SegmentRule:
       $ref: ./components/schemas/segments.yaml#/SegmentRule
     SegmentRuleNode:

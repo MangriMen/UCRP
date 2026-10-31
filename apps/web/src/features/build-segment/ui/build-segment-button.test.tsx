@@ -49,6 +49,47 @@ describe('BuildSegmentButton', () => {
     expect(within(dialog).getByLabelText('Минимум визитов')).toHaveValue('2')
   })
 
+  it('sends the selected purchase zones to the audience preview and on save', async () => {
+    let previewBody: unknown
+    let createBody: unknown
+    server.use(
+      http.post(`${API}/segments/preview`, async ({ request }) => {
+        previewBody = await request.json()
+        return HttpResponse.json({ size: 42, examples: [], cached: false, suppressed: false })
+      }),
+      http.post(`${API}/segments`, async ({ request }) => {
+        createBody = await request.json()
+        return HttpResponse.json(mockSegments[0], { status: 201 })
+      }),
+    )
+    renderButton()
+    await userEvent.click(screen.getByRole('button', { name: 'Новый сегмент' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.type(within(dialog).getByLabelText('Название'), 'Покупатели')
+    await userEvent.click(
+      await within(dialog).findByRole('checkbox', { name: 'Центральный ТЦ · 2 этаж' }),
+    )
+    await userEvent.click(within(dialog).getByRole('checkbox', { name: 'Северный ТЦ · 2 этаж' }))
+
+    const zones = [
+      { mallId: 'mall-0001', floor: 2 },
+      { mallId: 'mall-0002', floor: 2 },
+    ]
+    await waitFor(() =>
+      expect(previewBody).toMatchObject({
+        rule: { conditions: [{ periodDays: 90, purchasedZones: zones }] },
+      }),
+    )
+    expect(await within(dialog).findByText('42')).toBeInTheDocument()
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Создать сегмент' }))
+    await waitFor(() =>
+      expect(createBody).toMatchObject({
+        rule: { conditions: [{ periodDays: 90, purchasedZones: zones }] },
+      }),
+    )
+  })
+
   it('submits a root group with a nested OR group', async () => {
     let body: unknown
     server.use(

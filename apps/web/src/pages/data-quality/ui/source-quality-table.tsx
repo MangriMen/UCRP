@@ -28,7 +28,7 @@ export function SourceQualityTable({ rows, isLoading, error, onSelect }: SourceQ
     },
     {
       id: 'pending',
-      header: 'Спорные профили',
+      header: 'Спорные объединения',
       cell: (s) => s.pendingMergeCandidates ?? suppressed,
     },
     {

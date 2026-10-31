@@ -1,4 +1,10 @@
-export { useGuest, useGuestContacts, useGuestEvents, useGuestSearch } from './api/use-guests'
+export {
+  useGuest,
+  useGuestContacts,
+  useGuestEvents,
+  useGuestMovement,
+  useGuestSearch,
+} from './api/use-guests'
 export { GuestStatusBadge } from './ui/guest-status-badge'
 export { guestKeys, MIN_SEARCH_LENGTH } from './model/keys'
 export type { GuestContactFilters, GuestEventFilters, GuestSearchFilters } from './model/keys'
@@ -9,6 +15,7 @@ export type {
   GuestContact,
   GuestEvent,
   GuestIdentifier,
+  GuestMovementStep,
   GuestProfile,
   GuestSegmentSummary,
   GuestStatus,

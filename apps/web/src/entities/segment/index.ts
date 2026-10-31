@@ -23,4 +23,5 @@ export type {
   SegmentTemplate,
   SegmentUpdateRequest,
   SegmentVersion,
+  ZoneRef,
 } from './model/types'

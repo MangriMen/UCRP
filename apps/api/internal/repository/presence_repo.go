@@ -70,12 +70,15 @@ type TenantCandidate struct {
 	Name       string
 	CategoryID string
 	Priority   int
-	Floor      int
+	Floor      *int
 }
 
 func (r *PresenceSQL) ActiveTenants(ctx context.Context) ([]TenantCandidate, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, name, category_id, priority, floor FROM tenant WHERE is_active ORDER BY id`)
+		SELECT t.id, t.name, t.category_id, t.priority, t.floor
+		FROM tenant t
+		JOIN mall m ON m.id = t.mall_id AND m.is_active
+		WHERE t.is_active ORDER BY t.id`)
 	if err != nil {
 		return nil, err
 	}

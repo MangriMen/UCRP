@@ -157,6 +157,51 @@ paths:
           $ref: ../components/responses.yaml#/Forbidden
         '404':
           $ref: ../components/responses.yaml#/NotFound
+  /api/v1/guests/{id}/movement:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Guests
+      operationId: getGuestMovement
+      summary: Guest movement through the mall
+      description: Presence events of the guest (event types with `counts_as_presence`) with the mall and floor of each event's tenant, ascending by `occurredAt`. When more than `limit` events match, the most recent `limit` are returned. Not available to R-3, because it exposes visits to other tenants.
+      x-roles:
+        - R-1
+        - R-2
+        - R-4
+      x-uc:
+        - UC-2
+      parameters:
+        - $ref: ../components/parameters.yaml#/From
+        - name: to
+          in: query
+          description: Period end (exclusive), UTC
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 200
+      responses:
+        '200':
+          description: Movement steps
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/events.yaml#/MovementList
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
   /api/v1/guests/{id}/contacts:
     parameters:
       - $ref: ../components/parameters.yaml#/IdPath

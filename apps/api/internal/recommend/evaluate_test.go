@@ -24,6 +24,9 @@ func (s *stubEventRepo) ListUnmatchedByBatch(context.Context, string, int) ([]do
 func (s *stubEventRepo) ActionLog(context.Context, string, int) ([]domain.GuestActionLogEntry, error) {
 	return s.entries, nil
 }
+func (s *stubEventRepo) ListMovement(context.Context, string, *time.Time, *time.Time, int) ([]domain.MovementStep, error) {
+	return nil, nil
+}
 func (s *stubEventRepo) Insert(context.Context, *domain.Event) error { return nil }
 func (s *stubEventRepo) InsertIgnoreDuplicate(context.Context, *domain.Event) (bool, error) {
 	return false, nil

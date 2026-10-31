@@ -130,6 +130,7 @@ func (s *Seeder) describe() error {
 	s.printf("demo data plan (guests %d)\n", s.opts.Guests)
 	s.printf("  tenant_category          %d\n", len(demoCategories()))
 	s.printf("  tenant_category_relation %d\n", len(demoRelations()))
+	s.printf("  mall                     %d\n", len(demoMalls()))
 	s.printf("  tenant                   %d\n", len(demoTenants()))
 	s.printf("  project                  %d\n", len(demoProjects()))
 	s.printf("  app_user                 %d\n", len(demoUsers()))
@@ -177,6 +178,10 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 	tenantIDs := make([]string, 0, len(demoTenants()))
 	for _, t := range demoTenants() {
 		tenantIDs = append(tenantIDs, demoID("tenant", t.Code))
+	}
+	mallIDs := make([]string, 0, len(demoMalls()))
+	for _, m := range demoMalls() {
+		mallIDs = append(mallIDs, demoID("mall", m.Code))
 	}
 	projectIDs := make([]string, 0, len(demoProjects()))
 	for _, p := range demoProjects() {
@@ -270,6 +275,7 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 		{`DELETE FROM job_queue WHERE id = ANY($1)`, []any{jobIDs}},
 		{`DELETE FROM app_user WHERE id = ANY($1)`, []any{userIDs}},
 		{`DELETE FROM tenant WHERE id = ANY($1)`, []any{tenantIDs}},
+		{`DELETE FROM mall WHERE id = ANY($1)`, []any{mallIDs}},
 		{`DELETE FROM tenant_category_relation WHERE category_id = ANY($1)`, []any{categoryIDs}},
 		{`DELETE FROM tenant_category WHERE id = ANY($1)`, []any{categoryIDs}},
 	}

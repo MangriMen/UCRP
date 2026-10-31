@@ -16,8 +16,9 @@ const (
 type ExportFormat string
 
 const (
-	FormatCSV ExportFormat = "csv"
-	FormatAPI ExportFormat = "api"
+	FormatCSV  ExportFormat = "csv"
+	FormatAPI  ExportFormat = "api"
+	FormatXLSX ExportFormat = "xlsx"
 )
 
 type ExportStatus string

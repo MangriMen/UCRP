@@ -25,8 +25,8 @@ export function MergeBlocksPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Запреты склейки"
-        description="Пары профилей, которые не будут склеены автоматически"
+        title="Запреты объединения"
+        description="Пары профилей, которые не будут объединены автоматически"
       />
       <DataTable
         columns={columns}

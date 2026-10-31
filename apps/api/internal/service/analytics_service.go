@@ -251,8 +251,10 @@ func (s *AnalyticsService) DataQuality(ctx context.Context) ([]DataQualityItem, 
 			COALESCE((
 				SELECT COUNT(*) FROM merge_candidate m
 				WHERE m.resolution = 'pending'
-				  AND m.guest_a_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = d.id)
-				  OR m.guest_b_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = d.id)
+				  AND (
+				    m.guest_a_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = d.id)
+				    OR m.guest_b_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = d.id)
+				  )
 			), 0)
 		FROM data_source d
 		ORDER BY d.name`)

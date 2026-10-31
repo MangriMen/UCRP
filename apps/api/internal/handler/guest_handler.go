@@ -2,7 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -40,6 +42,39 @@ func (h *GuestHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, profile)
+}
+
+func (h *GuestHandler) Movement(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	from, ok := optionalTime(w, r, "from")
+	if !ok {
+		return
+	}
+	to, ok := optionalTime(w, r, "to")
+	if !ok {
+		return
+	}
+	limit, _ := strconv.Atoi(query.Get("limit"))
+	steps, err := h.profiles.Movement(r.Context(), chi.URLParam(r, "id"), from, to, limit)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": steps})
+}
+
+func optionalTime(w http.ResponseWriter, r *http.Request, name string) (*time.Time, bool) {
+	raw := r.URL.Query().Get(name)
+	if raw == "" {
+		return nil, true
+	}
+	value, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", name+": ожидается RFC 3339")
+		return nil, false
+	}
+	value = value.UTC()
+	return &value, true
 }
 
 func (h *GuestHandler) Events(w http.ResponseWriter, r *http.Request) {

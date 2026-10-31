@@ -1,4 +1,10 @@
-import type { Guest, GuestContact, GuestEvent, GuestProfile } from '../model/types'
+import type {
+  Guest,
+  GuestContact,
+  GuestEvent,
+  GuestMovementStep,
+  GuestProfile,
+} from '../model/types'
 
 export const mockGuests: Guest[] = [
   {
@@ -96,6 +102,59 @@ export const mockGuestEvents: GuestEvent[] = [
     createdAt: '2026-08-19T09:05:00Z',
   },
 ]
+
+const centralMall = { mallId: 'mall-0001', mallName: 'Центральный ТЦ' }
+
+export const mockGuestMovement: Record<string, GuestMovementStep[]> = {
+  'guest-0001': [
+    {
+      ...centralMall,
+      eventId: 'event-0002',
+      eventTypeCode: 'visit',
+      tenantId: 'tenant-0002',
+      tenantName: 'Зара',
+      floor: 2,
+      occurredAt: '2026-10-20T12:00:00Z',
+    },
+    {
+      ...centralMall,
+      eventId: 'event-0005',
+      eventTypeCode: 'purchase',
+      tenantId: 'tenant-0003',
+      tenantName: 'Киномир',
+      floor: 4,
+      occurredAt: '2026-10-20T12:40:00Z',
+    },
+    {
+      ...centralMall,
+      eventId: 'event-0006',
+      eventTypeCode: 'visit',
+      tenantId: 'tenant-0003',
+      tenantName: 'Киномир',
+      floor: 4,
+      occurredAt: '2026-10-20T13:05:00Z',
+    },
+    {
+      ...centralMall,
+      eventId: 'event-0001',
+      eventTypeCode: 'purchase',
+      tenantId: 'tenant-0001',
+      tenantName: 'Лента',
+      floor: 1,
+      occurredAt: '2026-10-28T18:20:00Z',
+    },
+    {
+      mallId: 'mall-0002',
+      mallName: 'Северный ТЦ',
+      eventId: 'event-0007',
+      eventTypeCode: 'visit',
+      tenantId: 'tenant-0101',
+      tenantName: 'ФитЗона',
+      floor: 2,
+      occurredAt: '2026-10-28T19:30:00Z',
+    },
+  ],
+}
 
 export const mockGuestContacts: GuestContact[] = [
   {

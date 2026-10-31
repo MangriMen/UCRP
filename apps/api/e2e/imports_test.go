@@ -465,3 +465,54 @@ func trackImport(s *harness.Suite, batchID string) {
 		_ = s.DB.Exec(cleanupCtx, `DELETE FROM import_batch WHERE id = $1`, batchID)
 	})
 }
+
+func TestImportUploadXLSXIsProcessed(t *testing.T) {
+	s := harness.New(t).WithAdmin().WithDB()
+	iw := buildImportWorld(t, s, "import-xlsx")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := uploadImport(ctx, s, iw.source.ID, "valid.xlsx", xlsxValid(t, iw.world.tenantA.Code, s.Reg.Phone(1), s.Reg.Phone(2)))
+	if err != nil {
+		t.Fatalf("POST /api/v1/imports: %v", err)
+	}
+	s.RequireStatus(resp, 202, "POST /api/v1/imports")
+	body, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode import response: %v", err)
+	}
+	obj, _ := body.(map[string]any)
+	batchID := harness.StringField(obj, "batchId")
+	trackImport(s, batchID)
+
+	s.WaitFor(s.Cfg.ImportTimeout, "xlsx import batch to finish", func(ctx context.Context) (bool, error) {
+		r, err := s.API.Get(ctx, "/api/v1/imports/"+batchID, nil)
+		if err != nil || r.Status != 200 {
+			return false, err
+		}
+		b, err := r.JSON()
+		if err != nil {
+			return false, err
+		}
+		o, _ := b.(map[string]any)
+		status := harness.StringField(o, "status")
+		return status == "completed" || status == "completed_with_errors" || status == "failed", nil
+	})
+
+	get, err := s.API.Get(ctx, "/api/v1/imports/"+batchID, nil)
+	if err != nil {
+		t.Fatalf("GET /api/v1/imports/{id}: %v", err)
+	}
+	decoded, err := get.JSON()
+	if err != nil {
+		t.Fatalf("decode batch: %v", err)
+	}
+	batch, _ := decoded.(map[string]any)
+	accepted, _ := harness.IntField(batch, "acceptedRows", "accepted")
+	if accepted != 2 {
+		t.Fatalf("accepted rows: expected 2, got %d (%s)", accepted, get.Snippet())
+	}
+	if status := harness.StringField(batch, "status"); status != "completed" {
+		t.Fatalf("batch status: expected completed, got %q", status)
+	}
+}

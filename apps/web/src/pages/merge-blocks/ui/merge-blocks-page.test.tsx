@@ -12,7 +12,7 @@ describe('MergeBlocksPage', () => {
         <MergeBlocksPage />
       </QueryClientProvider>,
     )
-    expect(await screen.findByText('Отклонённая склейка')).toBeInTheDocument()
+    expect(await screen.findByText('Отклонённое объединение')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Снять запрет' })).toBeInTheDocument()
   })
 })
