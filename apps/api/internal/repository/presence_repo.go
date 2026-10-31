@@ -186,13 +186,10 @@ func (r *PresenceSQL) CategoryRelations(ctx context.Context, categoryIDs []strin
 		return nil, nil
 	}
 	placeholders := make([]string, len(categoryIDs))
-	args := make([]any, 0, len(categoryIDs)*2)
+	args := make([]any, len(categoryIDs))
 	for i, id := range categoryIDs {
 		placeholders[i] = "$" + strconv.Itoa(i+1)
-		args = append(args, id)
-	}
-	for _, id := range categoryIDs {
-		args = append(args, id)
+		args[i] = id
 	}
 	joined := strings.Join(placeholders, ",")
 	rows, err := r.db.QueryContext(ctx, `

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"strings"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
@@ -62,16 +63,25 @@ type ExportCreateRequest struct {
 }
 
 type ExportDTO struct {
-	ID                  string `json:"id"`
-	SegmentID           string `json:"segmentId"`
-	Channel             string `json:"channel"`
-	Format              string `json:"format"`
-	Status              string `json:"status"`
-	TotalInSegment      int    `json:"totalInSegment"`
-	NoContactCount      int    `json:"noContactCount"`
-	BlockedByLimitCount int    `json:"blockedByLimitCount"`
-	ControlCount        int    `json:"controlCount"`
-	ExportedCount       int    `json:"exportedCount"`
+	ID                  string     `json:"id"`
+	SegmentID           string     `json:"segmentId"`
+	SegmentVersionID    string     `json:"segmentVersionId"`
+	CampaignID          string     `json:"campaignId,omitempty"`
+	Channel             string     `json:"channel"`
+	Format              string     `json:"format"`
+	Status              string     `json:"status"`
+	ControlPercent      int        `json:"controlPercent,omitempty"`
+	ControlSeed         int64      `json:"controlSeed,omitempty"`
+	TotalInSegment      *int       `json:"totalInSegment"`
+	NoContactCount      *int       `json:"noContactCount"`
+	BlockedByLimitCount *int       `json:"blockedByLimitCount"`
+	ControlCount        *int       `json:"controlCount"`
+	ExportedCount       *int       `json:"exportedCount"`
+	Suppressed          bool       `json:"suppressed"`
+	IdempotencyKey      string     `json:"idempotencyKey,omitempty"`
+	CreatedBy           string     `json:"createdBy,omitempty"`
+	CreatedAt           time.Time  `json:"createdAt"`
+	FinishedAt          *time.Time `json:"finishedAt"`
 }
 
 type memberCandidate struct {
@@ -394,18 +404,31 @@ func hash64(guestID string, seed int64) uint64 {
 }
 
 func toExportDTO(j domain.ExportJob) *ExportDTO {
-	return &ExportDTO{
-		ID:                  j.ID,
-		SegmentID:           j.SegmentID,
-		Channel:             string(j.Channel),
-		Format:              string(j.Format),
-		Status:              string(j.Status),
-		TotalInSegment:      j.TotalInSegment,
-		NoContactCount:      j.NoContactCount,
-		BlockedByLimitCount: j.BlockedByLimitCount,
-		ControlCount:        j.ControlCount,
-		ExportedCount:       j.ExportedCount,
+	suppressed := j.TotalInSegment < 5 || j.ExportedCount < 5 || j.ControlCount < 5
+	d := &ExportDTO{
+		ID:               j.ID,
+		SegmentID:        j.SegmentID,
+		SegmentVersionID: j.SegmentVersionID,
+		CampaignID:       j.CampaignID,
+		Channel:          string(j.Channel),
+		Format:           string(j.Format),
+		Status:           string(j.Status),
+		ControlPercent:   j.ControlPercent,
+		ControlSeed:      j.ControlSeed,
+		Suppressed:       suppressed,
+		IdempotencyKey:   j.IdempotencyKey,
+		CreatedBy:        j.CreatedBy,
+		CreatedAt:        j.CreatedAt,
+		FinishedAt:       j.FinishedAt,
 	}
+	if !suppressed {
+		d.TotalInSegment = &j.TotalInSegment
+		d.NoContactCount = &j.NoContactCount
+		d.BlockedByLimitCount = &j.BlockedByLimitCount
+		d.ControlCount = &j.ControlCount
+		d.ExportedCount = &j.ExportedCount
+	}
+	return d
 }
 
 func orDefault(v, def string) string {

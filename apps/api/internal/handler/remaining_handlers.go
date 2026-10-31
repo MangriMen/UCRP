@@ -273,5 +273,5 @@ func (h *AnalyticsHandler) DataQuality(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
+	writePage(w, dataQualityResponse(items), 0, 0, len(items))
 }

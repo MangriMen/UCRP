@@ -27,10 +27,10 @@ func TestDataQualitySuppressesSmallGroups(t *testing.T) {
 	}
 	for _, item := range items {
 		row, ok := item.(map[string]any)
-		if !ok || harness.StringField(row, "data_source_id") != w.source.ID {
+		if !ok || harness.StringField(row, "dataSourceId") != w.source.ID {
 			continue
 		}
-		if row["suppressed"] != true || row["pending_merges"] != nil || row["rejected_rate"] != nil || row["warning"] != nil {
+		if row["suppressed"] != true || row["pendingMerges"] != nil || row["rejectedRate"] != nil || row["warning"] != nil {
 			t.Fatalf("small source metrics exposed: %s", response.Snippet())
 		}
 		return

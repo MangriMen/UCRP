@@ -232,11 +232,11 @@ func (s *AnalyticsService) TenantAggregates(ctx context.Context, tenantID string
 }
 
 type DataQualityItem struct {
-	DataSourceID  string  `json:"data_source_id"`
+	DataSourceID  string  `json:"dataSourceId"`
 	Name          string  `json:"name"`
-	LastImportAt  string  `json:"last_import_at,omitempty"`
-	RejectedRate  float64 `json:"rejected_rate"`
-	PendingMerges int     `json:"pending_merges"`
+	LastImportAt  string  `json:"lastImportAt,omitempty"`
+	RejectedRate  float64 `json:"rejectedRate"`
+	PendingMerges int     `json:"pendingMerges"`
 	Warning       bool    `json:"warning"`
 }
 
