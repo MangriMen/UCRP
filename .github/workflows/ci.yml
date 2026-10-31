@@ -38,7 +38,7 @@ jobs:
             go:
               - 'apps/api/**'
               - '.golangci.yml'
-              - 'scripts/go-check.sh'
+              - 'scripts/go-check.go'
               - 'lefthook.yml'
               - '.github/workflows/ci.yml'
 
@@ -89,10 +89,10 @@ jobs:
           cache: true
 
       - name: Format
-        run: ${{ github.workspace }}/scripts/go-check.sh fmt
+        run: go run ${{ github.workspace }}/scripts/go-check.go fmt
 
       - name: Vet
-        run: ${{ github.workspace }}/scripts/go-check.sh vet
+        run: go run ${{ github.workspace }}/scripts/go-check.go vet
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
@@ -101,7 +101,7 @@ jobs:
           working-directory: apps/api
 
       - name: Test
-        run: ${{ github.workspace }}/scripts/go-check.sh test
+        run: go run ${{ github.workspace }}/scripts/go-check.go test
 
       - name: Build
-        run: ${{ github.workspace }}/scripts/go-check.sh build
+        run: go run ${{ github.workspace }}/scripts/go-check.go build

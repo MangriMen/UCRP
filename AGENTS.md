@@ -25,7 +25,7 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 - Bun workspaces + Turborepo. Use `bun`, not npm/yarn/pnpm.
 - Go module lives in `apps/api` (not the repo root). Run Go commands from there.
 - Go layers: handler → service → domain ← repository. Domain imports nothing from the others.
-- Go checks (`gofmt`, `go vet`, `golangci-lint`, `go test -race`, `go build`) live in `scripts/go-check.sh`; lefthook and CI both call it. Change checks there, not in two places. Hooks run checks on a snapshot (`scripts/run-on-tree.sh`): pre-commit on the staged index, pre-push on `HEAD`. Unstaged and untracked files are not checked and the working tree is never touched. `golangci-lint` is found via `PATH` or `$(go env GOPATH)/bin`.
+- Go checks (`gofmt`, `go vet`, `golangci-lint`, `go test -race`, `go build`) live in `scripts/go-check.go`; lefthook and CI both call it. Change checks there, not in two places. Hooks run checks on a snapshot (`scripts/run-on-tree.ts`): pre-commit on the staged index, pre-push on `HEAD`. Unstaged and untracked files are not checked and the working tree is never touched. `golangci-lint` is found via `PATH` or `$(go env GOPATH)/bin`.
 - CI: the frontend job must not require Go; Go lint/build/test run in the separate `go` job.
 - Turbo runs in strict env mode: new env vars must be listed in `turbo.jsonc` (`passThroughEnv`).
 - Commits: Conventional Commits (enforced by lefthook). Don't bypass hooks with `--no-verify`.
