@@ -48,7 +48,7 @@ function GuestPicker({ excludedGuestId, selectedGuestId, onSelect }: GuestPicker
         </p>
       )
     }
-    if (guests.isLoading) return <Skeleton className="h-16 w-full" />
+    if (guests.isLoading || guests.isPlaceholderData) return <Skeleton className="h-16 w-full" />
     if (guests.error) return <ErrorBanner error={guests.error} />
     if (candidates.length === 0) {
       return <p className="text-sm text-muted-foreground">Гости не найдены</p>

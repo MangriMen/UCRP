@@ -48,6 +48,33 @@ describe('MergeGuestsDialog', () => {
     expect(screen.queryByText('Иван Петров')).not.toBeInTheDocument()
   })
 
+  it('hides the previous results until the new search answers', async () => {
+    await openDialog()
+    const search = screen.getByLabelText('Поиск гостя')
+    await userEvent.type(search, 'Ива')
+    expect(await screen.findByRole('button', { name: /Мария Иванова/ })).toBeInTheDocument()
+
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let requested = false
+    server.use(
+      http.get(`${API}/guests`, async ({ request }) => {
+        if (new URL(request.url).searchParams.get('q') === 'Иван') {
+          requested = true
+          await gate
+        }
+      }),
+    )
+    await userEvent.type(search, 'н')
+    await waitFor(() => expect(requested).toBe(true))
+    expect(screen.queryByRole('button', { name: /Мария Иванова/ })).not.toBeInTheDocument()
+
+    release()
+    expect(await screen.findByRole('button', { name: /Мария Иванова/ })).toBeInTheDocument()
+  })
+
   it('asks for a longer query instead of searching', async () => {
     await openDialog()
     await userEvent.type(screen.getByLabelText('Поиск гостя'), 'И')
