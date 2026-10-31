@@ -182,17 +182,20 @@ func NewCampaignService(campaigns domain.CampaignRepo) *CampaignService {
 }
 
 type CampaignDTO struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	TenantID        string `json:"tenantId"`
-	SegmentID       string `json:"segmentId"`
-	AttributionDays int    `json:"attributionDays"`
-	Status          string `json:"status"`
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	TargetTenantID  string    `json:"targetTenantId"`
+	SegmentID       string    `json:"segmentId"`
+	AttributionDays int       `json:"attributionDays"`
+	Status          string    `json:"status"`
+	CreatedBy       string    `json:"createdBy,omitempty"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
 type CampaignRequest struct {
 	Name            string `json:"name"`
-	TenantID        string `json:"tenantId"`
+	TargetTenantID  string `json:"targetTenantId"`
 	SegmentID       string `json:"segmentId"`
 	AttributionDays int    `json:"attributionDays"`
 	Status          string `json:"status"`
@@ -220,7 +223,7 @@ func (s *CampaignService) Get(ctx context.Context, id string) (*CampaignDTO, err
 }
 
 func (s *CampaignService) Create(ctx context.Context, req CampaignRequest, actor string) (*CampaignDTO, error) {
-	if strings.TrimSpace(req.Name) == "" || req.TenantID == "" || req.SegmentID == "" {
+	if strings.TrimSpace(req.Name) == "" || req.TargetTenantID == "" || req.SegmentID == "" {
 		return nil, domain.ErrValidation
 	}
 	days := req.AttributionDays
@@ -231,7 +234,7 @@ func (s *CampaignService) Create(ctx context.Context, req CampaignRequest, actor
 	c := &domain.Campaign{
 		ID:              s.idGen.NewID(ctx),
 		Name:            strings.TrimSpace(req.Name),
-		TenantID:        req.TenantID,
+		TenantID:        req.TargetTenantID,
 		SegmentID:       req.SegmentID,
 		AttributionDays: days,
 		Status:          "active",
@@ -252,7 +255,7 @@ func (s *CampaignService) Update(ctx context.Context, id string, req CampaignReq
 		return nil, err
 	}
 	if hasExports, _ := s.campaigns.HasExports(ctx, id); hasExports {
-		if req.TenantID != "" && req.TenantID != c.TenantID {
+		if req.TargetTenantID != "" && req.TargetTenantID != c.TenantID {
 			return nil, domain.ErrConflict
 		}
 	}
@@ -287,7 +290,8 @@ func (s *CampaignService) Delete(ctx context.Context, id string) error {
 
 func toCampaignDTO(c domain.Campaign) CampaignDTO {
 	return CampaignDTO{
-		ID: c.ID, Name: c.Name, TenantID: c.TenantID, SegmentID: c.SegmentID,
+		ID: c.ID, Name: c.Name, TargetTenantID: c.TenantID, SegmentID: c.SegmentID,
 		AttributionDays: c.AttributionDays, Status: c.Status,
+		CreatedBy: c.CreatedBy, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt,
 	}
 }
