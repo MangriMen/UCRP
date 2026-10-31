@@ -7,6 +7,7 @@ import {
   History,
   Layers,
   Megaphone,
+  Plug,
   Settings,
   ShieldCheck,
   Store,
@@ -92,7 +93,15 @@ const navigation: NavGroup[] = [
   },
   {
     label: 'Данные',
-    items: [{ title: 'Импорт', to: '/import', icon: Upload, roles: ['analyst', 'manager'] }],
+    items: [
+      {
+        title: 'Арендаторы и источники',
+        to: '/data-sources',
+        icon: Plug,
+        roles: ['marketer', 'manager', 'analyst'],
+      },
+      { title: 'Импорт', to: '/import', icon: Upload, roles: ['analyst', 'manager'] },
+    ],
   },
   {
     label: 'Администрирование',

@@ -6,6 +6,7 @@ import { AuditLogPage } from '@/pages/audit-log'
 import { CampaignDetailsPage } from '@/pages/campaign-details'
 import { CampaignsPage } from '@/pages/campaigns'
 import { ContactLimitsPage } from '@/pages/contact-limits'
+import { DataSourcesPage } from '@/pages/data-sources'
 import { ExportsPage } from '@/pages/exports'
 import { GuestProfilePage } from '@/pages/guest-profile'
 import { GuestsPage } from '@/pages/guests'
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
               { path: 'campaigns', element: <CampaignsPage /> },
               { path: 'campaigns/:id', element: <CampaignDetailsPage /> },
               { path: 'settings/contact-limits', element: <ContactLimitsPage /> },
+              { path: 'data-sources', element: <DataSourcesPage /> },
             ],
           },
           {
