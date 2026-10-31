@@ -19,3 +19,11 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: () => {},
   }),
 })
+
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+globalThis.ResizeObserver ??= ResizeObserverStub

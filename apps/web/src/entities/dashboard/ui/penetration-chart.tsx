@@ -1,66 +1,72 @@
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { formatPercent } from '@/shared/lib/format'
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/shared/ui/chart'
 import { EmptyState } from '@/shared/ui/empty-state'
 import type { PenetrationPoint } from '../model/types'
 
-const numberFormat = new Intl.NumberFormat('ru-RU')
+const chartConfig = {
+  one: { label: '1 арендатор', color: 'var(--chart-3)' },
+  two: { label: '2 арендатора', color: 'var(--chart-2)' },
+  threePlus: { label: '3 и более', color: 'var(--chart-1)' },
+} satisfies ChartConfig
 
-const segments = [
-  { key: 'one', label: '1 арендатор', className: 'bg-chart-3' },
-  { key: 'two', label: '2 арендатора', className: 'bg-chart-2' },
-  { key: 'threePlus', label: '3 и более', className: 'bg-chart-1' },
-] as const
+const segmentKeys = ['one', 'two', 'threePlus'] as const
 
 interface PenetrationChartProps {
   series: PenetrationPoint[]
 }
 
+function describePoint(point: PenetrationPoint) {
+  const rate =
+    point.penetrationRate === undefined
+      ? ''
+      : `, доля двух и более: ${formatPercent(point.penetrationRate)}`
+  return `${point.period}: ${point.one} / ${point.two} / ${point.threePlus}${rate}`
+}
+
 export function PenetrationChart({ series }: PenetrationChartProps) {
   if (series.length === 0) return <EmptyState title="Нет данных за период" />
 
+  const ariaLabel = `Распределение гостей по числу арендаторов. ${series.map(describePoint).join('; ')}`
+
   return (
     <figure className="flex flex-col gap-3">
-      <ul className="flex flex-wrap gap-4 text-xs">
-        {segments.map((segment) => (
-          <li key={segment.key} className="flex items-center gap-1.5">
-            <span className={`size-3 rounded-sm ${segment.className}`} aria-hidden />
-            {segment.label}
-          </li>
-        ))}
-      </ul>
-      <ul className="flex flex-col gap-2">
-        {series.map((point) => {
-          const total = point.one + point.two + point.threePlus
-          const summary = segments
-            .map((s) => `${s.label}: ${numberFormat.format(point[s.key])}`)
-            .join(', ')
-          return (
-            <li
-              key={point.period}
-              className="grid grid-cols-[5rem_1fr_4rem] items-center gap-3 text-sm"
-            >
-              <span>{point.period}</span>
-              <div
-                role="img"
-                aria-label={`${point.period}. ${summary}`}
-                className="flex h-5 overflow-hidden rounded-sm bg-muted"
-              >
-                {segments.map((segment) => (
-                  <div
-                    key={segment.key}
-                    className={segment.className}
-                    style={{ width: `${total === 0 ? 0 : (point[segment.key] / total) * 100}%` }}
-                  />
-                ))}
-              </div>
-              <span className="text-right text-muted-foreground">
-                {point.penetrationRate === undefined ? '—' : formatPercent(point.penetrationRate)}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
+      <ChartContainer
+        config={chartConfig}
+        role="img"
+        aria-label={ariaLabel}
+        className="h-64 w-full"
+      >
+        <BarChart data={series} accessibilityLayer>
+          <CartesianGrid vertical={false} />
+          <XAxis dataKey="period" tickLine={false} axisLine={false} />
+          <YAxis tickLine={false} axisLine={false} width={48} />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                labelFormatter={(label, payload) => {
+                  const point = payload[0]?.payload as PenetrationPoint | undefined
+                  if (point?.penetrationRate === undefined) return label
+                  return `${label}, доля двух и более: ${formatPercent(point.penetrationRate)}`
+                }}
+              />
+            }
+          />
+          <ChartLegend content={<ChartLegendContent />} />
+          {segmentKeys.map((key) => (
+            <Bar key={key} dataKey={key} stackId="guests" fill={`var(--color-${key})`} />
+          ))}
+        </BarChart>
+      </ChartContainer>
       <figcaption className="text-xs text-muted-foreground">
-        Распределение гостей по числу арендаторов; справа — доля гостей с двумя и более
+        Распределение гостей по числу арендаторов; в подсказке — доля гостей с двумя и более
       </figcaption>
     </figure>
   )
