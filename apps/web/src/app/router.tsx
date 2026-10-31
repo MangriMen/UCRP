@@ -1,4 +1,6 @@
-import { createBrowserRouter, Link, Outlet } from 'react-router'
+import { createBrowserRouter, Outlet } from 'react-router'
+import { HomePage } from '@/pages/home'
+import { NotFoundPage } from '@/pages/not-found'
 
 function Layout() {
   return (
@@ -7,21 +9,6 @@ function Layout() {
       <main className="p-4">
         <Outlet />
       </main>
-    </div>
-  )
-}
-
-function HomePage() {
-  return <h1 className="text-2xl font-semibold">UCRP</h1>
-}
-
-function NotFoundPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold">404</h1>
-      <Link to="/" className="underline">
-        На главную
-      </Link>
     </div>
   )
 }

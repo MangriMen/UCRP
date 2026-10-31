@@ -1,11 +1,12 @@
-const BASE_URL = '/api/v1'
+import type { Schema } from './types'
 
-export interface ApiErrorBody {
-  code: string
-  message: string
-  details?: { field: string; reason: string }[]
+const BASE_URL = '/api/v1'
+const REQUEST_TIMEOUT_MS = 30_000
+
+export type ApiErrorBody = Omit<Schema<'ErrorResponse'>['error'], 'request_id'> & {
   request_id?: string
 }
+export type ApiErrorCode = ApiErrorBody['code']
 
 export class ApiError extends Error {
   readonly status: number
@@ -39,8 +40,8 @@ function refreshAccessToken(): Promise<boolean> {
   })
     .then(async (res) => {
       if (!res.ok) return false
-      const data = (await res.json()) as { access_token: string }
-      accessToken = data.access_token
+      const data = (await res.json()) as Schema<'TokenResponse'>
+      accessToken = data.accessToken
       return true
     })
     .catch(() => false)
@@ -57,8 +58,17 @@ async function toApiError(res: Response): Promise<ApiError> {
   } catch {
     // тело не JSON: падаем на общий текст ниже
   }
-  return new ApiError(res.status, { code: 'unknown', message: res.statusText })
+  return new ApiError(res.status, { code: 'internal_error', message: res.statusText })
 }
+
+function toTransportError(e: unknown): unknown {
+  if (e instanceof DOMException && e.name === 'TimeoutError') {
+    return new ApiError(504, { code: 'timeout', message: 'Сервер не ответил вовремя' })
+  }
+  return e
+}
+
+const NO_REFRESH_PATHS = new Set(['/auth/login', '/auth/refresh'])
 
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown
@@ -77,8 +87,10 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     const h = new Headers(headers)
     if (accessToken) h.set('Authorization', `Bearer ${accessToken}`)
     if (body !== undefined && !(body instanceof FormData)) h.set('Content-Type', 'application/json')
+    const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
     return fetch(url, {
       ...init,
+      signal: init.signal ? AbortSignal.any([init.signal, timeout]) : timeout,
       headers: h,
       credentials: 'include',
       body:
@@ -88,10 +100,19 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     })
   }
 
-  let res = await send()
-  if (res.status === 401 && !path.startsWith('/auth/')) {
+  let res: Response
+  try {
+    res = await send()
+  } catch (e) {
+    throw toTransportError(e)
+  }
+  if (res.status === 401 && !NO_REFRESH_PATHS.has(path)) {
     if (await refreshAccessToken()) {
-      res = await send()
+      try {
+        res = await send()
+      } catch (e) {
+        throw toTransportError(e)
+      }
     } else {
       onUnauthorized?.()
     }
