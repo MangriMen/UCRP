@@ -4,31 +4,31 @@
 
 ## 1. Соответствие сущностей и таблиц
 
-| Сущность                     | Таблицы                                        | Примечание                                                         |
-| ---------------------------- | ---------------------------------------------- | ------------------------------------------------------------------ |
-| E-1 Гость                    | `guest`                                        | `status` (`active/merged/deleted`), `merged_into_id`, `deleted_at` |
-| E-2 Событие                  | `event`                                        | `guest_id` может быть NULL (не привязано)                          |
-| E-3 Сегмент                  | `segment`, `segment_version`, `segment_member` | версионирование правил, материализованный состав                   |
-| E-4 Арендатор                | `tenant`                                       | `mall_id` — ТЦ, `floor` — этаж внутри ТЦ                           |
-| E-22 ТЦ                      | `mall`                                         | зона = пара (`mall_id`, `floor`), отдельной таблицы этажей нет     |
-| E-5 Источник данных          | `data_source`, `data_source_type`              | тип — справочник                                                   |
-| E-6 Категория арендатора     | `tenant_category`, `tenant_category_relation`  | смежность/конкуренция                                              |
-| E-7 Проект                   | `project`                                      |                                                                    |
-| E-8 Кампания                 | `campaign`                                     |                                                                    |
-| E-9 Тип события              | `event_type`                                   |                                                                    |
-| E-10 Идентификатор гостя     | `guest_identifier`                             |                                                                    |
-| E-11 Кандидат на объединение | `merge_candidate`                              | также журнал автообъединений                                       |
-| E-12 Запрет объединения      | `merge_block`                                  |                                                                    |
-| E-13 Загрузка                | `import_batch`                                 |                                                                    |
-| E-14 Отклонённая строка      | `rejected_row`                                 |                                                                    |
-| E-15 Рекомендация            | `recommendation`, `recommendation_factor`      |                                                                    |
-| E-16 Выгрузка                | `export_job`                                   | в коде `Export`                                                    |
-| E-17 Член выгрузки           | `export_member`                                |                                                                    |
-| E-18 Лимит контактов         | `contact_limit`                                |                                                                    |
-| E-19 Контакт                 | `contact_log`                                  |                                                                    |
-| E-20 Пользователь            | `app_user`                                     | `user` — зарезервированное слово PostgreSQL                        |
-| E-21 Аудит                   | `audit_log`                                    |                                                                    |
-| T-1 (служебная)              | `job_queue`                                    | очередь воркеров, D-8                                              |
+| Сущность                     | Таблицы                                                          | Примечание                                                                                 |
+| ---------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| E-1 Гость                    | `guest`                                                          | `status` (`active/merged/deleted`), `merged_into_id`, `deleted_at`                         |
+| E-2 Событие                  | `event`                                                          | `guest_id` может быть NULL (не привязано)                                                  |
+| E-3 Сегмент                  | `segment`, `segment_version`, `segment_member`                   | версионирование правил, материализованный состав                                           |
+| E-4 Арендатор                | `tenant`                                                         | `mall_id` — ТЦ, `floor` — этаж внутри ТЦ                                                   |
+| E-22 ТЦ                      | `mall`                                                           | зона = пара (`mall_id`, `floor`); диапазон этажей — в `mall`, отдельной таблицы этажей нет |
+| E-5 Источник данных          | `data_source`, `data_source_type`                                | тип — справочник                                                                           |
+| E-6 Категория арендатора     | `tenant_category`, `tenant_category_relation`                    | смежность/конкуренция                                                                      |
+| E-7 Проект                   | `project`                                                        |                                                                                            |
+| E-8 Кампания                 | `campaign`                                                       |                                                                                            |
+| E-9 Тип события              | `event_type`                                                     |                                                                                            |
+| E-10 Идентификатор гостя     | `guest_identifier`                                               |                                                                                            |
+| E-11 Кандидат на объединение | `merge_candidate`                                                | также журнал автообъединений                                                               |
+| E-12 Запрет объединения      | `merge_block`                                                    |                                                                                            |
+| E-13 Загрузка                | `import_batch`                                                   |                                                                                            |
+| E-14 Отклонённая строка      | `rejected_row`                                                   |                                                                                            |
+| E-15 Рекомендация            | `recommendation`, `recommendation_factor`, `recommendation_eval` | `recommendation_eval` — оценка рекомендаций (задание `recommend.evaluate`)                 |
+| E-16 Выгрузка                | `export_job`                                                     | в коде `Export`                                                                            |
+| E-17 Член выгрузки           | `export_member`                                                  |                                                                                            |
+| E-18 Лимит контактов         | `contact_limit`                                                  |                                                                                            |
+| E-19 Контакт                 | `contact_log`                                                    |                                                                                            |
+| E-20 Пользователь            | `app_user`                                                       | `user` — зарезервированное слово PostgreSQL                                                |
+| E-21 Аудит                   | `audit_log`                                                      |                                                                                            |
+| T-1 (служебная)              | `job_queue`                                                      | очередь воркеров, D-8                                                                      |
 
 ## 2. ER-диаграммы
 
@@ -66,6 +66,9 @@ erDiagram
     varchar code UK
     varchar name
     boolean is_active
+    smallint floor_min
+    smallint floor_max
+    boolean has_zero_floor
   }
   tenant {
     text id PK
@@ -203,6 +206,7 @@ erDiagram
   guest ||--o{ recommendation : "получает"
   tenant ||--o{ recommendation : "куда"
   recommendation ||--|{ recommendation_factor : "факторы"
+  guest ||--o{ recommendation_eval : "оценка"
 
   segment {
     text id PK
@@ -244,6 +248,13 @@ erDiagram
     varchar factor_code PK
     numeric weight
     numeric contribution
+  }
+  recommendation_eval {
+    text id PK
+    text guest_id FK
+    text probabilities
+    text ranking
+    timestamp evaluated_at
   }
 ```
 
@@ -310,7 +321,7 @@ erDiagram
 | -------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tenant_category`          | `id`                                                          | Атрибуты зависят только от категории                                                                                                                                                                                                                                                                        |
 | `tenant_category_relation` | (`category_id`, `related_category_id`, `relation_type`)       | Единственный неключевой атрибут `weight_pct` зависит от всего ключа                                                                                                                                                                                                                                         |
-| `mall`                     | `id`, `UNIQUE(code)`                                          | Название и признак активности зависят от ТЦ; список этажей выводится из арендаторов (`DISTINCT tenant.floor`, кроме 0), отдельно не хранится                                                                                                                                                                |
+| `mall`                     | `id`, `UNIQUE(code)`                                          | Название, признак активности и диапазон этажей (`floor_min`, `floor_max`, `has_zero_floor`) зависят от ТЦ; список этажей выводится из диапазона, отдельно не хранится                                                                                                                                       |
 | `tenant`                   | `id`                                                          | ТЦ — по FK `mall_id`; индекс (`mall_id`, `floor`) обслуживает зонные запросы. Категория — по FK, название категории не дублируется; `kind` (`mall`/`external`) отделяет арендатора комплекса от внешнего партнёра (A-22, D-38); `floor`, `x_m`, `y_m`, `priority` зависят от арендатора                     |
 | `project`                  | `id`, `UNIQUE(tenant_id, code)`                               | Принадлежность арендатору по FK                                                                                                                                                                                                                                                                             |
 | `event_type`               | `id`                                                          | Свойства типа (`has_amount`, `counts_as_presence`, `reverses_event_type_id`) вынесены из события. Отдельные типы `top_up` и `spend` с `counts_as_presence=false` различают пополнение и посещение (A-20, D-36)                                                                                              |
@@ -331,6 +342,7 @@ erDiagram
 | `campaign`                 | `id`                                                          | Цель и окно атрибуции — атрибуты кампании                                                                                                                                                                                                                                                                   |
 | `recommendation`           | `id`, `UNIQUE(guest_id, rank)`, `UNIQUE(guest_id, tenant_id)` | `explanation` — снимок текста на момент расчёта (иначе обоснование изменилось бы задним числом)                                                                                                                                                                                                             |
 | `recommendation_factor`    | (`recommendation_id`, `factor_code`)                          | Значения фактора зависят от пары ключа                                                                                                                                                                                                                                                                      |
+| `recommendation_eval`      | `id`                                                          | Результат одной оценки гостя: вероятности, ранжирование и время расчёта рекомендаций, к которым она относится                                                                                                                                                                                               |
 | `export_job`               | `id`                                                          | Версия сегмента фиксируется; `segment_id` оставлен для запросов журнала и выводим из `segment_version`, но включён намеренно (индекс журнала по сегменту; согласован CHECK-ом на уровне service). Счётчики — итог построения                                                                                |
 | `export_member`            | (`export_id`, `guest_id`)                                     | `is_control` и контакт зависят от пары                                                                                                                                                                                                                                                                      |
 | `contact_limit`            | `id`                                                          | Независимое правило                                                                                                                                                                                                                                                                                         |
