@@ -1,0 +1,204 @@
+package e2e
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/MangriMen/UCRP/e2e/harness"
+)
+
+func TestDataSourceTypesDefaults(t *testing.T) {
+	s := harness.New(t).WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Get(ctx, "/api/v1/data-source-types", nil)
+	if err != nil {
+		t.Fatalf("GET /api/v1/data-source-types: %v", err)
+	}
+	s.RequireStatus(resp, 200, "GET /api/v1/data-source-types")
+	s.RequireDeclaredStatus("GET", "/api/v1/data-source-types", resp)
+	s.RequireSchema("GET", "/api/v1/data-source-types", resp)
+
+	body, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode data source types: %v", err)
+	}
+	items, ok := harness.Items(body)
+	if !ok {
+		t.Fatalf("data source types response has no items array: %s", resp.Snippet())
+	}
+	codes := map[string]bool{}
+	for _, item := range items {
+		obj, _ := item.(map[string]any)
+		codes[harness.StringField(obj, "code")] = true
+	}
+	for _, want := range []string{"csv_excel", "crm", "pos", "api"} {
+		if !codes[want] {
+			t.Fatalf("data source types must contain %q, got %v", want, codes)
+		}
+	}
+}
+
+func TestDataSourceCreate(t *testing.T) {
+	s := harness.New(t).WithAdmin().WithDB()
+	w := buildWorld(t, s, "source-create")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	types, err := s.API.Get(ctx, "/api/v1/data-source-types", nil)
+	if err != nil {
+		t.Fatalf("GET data source types: %v", err)
+	}
+	typesBody, err := types.JSON()
+	if err != nil {
+		t.Fatalf("decode types: %v", err)
+	}
+	items, _ := harness.Items(typesBody)
+	var csvTypeID string
+	for _, item := range items {
+		obj, _ := item.(map[string]any)
+		if harness.StringField(obj, "code") == "csv_excel" {
+			csvTypeID = harness.StringField(obj, "id")
+		}
+	}
+	if csvTypeID == "" {
+		t.Fatalf("csv_excel data source type is missing")
+	}
+
+	resp, err := s.API.Post(ctx, "/api/v1/data-sources", map[string]any{
+		"tenant_id": w.tenantA.ID,
+		"type_id":   csvTypeID,
+		"name":      s.Reg.Name("source-created"),
+	})
+	if err != nil {
+		t.Fatalf("POST /api/v1/data-sources: %v", err)
+	}
+	s.RequireStatus(resp, 201, "POST /api/v1/data-sources")
+	s.RequireDeclaredStatus("POST", "/api/v1/data-sources", resp)
+	s.RequireSchema("POST", "/api/v1/data-sources", resp)
+
+	body, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode created source: %v", err)
+	}
+	obj, _ := body.(map[string]any)
+	sourceID := harness.StringField(obj, "id")
+	if sourceID == "" {
+		t.Fatalf("created data source has no id: %s", resp.Snippet())
+	}
+	trackDataSource(ctx, s, sourceID)
+
+	if active, ok := obj["is_active"].(bool); !ok || !active {
+		t.Fatalf("created data source must be active, got %v", obj["is_active"])
+	}
+	if code := harness.StringField(obj, "type_code", "typeCode"); code != "csv_excel" {
+		t.Fatalf("type_code: expected csv_excel, got %q", code)
+	}
+}
+
+func TestDataSourceCreateRequiresName(t *testing.T) {
+	s := harness.New(t).WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Post(ctx, "/api/v1/data-sources", map[string]any{"type_id": "00000000-0000-0000-0000-000000000000"})
+	if err != nil {
+		t.Fatalf("POST /api/v1/data-sources without name: %v", err)
+	}
+	s.RequireStatus(resp, 400, "POST /api/v1/data-sources without name")
+	s.RequireDeclaredStatus("POST", "/api/v1/data-sources", resp)
+	s.RequireSchema("POST", "/api/v1/data-sources", resp)
+}
+
+func TestDataSourceCreateRejectsBadMapping(t *testing.T) {
+	s := harness.New(t).WithAdmin().WithDB()
+	w := buildWorld(t, s, "source-bad-mapping")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Post(ctx, "/api/v1/data-sources", map[string]any{
+		"tenant_id":     w.tenantA.ID,
+		"type_id":       w.source.ID,
+		"name":          s.Reg.Name("source-bad-mapping"),
+		"field_mapping": "{not-json",
+	})
+	if err != nil {
+		t.Fatalf("POST /api/v1/data-sources with a broken mapping: %v", err)
+	}
+	s.RequireStatus(resp, 400, "POST /api/v1/data-sources with a broken field_mapping")
+	s.RequireDeclaredStatus("POST", "/api/v1/data-sources", resp)
+	s.RequireSchema("POST", "/api/v1/data-sources", resp)
+}
+
+func TestDataSourceGetUnknownReturns404(t *testing.T) {
+	s := harness.New(t).WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Get(ctx, "/api/v1/data-sources/00000000-0000-0000-0000-000000000000", nil)
+	if err != nil {
+		t.Fatalf("GET unknown data source: %v", err)
+	}
+	s.RequireStatus(resp, 404, "GET unknown data source")
+	s.RequireDeclaredStatus("GET", "/api/v1/data-sources/{id}", resp)
+	s.RequireSchema("GET", "/api/v1/data-sources/{id}", resp)
+}
+
+func TestDataSourceSyncRejectsFileOnlySource(t *testing.T) {
+	s := harness.New(t).WithAdmin().WithDB()
+	w := buildWorld(t, s, "source-sync")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Post(ctx, "/api/v1/data-sources/"+w.source.ID+"/sync", nil)
+	if err != nil {
+		t.Fatalf("POST /api/v1/data-sources/{id}/sync: %v", err)
+	}
+	s.RequireStatus(resp, 400, "POST /api/v1/data-sources/{id}/sync on a file-only source")
+	s.RequireDeclaredStatus("POST", "/api/v1/data-sources/{id}/sync", resp)
+	s.RequireSchema("POST", "/api/v1/data-sources/{id}/sync", resp)
+}
+
+func TestDataSourceListContainsFixture(t *testing.T) {
+	s := harness.New(t).WithAdmin().WithDB()
+	w := buildWorld(t, s, "source-list")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Get(ctx, "/api/v1/data-sources", nil)
+	if err != nil {
+		t.Fatalf("GET /api/v1/data-sources: %v", err)
+	}
+	s.RequireStatus(resp, 200, "GET /api/v1/data-sources")
+	s.RequireSchema("GET", "/api/v1/data-sources", resp)
+
+	body, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode data sources: %v", err)
+	}
+	items, _ := harness.Items(body)
+	found := false
+	for _, item := range items {
+		obj, _ := item.(map[string]any)
+		if harness.StringField(obj, "id") == w.source.ID {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("data source list must contain fixture source %s", w.source.ID)
+	}
+}
+
+func trackDataSource(ctx context.Context, s *harness.Suite, sourceID string) {
+	s.T.Helper()
+	if sourceID == "" {
+		return
+	}
+	s.T.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = s.DB.Exec(cleanupCtx, `DELETE FROM data_source WHERE id = $1`, sourceID)
+	})
+}
