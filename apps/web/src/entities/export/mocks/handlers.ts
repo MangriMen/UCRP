@@ -6,6 +6,7 @@ import { mockExports } from './fixtures'
 const IN_SEGMENT = 120
 const WITH_CONTACT = 100
 const BLOCKED_BY_LIMIT = 10
+const XLSX_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 const exports: Export[] = structuredClone(mockExports)
 
@@ -58,6 +59,11 @@ export const exportHandlers = [
     const item = exports.find((e) => e.id === params.id)
     if (!item) return apiError(404, 'not_found', 'Выгрузка не найдена')
     if (item.status !== 'ready') return apiError(409, 'export_not_ready', 'Выгрузка ещё не готова')
+    if (item.format === 'xlsx') {
+      return new HttpResponse(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), {
+        headers: { 'Content-Type': XLSX_CONTENT_TYPE },
+      })
+    }
     return new HttpResponse('guest_id,phone\nguest-0001,+70000000001\n', {
       headers: { 'Content-Type': 'text/csv' },
     })

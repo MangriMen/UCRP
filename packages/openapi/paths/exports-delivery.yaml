@@ -39,22 +39,26 @@ paths:
       tags:
         - Exports
       operationId: downloadExport
-      summary: Export CSV (non-control recipients only)
-      description: The control group is not included in the file. If the export is not ready — 409 `export_not_ready`.
+      summary: Export file, CSV or XLSX by the export format (non-control recipients only)
+      description: The control group is not included in the file. The file is XLSX when the export format is `xlsx`, otherwise CSV. If the export is not ready — 409 `export_not_ready`.
       x-roles:
         - R-1
       x-uc:
         - UC-5
       responses:
         '200':
-          description: CSV file
+          description: CSV or XLSX file
           headers:
             Content-Disposition:
               schema:
                 type: string
-              description: attachment; filename="export-{id}.csv"
+              description: attachment; filename="export-{id}.csv" or "export-{id}.xlsx"
           content:
             text/csv:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
               schema:
                 type: string
                 format: binary

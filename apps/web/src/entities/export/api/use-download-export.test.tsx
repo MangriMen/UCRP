@@ -9,10 +9,10 @@ import { API, apiError } from '@/shared/api/mocks/helpers'
 import * as saveBlobModule from '@/shared/lib/save-blob'
 import { DownloadExportButton } from '../ui/download-export-button'
 
-function renderButton() {
+function renderButton(format: 'csv' | 'xlsx' = 'csv') {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <DownloadExportButton exportId="export-0001" />
+      <DownloadExportButton exportId="export-0001" format={format} />
     </QueryClientProvider>,
   )
 }
@@ -41,6 +41,14 @@ describe('DownloadExportButton', () => {
     expect(blob.type).toBe('text/csv')
     expect(blob.size).toBe(4)
     expect(auth).toBe('Bearer secret')
+  })
+
+  it('saves an Excel export with the xlsx extension', async () => {
+    const save = vi.spyOn(saveBlobModule, 'saveBlob').mockImplementation(() => {})
+    renderButton('xlsx')
+    await userEvent.click(screen.getByRole('button', { name: 'Скачать Excel' }))
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1))
+    expect(save.mock.calls[0][1]).toBe('export-export-0001.xlsx')
   })
 
   it('shows the server error when the export is not ready', async () => {

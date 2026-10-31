@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"strings"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"github.com/MangriMen/UCRP/e2e/client"
 	"github.com/MangriMen/UCRP/e2e/fixtures"
 	"github.com/MangriMen/UCRP/e2e/harness"
+	"github.com/xuri/excelize/v2"
 )
 
 type exportWorld struct {
@@ -273,6 +275,60 @@ func TestExportDownloadExcludesControlGroup(t *testing.T) {
 	}
 	if !strings.HasPrefix(lines[0], "guest_id") {
 		t.Fatalf("CSV header: expected guest_id column, got %q", lines[0])
+	}
+}
+
+func TestExportDownloadXLSX(t *testing.T) {
+	s := harness.New(t).WithDB().WithMarketer()
+	ew := buildExportWorld(t, s, "export-xlsx", 3)
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Post(ctx, "/api/v1/exports", map[string]any{
+		"segmentId":      ew.segment.ID,
+		"channel":        "sms",
+		"format":         "xlsx",
+		"controlPercent": 0,
+		"idempotencyKey": s.Reg.Name("key-xlsx"),
+	})
+	if err != nil {
+		t.Fatalf("POST /api/v1/exports: %v", err)
+	}
+	s.RequireStatus(resp, 201, "POST /api/v1/exports with the xlsx format")
+	body, err := resp.JSON()
+	if err != nil {
+		t.Fatalf("decode export: %v", err)
+	}
+	obj, _ := body.(map[string]any)
+	exportID := harness.StringField(obj, "id")
+	trackExport(s, exportID)
+	if got := harness.StringField(obj, "format"); got != "xlsx" {
+		t.Fatalf("export format: expected xlsx, got %q", got)
+	}
+
+	download, err := s.API.Get(ctx, "/api/v1/exports/"+exportID+"/download", nil)
+	if err != nil {
+		t.Fatalf("GET export download: %v", err)
+	}
+	s.RequireStatus(download, 200, "GET /api/v1/exports/{id}/download for xlsx")
+	if got := download.Header.Get("Content-Type"); !strings.Contains(got, "spreadsheetml.sheet") {
+		t.Fatalf("Content-Type: expected the xlsx media type, got %q", got)
+	}
+	if got := download.Header.Get("Content-Disposition"); !strings.HasSuffix(got, `.xlsx"`) {
+		t.Fatalf("Content-Disposition: expected an .xlsx file name, got %q", got)
+	}
+
+	book, err := excelize.OpenReader(bytes.NewReader(download.Body))
+	if err != nil {
+		t.Fatalf("open downloaded xlsx: %v", err)
+	}
+	defer func() { _ = book.Close() }()
+	rows, err := book.GetRows(book.GetSheetList()[0])
+	if err != nil {
+		t.Fatalf("read downloaded xlsx: %v", err)
+	}
+	if len(rows) != 4 || rows[0][0] != "guest_id" {
+		t.Fatalf("xlsx must hold a guest_id header plus 3 recipients, got %v", rows)
 	}
 }
 
