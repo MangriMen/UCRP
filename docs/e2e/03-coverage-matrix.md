@@ -176,30 +176,30 @@ R-4 не читает правила лимитов: `GET /contact-limits` от�
 
 ## 8. Идентичность (UC-11, UC-12)
 
-| Требование                                  | UC    | US    | Endpoint                                 | Тест                                                 | Тип | Статус         |
-| ------------------------------------------- | ----- | ----- | ---------------------------------------- | ---------------------------------------------------- | --- | -------------- |
-| Очередь с причиной и score                  | UC-11 | US-11 | `GET /merge-candidates`                  | `TestMergeCandidatesListContract`                    | P,C | OK             |
-| Фильтр по `resolution`                      | UC-11 | US-11 | `GET /merge-candidates?resolution=`      | `TestMergeCandidateListFiltersByResolution`          | P   | OK             |
-| Детали пары: два профиля                    | UC-11 | US-11 | `GET /merge-candidates/{id}`             | `TestMergeCandidateGetContract`                      | P,C | OK             |
-| Неизвестная пара → 404                      | UC-11 | —     | `GET /merge-candidates/{id}`             | `TestMergeCandidateUnknownReturns404`                | N   | OK             |
-| Confirm переносит события и идентификаторы  | UC-11 | US-11 | `POST .../confirm`                       | `TestMergeCandidateConfirmMovesEventsAndIdentifiers` | P,B | OK             |
-| Confirm: поглощённый профиль `merged`       | UC-11 | US-11 | `GET /guests/{id}`                       | `TestMergeCandidateConfirmMovesEventsAndIdentifiers` | B   | OK             |
-| Повторный confirm → 409                     | UC-11 | US-11 | `POST .../confirm`                       | `TestMergeCandidateConfirmTwiceReturns409`           | N,B | OK             |
-| Reject создаёт запрет                       | UC-11 | US-11 | `POST .../reject`                        | `TestMergeCandidateRejectCreatesBlock`               | P,B | OK             |
-| Revert возвращает данные                    | UC-11 | US-11 | `POST .../revert`                        | `TestMergeCandidateRevertRestoresOrigin`             | P,B | OK             |
-| Revert нерешённой пары → 409                | UC-11 | —     | `POST .../revert`                        | `TestMergeCandidateRevertPendingReturns409`          | N   | OK             |
-| Пара под запретом → 409                     | UC-11 | US-11 | `POST /guests/{id}/merge`                | `merge.manual.blocked`                               | N,B | OK (без теста) |
-| Ручное объединение с собой → 400            | UC-11 | —     | `POST /guests/{id}/merge`                | `merge.manual.self`                                  | N   | OK (без теста) |
-| Список запретов и снятие                    | UC-11 | US-11 | `/merge-blocks*`                         | `merge.blocks.list-delete`                           | P   | OK (без теста) |
-| Аудит решения                               | UC-11 | US-11 | `GET /audit-logs`                        | `merge.confirm.audit`                                | B   | OK (дефект)    |
-| R-1 только читает очередь                   | UC-11 | US-11 | `POST .../confirm`                       | `TestRoleMatrix`                                     | N,S | OK             |
-| Автосклейка: гость создаётся из импорта     | UC-12 | US-2  | наблюдение через `GET /guests`           | `TestIdentityResolveCreatesGuestFromImport`          | B   | OK             |
-| Автосклейка: привязка к существующему гостю | UC-12 | US-2  | наблюдение через `GET /guests`           | `TestIdentityResolveAttachesToExistingGuest`         | B   | OK             |
-| Автосклейка по общему телефону              | UC-12 | US-11 | наблюдение через `GET /merge-candidates` | `TestIdentityAutoMergeOnSharedPhone`                 | B   | OK             |
-| Спорная пара по общему email                | UC-12 | US-11 | наблюдение через `GET /merge-candidates` | `TestIdentityPendingCandidateOnSharedEmail`          | B   | OK             |
-| Сквозной цикл склейки и разъединения        | UC-11 | US-11 | `/merge-candidates*`                     | `TestE2EIdentityMergeLifecycle`                      | E   | OK             |
+| Требование                                      | UC    | US    | Endpoint                                 | Тест                                                 | Тип | Статус         |
+| ----------------------------------------------- | ----- | ----- | ---------------------------------------- | ---------------------------------------------------- | --- | -------------- |
+| Очередь с причиной и score                      | UC-11 | US-11 | `GET /merge-candidates`                  | `TestMergeCandidatesListContract`                    | P,C | OK             |
+| Фильтр по `resolution`                          | UC-11 | US-11 | `GET /merge-candidates?resolution=`      | `TestMergeCandidateListFiltersByResolution`          | P   | OK             |
+| Детали пары: два профиля                        | UC-11 | US-11 | `GET /merge-candidates/{id}`             | `TestMergeCandidateGetContract`                      | P,C | OK             |
+| Неизвестная пара → 404                          | UC-11 | —     | `GET /merge-candidates/{id}`             | `TestMergeCandidateUnknownReturns404`                | N   | OK             |
+| Confirm переносит события и идентификаторы      | UC-11 | US-11 | `POST .../confirm`                       | `TestMergeCandidateConfirmMovesEventsAndIdentifiers` | P,B | OK             |
+| Confirm: поглощённый профиль `merged`           | UC-11 | US-11 | `GET /guests/{id}`                       | `TestMergeCandidateConfirmMovesEventsAndIdentifiers` | B   | OK             |
+| Повторный confirm → 409                         | UC-11 | US-11 | `POST .../confirm`                       | `TestMergeCandidateConfirmTwiceReturns409`           | N,B | OK             |
+| Reject создаёт запрет                           | UC-11 | US-11 | `POST .../reject`                        | `TestMergeCandidateRejectCreatesBlock`               | P,B | OK             |
+| Revert возвращает данные                        | UC-11 | US-11 | `POST .../revert`                        | `TestMergeCandidateRevertRestoresOrigin`             | P,B | OK             |
+| Revert нерешённой пары → 409                    | UC-11 | —     | `POST .../revert`                        | `TestMergeCandidateRevertPendingReturns409`          | N   | OK             |
+| Пара под запретом → 409                         | UC-11 | US-11 | `POST /guests/{id}/merge`                | `merge.manual.blocked`                               | N,B | OK (без теста) |
+| Ручное объединение с собой → 400                | UC-11 | —     | `POST /guests/{id}/merge`                | `merge.manual.self`                                  | N   | OK (без теста) |
+| Список запретов и снятие                        | UC-11 | US-11 | `/merge-blocks*`                         | `merge.blocks.list-delete`                           | P   | OK (без теста) |
+| Аудит решения                                   | UC-11 | US-11 | `GET /audit-logs`                        | `merge.confirm.audit`                                | B   | OK (дефект)    |
+| R-1 только читает очередь                       | UC-11 | US-11 | `POST .../confirm`                       | `TestRoleMatrix`                                     | N,S | OK             |
+| Автообъединение: гость создаётся из импорта     | UC-12 | US-2  | наблюдение через `GET /guests`           | `TestIdentityResolveCreatesGuestFromImport`          | B   | OK             |
+| Автообъединение: привязка к существующему гостю | UC-12 | US-2  | наблюдение через `GET /guests`           | `TestIdentityResolveAttachesToExistingGuest`         | B   | OK             |
+| Автообъединение по общему телефону              | UC-12 | US-11 | наблюдение через `GET /merge-candidates` | `TestIdentityAutoMergeOnSharedPhone`                 | B   | OK             |
+| Спорная пара по общему email                    | UC-12 | US-11 | наблюдение через `GET /merge-candidates` | `TestIdentityPendingCandidateOnSharedEmail`          | B   | OK             |
+| Сквозной цикл объединения и разъединения        | UC-11 | US-11 | `/merge-candidates*`                     | `TestE2EIdentityMergeLifecycle`                      | E   | OK             |
 
-Аудит склейки пишется, но `request_id` в записи остаётся `NULL`
+Аудит объединения пишется, но `request_id` в записи остаётся `NULL`
 (`02-contradictions.md` G4), поэтому требование «каждая запись содержит
 `requestId`» не выполняется.
 
@@ -262,21 +262,21 @@ R-4 не читает правила лимитов: `GET /contact-limits` от�
 
 ## 12. Требования без endpoint (проверить нельзя)
 
-| Требование                             | Причина                                         |
-| -------------------------------------- | ----------------------------------------------- |
-| Конверсия и инкремент по кампании      | `GET /campaigns/{id}/results` не смонтирован    |
-| Источник без загрузок — не ошибка      | `GET /data-quality/sources/{id}` не смонтирован |
-| Детали и динамика по источнику         | то же                                           |
-| Пересчёт сегментов по событию (UC-13)  | только очередь `segment.recompute`              |
-| Расчёт рекомендаций по событию (UC-15) | только очередь `recommend.refresh`              |
-| Схлопывание заданий по `dedup_key`     | нет REST к `job_queue`                          |
-| Инкремент против контрольной группы    | требует накопления событий и окна атрибуции     |
-| Match rate, доля оспоренных склеек     | агрегаты по объёму данных                       |
-| Время «сегмент → выгрузка» ≤ 5 мин     | метрика по `segment_version.created_at`         |
-| Rate limit логина                      | примитив не реализован, порог не задан          |
-| Таймауты 504                           | нет управляемой задержки                        |
-| Физическое удаление запрещено          | проверяется только косвенно                     |
+| Требование                              | Причина                                         |
+| --------------------------------------- | ----------------------------------------------- |
+| Конверсия и инкремент по кампании       | `GET /campaigns/{id}/results` не смонтирован    |
+| Источник без загрузок — не ошибка       | `GET /data-quality/sources/{id}` не смонтирован |
+| Детали и динамика по источнику          | то же                                           |
+| Пересчёт сегментов по событию (UC-13)   | только очередь `segment.recompute`              |
+| Расчёт рекомендаций по событию (UC-15)  | только очередь `recommend.refresh`              |
+| Схлопывание заданий по `dedup_key`      | нет REST к `job_queue`                          |
+| Инкремент против контрольной группы     | требует накопления событий и окна атрибуции     |
+| Match rate, доля оспоренных объединений | агрегаты по объёму данных                       |
+| Время «сегмент → выгрузка» ≤ 5 мин      | метрика по `segment_version.created_at`         |
+| Rate limit логина                       | примитив не реализован, порог не задан          |
+| Таймауты 504                            | нет управляемой задержки                        |
+| Физическое удаление запрещено           | проверяется только косвенно                     |
 
-Автосклейка профилей (UC-12) больше не входит в этот список: воркер
+Автообъединение профилей (UC-12) больше не входит в этот список: воркер
 `identity.resolve` работает, и её поведение наблюдается через
 `GET /merge-candidates` и `GET /guests` (`TestIdentity*`).

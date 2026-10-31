@@ -18,9 +18,9 @@
 | `auth.RequireRole` не подключён, ролевых 403 нет       | подключён ко всем приватным маршрутам (§2.9)                                             |
 | Нет импорта, выгрузок, справочников, аналитики, аудита | все группы смонтированы (§5 `01-requirements-map.md`)                                    |
 | Воркер помечает задания `done` без обработки           | обрабатывает `import.process`, `connector.pull`, `identity.resolve`, `segment.recompute` |
-| Автосклейки нет                                        | `internal/identity.Resolver` создаёт и подтверждает пары                                 |
-| Аудит не пишется                                       | пишется в транзакциях склейки (`merge_tx.go`)                                            |
-| Склейка без транзакции                                 | одна транзакция + `audit_log` (BR-18 закрыт)                                             |
+| Автообъединения нет                                    | `internal/identity.Resolver` создаёт и подтверждает пары                                 |
+| Аудит не пишется                                       | пишется в транзакциях объединения (`merge_tx.go`)                                        |
+| Объединение без транзакции                             | одна транзакция + `audit_log` (BR-18 закрыт)                                             |
 | Токен отдаётся как `access_token`                      | `accessToken`/`tokenType`/`expiresIn` (D5 закрыт)                                        |
 | `GET /guests` возвращает `status=merged`               | фильтр `status = 'active'`                                                               |
 | `q` не проверяется                                     | 400 при `q` короче 2 символов                                                            |
@@ -71,7 +71,7 @@
   `SegmentVersionStatus` (pending/computing/ready/failed) в OpenAPI и добавить
   `versionStatus` в `Segment`.
 
-### D3. Причина запрета склейки: `manual_reject`/`auto_conflict` или `rejected` — **открыто**
+### D3. Причина запрета объединения: `manual_reject`/`auto_conflict` или `rejected` — **открыто**
 
 - **Что:** `docs/openapi/components/schemas/identity.json` → `MergeBlock.reason`
   enum `manual_unmerge|manual_reject|auto_conflict`. DDL:
@@ -198,7 +198,7 @@
   `request_id` заполняется. **`details` не заполняется никогда** — структура
   `ErrorDetail` содержит поле, но ни один вызов `WriteError` его не передаёт.
 - Вне enum контракта: `missing_columns` (422 при импорте, `import_service.go`).
-- Бизнес-коды не различаются: повторное решение по паре и запрет склейки дают
+- Бизнес-коды не различаются: повторное решение по паре и запрет объединения дают
   общий `conflict` вместо `already_resolved`/`merge_blocked`; агрегаты R-3 при
   чужом `tenant_id` отдают `forbidden_role` вместо `forbidden_tenant`.
 - Реализованы и соответствуют контракту: `segment_not_ready`,
@@ -258,7 +258,7 @@
 - `GET /segments/{id}/recommendations` отдаёт `{items[{tenant_id, score, guests}]}`;
   такого агрегата в контракте нет — операция описана иначе.
 
-### 2.6. Склейки: транзакционность, аудит, коды, сортировка
+### 2.6. Объединения: транзакционность, аудит, коды, сортировка
 
 Реализовано и соответствует контракту:
 
@@ -266,7 +266,7 @@
   `MarkMerged` → перенос событий → перенос идентификаторов →
   `UPDATE merge_candidate` → запись в `audit_log` (действия `merge.confirm`,
   `merge.reject`, `merge.revert`, `merge.manual`, `merge.auto`);
-- запрет склейки создаётся при reject (`rejected`) и revert (`manual_unmerge`);
+- запрет объединения создаётся при reject (`rejected`) и revert (`manual_unmerge`);
 - `POST /guests/{id}/merge` реализован.
 
 Расхождения:
@@ -289,7 +289,7 @@
 Закрыто (проверено в коде и на запущенном сервисе):
 
 - `q` обязателен, минимум 2 символа → 400;
-- `GET /guests` и `GET /guests?q=` фильтруют `status = 'active'` — склеенные
+- `GET /guests` и `GET /guests?q=` фильтруют `status = 'active'` — объединённые
   профили в выдачу не попадают;
 - `DELETE /guests/{id}` реализован;
 - `GET /guests/{id}/contacts` реализован.
@@ -416,17 +416,17 @@ GET /api/v1/data-quality/sources/{id}   (UC-9,  x-roles R-4,R-2)
 
 ### G4. Аудит: частично закрыто
 
-`audit_log` пишется только операциями склейки (`merge.confirm`, `merge.reject`,
+`audit_log` пишется только операциями объединения (`merge.confirm`, `merge.reject`,
 `merge.revert`, `merge.manual`, `merge.auto`). `AuditService.Insert` не вызывается
 ни из одного другого сервиса: создание сегмента, импорт, выгрузка, изменения
 справочников и пользователей записей не оставляют. BR-30 проверяем только для
-склейки.
+объединения.
 
-### G5. Автосклейка: закрыто
+### G5. Автообъединение: закрыто
 
 `internal/identity/resolver.go` реализован: находит существующего гостя по
 нормализованному идентификатору, привязывает событие, при совпадении телефона
-делает автосклейку (`score 90`, `auto_merged`), при совпадении email ставит пару
+делает автообъединение (`score 90`, `auto_merged`), при совпадении email ставит пару
 в очередь (`pending`, score 70/75). Порог из NB-1 («≥ 80») в коде не используется —
 вместо него фиксированные значения по типу ключа.
 
@@ -505,8 +505,8 @@ markdown-отчёт о расхождениях). 129 тестов — 130 фу�
 | Категория      | Что можно тестировать сейчас                                                                              | Что нельзя                                                                                                                                                         |
 | -------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Контракт       | `POST /auth/login`, `GET /auth/me`, `GET /guests`, `GET /data-source-types`, `/segments` (кроме `status`) | схемы `GuestProfile`, `Event`, `MergeCandidate`, `Import*`, `Export*`, `ContactLimit`, `User`, `AuditLog`, `CrossTenantReport`; `meta` вне `/guests` и `/segments` |
-| Бизнес-правила | BR-1…BR-10, BR-12…BR-14, BR-17, BR-18, BR-19, BR-26, BR-27, BR-28                                         | BR-11 (fallback), BR-15 (частично), BR-20/BR-21 (коды), BR-22/BR-23 (форма), BR-25, BR-29, BR-30 (кроме склейки)                                                   |
-| E2E            | импорт → гости → сегмент → рекомендации → выгрузка; склейка и разъединение; лимиты контактов              | стадии, зависящие от `recommend.refresh` и `export.build`; `campaigns/{id}/results`; `data-quality/sources/{id}`                                                   |
+| Бизнес-правила | BR-1…BR-10, BR-12…BR-14, BR-17, BR-18, BR-19, BR-26, BR-27, BR-28                                         | BR-11 (fallback), BR-15 (частично), BR-20/BR-21 (коды), BR-22/BR-23 (форма), BR-25, BR-29, BR-30 (кроме объединения)                                               |
+| E2E            | импорт → гости → сегмент → рекомендации → выгрузка; объединение и разъединение; лимиты контактов          | стадии, зависящие от `recommend.refresh` и `export.build`; `campaigns/{id}/results`; `data-quality/sources/{id}`                                                   |
 | Роли           | вся матрица 403, изоляция R-3 на `/tenants/{id}/aggregates`                                               | карточки арендатора для R-3 (`GET /tenants/{id}` возвращает 403) и `PATCH /tenants/{id}` для R-1                                                                   |
 | Асинхронность  | `PUT /segments/{id}` → `pending` → `ready` + `computedAt`; `identity.resolve` после импорта               | `recommend.refresh`, `export.build`, проверки 504 по управляемой задержке                                                                                          |
 
