@@ -1,12 +1,13 @@
 import { http, HttpResponse } from 'msw'
 import { API, apiError, mockId, paged } from '@/shared/api/mocks/helpers'
+import { collectLeaves } from '../model/rule'
 import { isSegmentComputing } from '../model/status'
 import type {
   Segment,
   SegmentCreateRequest,
   SegmentMember,
   SegmentPreview,
-  SegmentRule,
+  SegmentRuleNode,
   SegmentUpdateRequest,
 } from '../model/types'
 import { mockSegments, mockSegmentTemplates, mockSegmentVersions } from './fixtures'
@@ -15,11 +16,16 @@ const READY_MEMBER_COUNT = 150
 
 const PREVIEW_BASE_SIZE = 1200
 
-function previewFor(rule: SegmentRule, limit: number): SegmentPreview {
-  const conditions = Object.values(rule).filter((value) =>
-    Array.isArray(value) ? value.length > 0 : value != null,
-  ).length
-  const size = Math.floor(PREVIEW_BASE_SIZE / conditions)
+function previewFor(rule: SegmentRuleNode, limit: number): SegmentPreview {
+  const conditions = collectLeaves(rule).reduce(
+    (total, leaf) =>
+      total +
+      Object.values(leaf).filter((value) =>
+        Array.isArray(value) ? value.length > 0 : value != null,
+      ).length,
+    0,
+  )
+  const size = Math.floor(PREVIEW_BASE_SIZE / Math.max(conditions, 1))
   return {
     size,
     examples: Array.from({ length: Math.min(limit, size) }, (_, index) => ({
@@ -89,8 +95,10 @@ export const segmentHandlers = [
   }),
 
   http.post(`${API}/segments/preview`, async ({ request }) => {
-    const body = (await request.json()) as { rule: SegmentRule; limit: number }
-    const overlap = body.rule.was?.some((id) => body.rule.wasNot?.includes(id))
+    const body = (await request.json()) as { rule: SegmentRuleNode; limit: number }
+    const overlap = collectLeaves(body.rule).some((leaf) =>
+      leaf.was?.some((id) => leaf.wasNot?.includes(id)),
+    )
     if (overlap) return apiError(400, 'validation_error', 'Арендатор указан в was и wasNot')
     return HttpResponse.json(previewFor(body.rule, body.limit))
   }),

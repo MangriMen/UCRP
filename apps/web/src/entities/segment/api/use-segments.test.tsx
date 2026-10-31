@@ -13,7 +13,11 @@ describe('segment hooks', () => {
   it('filters segments by status', async () => {
     const { result } = renderHook(() => useSegments({ status: 'ready' }), { wrapper })
     await waitFor(() => expect(result.current.data).toBeDefined())
-    expect(result.current.data?.items.map((s) => s.id)).toEqual(['segment-0001', 'segment-0002'])
+    expect(result.current.data?.items.map((s) => s.id)).toEqual([
+      'segment-0001',
+      'segment-0002',
+      'segment-0005',
+    ])
   })
 
   it('pages members and reports the total', async () => {

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { SegmentRule } from '@/entities/segment'
+import { isRuleGroup, type SegmentRule, type SegmentRuleNode } from '@/entities/segment'
 
 export const MAX_PERIOD_DAYS = 730
 
@@ -13,7 +13,7 @@ const isIntegerInRange = (value: string, min: number, max: number) => {
   return number >= min && number <= max
 }
 
-const ruleFields = z.object({
+const leafFields = z.object({
   periodDays: z
     .string()
     .trim()
@@ -39,9 +39,9 @@ const ruleFields = z.object({
     }),
 })
 
-type RuleFields = z.infer<typeof ruleFields>
+type LeafValues = z.infer<typeof leafFields>
 
-const rejectTenantOverlap = (values: RuleFields, context: z.RefinementCtx) => {
+const rejectTenantOverlap = (values: LeafValues, context: z.RefinementCtx) => {
   if (values.was.some((id) => values.wasNot.includes(id))) {
     context.addIssue({
       code: 'custom',
@@ -51,20 +51,43 @@ const rejectTenantOverlap = (values: RuleFields, context: z.RefinementCtx) => {
   }
 }
 
-export const ruleFormSchema = ruleFields.superRefine(rejectTenantOverlap)
+export const leafSchema = leafFields.superRefine(rejectTenantOverlap)
 
-export const segmentFormSchema = ruleFields
-  .extend({
-    name: z.string().trim().min(1, 'Введите название').max(200, 'Не более 200 символов'),
-    description: z.string().trim().max(1000, 'Не более 1000 символов'),
-    templateCode: z.string().nullable(),
+export const MAX_GROUP_DEPTH = 1
+
+export const operatorOptions = ['and', 'or'] as const
+
+export type Operator = (typeof operatorOptions)[number]
+
+export interface GroupValues {
+  operator: Operator
+  conditions: LeafValues[]
+  groups: GroupValues[]
+}
+
+const buildGroupSchema = (depth: number): z.ZodType<GroupValues, GroupValues> =>
+  z.object({
+    operator: z.enum(operatorOptions),
+    conditions: z.array(leafSchema).min(1, 'Добавьте хотя бы одно условие'),
+    groups: depth > 0 ? z.array(buildGroupSchema(depth - 1)) : z.array(z.never()).max(0),
   })
-  .superRefine(rejectTenantOverlap)
 
-export type RuleFormValues = z.infer<typeof ruleFormSchema>
+export const ruleFormSchema = buildGroupSchema(MAX_GROUP_DEPTH)
+
+export const segmentFormSchema = z.object({
+  name: z.string().trim().min(1, 'Введите название').max(200, 'Не более 200 символов'),
+  description: z.string().trim().max(1000, 'Не более 1000 символов'),
+  templateCode: z.string().nullable(),
+  operator: z.enum(operatorOptions),
+  conditions: z.array(leafSchema).min(1, 'Добавьте хотя бы одно условие'),
+  groups: z.array(buildGroupSchema(MAX_GROUP_DEPTH - 1)),
+})
+
+export type LeafFormValues = LeafValues
+export type RuleFormValues = GroupValues
 export type SegmentFormValues = z.infer<typeof segmentFormSchema>
 
-export const emptyRuleValues: RuleFormValues = {
+export const emptyLeafValues: LeafFormValues = {
   periodDays: '90',
   was: [],
   wasNot: [],
@@ -75,9 +98,15 @@ export const emptyRuleValues: RuleFormValues = {
   minAmount: '',
 }
 
+export const emptyGroupValues = (): GroupValues => ({
+  operator: 'and',
+  conditions: [{ ...emptyLeafValues }],
+  groups: [],
+})
+
 const nonEmpty = (ids: string[]) => (ids.length > 0 ? ids : undefined)
 
-export function toRule(values: RuleFormValues): SegmentRule {
+function toLeaf(values: LeafFormValues): SegmentRule {
   return {
     periodDays: Number(values.periodDays),
     was: nonEmpty(values.was),
@@ -93,7 +122,14 @@ export function toRule(values: RuleFormValues): SegmentRule {
   }
 }
 
-export function toRuleFormValues(rule: SegmentRule): RuleFormValues {
+export function toRule(values: GroupValues): SegmentRuleNode {
+  return {
+    operator: values.operator,
+    conditions: [...values.conditions.map(toLeaf), ...values.groups.map(toRule)],
+  }
+}
+
+function toLeafValues(rule: SegmentRule): LeafFormValues {
   return {
     periodDays: String(rule.periodDays),
     was: rule.was ?? [],
@@ -105,3 +141,21 @@ export function toRuleFormValues(rule: SegmentRule): RuleFormValues {
     minAmount: rule.minAmountMinor == null ? '' : String(rule.minAmountMinor / MINOR_PER_MAJOR),
   }
 }
+
+const isLeaf = (node: SegmentRuleNode): node is SegmentRule => !isRuleGroup(node)
+
+function toGroupValues(node: SegmentRuleNode, depth: number): GroupValues {
+  if (!isRuleGroup(node)) {
+    return { operator: 'and', conditions: [toLeafValues(node)], groups: [] }
+  }
+  const leaves = node.conditions.filter(isLeaf)
+  const groups = depth > 0 ? node.conditions.filter(isRuleGroup) : []
+  return {
+    operator: node.operator,
+    conditions: leaves.map(toLeafValues),
+    groups: groups.map((group) => toGroupValues(group, depth - 1)),
+  }
+}
+
+export const toRuleFormValues = (node: SegmentRuleNode): GroupValues =>
+  toGroupValues(node, MAX_GROUP_DEPTH)

@@ -1,4 +1,4 @@
-import type { Segment, SegmentRule, SegmentTemplate, SegmentVersion } from '../model/types'
+import type { Segment, SegmentRuleNode, SegmentTemplate, SegmentVersion } from '../model/types'
 
 export const mockSegments: Segment[] = [
   {
@@ -61,15 +61,42 @@ export const mockSegments: Segment[] = [
     createdAt: '2026-10-20T09:00:00Z',
     updatedAt: '2026-10-20T09:30:00Z',
   },
+  {
+    id: 'segment-0005',
+    name: 'Лояльные или крупные',
+    description: 'Часто ходят к соседям либо тратят много',
+    templateCode: null,
+    isTemplate: false,
+    currentVersionNo: 1,
+    status: 'ready',
+    memberCount: 64,
+    computedAt: '2026-10-30T06:00:00Z',
+    rule: {
+      operator: 'and',
+      conditions: [
+        { periodDays: 90, requireContact: 'phone' },
+        {
+          operator: 'or',
+          conditions: [
+            { periodDays: 90, minVisits: 5 },
+            { periodDays: 180, minAmountMinor: 500000 },
+          ],
+        },
+      ],
+    },
+    ruleText: 'С телефоном и (от 5 визитов за 90 дней или от 5 000 ₽ за 180 дней)',
+    createdAt: '2026-10-25T09:00:00Z',
+    updatedAt: '2026-10-30T06:00:00Z',
+  },
 ]
 
 export function mockSegmentVersions(segment: Segment): SegmentVersion[] {
   return Array.from({ length: segment.currentVersionNo }, (_, index) => {
     const versionNo = segment.currentVersionNo - index
     const isCurrent = versionNo === segment.currentVersionNo
-    const rule: SegmentRule = isCurrent
+    const rule: SegmentRuleNode = isCurrent
       ? (segment.rule ?? { periodDays: 90 })
-      : { ...segment.rule, periodDays: 30 }
+      : { periodDays: 30 }
     return {
       id: `${segment.id}-v${versionNo}`,
       segmentId: segment.id,
@@ -116,8 +143,14 @@ export const mockSegmentTemplates: SegmentTemplate[] = [
   {
     code: 'high_value',
     name: 'Высокий чек',
-    description: 'Крупные покупки за период',
-    rule: { periodDays: 180, minAmountMinor: 500000 },
+    description: 'Крупные покупки за период или частые визиты',
+    rule: {
+      operator: 'or',
+      conditions: [
+        { periodDays: 180, minAmountMinor: 500000 },
+        { periodDays: 90, minVisits: 5 },
+      ],
+    },
     defaultPeriodDays: 180,
   },
 ]

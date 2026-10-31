@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { SegmentRule } from '@/entities/segment'
+import type { SegmentRuleNode } from '@/entities/segment'
 import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
 import { formatDateTime } from '@/shared/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -9,12 +9,12 @@ import { usePreviewSegment } from '../api/use-preview-segment'
 const PREVIEW_DEBOUNCE_MS = 600
 
 interface PreviewPanelProps {
-  rule: SegmentRule | null
+  rule: SegmentRuleNode | null
 }
 
 export function PreviewPanel({ rule }: PreviewPanelProps) {
   const ruleKey = useDebouncedValue(JSON.stringify(rule), PREVIEW_DEBOUNCE_MS)
-  const debouncedRule = useMemo<SegmentRule | null>(() => JSON.parse(ruleKey), [ruleKey])
+  const debouncedRule = useMemo<SegmentRuleNode | null>(() => JSON.parse(ruleKey), [ruleKey])
   const preview = usePreviewSegment(debouncedRule)
   const isStale = JSON.stringify(rule) !== ruleKey
 

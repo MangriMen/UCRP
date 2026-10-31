@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { SegmentTopTenants } from '@/entities/recommendation'
-import { isSegmentComputing, SegmentStatusBadge, useSegment } from '@/entities/segment'
+import { isSegmentComputing, RuleSummary, SegmentStatusBadge, useSegment } from '@/entities/segment'
 import { useAuth } from '@/entities/user'
 import { BuildSegmentButton } from '@/features/build-segment'
 import { CreateExportButton } from '@/features/create-export'
@@ -75,12 +75,14 @@ export function SegmentDetailsPage() {
           </CardContent>
         </Card>
       </div>
-      {segment.ruleText && (
+      {(segment.rule || segment.ruleText) && (
         <Card>
           <CardHeader>
             <CardTitle>Правило</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm">{segment.ruleText}</CardContent>
+          <CardContent className="text-sm">
+            {segment.rule ? <RuleSummary rule={segment.rule} /> : segment.ruleText}
+          </CardContent>
         </Card>
       )}
       {canManage && (
