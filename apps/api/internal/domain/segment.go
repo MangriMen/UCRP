@@ -47,9 +47,10 @@ type SegmentVersion struct {
 }
 
 type SegmentRule struct {
-	Was        []string `json:"was"`
-	WasNot     []string `json:"was_not"`
-	PeriodDays int      `json:"period_days"`
+	Was            []string `json:"was"`
+	WasNot         []string `json:"was_not"`
+	PeriodDays     int      `json:"period_days"`
+	RequireContact string   `json:"require_contact,omitempty"`
 }
 
 type GuestContact struct {

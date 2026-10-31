@@ -28,9 +28,10 @@ func NewSegmentService(repo domain.SegmentRepo, evaluator domain.SegmentEvaluato
 }
 
 type SegmentPreviewRequest struct {
-	Was        []string `json:"was"`
-	WasNot     []string `json:"was_not"`
-	PeriodDays int      `json:"period_days"`
+	Was            []string `json:"was"`
+	WasNot         []string `json:"was_not"`
+	PeriodDays     int      `json:"period_days"`
+	RequireContact string   `json:"require_contact"`
 }
 
 type SegmentPreviewResponse struct {
@@ -39,12 +40,13 @@ type SegmentPreviewResponse struct {
 }
 
 type SegmentCreateRequest struct {
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	TemplateCode string   `json:"template_code"`
-	Was          []string `json:"was"`
-	WasNot       []string `json:"was_not"`
-	PeriodDays   int      `json:"period_days"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description"`
+	TemplateCode   string   `json:"template_code"`
+	Was            []string `json:"was"`
+	WasNot         []string `json:"was_not"`
+	PeriodDays     int      `json:"period_days"`
+	RequireContact string   `json:"require_contact"`
 }
 
 type SegmentDTO struct {
@@ -62,9 +64,10 @@ type SegmentDTO struct {
 
 func (s *SegmentService) Preview(ctx context.Context, req SegmentPreviewRequest) (*SegmentPreviewResponse, error) {
 	size, examples, err := s.evaluator.Preview(ctx, domain.SegmentRule{
-		Was:        req.Was,
-		WasNot:     req.WasNot,
-		PeriodDays: req.PeriodDays,
+		Was:            req.Was,
+		WasNot:         req.WasNot,
+		PeriodDays:     req.PeriodDays,
+		RequireContact: req.RequireContact,
 	})
 	if err != nil {
 		return nil, err
@@ -73,7 +76,7 @@ func (s *SegmentService) Preview(ctx context.Context, req SegmentPreviewRequest)
 }
 
 func (s *SegmentService) Create(ctx context.Context, req SegmentCreateRequest, actorUserID string) (*SegmentDTO, error) {
-	rule := domain.SegmentRule{Was: req.Was, WasNot: req.WasNot, PeriodDays: req.PeriodDays}
+	rule := domain.SegmentRule{Was: req.Was, WasNot: req.WasNot, PeriodDays: req.PeriodDays, RequireContact: req.RequireContact}
 	members, err := s.evaluator.Evaluate(ctx, rule)
 	if err != nil {
 		return nil, err
@@ -158,7 +161,7 @@ func (s *SegmentService) Update(ctx context.Context, id string, req SegmentCreat
 	if seg.Status == domain.SegmentArchived {
 		return nil, domain.ErrConflict
 	}
-	rule := domain.SegmentRule{Was: req.Was, WasNot: req.WasNot, PeriodDays: req.PeriodDays}
+	rule := domain.SegmentRule{Was: req.Was, WasNot: req.WasNot, PeriodDays: req.PeriodDays, RequireContact: req.RequireContact}
 	ruleJSON, _ := json.Marshal(rule)
 	now := s.clock.Now()
 	ver := &domain.SegmentVersion{
