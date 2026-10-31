@@ -59,7 +59,7 @@ func New(t *testing.T) *Suite {
 	})
 
 	if cfg.BaseURL == "" {
-		t.Skip("UCRP_E2E_BASE_URL is not set: start the API and export the E2E environment (docs/e2e/05-implementation.md)")
+		t.Skip("UCRP_E2E_BASE_URL is not set: start the API and export the E2E environment (see apps/api/README.md, e2e/run.sh)")
 	}
 	s.API = client.New(cfg.BaseURL, cfg.RequestTimeout)
 
