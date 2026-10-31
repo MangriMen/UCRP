@@ -1,0 +1,92 @@
+import type { MergeCandidate, MergeCandidateDetail } from '../model/types'
+
+type Profile = MergeCandidateDetail['guestA']
+
+export const mockMergeCandidates: MergeCandidate[] = [
+  {
+    id: 'candidate-0001',
+    guestAId: 'guest-0001',
+    guestBId: 'guest-0002',
+    reasonCode: 'shared_phone_names_differ',
+    reasonText: 'Общий телефон, имена различаются',
+    score: 72,
+    resolution: 'pending',
+    createdAt: '2026-10-29T09:00:00Z',
+  },
+  {
+    id: 'candidate-0002',
+    guestAId: 'guest-0001',
+    guestBId: 'guest-0004',
+    reasonCode: 'shared_email',
+    reasonText: 'Общий email',
+    score: 95,
+    resolution: 'confirmed',
+    winnerGuestId: 'guest-0001',
+    mergedGuestId: 'guest-0004',
+    decidedBy: 'user-0001',
+    decidedAt: '2026-09-20T08:00:00Z',
+    createdAt: '2026-09-19T08:00:00Z',
+  },
+]
+
+export const mockProfiles: Record<string, Profile> = {
+  'guest-0001': {
+    id: 'guest-0001',
+    displayName: 'Иван Петров',
+    status: 'active',
+    tenantCount: 3,
+    eventCount: 14,
+    firstSeenAt: '2026-01-12T10:00:00Z',
+    lastSeenAt: '2026-10-28T18:20:00Z',
+    createdAt: '2026-01-12T10:00:00Z',
+    updatedAt: '2026-10-28T18:20:00Z',
+    identifiers: [
+      {
+        id: 'identifier-0001',
+        guestId: 'guest-0001',
+        idType: 'phone',
+        valueNormalized: '79001234567',
+        isReliable: true,
+      },
+    ],
+    tenants: [],
+    segments: [],
+  },
+  'guest-0002': {
+    id: 'guest-0002',
+    displayName: 'Мария Иванова',
+    status: 'active',
+    tenantCount: 1,
+    eventCount: 4,
+    firstSeenAt: '2026-06-03T12:30:00Z',
+    lastSeenAt: '2026-10-02T15:10:00Z',
+    createdAt: '2026-06-03T12:30:00Z',
+    updatedAt: '2026-10-02T15:10:00Z',
+    identifiers: [
+      {
+        id: 'identifier-0003',
+        guestId: 'guest-0002',
+        idType: 'phone',
+        valueNormalized: '79001234567',
+        isReliable: false,
+      },
+    ],
+    tenants: [],
+    segments: [],
+  },
+  'guest-0004': {
+    id: 'guest-0004',
+    displayName: 'Пётр Сидоров',
+    status: 'merged',
+    mergedIntoId: 'guest-0001',
+    tenantCount: 1,
+    eventCount: 2,
+    firstSeenAt: '2026-03-01T08:00:00Z',
+    lastSeenAt: '2026-03-15T08:00:00Z',
+    createdAt: '2026-03-01T08:00:00Z',
+    updatedAt: '2026-09-20T08:00:00Z',
+    identifiers: [],
+    tenants: [],
+    segments: [],
+  },
+}
