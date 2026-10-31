@@ -16,7 +16,7 @@ export {
   scopeTypeLabels,
   subjectTypeLabels,
 } from './model/labels'
-export { availableTransitions, isGrantEditable } from './model/lifecycle'
+export { availableTransitions, isGrantEditable, isStaffRoleGrant } from './model/lifecycle'
 export { TENANT_ROLE_ID } from './model/tenant-role'
 export {
   GRANT_SUBJECT_TYPES,

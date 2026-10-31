@@ -4,6 +4,7 @@ import {
   AccessAuditTable,
   GrantStatusBadge,
   effectLabels,
+  isStaffRoleGrant,
   presetLabel,
   scopeTypeLabels,
   subjectParams,
@@ -155,15 +156,17 @@ export function AccessGrantDetailsPage() {
               </ul>
             )}
           </section>
-          <div>
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={<Link to={`/access/effective?${subjectQuery}`} />}
-            >
-              Эффективный доступ субъекта
-            </Button>
-          </div>
+          {!isStaffRoleGrant(grant) && (
+            <div>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<Link to={`/access/effective?${subjectQuery}`} />}
+              >
+                Эффективный доступ субъекта
+              </Button>
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="history" className="pt-4">
           <GrantHistory grantId={grant.id} />

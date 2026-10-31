@@ -1,8 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { describe, expect, it } from 'vitest'
+import { server } from '@/app/mocks/server'
+import { mockAccessGrants } from '@/entities/access/mocks'
 import { userKeys, type Me } from '@/entities/user'
 import { mockUsers } from '@/entities/user/mocks'
 import { AccessGrantDetailsPage } from './access-grant-details-page'
@@ -71,6 +74,24 @@ describe('AccessGrantDetailsPage', () => {
     expect(await screen.findByText('Отозван')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Отозвать' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Изменить' })).not.toBeInTheDocument()
+  })
+
+  it('offers no actions or effective access for a staff role grant', async () => {
+    server.use(
+      http.get('*/api/v1/access/grants/bootstrap-role-marketer', () =>
+        HttpResponse.json({
+          ...mockAccessGrants[0],
+          id: 'bootstrap-role-marketer',
+          subjectType: 'role',
+          subjectId: 'marketer',
+        }),
+      ),
+    )
+    renderPage('/access/grants/bootstrap-role-marketer')
+    expect(await screen.findByText('Обзор')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Отозвать' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Изменить' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Эффективный доступ субъекта')).not.toBeInTheDocument()
   })
 
   it('reports a missing grant', async () => {

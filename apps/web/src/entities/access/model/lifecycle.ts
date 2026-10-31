@@ -14,7 +14,7 @@ const TRANSITIONS: GrantTransition[] = ['activate', 'suspend', 'revoke']
 export const isGrantEnded = (grant: AccessGrant, now = new Date()) =>
   grant.validTo !== null && grant.validTo !== undefined && new Date(grant.validTo) <= now
 
-const isStaffRoleGrant = (grant: AccessGrant) =>
+export const isStaffRoleGrant = (grant: AccessGrant) =>
   grant.subjectType === 'role' && grant.subjectId !== TENANT_ROLE_ID
 
 export const isGrantEditable = (grant: AccessGrant, now = new Date()) =>
