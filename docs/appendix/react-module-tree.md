@@ -1,16 +1,13 @@
 # Дерево React-модулей (проектное, без кода)
 
-Стек: React (JSX) + Vite, React Router, TanStack Query и Table, React Hook Form. Связь с backend — только REST `/api/v1` через `api/`. Модуль `features/admin` добавлен к списку плана (D-14).
+Стек: React + Vite + TypeScript, shadcn/ui (Tailwind), React Router, TanStack Query и Table, React Hook Form. Связь с backend — только REST `/api/v1` через `shared/api`. Структура соответствует `ARCHITECTURE.md`, раздел 3 (`app → features → shared`). Модуль `features/admin` добавлен к списку плана (D-14).
 
 ```text
 src/
-  api/                клиент fetch, перехват 401 → refresh (single-flight), формат ошибок,
-                      хуки TanStack Query по ресурсам, типы ответов
-  auth/               AuthProvider, LoginPage, useAuth (role, tenantId), RoleGuard
-  routes/             конфигурация маршрутов, меню по роли, защищённые маршруты, 403/404 страницы
-  components/         DataTable (виртуализация), FormField, ErrorBanner, StatusBadge,
-                      ConfirmDialog, Pagination, EmptyState
+  app/                провайдеры (QueryClient, Router), конфигурация маршрутов, layout,
+                      меню по роли, защищённые маршруты, 403/404 страницы, глобальные стили
   features/
+    auth/             AuthProvider, LoginPage, useAuth (role, tenantId), RoleGuard
     import/           UploadForm, BatchList, BatchStatus (опрос 2 с), RejectedTable, SyncButton
     profiles/         GuestSearch, GuestProfile, EventFeed, MergeQueue, MergeCompare,
                       UnmergeBlocks, ContactHistory
@@ -23,16 +20,22 @@ src/
     tenant/           TenantAggregatesPage (единственный раздел R-3), SmallCellNotice
     dq/               SourceQualityTable, SourceDetail
     admin/            Tenants, Categories, Projects, EventTypes, DataSources, Users, AuditLog
+  shared/
+    api/              клиент fetch, перехват 401 → refresh (single-flight), формат ошибок,
+                      QueryClient; хуки TanStack Query по ресурсам живут в features/*/api
+    ui/               shadcn-компоненты и базовые: DataTable (виртуализация), FormField,
+                      ErrorBanner, StatusBadge, ConfirmDialog, Pagination, EmptyState
+    lib/              утилиты (cn и т. п.)
 ```
 
 ## Правила
 
 | Правило | Описание |
 |---|---|
-| Единственный вход к данным | Компоненты не вызывают `fetch` напрямую, только хуки из `api/` |
-| Доступ | `routes/` скрывает пункты по `role`; решающая проверка на backend (403 обрабатывается `ErrorBanner`) |
+| Единственный вход к данным | Компоненты не вызывают `fetch` напрямую, только хуки из `shared/api` или `features/*/api` |
+| Доступ | `app/` (маршруты, меню) скрывает пункты по `role`; решающая проверка на backend (403 обрабатывается `ErrorBanner`) |
 | Изоляция R-3 | Для роли `tenant` в меню один пункт `features/tenant`; `tenantId` берётся из `GET /auth/me`, в URL и формах не вводится |
-| Состояние | Серверное — TanStack Query; локальное — состояние компонента; глобальный стор только для `auth/` |
+| Состояние | Серверное — TanStack Query; локальное — состояние компонента; глобальный стор только для `features/auth` |
 | Обновления | Опрос (D-22): статус импорта 2 с, пересчёт сегмента и рекомендации 5 с |
 
 ## Соответствие компонентам
@@ -46,9 +49,9 @@ src/
 | CMP-5 Recommendations | `features/recommendations` |
 | CMP-6 Export | `features/export` |
 | CMP-7 Analytics | `features/dashboard`, `features/tenant`, `features/dq` |
-| CMP-8 Access & Auth | `auth/`, `routes/`, `features/admin` (Users) |
+| CMP-8 Access & Auth | `features/auth`, `app/` (маршруты), `features/admin` (Users) |
 | CMP-9 Audit | `features/admin` (AuditLog) |
 | CMP-10 Reference | `features/admin` (справочники, источники) |
 
 ## Чекпойнт
-Создано: дерево React-модулей `api/`, `auth/`, `routes/`, `components/`, `features/{import,profiles,segments,recommendations,export,dashboard,tenant,dq,admin}`; соответствие CMP-1…CMP-10. Решения: D-14, D-22, D-29.
+Создано: дерево React-модулей `app/`, `shared/{api,ui,lib}`, `features/{auth,import,profiles,segments,recommendations,export,dashboard,tenant,dq,admin}`; соответствие CMP-1…CMP-10. Решения: D-14, D-22, D-29.
