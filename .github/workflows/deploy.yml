@@ -65,6 +65,9 @@ jobs:
               - 'deploy/api/**'
             web:
               - 'apps/web/**'
+              - 'packages/api-docs/**'
+              - 'docs/openapi.json'
+              - 'docs/openapi/**'
               - 'deploy/web/**'
               - 'package.json'
               - 'bun.lock'
@@ -179,11 +182,12 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           UCRP_ADMIN_EMAIL: ${{ secrets.UCRP_ADMIN_EMAIL }}
           UCRP_ADMIN_PASSWORD: ${{ secrets.UCRP_ADMIN_PASSWORD }}
+          DOCS_HTPASSWD: ${{ secrets.DOCS_HTPASSWD }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: COMPOSE_FILE_NAME,SERVER_DIR,GHCR_USER,GHCR_TOKEN,UCRP_JWT_SECRET,POSTGRES_PASSWORD,UCRP_ADMIN_EMAIL,UCRP_ADMIN_PASSWORD
+          envs: COMPOSE_FILE_NAME,SERVER_DIR,GHCR_USER,GHCR_TOKEN,UCRP_JWT_SECRET,POSTGRES_PASSWORD,UCRP_ADMIN_EMAIL,UCRP_ADMIN_PASSWORD,DOCS_HTPASSWD
           script: |
             set -e
 

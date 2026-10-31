@@ -28,6 +28,8 @@ jobs:
             frontend:
               - 'apps/web/**'
               - 'packages/**'
+              - 'docs/openapi.json'
+              - 'docs/openapi/**'
               - 'package.json'
               - 'bun.lock'
               - 'turbo.jsonc'
