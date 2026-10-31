@@ -24,12 +24,12 @@ func NewImportHandler(imports *service.ImportService, sources *service.DataSourc
 
 func (h *ImportHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(64 << 20); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Ожидается multipart/form-data")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Ожидается multipart/form-data")
 		return
 	}
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Не передан файл")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Не передан файл")
 		return
 	}
 	defer func() { _ = file.Close() }()

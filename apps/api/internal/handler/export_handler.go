@@ -23,7 +23,7 @@ func NewExportHandler(exports *service.ExportService) *ExportHandler {
 func (h *ExportHandler) Preview(w http.ResponseWriter, r *http.Request) {
 	var req service.ExportPreviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	res, err := h.exports.Preview(r.Context(), req)
@@ -38,7 +38,7 @@ func (h *ExportHandler) Create(w http.ResponseWriter, r *http.Request) {
 	key := r.Header.Get("Idempotency-Key")
 	var req service.ExportCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
 	if req.IdempotencyKey == "" {

@@ -224,7 +224,7 @@
         "tags": ["Imports"],
         "operationId": "syncDataSource",
         "summary": "Manually trigger a pull from an API source",
-        "description": "Enqueues a `connector.pull` job with `dedupKey = pull:{sourceId}:{window}`. If a sync for the same window is already running, returns 409 `sync_in_progress`.",
+        "description": "Enqueues a `connector.pull` job with `dedupKey = pull:{sourceId}:{window}`. If a sync for the same window is already running, returns 409 `sync_in_progress`. A file-only source returns 400.",
         "x-roles": ["R-4"],
         "x-uc": ["UC-14"],
         "responses": {
@@ -237,6 +237,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
           },
           "401": {
             "$ref": "../components/responses.json#/Unauthorized"

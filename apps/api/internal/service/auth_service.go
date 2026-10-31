@@ -24,13 +24,46 @@ type LoginResult struct {
 	AccessToken  string
 	RefreshToken string
 	ExpiresIn    int64
-	User         PublicUser
+	User         MeResponse
 }
 
-type PublicUser struct {
-	ID       string      `json:"id"`
-	Role     domain.Role `json:"role"`
-	TenantID string      `json:"tenant_id"`
+type MeResponse struct {
+	UserID      string   `json:"userId"`
+	Email       string   `json:"email"`
+	DisplayName string   `json:"displayName"`
+	Role        string   `json:"role"`
+	TenantID    string   `json:"tenantId,omitempty"`
+	Permissions []string `json:"permissions"`
+}
+
+func permissionsFor(role domain.Role) []string {
+	switch role {
+	case domain.RoleMarketer:
+		return []string{"guests:read", "segments:write", "exports:write", "contact-limits:write"}
+	case domain.RoleManager:
+		return []string{"guests:read", "imports:read", "data-sources:read", "users:write", "audit:read"}
+	case domain.RoleAnalyst:
+		return []string{"guests:read", "guests:merge", "imports:write", "data-sources:write", "reference:write", "segments:write", "dashboard:read", "dq:read"}
+	case domain.RoleTenant:
+		return []string{"dashboard:read", "campaigns:write"}
+	default:
+		return []string{}
+	}
+}
+
+func toMe(u *domain.User) MeResponse {
+	m := MeResponse{
+		UserID:      u.ID,
+		Email:       u.Email,
+		DisplayName: u.DisplayName,
+		Role:        string(u.Role),
+		TenantID:    u.TenantID,
+		Permissions: permissionsFor(u.Role),
+	}
+	if m.Permissions == nil {
+		m.Permissions = []string{}
+	}
+	return m
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (LoginResult, error) {
@@ -52,25 +85,25 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (LoginR
 		AccessToken:  pair.AccessToken,
 		RefreshToken: pair.RefreshToken,
 		ExpiresIn:    pair.ExpiresIn,
-		User:         PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID},
+		User:         toMe(u),
 	}, nil
 }
 
-func (s *AuthService) Me(ctx context.Context, userID string) (PublicUser, error) {
+func (s *AuthService) Me(ctx context.Context, userID string) (MeResponse, error) {
 	u, err := s.users.GetByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			return PublicUser{}, domain.ErrNotFound
+			return MeResponse{}, domain.ErrNotFound
 		}
-		return PublicUser{}, err
+		return MeResponse{}, err
 	}
-	return PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID}, nil
+	return toMe(u), nil
 }
 
-func (s *AuthService) CreateUser(ctx context.Context, email, password, displayName string, role domain.Role, tenantID string) (PublicUser, error) {
+func (s *AuthService) CreateUser(ctx context.Context, email, password, displayName string, role domain.Role, tenantID string) (MeResponse, error) {
 	hash, err := auth.HashPassword(password)
 	if err != nil {
-		return PublicUser{}, err
+		return MeResponse{}, err
 	}
 	u := &domain.User{
 		ID:           s.idGen.NewID(ctx),
@@ -83,7 +116,7 @@ func (s *AuthService) CreateUser(ctx context.Context, email, password, displayNa
 		CreatedAt:    s.clock.Now().UTC().Truncate(time.Second),
 	}
 	if err := s.users.Insert(ctx, u); err != nil {
-		return PublicUser{}, err
+		return MeResponse{}, err
 	}
-	return PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID}, nil
+	return toMe(u), nil
 }

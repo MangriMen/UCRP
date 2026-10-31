@@ -74,6 +74,20 @@ func (r *Registry) Cleanup(ctx context.Context) error {
 		note(r.db.Exec(ctx, `UPDATE guest SET status = 'active', merged_into_id = NULL WHERE id = $1`, guestID))
 	}
 
+	for _, tenantID := range r.created["tenant"] {
+		note(r.db.Exec(ctx, `DELETE FROM rejected_row rr USING import_batch ib, data_source ds WHERE rr.import_batch_id = ib.id AND ib.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
+		note(r.db.Exec(ctx, `DELETE FROM import_batch ib USING data_source ds WHERE ib.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
+		note(r.db.Exec(ctx, `DELETE FROM event e USING data_source ds WHERE e.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
+		note(r.db.Exec(ctx, `DELETE FROM data_source WHERE tenant_id = $1`, tenantID))
+	}
+
+	for _, segID := range r.created["segment"] {
+		note(r.db.Exec(ctx, `DELETE FROM export_member em USING export_job ej WHERE em.export_id = ej.id AND ej.segment_id = $1`, segID))
+		note(r.db.Exec(ctx, `DELETE FROM export_job WHERE segment_id = $1`, segID))
+		note(r.db.Exec(ctx, `DELETE FROM segment_member sm USING segment_version sv WHERE sm.segment_version_id = sv.id AND sv.segment_id = $1`, segID))
+		note(r.db.Exec(ctx, `DELETE FROM segment_version WHERE segment_id = $1`, segID))
+	}
+
 	order := []string{
 		"contact_log",
 		"export_member",

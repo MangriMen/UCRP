@@ -53,7 +53,7 @@ func TestRoleMatrix(t *testing.T) {
 		{"manager reads imports", "manager", "GET", "/api/v1/imports", nil, 200},
 		{"manager reads data sources", "manager", "GET", "/api/v1/data-sources", nil, 200},
 		{"manager cannot create imports", "manager", "POST", "/api/v1/imports", nil, 403},
-		{"manager cannot read exports", "manager", "GET", "/api/v1/exports", nil, 403},
+		{"manager reads exports", "manager", "GET", "/api/v1/exports", nil, 200},
 		{"manager cannot read guests", "manager", "GET", "/api/v1/guests?q=e2e", nil, 403},
 		{"manager cannot confirm merges", "manager", "POST", "/api/v1/merge-candidates/00000000-0000-0000-0000-000000000000/confirm", nil, 403},
 
@@ -61,7 +61,7 @@ func TestRoleMatrix(t *testing.T) {
 		{"analyst reads imports", "analyst", "GET", "/api/v1/imports", nil, 200},
 		{"analyst reads data sources", "analyst", "GET", "/api/v1/data-sources", nil, 200},
 		{"analyst reads data source types", "analyst", "GET", "/api/v1/data-source-types", nil, 200},
-		{"analyst cannot read exports", "analyst", "GET", "/api/v1/exports", nil, 403},
+		{"analyst reads exports", "analyst", "GET", "/api/v1/exports", nil, 200},
 		{"analyst cannot create exports", "analyst", "POST", "/api/v1/exports", map[string]any{}, 403},
 		{"analyst cannot preview exports", "analyst", "POST", "/api/v1/exports/preview", map[string]any{}, 403},
 	}

@@ -25,9 +25,9 @@ func TestDataSourceTypesDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode data source types: %v", err)
 	}
-	items, ok := harness.Items(body)
+	items, ok := body.([]any)
 	if !ok {
-		t.Fatalf("data source types response has no items array: %s", resp.Snippet())
+		t.Fatalf("data source types response is not an array: %s", resp.Snippet())
 	}
 	codes := map[string]bool{}
 	for _, item := range items {
@@ -55,7 +55,7 @@ func TestDataSourceCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode types: %v", err)
 	}
-	items, _ := harness.Items(typesBody)
+	items, _ := typesBody.([]any)
 	var csvTypeID string
 	for _, item := range items {
 		obj, _ := item.(map[string]any)

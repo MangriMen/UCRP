@@ -27,7 +27,7 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 		AccessToken:  pair.AccessToken,
 		RefreshToken: pair.RefreshToken,
 		ExpiresIn:    pair.ExpiresIn,
-		User:         PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID},
+		User:         toMe(u),
 	}, nil
 }
 
@@ -101,7 +101,7 @@ func (s *AuthService) CreateUserService(ctx context.Context, req UserCreateReque
 	if err != nil {
 		return nil, err
 	}
-	return &UserDTO{ID: pub.ID, Email: email, DisplayName: req.DisplayName, Role: string(pub.Role), TenantID: pub.TenantID, IsActive: true}, nil
+	return &UserDTO{ID: pub.UserID, Email: email, DisplayName: req.DisplayName, Role: pub.Role, TenantID: pub.TenantID, IsActive: true}, nil
 }
 
 func (s *AuthService) UpdateUser(ctx context.Context, id string, req UserUpdateRequest) (*UserDTO, error) {
