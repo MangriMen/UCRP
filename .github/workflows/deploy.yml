@@ -172,17 +172,25 @@ jobs:
         uses: appleboy/ssh-action@v1.2.5
         env:
           COMPOSE_FILE_NAME: ${{ vars.COMPOSE_FILE_NAME }}
+          SERVER_DIR: ${{ vars.SERVER_DIR }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UCRP_JWT_SECRET: ${{ secrets.UCRP_JWT_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          UCRP_ADMIN_EMAIL: ${{ secrets.UCRP_ADMIN_EMAIL }}
+          UCRP_ADMIN_PASSWORD: ${{ secrets.UCRP_ADMIN_PASSWORD }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: COMPOSE_FILE_NAME
+          envs: COMPOSE_FILE_NAME,SERVER_DIR,GHCR_USER,GHCR_TOKEN,UCRP_JWT_SECRET,POSTGRES_PASSWORD,UCRP_ADMIN_EMAIL,UCRP_ADMIN_PASSWORD
           script: |
             set -e
 
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            trap 'docker logout ghcr.io' EXIT
 
-            cd ${{ vars.SERVER_DIR }}
+            cd "$SERVER_DIR"
 
             mv .deploy-tmp/docker-compose.yml "$COMPOSE_FILE_NAME"
             rm -rf .deploy-tmp
@@ -195,12 +203,7 @@ jobs:
             fi
 
             export IMAGE_TAG=latest
-            export UCRP_JWT_SECRET="${{ secrets.UCRP_JWT_SECRET }}"
-            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
-            export UCRP_ADMIN_EMAIL="${{ secrets.UCRP_ADMIN_EMAIL }}"
-            export UCRP_ADMIN_PASSWORD="${{ secrets.UCRP_ADMIN_PASSWORD }}"
 
             $COMPOSE pull
             $COMPOSE up -d --remove-orphans
             docker image prune -f
-            docker logout

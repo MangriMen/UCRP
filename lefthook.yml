@@ -2,7 +2,6 @@ pre-commit:
   parallel: true
 
   jobs:
-    # Go-задачи включаются автоматически, как только появится apps/api/go.mod.
     - name: go:fmt
       root: 'apps/api/'
       glob: '**/*.go'

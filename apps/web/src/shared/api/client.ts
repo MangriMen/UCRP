@@ -32,7 +32,6 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler
 }
 
-// Single-flight: параллельные 401 ждут один и тот же запрос refresh.
 function refreshAccessToken(): Promise<boolean> {
   refreshing ??= fetch(`${BASE_URL}/auth/refresh`, {
     method: 'POST',
@@ -52,12 +51,8 @@ function refreshAccessToken(): Promise<boolean> {
 }
 
 async function toApiError(res: Response): Promise<ApiError> {
-  try {
-    const data = (await res.json()) as { error?: ApiErrorBody }
-    if (data.error) return new ApiError(res.status, data.error)
-  } catch {
-    // тело не JSON: падаем на общий текст ниже
-  }
+  const data = (await res.json().catch(() => null)) as { error?: ApiErrorBody } | null
+  if (data?.error) return new ApiError(res.status, data.error)
   return new ApiError(res.status, { code: 'internal_error', message: res.statusText })
 }
 

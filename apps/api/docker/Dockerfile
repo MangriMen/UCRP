@@ -1,28 +1,18 @@
-# UCRP backend — multi-stage build.
-# Context: apps/api (корень Go-модуля). Dockerfile: apps/api/docker/Dockerfile.
-#
-#   docker build -f docker/Dockerfile --build-arg APP=api    -t ucrp-api:local .
-#   docker build -f docker/Dockerfile --build-arg APP=worker -t ucrp-worker:local .
-
-# ---------- build ----------
 FROM golang:1.26-alpine AS build
 
 RUN apk add --no-cache ca-certificates git
 
 WORKDIR /src
 
-# Слой зависимостей кэшируется, пока не изменится go.mod / go.sum
 COPY go.mod go.sum* ./
 RUN go mod download
 
 COPY . .
 
-# APP=api | worker — какую точку входа собираем
 ARG APP=api
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags='-s -w' -o /out/server ./cmd/${APP}
 
-# ---------- runtime ----------
 FROM alpine:3.21 AS runtime
 
 RUN apk add --no-cache ca-certificates tzdata

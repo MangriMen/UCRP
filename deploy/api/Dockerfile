@@ -12,10 +12,16 @@ FROM alpine:3.21 AS runner
 RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 COPY --from=build /out/server /app/server
-RUN mkdir -p /data/uploads
+RUN addgroup -S -g 10001 ucrp \
+    && adduser -S -u 10001 -G ucrp ucrp \
+    && mkdir -p /data/uploads \
+    && chown -R ucrp:ucrp /data
+USER ucrp
 ENV UCRP_HTTP_ADDR=:8080 \
     UCRP_UPLOAD_DIR=/data/uploads \
     UCRP_LOG_LEVEL=info \
     TZ=UTC
 EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1
 ENTRYPOINT ["/app/server"]
