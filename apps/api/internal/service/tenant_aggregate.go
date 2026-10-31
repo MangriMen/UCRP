@@ -3,7 +3,7 @@ package service
 import "context"
 
 type TenantVisitAggregate struct {
-	VisitsCount *int `json:"visits_count"`
+	VisitsCount *int `json:"visitsCount"`
 	Suppressed  bool `json:"suppressed"`
 }
 

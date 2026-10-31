@@ -1,13 +1,7 @@
 {
   "TenantGuestIdentifier": {
     "type": "object",
-    "required": [
-      "id",
-      "guestId",
-      "idType",
-      "valueNormalized",
-      "createdAt"
-    ],
+    "required": ["id", "guestId", "idType", "valueNormalized", "createdAt"],
     "properties": {
       "id": {
         "type": "string"
@@ -49,9 +43,7 @@
       },
       "status": {
         "type": "string",
-        "enum": [
-          "active"
-        ]
+        "enum": ["active"]
       },
       "firstSeenAt": {
         "type": "string",
@@ -126,9 +118,7 @@
   },
   "TenantGuestEvents": {
     "type": "object",
-    "required": [
-      "items"
-    ],
+    "required": ["items"],
     "properties": {
       "items": {
         "type": "array",
@@ -141,12 +131,9 @@
   "TenantVisitAggregate": {
     "type": "object",
     "description": "Only present when metric.visits_count.read is granted; suppressed if fewer than k distinct guests.",
-    "required": [
-      "visits_count",
-      "suppressed"
-    ],
+    "required": ["visitsCount", "suppressed"],
     "properties": {
-      "visits_count": {
+      "visitsCount": {
         "type": "integer",
         "nullable": true
       },
@@ -162,12 +149,9 @@
   },
   "ManagementTenantAggregate": {
     "type": "object",
-    "required": [
-      "new_guests",
-      "hidden"
-    ],
+    "required": ["newGuests", "hidden"],
     "properties": {
-      "new_guests": {
+      "newGuests": {
         "type": "integer"
       },
       "hidden": {

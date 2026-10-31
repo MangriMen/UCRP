@@ -47,16 +47,16 @@
   "TenantOwnReference": {
     "type": "object",
     "description": "Own tenant reference visible to an authorized tenant; internal priority is not included.",
-    "required": ["id", "code", "name", "category_id", "kind", "floor", "is_active"],
+    "required": ["id", "code", "name", "categoryId", "kind", "floor", "isActive"],
     "additionalProperties": false,
     "properties": {
       "id": { "type": "string" },
       "code": { "type": "string" },
       "name": { "type": "string" },
-      "category_id": { "type": "string" },
+      "categoryId": { "type": "string" },
       "kind": { "type": "string" },
       "floor": { "type": "integer" },
-      "is_active": { "type": "boolean" }
+      "isActive": { "type": "boolean" }
     }
   },
   "TenantOwnReferencePage": {
