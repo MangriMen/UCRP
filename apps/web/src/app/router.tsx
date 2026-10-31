@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import { RoleGuard } from '@/entities/user'
+import { GuestsPage } from '@/pages/guests'
 import { ImportDetailsPage } from '@/pages/import-details'
 import { ImportsPage } from '@/pages/imports'
 import { LoginPage } from '@/pages/login'
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
               { path: 'import', element: <ImportsPage /> },
               { path: 'import/:id', element: <ImportDetailsPage /> },
             ],
+          },
+          {
+            element: <RoleGuard roles={['marketer', 'analyst']} />,
+            children: [{ path: 'guests', element: <GuestsPage /> }],
           },
           { path: '*', element: <NotFoundPage /> },
         ],
