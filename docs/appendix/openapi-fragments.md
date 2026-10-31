@@ -17,17 +17,17 @@
 }
 ```
 
-| HTTP | `error.code` | Когда |
-|---|---|---|
-| 400 | `validation_failed`, `idempotency_key_required`, `invalid_rule` | неверное тело или параметры, нет `Idempotency-Key`, тенант в «был» и «не был» |
-| 401 | `unauthorized`, `invalid_credentials`, `token_expired` | нет или просрочен токен, неверный логин |
-| 403 | `forbidden_role`, `forbidden_tenant` | роль не в списке реестра; R-3 запросил чужой `tenant_id` |
-| 404 | `not_found` | объект не найден |
-| 409 | `contact_limit_exceeded`, `segment_not_ready`, `merge_blocked`, `already_resolved`, `sync_in_progress`, `export_not_ready` | конфликт состояния |
-| 413 | `file_too_large` | более 100 тыс. строк или лимит размера |
-| 422 | `bad_format`, `missing_columns` | неверный формат файла или нет обязательных колонок |
-| 429 | `rate_limited` | слишком много попыток входа |
-| 504 | `timeout` | истёк дедлайн `context` |
+| HTTP | `error.code`                                                                                                               | Когда                                                                         |
+| ---- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 400  | `validation_failed`, `idempotency_key_required`, `invalid_rule`                                                            | неверное тело или параметры, нет `Idempotency-Key`, тенант в «был» и «не был» |
+| 401  | `unauthorized`, `invalid_credentials`, `token_expired`                                                                     | нет или просрочен токен, неверный логин                                       |
+| 403  | `forbidden_role`, `forbidden_tenant`                                                                                       | роль не в списке реестра; R-3 запросил чужой `tenant_id`                      |
+| 404  | `not_found`                                                                                                                | объект не найден                                                              |
+| 409  | `contact_limit_exceeded`, `segment_not_ready`, `merge_blocked`, `already_resolved`, `sync_in_progress`, `export_not_ready` | конфликт состояния                                                            |
+| 413  | `file_too_large`                                                                                                           | более 100 тыс. строк или лимит размера                                        |
+| 422  | `bad_format`, `missing_columns`                                                                                            | неверный формат файла или нет обязательных колонок                            |
+| 429  | `rate_limited`                                                                                                             | слишком много попыток входа                                                   |
+| 504  | `timeout`                                                                                                                  | истёк дедлайн `context`                                                       |
 
 ## 2. Аутентификация
 
@@ -61,10 +61,16 @@
 
 ```json
 {
-  "id": "b-101", "data_source_id": "ds-pos", "mode": "file",
+  "id": "b-101",
+  "data_source_id": "ds-pos",
+  "mode": "file",
   "status": "completed_with_errors",
-  "total": 1000, "accepted": 940, "rejected": 12, "duplicate": 48,
-  "started_at": "2026-09-30T10:00:03Z", "finished_at": "2026-09-30T10:00:41Z"
+  "total": 1000,
+  "accepted": 940,
+  "rejected": 12,
+  "duplicate": 48,
+  "started_at": "2026-09-30T10:00:03Z",
+  "finished_at": "2026-09-30T10:00:41Z"
 }
 ```
 
@@ -75,10 +81,22 @@
 ```json
 {
   "items": [
-    { "row_number": 17, "error_code": "bad_date", "error_message": "Не распознана дата «31.31.2026»", "raw_line": "..." },
-    { "row_number": 52, "error_code": "no_external_id", "error_message": "Нет номера операции", "raw_line": "..." }
+    {
+      "row_number": 17,
+      "error_code": "bad_date",
+      "error_message": "Не распознана дата «31.31.2026»",
+      "raw_line": "..."
+    },
+    {
+      "row_number": 52,
+      "error_code": "no_external_id",
+      "error_message": "Нет номера операции",
+      "raw_line": "..."
+    }
   ],
-  "page": 1, "page_size": 50, "total": 12
+  "page": 1,
+  "page_size": 50,
+  "total": 12
 }
 ```
 
@@ -90,8 +108,12 @@
 
 ```json
 {
-  "id": "g-1001", "display_name": "Анна К.", "status": "active", "merged_into_id": null,
-  "tenant_count": 2, "tenants": ["Кофейня Bean", "ФитЗона"],
+  "id": "g-1001",
+  "display_name": "Анна К.",
+  "status": "active",
+  "merged_into_id": null,
+  "tenant_count": 2,
+  "tenants": ["Кофейня Bean", "ФитЗона"],
   "identifiers": [
     { "id_type": "phone", "value": "79001234567", "source_id": "ds-pos" },
     { "id_type": "email", "value": "anna@example.com", "source_id": "ds-crm" }
@@ -107,8 +129,15 @@
 ```json
 {
   "items": [
-    { "id": "e-3", "type": "purchase", "tenant": "Кофейня Bean", "project": null,
-      "occurred_at": "2026-09-20T09:15:00Z", "amount_minor": 28000, "currency": "RUB" }
+    {
+      "id": "e-3",
+      "type": "purchase",
+      "tenant": "Кофейня Bean",
+      "project": null,
+      "occurred_at": "2026-09-20T09:15:00Z",
+      "amount_minor": 28000,
+      "currency": "RUB"
+    }
   ],
   "next_page": null
 }
@@ -118,16 +147,23 @@
 
 ```json
 {
-  "guest_id": "g-1001", "computed_at": "2026-10-30T09:00:00Z", "algorithm_version": "v1",
+  "guest_id": "g-1001",
+  "computed_at": "2026-10-30T09:00:00Z",
+  "algorithm_version": "v1",
   "items": [
-    { "rank": 1, "tenant_id": "t-cine", "tenant_name": "Кинотеатр Синема", "score": 0.78,
+    {
+      "rank": 1,
+      "tenant_id": "t-cine",
+      "tenant_name": "Кинотеатр Синема",
+      "score": 0.78,
       "explanation": "Похожие гости ходят в Кинотеатр Синема, Спорт и Развлечения смежны, недавняя активность, 3 этаж",
       "factors": [
-        { "code": "similar_guests", "raw_value": 0.85, "weight": 0.40, "contribution": 0.34 },
-        { "code": "category_adjacency", "raw_value": 0.70, "weight": 0.25, "contribution": 0.175 },
-        { "code": "recency", "raw_value": 0.90, "weight": 0.25, "contribution": 0.225 },
-        { "code": "distance", "raw_value": 0.40, "weight": 0.10, "contribution": 0.04 }
-      ] }
+        { "code": "similar_guests", "raw_value": 0.85, "weight": 0.4, "contribution": 0.34 },
+        { "code": "category_adjacency", "raw_value": 0.7, "weight": 0.25, "contribution": 0.175 },
+        { "code": "recency", "raw_value": 0.9, "weight": 0.25, "contribution": 0.225 },
+        { "code": "distance", "raw_value": 0.4, "weight": 0.1, "contribution": 0.04 }
+      ]
+    }
   ]
 }
 ```
@@ -141,8 +177,10 @@
 ```json
 {
   "rule": {
-    "was": ["t-bean", "t-fit"], "was_not": ["t-cine"],
-    "period_days": 90, "require_contact": "phone"
+    "was": ["t-bean", "t-fit"],
+    "was_not": ["t-cine"],
+    "period_days": 90,
+    "require_contact": "phone"
   }
 }
 ```
@@ -176,17 +214,23 @@
 `POST /exports` — R-1; обязателен заголовок `Idempotency-Key`.
 
 ```json
-{ "segment_id": "s-1", "channel": "sms", "format": "csv", "control_percent": 33, "campaign_id": "c-1" }
+{
+  "segment_id": "s-1",
+  "channel": "sms",
+  "format": "csv",
+  "control_percent": 33,
+  "campaign_id": "c-1"
+}
 ```
 
-| Ответ | Тело / причина |
-|---|---|
-| 201 | `{ "id": "x-1", "status": "ready", "total_in_segment": 5, "no_contact_count": 1, "blocked_by_limit_count": 1, "control_count": 1, "exported_count": 2 }`; повтор с тем же ключом возвращает ту же выгрузку |
-| 202 | `{ "id": "x-2", "status": "queued" }` — более 20 000 членов, строится заданием `export.build` |
-| 400 | нет `Idempotency-Key` или неверное тело |
-| 404 | сегмента нет |
-| 409 | `segment_not_ready` или `contact_limit_exceeded` (все исключены; `details` содержит разбивку причин) |
-| 504 | `timeout` |
+| Ответ | Тело / причина                                                                                                                                                                                             |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 201   | `{ "id": "x-1", "status": "ready", "total_in_segment": 5, "no_contact_count": 1, "blocked_by_limit_count": 1, "control_count": 1, "exported_count": 2 }`; повтор с тем же ключом возвращает ту же выгрузку |
+| 202   | `{ "id": "x-2", "status": "queued" }` — более 20 000 членов, строится заданием `export.build`                                                                                                              |
+| 400   | нет `Idempotency-Key` или неверное тело                                                                                                                                                                    |
+| 404   | сегмента нет                                                                                                                                                                                               |
+| 409   | `segment_not_ready` или `contact_limit_exceeded` (все исключены; `details` содержит разбивку причин)                                                                                                       |
+| 504   | `timeout`                                                                                                                                                                                                  |
 
 `GET /exports/{id}/download` — CSV только не-контрольных получателей, колонки `guest_id,channel,contact,segment_name,campaign_id` (Q-20); 409 `export_not_ready`, если статус не `ready`.
 
@@ -194,8 +238,11 @@
 
 ```json
 {
-  "export_id": "x-1", "channel": "sms", "segment_name": "Спящий сосед, кино", "campaign_id": "c-1",
-  "items": [ { "guest_id": "g-1001", "contact": "79001234567", "is_control": false } ],
+  "export_id": "x-1",
+  "channel": "sms",
+  "segment_name": "Спящий сосед, кино",
+  "campaign_id": "c-1",
+  "items": [{ "guest_id": "g-1001", "contact": "79001234567", "is_control": false }],
   "next_page": null
 }
 ```
@@ -230,11 +277,17 @@
   "contested_merge_share": 0.004,
   "segment_to_export_minutes_p50": 3.2,
   "conversion": 0.041,
-  "incremental_visits": { "recipients_rate": 0.041, "control_rate": 0.026, "lift": 0.015, "significant": true }
+  "incremental_visits": {
+    "recipients_rate": 0.041,
+    "control_rate": 0.026,
+    "lift": 0.015,
+    "significant": true
+  }
 }
 ```
 
 Источники каждого показателя и формулы — `docs/15-consistency.md`, раздел 8. Поле может быть `null`, если данных нет (пустое состояние).
 
 ## Чекпойнт
+
 Описаны: единый формат ошибок, 202/200 импорта, профиль и рекомендации, сегменты, выгрузка (201/202/409), склейки, агрегаты R-3, метрики. Новых `Q`/`D` не добавлено.

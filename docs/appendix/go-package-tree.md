@@ -52,31 +52,32 @@ internal/
 
 ## Правила зависимостей
 
-| Пакет | Может импортировать | Не может |
-|---|---|---|
-| `domain` | стандартную библиотеку | всё остальное |
-| `handler` | `service`, `domain`, `platform/auth`, `platform/httpx` | `repository`, `ingestion`… |
-| `service` | `domain`, пакеты возможностей через интерфейсы | `handler`, `repository` (только интерфейсы из `domain`) |
-| `repository` | `domain`, `repository/sqlstore` | `service`, `handler` |
-| `ingestion`, `identity`, `segments`, `recommend`, `export` | `domain`, `platform/*` | `handler`, друг друга напрямую (через `service`/очередь) |
-| `cmd/*` | всё (композиция) | — |
+| Пакет                                                      | Может импортировать                                    | Не может                                                 |
+| ---------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------- |
+| `domain`                                                   | стандартную библиотеку                                 | всё остальное                                            |
+| `handler`                                                  | `service`, `domain`, `platform/auth`, `platform/httpx` | `repository`, `ingestion`…                               |
+| `service`                                                  | `domain`, пакеты возможностей через интерфейсы         | `handler`, `repository` (только интерфейсы из `domain`)  |
+| `repository`                                               | `domain`, `repository/sqlstore`                        | `service`, `handler`                                     |
+| `ingestion`, `identity`, `segments`, `recommend`, `export` | `domain`, `platform/*`                                 | `handler`, друг друга напрямую (через `service`/очередь) |
+| `cmd/*`                                                    | всё (композиция)                                       | —                                                        |
 
 Исключения: пакет `identity/normalize` (чистые функции нормализации ключей, без доступа к БД) могут импортировать `ingestion` и `identity`; во всех остальных случаях `ingestion` не вызывает `identity` напрямую. Исключение для Identity: `ingestion` не вызывает `identity` напрямую — он ставит задание `identity.resolve` в очередь. Изоляция R-3: `TenantAggregateService` получает только `tenant_aggregate_repo` с методами `...ForTenant`, прямого доступа к `event_repo`/`guest_repo` у него нет.
 
 ## Соответствие компонентам (см. 11-component-diagram.md)
 
-| Компонент | Пакеты |
-|---|---|
-| CMP-1 Ingestion | `internal/ingestion`, `service.ImportService` |
-| CMP-2 Identity | `internal/identity`, `service.IdentityService` |
-| CMP-3 Profile & Events | `service.ProfileService`, `repository.guest_repo/event_repo` |
-| CMP-4 Segments | `internal/segments`, `service.SegmentService` |
-| CMP-5 Recommendations | `internal/recommend`, `service.RecommendationService` |
-| CMP-6 Export | `internal/export`, `service.ExportService`, `service.ContactLimitService`, `service.CampaignService` |
-| CMP-7 Analytics | `service.DashboardService`, `service.TenantAggregateService`, `service.DataQualityService`, `service.CampaignService` (результаты) |
-| CMP-8 Access & Auth | `internal/platform/auth`, `service.AuthService`, `service.UserService` |
-| CMP-9 Audit | `service.AuditService`, `repository.audit_repo` |
-| CMP-10 Reference | `service.ReferenceService` |
+| Компонент              | Пакеты                                                                                                                             |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| CMP-1 Ingestion        | `internal/ingestion`, `service.ImportService`                                                                                      |
+| CMP-2 Identity         | `internal/identity`, `service.IdentityService`                                                                                     |
+| CMP-3 Profile & Events | `service.ProfileService`, `repository.guest_repo/event_repo`                                                                       |
+| CMP-4 Segments         | `internal/segments`, `service.SegmentService`                                                                                      |
+| CMP-5 Recommendations  | `internal/recommend`, `service.RecommendationService`                                                                              |
+| CMP-6 Export           | `internal/export`, `service.ExportService`, `service.ContactLimitService`, `service.CampaignService`                               |
+| CMP-7 Analytics        | `service.DashboardService`, `service.TenantAggregateService`, `service.DataQualityService`, `service.CampaignService` (результаты) |
+| CMP-8 Access & Auth    | `internal/platform/auth`, `service.AuthService`, `service.UserService`                                                             |
+| CMP-9 Audit            | `service.AuditService`, `repository.audit_repo`                                                                                    |
+| CMP-10 Reference       | `service.ReferenceService`                                                                                                         |
 
 ## Чекпойнт
+
 Создано: дерево Go-пакетов `cmd/{api,worker}`, `internal/{domain,handler,service,repository,ingestion,identity,segments,recommend,export,platform}`; соответствие CMP-1…CMP-10. Решения: D-28.

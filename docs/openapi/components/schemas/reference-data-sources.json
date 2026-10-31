@@ -1,251 +1,226 @@
 {
-    "DataSourceType":  {
-                           "type":  "object",
-                           "required":  [
-                                            "id",
-                                            "code",
-                                            "name",
-                                            "connectorKey",
-                                            "supportsFile",
-                                            "supportsPull"
-                                        ],
-                           "properties":  {
-                                              "id":  {
-                                                         "type":  "string"
-                                                     },
-                                              "code":  {
-                                                           "type":  "string",
-                                                           "maxLength":  64,
-                                                           "example":  "csv_excel"
-                                                       },
-                                              "name":  {
-                                                           "type":  "string",
-                                                           "maxLength":  200
-                                                       },
-                                              "connectorKey":  {
-                                                                   "type":  "string",
-                                                                   "description":  "Ключ реализации SourceConnector в коде",
-                                                                   "example":  "csv_excel"
-                                                               },
-                                              "supportsFile":  {
-                                                                   "type":  "boolean",
-                                                                   "description":  "Поддерживает загрузку файла"
-                                                               },
-                                              "supportsPull":  {
-                                                                   "type":  "boolean",
-                                                                   "description":  "Поддерживает подтягивание по API"
-                                                               },
-                                              "configSchema":  {
-                                                                   "type":  "object",
-                                                                   "nullable":  true,
-                                                                   "additionalProperties":  true,
-                                                                   "description":  "JSON-схема конфигурации источника этого типа"
-                                                               },
-                                              "isActive":  {
-                                                               "type":  "boolean"
-                                                           }
-                                          }
-                       },
-    "DataSourceTypeRequest":  {
-                                  "type":  "object",
-                                  "required":  [
-                                                   "code",
-                                                   "name",
-                                                   "connectorKey",
-                                                   "supportsFile",
-                                                   "supportsPull"
-                                               ],
-                                  "properties":  {
-                                                     "code":  {
-                                                                  "type":  "string",
-                                                                  "minLength":  1,
-                                                                  "maxLength":  64
-                                                              },
-                                                     "name":  {
-                                                                  "type":  "string",
-                                                                  "minLength":  1,
-                                                                  "maxLength":  200
-                                                              },
-                                                     "connectorKey":  {
-                                                                          "type":  "string",
-                                                                          "minLength":  1,
-                                                                          "maxLength":  64
-                                                                      },
-                                                     "supportsFile":  {
-                                                                          "type":  "boolean"
-                                                                      },
-                                                     "supportsPull":  {
-                                                                          "type":  "boolean"
-                                                                      },
-                                                     "configSchema":  {
-                                                                          "type":  "object",
-                                                                          "nullable":  true,
-                                                                          "additionalProperties":  true
-                                                                      },
-                                                     "isActive":  {
-                                                                      "type":  "boolean",
-                                                                      "default":  true
-                                                                  }
-                                                 }
-                              },
-    "FieldMapping":  {
-                         "type":  "object",
-                         "description":  "Сопоставление полей источника с полями платформы",
-                         "additionalProperties":  {
-                                                      "type":  "string"
-                                                  },
-                         "example":  {
-                                         "externalId":  "check_id",
-                                         "occurredAt":  "date_time",
-                                         "amountMinor":  "total_kopecks",
-                                         "phone":  "client_phone",
-                                         "eventType":  "operation_type"
-                                     }
-                     },
-    "DataSource":  {
-                       "type":  "object",
-                       "required":  [
-                                        "id",
-                                        "typeId",
-                                        "name",
-                                        "isActive"
-                                    ],
-                       "properties":  {
-                                          "id":  {
-                                                     "type":  "string"
-                                                 },
-                                          "tenantId":  {
-                                                           "type":  "string",
-                                                           "nullable":  true,
-                                                           "description":  "null — общий источник УК (Wi-Fi, парковка)"
-                                                       },
-                                          "tenantName":  {
-                                                             "type":  "string",
-                                                             "nullable":  true,
-                                                             "readOnly":  true
-                                                         },
-                                          "typeId":  {
-                                                         "type":  "string"
-                                                     },
-                                          "typeCode":  {
-                                                           "type":  "string",
-                                                           "readOnly":  true
-                                                       },
-                                          "name":  {
-                                                       "type":  "string",
-                                                       "maxLength":  200
-                                                   },
-                                          "config":  {
-                                                         "type":  "object",
-                                                         "nullable":  true,
-                                                         "additionalProperties":  true
-                                                     },
-                                          "fieldMapping":  {
-                                                               "$ref": "./reference-data-sources.json#/FieldMapping"
-                                                           },
-                                          "scheduleCron":  {
-                                                               "type":  "string",
-                                                               "nullable":  true,
-                                                               "description":  "Расписание pull в cron-формате",
-                                                               "example":  "0 * * * *"
-                                                           },
-                                          "isActive":  {
-                                                           "type":  "boolean"
-                                                       },
-                                          "lastImportAt":  {
-                                                               "type":  "string",
-                                                               "format":  "date-time",
-                                                               "nullable":  true
-                                                           },
-                                          "createdAt":  {
-                                                            "type":  "string",
-                                                            "format":  "date-time"
-                                                        },
-                                          "updatedAt":  {
-                                                            "type":  "string",
-                                                            "format":  "date-time"
-                                                        }
-                                      }
-                   },
-    "DataSourceCreateRequest":  {
-                                    "type":  "object",
-                                    "required":  [
-                                                     "typeId",
-                                                     "name",
-                                                     "fieldMapping"
-                                                 ],
-                                    "properties":  {
-                                                       "tenantId":  {
-                                                                        "type":  "string",
-                                                                        "nullable":  true
-                                                                    },
-                                                       "typeId":  {
-                                                                      "type":  "string"
-                                                                  },
-                                                       "name":  {
-                                                                    "type":  "string",
-                                                                    "minLength":  1,
-                                                                    "maxLength":  200
-                                                                },
-                                                       "config":  {
-                                                                      "type":  "object",
-                                                                      "nullable":  true,
-                                                                      "additionalProperties":  true
-                                                                  },
-                                                       "fieldMapping":  {
-                                                                            "$ref": "./reference-data-sources.json#/FieldMapping"
-                                                                        },
-                                                       "scheduleCron":  {
-                                                                            "type":  "string",
-                                                                            "nullable":  true
-                                                                        },
-                                                       "isActive":  {
-                                                                        "type":  "boolean",
-                                                                        "default":  true
-                                                                    }
-                                                   }
-                                },
-    "DataSourceUpdateRequest":  {
-                                    "type":  "object",
-                                    "properties":  {
-                                                       "name":  {
-                                                                    "type":  "string",
-                                                                    "minLength":  1,
-                                                                    "maxLength":  200
-                                                                },
-                                                       "config":  {
-                                                                      "type":  "object",
-                                                                      "nullable":  true,
-                                                                      "additionalProperties":  true
-                                                                  },
-                                                       "fieldMapping":  {
-                                                                            "$ref": "./reference-data-sources.json#/FieldMapping"
-                                                                        },
-                                                       "scheduleCron":  {
-                                                                            "type":  "string",
-                                                                            "nullable":  true
-                                                                        },
-                                                       "isActive":  {
-                                                                        "type":  "boolean"
-                                                                    }
-                                                   }
-                                },
-    "DataSourcePage":  {
-                           "type":  "object",
-                           "required":  [
-                                            "items",
-                                            "meta"
-                                        ],
-                           "properties":  {
-                                              "items":  {
-                                                            "type":  "array",
-                                                            "items":  {
-                                                                          "$ref": "./reference-data-sources.json#/DataSource"
-                                                                      }
-                                                        },
-                                              "meta":  {
-                                                           "$ref": "./common.json#/PageMeta"
-                                                       }
-                                          }
-                       }
+  "DataSourceType": {
+    "type": "object",
+    "required": ["id", "code", "name", "connectorKey", "supportsFile", "supportsPull"],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "code": {
+        "type": "string",
+        "maxLength": 64,
+        "example": "csv_excel"
+      },
+      "name": {
+        "type": "string",
+        "maxLength": 200
+      },
+      "connectorKey": {
+        "type": "string",
+        "description": "SourceConnector implementation key in code",
+        "example": "csv_excel"
+      },
+      "supportsFile": {
+        "type": "boolean",
+        "description": "Supports file upload"
+      },
+      "supportsPull": {
+        "type": "boolean",
+        "description": "Supports API pull"
+      },
+      "configSchema": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true,
+        "description": "JSON schema for the configuration of this source type"
+      },
+      "isActive": {
+        "type": "boolean"
+      }
+    }
+  },
+  "DataSourceTypeRequest": {
+    "type": "object",
+    "required": ["code", "name", "connectorKey", "supportsFile", "supportsPull"],
+    "properties": {
+      "code": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "connectorKey": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      },
+      "supportsFile": {
+        "type": "boolean"
+      },
+      "supportsPull": {
+        "type": "boolean"
+      },
+      "configSchema": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true
+      },
+      "isActive": {
+        "type": "boolean",
+        "default": true
+      }
+    }
+  },
+  "FieldMapping": {
+    "type": "object",
+    "description": "Mapping of source fields to platform fields",
+    "additionalProperties": {
+      "type": "string"
+    },
+    "example": {
+      "externalId": "check_id",
+      "occurredAt": "date_time",
+      "amountMinor": "total_kopecks",
+      "phone": "client_phone",
+      "eventType": "operation_type"
+    }
+  },
+  "DataSource": {
+    "type": "object",
+    "required": ["id", "typeId", "name", "isActive"],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "tenantId": {
+        "type": "string",
+        "nullable": true,
+        "description": "null — shared management company source (Wi-Fi, parking)"
+      },
+      "tenantName": {
+        "type": "string",
+        "nullable": true,
+        "readOnly": true
+      },
+      "typeId": {
+        "type": "string"
+      },
+      "typeCode": {
+        "type": "string",
+        "readOnly": true
+      },
+      "name": {
+        "type": "string",
+        "maxLength": 200
+      },
+      "config": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true
+      },
+      "fieldMapping": {
+        "$ref": "./reference-data-sources.json#/FieldMapping"
+      },
+      "scheduleCron": {
+        "type": "string",
+        "nullable": true,
+        "description": "Pull schedule in cron format",
+        "example": "0 * * * *"
+      },
+      "isActive": {
+        "type": "boolean"
+      },
+      "lastImportAt": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true
+      },
+      "createdAt": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updatedAt": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "DataSourceCreateRequest": {
+    "type": "object",
+    "required": ["typeId", "name", "fieldMapping"],
+    "properties": {
+      "tenantId": {
+        "type": "string",
+        "nullable": true
+      },
+      "typeId": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "config": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true
+      },
+      "fieldMapping": {
+        "$ref": "./reference-data-sources.json#/FieldMapping"
+      },
+      "scheduleCron": {
+        "type": "string",
+        "nullable": true
+      },
+      "isActive": {
+        "type": "boolean",
+        "default": true
+      }
+    }
+  },
+  "DataSourceUpdateRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "config": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": true
+      },
+      "fieldMapping": {
+        "$ref": "./reference-data-sources.json#/FieldMapping"
+      },
+      "scheduleCron": {
+        "type": "string",
+        "nullable": true
+      },
+      "isActive": {
+        "type": "boolean"
+      }
+    }
+  },
+  "DataSourcePage": {
+    "type": "object",
+    "required": ["items", "meta"],
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "./reference-data-sources.json#/DataSource"
+        }
+      },
+      "meta": {
+        "$ref": "./common.json#/PageMeta"
+      }
+    }
+  }
 }

@@ -1,57 +1,57 @@
 {
   "NoContent": {
-    "description": "Операция выполнена, тело отсутствует"
+    "description": "Operation completed, no body"
   },
   "BadRequest": {
-    "description": "Ошибка валидации запроса (400)",
+    "description": "Request validation error (400)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }
   },
   "Unauthorized": {
-    "description": "Токен отсутствует, просрочен или подпись неверна (401)",
+    "description": "Token missing, expired, or signature invalid (401)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }
   },
   "Forbidden": {
-    "description": "Роль не допущена к операции или чужой арендатор (403)",
+    "description": "Role not allowed for this operation, or foreign tenant (403)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }
   },
   "NotFound": {
-    "description": "Ресурс не найден (404)",
+    "description": "Resource not found (404)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }
   },
   "Conflict": {
-    "description": "Конфликт состояния: лимит контактов, дубликат, занятый ресурс, уже решённая склейка (409)",
+    "description": "State conflict: contact limit, duplicate, busy resource, already resolved merge (409)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }
   },
   "PayloadTooLarge": {
-    "description": "Файл слишком большой или больше 100 000 строк (413)",
+    "description": "File too large or more than 100,000 rows (413)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }
   },
   "UnprocessableEntity": {
-    "description": "Семантически неверный файл: формат, кодировка, отсутствие обязательных колонок (422)",
+    "description": "Semantically invalid file: format, encoding, missing required columns (422)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }
   },
   "TooManyRequests": {
-    "description": "Превышен лимит запросов (429)",
+    "description": "Rate limit exceeded (429)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }
   },
   "GatewayTimeout": {
-    "description": "Превышен дедлайн операции (504)",
+    "description": "Operation deadline exceeded (504)",
     "content": {
       "application/json": { "schema": { "$ref": "./schemas/common.json#/ErrorResponse" } }
     }

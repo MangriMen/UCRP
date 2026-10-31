@@ -1,145 +1,125 @@
 {
-    "paths":  {
-                  "/api/v1/data-source-types":  {
-                                                    "get":  {
-                                                                "tags":  [
-                                                                             "Reference"
-                                                                         ],
-                                                                "operationId":  "listDataSourceTypes",
-                                                                "summary":  "Типы источников данных",
-                                                                "description":  "Базовые типы: `crm`, `pos`, `api`, `csv_excel`. `connectorKey` указывает на реализацию `SourceConnector` в коде.",
-                                                                "x-roles":  [
-                                                                                "R-1",
-                                                                                "R-2",
-                                                                                "R-4"
-                                                                            ],
-                                                                "x-uc":  [
-                                                                             "UC-17"
-                                                                         ],
-                                                                "responses":  {
-                                                                                  "200":  {
-                                                                                              "description":  "Типы источников",
-                                                                                              "content":  {
-                                                                                                              "application/json":  {
-                                                                                                                                       "schema":  {
-                                                                                                                                                      "type":  "array",
-                                                                                                                                                      "items":  {
-                                                                                                                                                                    "$ref": "../components/schemas/reference-data-sources.json#/DataSourceType"
-                                                                                                                                                                }
-                                                                                                                                                  }
-                                                                                                                                   }
-                                                                                                          }
-                                                                                          },
-                                                                                  "401":  {
-                                                                                              "$ref": "../components/responses.json#/Unauthorized"
-                                                                                          },
-                                                                                  "403":  {
-                                                                                              "$ref": "../components/responses.json#/Forbidden"
-                                                                                          }
-                                                                              }
-                                                            },
-                                                    "post":  {
-                                                                 "tags":  [
-                                                                              "Reference"
-                                                                          ],
-                                                                 "operationId":  "createDataSourceType",
-                                                                 "summary":  "Зарегистрировать тип источника",
-                                                                 "description":  "Коннектор с указанным `connectorKey` должен существовать в коде, иначе 400 `connector_not_registered`.",
-                                                                 "x-roles":  [
-                                                                                 "R-4"
-                                                                             ],
-                                                                 "x-uc":  [
-                                                                              "UC-17"
-                                                                          ],
-                                                                 "requestBody":  {
-                                                                                     "required":  true,
-                                                                                     "content":  {
-                                                                                                     "application/json":  {
-                                                                                                                              "schema":  {
-                                                                                                                                             "$ref": "../components/schemas/reference-data-sources.json#/DataSourceTypeRequest"
-                                                                                                                                         }
-                                                                                                                          }
-                                                                                                 }
-                                                                                 },
-                                                                 "responses":  {
-                                                                                   "201":  {
-                                                                                               "description":  "Тип источника создан",
-                                                                                               "content":  {
-                                                                                                               "application/json":  {
-                                                                                                                                        "schema":  {
-                                                                                                                                                       "$ref": "../components/schemas/reference-data-sources.json#/DataSourceType"
-                                                                                                                                                   }
-                                                                                                                                    }
-                                                                                                           }
-                                                                                           },
-                                                                                   "400":  {
-                                                                                               "$ref": "../components/responses.json#/BadRequest"
-                                                                                           },
-                                                                                   "401":  {
-                                                                                               "$ref": "../components/responses.json#/Unauthorized"
-                                                                                           },
-                                                                                   "403":  {
-                                                                                               "$ref": "../components/responses.json#/Forbidden"
-                                                                                           },
-                                                                                   "409":  {
-                                                                                               "$ref": "../components/responses.json#/Conflict"
-                                                                                           }
-                                                                               }
-                                                             }
-                                                },
-                  "/api/v1/data-source-types/{id}":  {
-                                                         "parameters":  [
-                                                                            {
-                                                                                "$ref": "../components/parameters.json#/IdPath"
-                                                                            }
-                                                                        ],
-                                                         "patch":  {
-                                                                       "tags":  [
-                                                                                    "Reference"
-                                                                                ],
-                                                                       "operationId":  "updateDataSourceType",
-                                                                       "summary":  "Изменить тип источника",
-                                                                       "x-roles":  [
-                                                                                       "R-4"
-                                                                                   ],
-                                                                       "x-uc":  [
-                                                                                    "UC-17"
-                                                                                ],
-                                                                       "requestBody":  {
-                                                                                           "required":  true,
-                                                                                           "content":  {
-                                                                                                           "application/json":  {
-                                                                                                                                    "schema":  {
-                                                                                                                                                   "$ref": "../components/schemas/reference-data-sources.json#/DataSourceTypeRequest"
-                                                                                                                                               }
-                                                                                                                                }
-                                                                                                       }
-                                                                                       },
-                                                                       "responses":  {
-                                                                                         "200":  {
-                                                                                                     "description":  "Обновлённый тип источника",
-                                                                                                     "content":  {
-                                                                                                                     "application/json":  {
-                                                                                                                                              "schema":  {
-                                                                                                                                                             "$ref": "../components/schemas/reference-data-sources.json#/DataSourceType"
-                                                                                                                                                         }
-                                                                                                                                          }
-                                                                                                                 }
-                                                                                                 },
-                                                                                         "400":  {
-                                                                                                     "$ref": "../components/responses.json#/BadRequest"
-                                                                                                 },
-                                                                                         "401":  {
-                                                                                                     "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                 },
-                                                                                         "403":  {
-                                                                                                     "$ref": "../components/responses.json#/Forbidden"
-                                                                                                 },
-                                                                                         "404":  {
-                                                                                                     "$ref": "../components/responses.json#/NotFound"
-                                                                                                 }
-                                                                                     }
-                                                                   }
-                                                     }
+  "paths": {
+    "/api/v1/data-source-types": {
+      "get": {
+        "tags": ["Reference"],
+        "operationId": "listDataSourceTypes",
+        "summary": "Data source types",
+        "description": "Base types: `crm`, `pos`, `api`, `csv_excel`. `connectorKey` points to the `SourceConnector` implementation in code.",
+        "x-roles": ["R-1", "R-2", "R-4"],
+        "x-uc": ["UC-17"],
+        "responses": {
+          "200": {
+            "description": "Source types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../components/schemas/reference-data-sources.json#/DataSourceType"
+                  }
+                }
               }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reference"],
+        "operationId": "createDataSourceType",
+        "summary": "Register a source type",
+        "description": "A connector with the given `connectorKey` must exist in code, otherwise 400 `connector_not_registered`.",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-17"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/reference-data-sources.json#/DataSourceTypeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Source type created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/reference-data-sources.json#/DataSourceType"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/data-source-types/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "patch": {
+        "tags": ["Reference"],
+        "operationId": "updateDataSourceType",
+        "summary": "Update a source type",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-17"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/reference-data-sources.json#/DataSourceTypeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated source type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/reference-data-sources.json#/DataSourceType"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    }
+  }
 }
