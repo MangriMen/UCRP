@@ -39,6 +39,15 @@ describe('request', () => {
     )
   })
 
+  it('treats a refresh response without accessToken as a failed refresh', async () => {
+    setAccessToken('old')
+    const fetchMock = vi.fn(async (url: string) =>
+      url.endsWith('/auth/refresh') ? json(200, { access_token: 'x' }) : json(401),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(request('/a')).rejects.toMatchObject({ status: 401 })
+  })
+
   it('returns the response body as a blob with the bearer token', async () => {
     setAccessToken('token')
     const fetchMock = vi.fn().mockResolvedValue(new Response('id,phone\n1,+7'))

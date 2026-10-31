@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { server } from '@/app/mocks/server'
 import { MOCK_PASSWORD, mockUsers } from '@/entities/user/mocks'
 import { setAccessToken } from '@/shared/api/client'
 import { LoginForm } from './login-form'
@@ -41,5 +43,17 @@ describe('LoginForm', () => {
     await userEvent.type(screen.getByLabelText('Пароль'), MOCK_PASSWORD)
     await userEvent.click(screen.getByRole('button', { name: 'Войти' }))
     await vi.waitFor(() => expect(onSuccess).toHaveBeenCalled())
+  })
+
+  it('shows an error and does not succeed when the login response has no accessToken', async () => {
+    server.use(http.post('*/api/v1/auth/login', () => HttpResponse.json({ access_token: 'x' })))
+    const onSuccess = renderForm()
+    await userEvent.type(screen.getByLabelText('Email'), mockUsers[2].email)
+    await userEvent.type(screen.getByLabelText('Пароль'), MOCK_PASSWORD)
+    await userEvent.click(screen.getByRole('button', { name: 'Войти' }))
+    expect(
+      await screen.findByText('Сервер вернул некорректный ответ при входе'),
+    ).toBeInTheDocument()
+    expect(onSuccess).not.toHaveBeenCalled()
   })
 })
