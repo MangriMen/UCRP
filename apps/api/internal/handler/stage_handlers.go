@@ -228,12 +228,13 @@ func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
 		b := v == "true" || v == "1"
 		isControl = &b
 	}
-	items, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl)
+	limit, offset := pageParams(r)
+	items, total, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, nonNil(items))
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *GuestHandler) Contacts(w http.ResponseWriter, r *http.Request) {

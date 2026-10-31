@@ -6,3 +6,4 @@ export type ExportChannel = Schema<'ExportChannel'>
 export type ExportFormat = Schema<'ExportFormat'>
 export type ExportPreview = Schema<'ExportPreviewResponse'>
 export type ExportCreateRequest = Schema<'ExportCreateRequest'>
+export type ExportMember = Schema<'ExportMember'>

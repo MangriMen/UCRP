@@ -10,6 +10,7 @@ import { ContactLimitsPage } from '@/pages/contact-limits'
 import { DashboardPage } from '@/pages/dashboard'
 import { DataQualityPage } from '@/pages/data-quality'
 import { DataSourcesPage } from '@/pages/data-sources'
+import { ExportDetailsPage } from '@/pages/export-details'
 import { ExportsPage } from '@/pages/exports'
 import { GuestProfilePage } from '@/pages/guest-profile'
 import { GuestsPage } from '@/pages/guests'
@@ -79,7 +80,10 @@ export const router = createBrowserRouter([
           },
           {
             element: <AccessGuard permission="export.read" />,
-            children: [{ path: 'exports', element: <ExportsPage /> }],
+            children: [
+              { path: 'exports', element: <ExportsPage /> },
+              { path: 'exports/:id', element: <ExportDetailsPage /> },
+            ],
           },
           {
             element: <AccessGuard permission="campaign.read" />,

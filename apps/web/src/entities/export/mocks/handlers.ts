@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { API, apiError, mockId, paged } from '@/shared/api/mocks/helpers'
-import type { Export, ExportCreateRequest, ExportPreview } from '../model/types'
+import type { Export, ExportCreateRequest, ExportMember, ExportPreview } from '../model/types'
 import { mockExports } from './fixtures'
 
 const IN_SEGMENT = 120
@@ -17,6 +17,23 @@ function advance(item: Export) {
     item.finishedAt = new Date().toISOString()
     item.downloadUrl = `/api/v1/exports/${item.id}/download`
   }
+}
+
+function membersOf(item: Export): ExportMember[] {
+  const recipients = item.exportedCount ?? 0
+  const total = recipients + (item.controlCount ?? 0)
+  return Array.from({ length: total }, (_, index) => {
+    const number = String(index + 1).padStart(4, '0')
+    return {
+      guestId: `guest-${number}`,
+      isControl: index >= recipients,
+      identifierId: `identifier-${item.id}-${number}`,
+      contact:
+        item.channel === 'email'
+          ? { idType: 'email', value: `guest${number}@example.com` }
+          : { idType: 'phone', value: `7900000${number}` },
+    }
+  })
 }
 
 function preview(controlPercent: number): ExportPreview {
@@ -53,6 +70,16 @@ export const exportHandlers = [
     if (!item) return apiError(404, 'not_found', 'Выгрузка не найдена')
     advance(item)
     return HttpResponse.json(item)
+  }),
+
+  http.get(`${API}/exports/:id/members`, ({ params, request }) => {
+    const item = exports.find((e) => e.id === params.id)
+    if (!item) return apiError(404, 'not_found', 'Выгрузка не найдена')
+    const isControl = new URL(request.url).searchParams.get('is_control')
+    const members = membersOf(item).filter(
+      (member) => isControl === null || String(member.isControl) === isControl,
+    )
+    return HttpResponse.json(paged(request, members))
   }),
 
   http.get(`${API}/exports/:id/download`, ({ params }) => {

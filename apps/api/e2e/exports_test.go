@@ -421,6 +421,108 @@ func TestExportListJournal(t *testing.T) {
 	}
 }
 
+func TestExportListFiltersBySegment(t *testing.T) {
+	s := harness.New(t).WithDB().WithMarketer()
+	ew := buildExportWorld(t, s, "export-filter", 1)
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("key-filter"))
+	if err != nil {
+		t.Fatalf("POST /api/v1/exports: %v", err)
+	}
+	s.RequireStatus(resp, 201, "POST /api/v1/exports")
+	created := jsonObject(t, resp, "created export")
+	exportID := harness.StringField(created, "id")
+	trackExport(s, exportID)
+
+	list, err := s.API.Get(ctx, "/api/v1/exports", map[string][]string{
+		"segment_id": {ew.segment.ID},
+		"channel":    {"sms"},
+		"status":     {"ready"},
+	})
+	if err != nil {
+		t.Fatalf("GET /api/v1/exports: %v", err)
+	}
+	s.RequireStatus(list, 200, "GET /api/v1/exports filtered")
+	s.RequireSchema("GET", "/api/v1/exports", list)
+	page := jsonObject(t, list, "export page")
+	items, _ := harness.Items(page)
+	if len(items) != 1 {
+		t.Fatalf("segment filter: expected exactly the created export, got %d items", len(items))
+	}
+	meta, _ := page["meta"].(map[string]any)
+	if total, _ := harness.IntField(meta, "total"); total != 1 {
+		t.Fatalf("meta.total: expected 1, got %d", total)
+	}
+	item, _ := items[0].(map[string]any)
+	if harness.StringField(item, "segmentName") == "" {
+		t.Fatalf("export must carry segmentName: %s", list.Snippet())
+	}
+	if harness.StringField(item, "downloadUrl") != "/api/v1/exports/"+exportID+"/download" {
+		t.Fatalf("ready export must carry downloadUrl: %s", list.Snippet())
+	}
+}
+
+func TestExportMembersSplitsControlGroup(t *testing.T) {
+	s := harness.New(t).WithDB().WithMarketer()
+	ew := buildExportWorld(t, s, "export-members", 4)
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Post(ctx, "/api/v1/exports", map[string]any{
+		"segmentId":      ew.segment.ID,
+		"channel":        "sms",
+		"format":         "csv",
+		"controlPercent": 50,
+		"idempotencyKey": s.Reg.Name("key-members"),
+	})
+	if err != nil {
+		t.Fatalf("POST /api/v1/exports: %v", err)
+	}
+	s.RequireStatus(resp, 201, "POST /api/v1/exports with a control group")
+	created := jsonObject(t, resp, "created export")
+	exportID := harness.StringField(created, "id")
+	trackExport(s, exportID)
+	control, _ := harness.IntField(created, "controlCount")
+	exported, _ := harness.IntField(created, "exportedCount")
+
+	for _, group := range []struct {
+		isControl string
+		expected  int
+	}{{"false", exported}, {"true", control}} {
+		members, err := s.API.Get(ctx, "/api/v1/exports/"+exportID+"/members", map[string][]string{
+			"is_control": {group.isControl},
+			"page_size":  {"1"},
+		})
+		if err != nil {
+			t.Fatalf("GET /api/v1/exports/{id}/members: %v", err)
+		}
+		s.RequireStatus(members, 200, "GET /api/v1/exports/{id}/members")
+		s.RequireDeclaredStatus("GET", "/api/v1/exports/{id}/members", members)
+		s.RequireSchema("GET", "/api/v1/exports/{id}/members", members)
+		page := jsonObject(t, members, "export member page")
+		meta, _ := page["meta"].(map[string]any)
+		if total, _ := harness.IntField(meta, "total"); total != group.expected {
+			t.Fatalf("is_control=%s: expected total %d, got %d", group.isControl, group.expected, total)
+		}
+		items, _ := harness.Items(page)
+		if group.expected > 0 && len(items) != 1 {
+			t.Fatalf("is_control=%s: page_size=1 must return one member, got %d", group.isControl, len(items))
+		}
+		for _, item := range items {
+			obj, _ := item.(map[string]any)
+			if isControl, _ := obj["isControl"].(bool); isControl != (group.isControl == "true") {
+				t.Fatalf("is_control=%s returned a member of the other group: %s", group.isControl, members.Snippet())
+			}
+			contact, _ := obj["contact"].(map[string]any)
+			if harness.StringField(contact, "idType") != "phone" || harness.StringField(contact, "value") == "" {
+				t.Fatalf("sms member must carry its phone contact: %s", members.Snippet())
+			}
+		}
+	}
+}
+
 func TestExportGetUnknownReturns404(t *testing.T) {
 	s := harness.New(t).WithDB().WithMarketer()
 	ctx, cancel := s.Ctx()

@@ -169,8 +169,11 @@ func (f *fakeExportRepo) ListMembers(context.Context, string) ([]domain.ExportMe
 func (f *fakeExportRepo) Insert(context.Context, *domain.ExportJob, []domain.ExportMember) error {
 	return nil
 }
-func (f *fakeExportRepo) List(context.Context, int, int) ([]domain.ExportJob, error) {
-	return nil, nil
+func (f *fakeExportRepo) ListMemberPage(context.Context, string, *bool, int, int) ([]domain.ExportMember, int, error) {
+	return nil, 0, nil
+}
+func (f *fakeExportRepo) List(context.Context, domain.ExportFilter, int, int) ([]domain.ExportJob, int, error) {
+	return nil, 0, nil
 }
 
 type fakeSegments struct {

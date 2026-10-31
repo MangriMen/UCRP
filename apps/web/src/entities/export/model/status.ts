@@ -13,6 +13,12 @@ export const exportChannelLabels: Record<ExportChannel, string> = {
   email: 'Email',
 }
 
+export const exportFormatLabels: Record<ExportFormat, string> = {
+  csv: 'CSV',
+  api: 'API',
+  xlsx: 'Excel',
+}
+
 export const isExportActive = (status: ExportStatus) => status === 'queued' || status === 'building'
 
 export type ExportFileFormat = Extract<ExportFormat, 'csv' | 'xlsx'>
