@@ -24,9 +24,10 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 		return LoginResult{}, err
 	}
 	return LoginResult{
-		AccessToken: pair.AccessToken,
-		ExpiresIn:   pair.ExpiresIn,
-		User:        PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID},
+		AccessToken:  pair.AccessToken,
+		RefreshToken: pair.RefreshToken,
+		ExpiresIn:    pair.ExpiresIn,
+		User:         PublicUser{ID: u.ID, Role: u.Role, TenantID: u.TenantID},
 	}, nil
 }
 

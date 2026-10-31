@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/auth"
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/service"
@@ -24,14 +23,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh",
-		Value:    cookie.Value,
-		Path:     "/api/v1/auth",
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   7 * 24 * 3600,
-	})
+	setRefreshCookie(w, res.RefreshToken)
 	httpx.WriteJSON(w, http.StatusOK, loginResponse{
 		AccessToken: res.AccessToken,
 		ExpiresIn:   res.ExpiresIn,
@@ -274,5 +266,3 @@ func (h *AnalyticsHandler) DataQuality(w http.ResponseWriter, r *http.Request) {
 	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
-
-var _ = domain.ErrNotFound
