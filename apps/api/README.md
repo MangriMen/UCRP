@@ -1,7 +1,7 @@
 # apps/api — Go backend (UCRP)
 
-Модуль: `github.com/MangriMen/UCRP`.  
-Слои: `handler → service → domain ← repository`; capability-пакеты зависят только от `domain` / `platform/*`.  
+Модуль: `github.com/MangriMen/UCRP`.
+Слои: `handler → service → domain ← repository`; capability-пакеты зависят только от `domain` / `platform/*`.
 Правила — `docs/ARCHITECTURE.md`, дерево — `docs/appendix/go-package-tree.md`, API — `docs/appendix/endpoint-registry.md`.
 
 ## Структура
@@ -35,6 +35,17 @@ go run ./cmd/worker
 go test ./...
 ```
 
+Демонстрационные данные:
+
+```sh
+cd apps/api
+go run ./cmd/seed -dsn "postgres://ucrp:ucrp@127.0.0.1:5543/ucrp?sslmode=disable"
+go run ./cmd/seed -guests 300   # количество фоновых гостей (10..2000)
+go run ./cmd/seed -reset       # удалить только демо-данные
+```
+
+Подробности — в `seed/README.md`.
+
 Docker:
 
 ```sh
@@ -45,7 +56,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 ## Базовые зависимости
 
-Выбор продиктован архитектурой (SQLite → PG, очередь на таблице, JWT, без CGO в Docker).  
+Выбор продиктован архитектурой (SQLite → PG, очередь на таблице, JWT, без CGO в Docker).
 В `go.mod` подключаются **после первого импорта** в коде; здесь — согласованный список.
 
 | Пакет                                                      | Зачем                                                                                     | Где в системе                          |

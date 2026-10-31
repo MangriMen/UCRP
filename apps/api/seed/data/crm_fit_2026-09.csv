@@ -1,0 +1,16 @@
+external_id,occurred_at,event_type,amount,phone,email,tenant_code
+CHK-301,2026-09-01T07:30:00Z,purchase,265000,791000003013,guest3013@demo.ucrp.test,fit-zone
+CHK-302,2026-09-01T12:30:00Z,purchase,280000,791000003023,guest3023@demo.ucrp.test,fit-zone
+CHK-303,2026-09-01T17:30:00Z,purchase,295000,791000003033,guest3033@demo.ucrp.test,fit-zone
+CHK-304,2026-09-02T07:30:00Z,purchase,310000,791000003043,guest3043@demo.ucrp.test,fit-zone
+CHK-305,2026-09-02T12:30:00Z,purchase,325000,791000003053,guest3053@demo.ucrp.test,fit-zone
+CHK-306,2026-09-02T17:30:00Z,purchase,340000,791000003063,guest3063@demo.ucrp.test,fit-zone
+CHK-307,2026-09-03T07:30:00Z,purchase,355000,791000003073,guest3073@demo.ucrp.test,fit-zone
+CHK-308,2026-09-03T12:30:00Z,purchase,370000,791000003083,guest3083@demo.ucrp.test,fit-zone
+CHK-309,2026-09-03T17:30:00Z,purchase,385000,791000003093,guest3093@demo.ucrp.test,fit-zone
+CHK-310,2026-09-04T07:30:00Z,purchase,400000,791000003103,guest3103@demo.ucrp.test,fit-zone
+CHK-311,2026-09-04T12:30:00Z,purchase,415000,791000003113,guest3113@demo.ucrp.test,fit-zone
+CHK-312,2026-09-04T17:30:00Z,purchase,430000,791000003123,guest3123@demo.ucrp.test,fit-zone
+CHK-313,2026-09-05T07:30:00Z,purchase,445000,791000003133,guest3133@demo.ucrp.test,fit-zone
+CHK-314,2026-09-05T12:30:00Z,purchase,460000,791000003143,guest3143@demo.ucrp.test,fit-zone
+CHK-315,2026-09-05T17:30:00Z,purchase,475000,791000003153,guest3153@demo.ucrp.test,fit-zone
