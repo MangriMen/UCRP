@@ -3,6 +3,7 @@ package e2e
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -42,8 +43,8 @@ func xlsxValid(t *testing.T, tenantCode, phoneA, phoneB string) []byte {
 	t.Helper()
 	records := [][]any{
 		{"external_id", "occurred_at", "event_type", "amount", "phone", "email", "tenant_code"},
-		{"e2e-x1", "2026-10-01T10:00:00Z", "purchase", 1000, phoneA, "", tenantCode},
-		{"e2e-x2", "2026-10-02T11:00:00Z", "visit", 0, phoneB, "", tenantCode},
+		{"e2e-x1", time.Date(2026, 10, 1, 10, 0, 0, 0, time.UTC), "purchase", 1000, phoneA, "", tenantCode},
+		{"e2e-x2", time.Date(2026, 10, 2, 11, 0, 0, 0, time.UTC), "visit", 0, phoneB, "", tenantCode},
 	}
 	book := excelize.NewFile()
 	for i, record := range records {

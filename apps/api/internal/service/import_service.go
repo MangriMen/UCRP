@@ -131,7 +131,7 @@ func (s *ImportService) Create(ctx context.Context, in CreateImportInput) (*Crea
 		return nil, &ImportError{http.StatusUnprocessableEntity, "bad_format", "Пустой файл"}
 	}
 	if ingestion.IsXLSX(data) {
-		data, err = ingestion.XLSXToCSV(data)
+		data, err = ingestion.XLSXToCSV(data, importMaxRows)
 		if err != nil {
 			return nil, importReadError(err)
 		}
