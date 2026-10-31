@@ -45,11 +45,12 @@ type ExportPreviewRequest struct {
 }
 
 type ExportPreviewResponse struct {
-	InSegment      int `json:"in_segment"`
-	WithContact    int `json:"with_contact"`
-	BlockedByLimit int `json:"blocked_by_limit"`
-	Control        int `json:"control"`
-	ToSend         int `json:"to_send"`
+	InSegment      *int `json:"in_segment"`
+	WithContact    *int `json:"with_contact"`
+	BlockedByLimit *int `json:"blocked_by_limit"`
+	Control        *int `json:"control"`
+	ToSend         *int `json:"to_send"`
+	Suppressed     bool `json:"suppressed"`
 }
 
 type ExportCreateRequest struct {
@@ -67,11 +68,12 @@ type ExportDTO struct {
 	Channel             string `json:"channel"`
 	Format              string `json:"format"`
 	Status              string `json:"status"`
-	TotalInSegment      int    `json:"total_in_segment"`
-	NoContactCount      int    `json:"no_contact_count"`
-	BlockedByLimitCount int    `json:"blocked_by_limit_count"`
-	ControlCount        int    `json:"control_count"`
-	ExportedCount       int    `json:"exported_count"`
+	TotalInSegment      *int   `json:"total_in_segment"`
+	NoContactCount      *int   `json:"no_contact_count"`
+	BlockedByLimitCount *int   `json:"blocked_by_limit_count"`
+	ControlCount        *int   `json:"control_count"`
+	ExportedCount       *int   `json:"exported_count"`
+	Suppressed          bool   `json:"suppressed"`
 }
 
 type memberCandidate struct {
@@ -100,13 +102,7 @@ func (s *ExportService) Preview(ctx context.Context, req ExportPreviewRequest) (
 	allowed := withoutIDs(withContact, blocked)
 	control := pickControl(allowed, req.ControlPercent, hashSeed(req.IdempotencyKey))
 	totalGuests := len(dedupeByGuest(all))
-	return &ExportPreviewResponse{
-		InSegment:      totalGuests,
-		WithContact:    len(withContact),
-		BlockedByLimit: len(blocked),
-		Control:        len(control),
-		ToSend:         len(allowed) - len(control),
-	}, nil
+	return exportPreviewResponse(totalGuests, len(withContact), len(blocked), len(control), len(allowed)-len(control)), nil
 }
 
 func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, actorUserID string) (*ExportDTO, error) {
@@ -394,18 +390,39 @@ func hash64(guestID string, seed int64) uint64 {
 }
 
 func toExportDTO(j domain.ExportJob) *ExportDTO {
-	return &ExportDTO{
-		ID:                  j.ID,
-		SegmentID:           j.SegmentID,
-		Channel:             string(j.Channel),
-		Format:              string(j.Format),
-		Status:              string(j.Status),
-		TotalInSegment:      j.TotalInSegment,
-		NoContactCount:      j.NoContactCount,
-		BlockedByLimitCount: j.BlockedByLimitCount,
-		ControlCount:        j.ControlCount,
-		ExportedCount:       j.ExportedCount,
+	result := &ExportDTO{
+		ID:        j.ID,
+		SegmentID: j.SegmentID,
+		Channel:   string(j.Channel),
+		Format:    string(j.Format),
+		Status:    string(j.Status),
 	}
+	if smallExportCount(j.TotalInSegment, j.NoContactCount, j.BlockedByLimitCount, j.ControlCount, j.ExportedCount) {
+		result.Suppressed = true
+		return result
+	}
+	result.TotalInSegment = &j.TotalInSegment
+	result.NoContactCount = &j.NoContactCount
+	result.BlockedByLimitCount = &j.BlockedByLimitCount
+	result.ControlCount = &j.ControlCount
+	result.ExportedCount = &j.ExportedCount
+	return result
+}
+
+func exportPreviewResponse(total, withContact, blocked, control, toSend int) *ExportPreviewResponse {
+	if smallExportCount(total, total-withContact, withContact, blocked, control, toSend) {
+		return &ExportPreviewResponse{Suppressed: true}
+	}
+	return &ExportPreviewResponse{InSegment: &total, WithContact: &withContact, BlockedByLimit: &blocked, Control: &control, ToSend: &toSend}
+}
+
+func smallExportCount(counts ...int) bool {
+	for _, count := range counts {
+		if count < 5 {
+			return true
+		}
+	}
+	return false
 }
 
 func orDefault(v, def string) string {

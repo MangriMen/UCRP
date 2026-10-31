@@ -200,9 +200,11 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 		t.Fatalf("step 1 decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	size, ok := harness.IntField(previewObj, "size")
-	if !ok || size < 1 {
-		t.Fatalf("step 1: preview size must include the fixture guest, got %v", size)
+	if size, ok := previewObj["size"]; !ok || size != nil || previewObj["suppressed"] != true {
+		t.Fatalf("step 1: preview must suppress its small membership: %s", preview.Snippet())
+	}
+	if examples, ok := previewObj["examples"].([]any); !ok || len(examples) != 0 {
+		t.Fatalf("step 1: preview must hide examples: %s", preview.Snippet())
 	}
 
 	create, err := s.PostContractShape(ctx, "/api/v1/segments",
@@ -241,8 +243,12 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 		t.Fatalf("step 3 decode segment: %v", err)
 	}
 	getObj, _ := getBody.(map[string]any)
-	if count, ok := harness.IntField(getObj, "memberCount", "member_count"); !ok || count < 1 {
-		t.Fatalf("step 3: created segment must materialize at least one member, got %v", count)
+	if count, ok := getObj["memberCount"]; !ok || count != nil || getObj["suppressed"] != true {
+		t.Fatalf("step 3: segment must suppress its small membership: %s", get.Snippet())
+	}
+	memberCount, err := s.DB.Count(ctx, `SELECT COUNT(*) FROM segment_member sm JOIN segment_version sv ON sv.id = sm.segment_version_id WHERE sv.segment_id = $1 AND sm.guest_id = $2`, segmentID, guest.ID)
+	if err != nil || memberCount != 1 {
+		t.Fatalf("step 3: expected fixture guest in created segment, got %d: %v", memberCount, err)
 	}
 
 	refresh, err := s.API.Post(ctx, "/api/v1/guests/"+guest.ID+"/recommendations/refresh", nil)
@@ -260,6 +266,22 @@ func TestE2ESegmentToRecommendation(t *testing.T) {
 		obj, _ := item.(map[string]any)
 		if harness.StringField(obj, "tenantId", "tenant_id") == w.tenantA.ID {
 			t.Fatalf("step 4: recommendations must not include the visited tenant %s", w.tenantA.ID)
+		}
+	}
+	segmentRecommendations, err := s.API.Get(ctx, "/api/v1/segments/"+segmentID+"/recommendations", nil)
+	if err != nil {
+		t.Fatalf("read segment recommendations: %v", err)
+	}
+	s.RequireStatus(segmentRecommendations, 200, "read segment recommendations")
+	segmentBody, err := segmentRecommendations.JSON()
+	if err != nil {
+		t.Fatalf("decode segment recommendations: %v", err)
+	}
+	segmentItems, _ := harness.Items(segmentBody)
+	for _, item := range segmentItems {
+		value, _ := item.(map[string]any)
+		if value["suppressed"] != true || value["guests"] != nil || value["score"] != nil {
+			t.Fatalf("small segment recommendation was not suppressed: %s", segmentRecommendations.Snippet())
 		}
 	}
 

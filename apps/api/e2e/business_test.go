@@ -6,6 +6,8 @@ import (
 
 	"github.com/MangriMen/UCRP/e2e/harness"
 	"github.com/MangriMen/UCRP/e2e/report"
+	"github.com/MangriMen/UCRP/internal/domain"
+	"github.com/MangriMen/UCRP/internal/segments"
 )
 
 func TestGuestProfileReflectsTenantCount(t *testing.T) {
@@ -227,12 +229,20 @@ func TestSegmentPreviewCountsMatchingGuests(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	obj, _ := decoded.(map[string]any)
-	size, ok := harness.IntField(obj, "size")
-	if !ok {
-		t.Fatalf("preview response has no size field: %s", resp.Snippet())
+	if size, ok := obj["size"]; !ok || size != nil || obj["suppressed"] != true {
+		t.Fatalf("preview must suppress the small segment: %s", resp.Snippet())
 	}
-	if size != 2 {
-		t.Fatalf("preview size: expected 2 guests that visited A or B and never C, got %d", size)
+	if examples, ok := obj["examples"].([]any); !ok || len(examples) != 0 {
+		t.Fatalf("preview must hide examples for the small segment: %s", resp.Snippet())
+	}
+	members, err := segments.NewSqlEvaluator(s.DB.DB).Evaluate(ctx, domain.SegmentRule{
+		Was: []string{w.tenantA.ID, w.tenantB.ID}, WasNot: []string{w.tenantC.ID}, PeriodDays: 90,
+	})
+	if err != nil {
+		t.Fatalf("evaluate preview rule: %v", err)
+	}
+	if len(members) != 2 || !containsString(members, both.ID) || !containsString(members, onlyA.ID) {
+		t.Fatalf("preview rule should select both expected guests, got %v", members)
 	}
 }
 
@@ -378,13 +388,22 @@ func TestSegmentGetReportsReadyVersion(t *testing.T) {
 		t.Fatalf("decode segment: %v", err)
 	}
 	obj, _ := decoded.(map[string]any)
-	count, ok := harness.IntField(obj, "memberCount", "member_count")
-	if !ok {
-		t.Fatalf("segment response has no memberCount: %s", resp.Snippet())
+	if count, ok := obj["memberCount"]; !ok || count != nil || obj["suppressed"] != true {
+		t.Fatalf("segment must suppress its small membership: %s", resp.Snippet())
 	}
-	if count != 1 {
-		t.Fatalf("memberCount: expected 1 materialized member, got %d", count)
+	count, err := s.DB.Count(ctx, `SELECT COUNT(*) FROM segment_member sm JOIN segment_version sv ON sv.id = sm.segment_version_id WHERE sv.segment_id = $1 AND sm.guest_id = $2`, segment.ID, guest.ID)
+	if err != nil || count != 1 {
+		t.Fatalf("expected fixture guest in materialized segment, got %d: %v", count, err)
 	}
+}
+
+func containsString(items []string, target string) bool {
+	for _, item := range items {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }
 
 func TestRecommendationsExcludeVisitedTenants(t *testing.T) {

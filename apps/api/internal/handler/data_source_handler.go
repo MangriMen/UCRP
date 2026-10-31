@@ -89,7 +89,7 @@ func (h *DataSourceHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, offset+len(items))
 }
 
 func (h *DataSourceHandler) Get(w http.ResponseWriter, r *http.Request) {

@@ -91,7 +91,7 @@
   },
   "SegmentVersion": {
     "type": "object",
-    "required": ["id", "segmentId", "versionNo", "rule", "status", "memberCount"],
+    "required": ["id", "segmentId", "versionNo", "rule", "status", "memberCount", "suppressed"],
     "properties": {
       "id": {
         "type": "string"
@@ -115,7 +115,12 @@
       },
       "memberCount": {
         "type": "integer",
-        "minimum": 0
+        "minimum": 0,
+        "nullable": true,
+        "description": "Null when unknown or fewer than five guests."
+      },
+      "suppressed": {
+        "type": "boolean"
       },
       "computedAt": {
         "type": "string",
@@ -141,6 +146,7 @@
       "currentVersionNo",
       "status",
       "memberCount",
+      "suppressed",
       "createdAt",
       "updatedAt"
     ],
@@ -173,7 +179,12 @@
       },
       "memberCount": {
         "type": "integer",
-        "minimum": 0
+        "minimum": 0,
+        "nullable": true,
+        "description": "Null when unknown or fewer than five guests."
+      },
+      "suppressed": {
+        "type": "boolean"
       },
       "computedAt": {
         "type": "string",

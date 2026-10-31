@@ -27,22 +27,42 @@ type RecommendationDTO struct {
 }
 
 type SegmentRecommendationDTO struct {
-	TenantID string  `json:"tenant_id"`
-	Score    float64 `json:"score"`
-	Guests   int     `json:"guests"`
+	TenantID        string  `json:"tenant_id"`
+	TenantName      string  `json:"tenant_name"`
+	CategoryID      string  `json:"category_id,omitempty"`
+	Score           float64 `json:"score"`
+	Guests          int     `json:"guests"`
+	EligibleCount   int     `json:"eligible_count"`
+	SegmentCount    int     `json:"segment_count"`
+	AverageScore    float64 `json:"average_score"`
+	IncompleteCount int     `json:"incomplete_count"`
+}
+
+type SegmentAggregator interface {
+	AggregateSegment(ctx context.Context, segmentID string, limit int) ([]domain.SegmentTenantScore, error)
 }
 
 func (s *RecommendationService) ForSegment(ctx context.Context, segmentID string, limit int) ([]SegmentRecommendationDTO, error) {
-	items, err := s.repo.TopTenantsForSegment(ctx, segmentID, limit)
+	agg, ok := s.rec.(SegmentAggregator)
+	if !ok {
+		return nil, fmt.Errorf("recommendations: segment aggregation is not available")
+	}
+	items, err := agg.AggregateSegment(ctx, segmentID, limit)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]SegmentRecommendationDTO, 0, len(items))
 	for _, it := range items {
 		out = append(out, SegmentRecommendationDTO{
-			TenantID: it.TenantID,
-			Score:    it.Score,
-			Guests:   it.Guests,
+			TenantID:        it.TenantID,
+			TenantName:      it.TenantName,
+			CategoryID:      it.CategoryName,
+			Score:           it.AverageScore,
+			Guests:          it.GuestCount,
+			EligibleCount:   it.EligibleCount,
+			SegmentCount:    it.SegmentCount,
+			AverageScore:    it.AverageScore,
+			IncompleteCount: it.IncompleteCount,
 		})
 	}
 	return out, nil

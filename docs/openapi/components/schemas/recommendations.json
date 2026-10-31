@@ -5,7 +5,7 @@
     "properties": {
       "factorCode": {
         "type": "string",
-        "enum": ["similar_guests", "category_adjacency", "recency", "distance", "tenant_priority"]
+        "enum": ["similar_guests", "category_adjacency", "recency", "distance", "tenant_priority", "popularity", "competitor_penalty", "low_data"]
       },
       "rawValue": {
         "type": "number",
@@ -106,32 +106,54 @@
   },
   "SegmentRecommendation": {
     "type": "object",
-    "required": ["tenantId", "tenantName", "guestCount"],
+    "required": ["tenant_id", "tenant_name", "guests", "suppressed"],
     "properties": {
-      "tenantId": {
+      "tenant_id": {
         "type": "string"
       },
-      "tenantName": {
+      "tenant_name": {
         "type": "string"
       },
-      "categoryName": {
+      "category_id": {
         "type": "string",
         "nullable": true
       },
-      "guestCount": {
+      "guests": {
         "type": "integer",
+        "nullable": true,
         "minimum": 0,
         "description": "How many segment guests were recommended this tenant"
       },
-      "avgScore": {
+      "score": {
         "type": "number",
-        "format": "double"
+        "format": "double",
+        "nullable": true
+      },
+      "average_score": {
+        "type": "number",
+        "format": "double",
+        "nullable": true
+      },
+      "eligible_count": {
+        "type": "integer",
+        "nullable": true
+      },
+      "segment_count": {
+        "type": "integer",
+        "nullable": true
+      },
+      "incomplete_count": {
+        "type": "integer",
+        "nullable": true
+      },
+      "suppressed": {
+        "type": "boolean"
       }
     }
   },
   "SegmentRecommendationList": {
     "type": "object",
-    "required": ["segmentId", "items"],
+    "required": ["items"],
     "properties": {
       "segmentId": {
         "type": "string"

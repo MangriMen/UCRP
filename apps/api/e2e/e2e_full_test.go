@@ -106,10 +106,7 @@ func TestE2EImportToExport(t *testing.T) {
 		t.Fatalf("step 7 decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	toSend, _ := harness.IntField(previewObj, "to_send", "toSend")
-	if toSend < 1 {
-		t.Fatalf("step 7: the imported guest must be exportable, to_send=%d", toSend)
-	}
+	assertExportCountsSuppressed(t, previewObj, "in_segment", "with_contact", "blocked_by_limit", "control", "to_send")
 
 	exportResp, err := exportCreate(ctx, marketer, segmentID, s.Reg.Name("e2e-full-key"))
 	if err != nil {

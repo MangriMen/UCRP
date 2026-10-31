@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 )
@@ -10,14 +11,16 @@ type IdentityService struct {
 	candidates domain.MergeCandidateRepo
 	blocks     domain.UnmergeBlockRepo
 	manual     domain.MergeManualRepo
+	queue      domain.Queue
 	clock      domain.Clock
 }
 
-func NewIdentityService(candidates domain.MergeCandidateRepo, blocks domain.UnmergeBlockRepo, manual domain.MergeManualRepo) *IdentityService {
+func NewIdentityService(candidates domain.MergeCandidateRepo, blocks domain.UnmergeBlockRepo, manual domain.MergeManualRepo, queue domain.Queue) *IdentityService {
 	return &IdentityService{
 		candidates: candidates,
 		blocks:     blocks,
 		manual:     manual,
+		queue:      queue,
 		clock:      domain.SystemClock{},
 	}
 }
@@ -61,6 +64,9 @@ func (s *IdentityService) Confirm(ctx context.Context, id, actorUserID string) (
 	if err != nil {
 		return nil, err
 	}
+	if err := s.enqueueRecommendRefresh(ctx, c.GuestAID, c.GuestBID); err != nil {
+		return nil, err
+	}
 	dto := toMergeDTO(*c)
 	return &dto, nil
 }
@@ -79,6 +85,9 @@ func (s *IdentityService) Revert(ctx context.Context, id, actorUserID string) (*
 	if err != nil {
 		return nil, err
 	}
+	if err := s.enqueueRecommendRefresh(ctx, c.WinnerGuestID, c.MergedGuestID); err != nil {
+		return nil, err
+	}
 	dto := toMergeDTO(*c)
 	return &dto, nil
 }
@@ -88,8 +97,34 @@ func (s *IdentityService) Merge(ctx context.Context, sourceGuestID, targetGuestI
 	if err != nil {
 		return nil, err
 	}
+	if err := s.enqueueRecommendRefresh(ctx, c.WinnerGuestID, c.MergedGuestID); err != nil {
+		return nil, err
+	}
 	d := toMergeDTO(*c)
 	return &d, nil
+}
+
+func (s *IdentityService) enqueueRecommendRefresh(ctx context.Context, guestIDs ...string) error {
+	if s.queue == nil {
+		return nil
+	}
+	for _, guestID := range guestIDs {
+		if guestID == "" {
+			continue
+		}
+		payload, err := json.Marshal(map[string]string{"guest_id": guestID})
+		if err != nil {
+			return err
+		}
+		if err := s.queue.Enqueue(ctx, domain.Job{
+			JobType:  "recommend.refresh",
+			Payload:  string(payload),
+			DedupKey: "reco:" + guestID,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type UnmergeBlockDTO struct {

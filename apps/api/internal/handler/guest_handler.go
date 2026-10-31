@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -21,7 +20,7 @@ func NewGuestHandler(profiles *service.ProfileService) *GuestHandler {
 
 func (h *GuestHandler) Search(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
-	if len([]rune(q)) < 2 {
+	if q != "" && len([]rune(q)) < 2 {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "q: минимум 2 символа")
 		return
 	}
@@ -50,11 +49,5 @@ func (h *GuestHandler) Events(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": events})
-}
-
-func pageParams(r *http.Request) (int, int) {
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	return limit, offset
+	writePage(w, events, limit, offset, offset+len(events))
 }

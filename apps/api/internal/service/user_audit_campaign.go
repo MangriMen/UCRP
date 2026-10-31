@@ -23,11 +23,15 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 	if err != nil {
 		return LoginResult{}, err
 	}
+	me, err := s.effectiveMe(ctx, u)
+	if err != nil {
+		return LoginResult{}, err
+	}
 	return LoginResult{
 		AccessToken:  pair.AccessToken,
 		RefreshToken: pair.RefreshToken,
 		ExpiresIn:    pair.ExpiresIn,
-		User:         toMe(u),
+		User:         me,
 	}, nil
 }
 
@@ -115,7 +119,7 @@ func (s *AuthService) UpdateUser(ctx context.Context, id string, req UserUpdateR
 	if req.Role != "" {
 		u.Role = domain.Role(req.Role)
 	}
-	if req.TenantID != "" || u.Role == domain.RoleTenant {
+	if req.TenantID != "" {
 		u.TenantID = req.TenantID
 	}
 	if req.Password != "" {

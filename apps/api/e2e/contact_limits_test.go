@@ -38,15 +38,12 @@ func TestContactLimitBlocksRepeatExport(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	blocked, _ := harness.IntField(previewObj, "blocked_by_limit", "blockedByLimit")
-	toSend, _ := harness.IntField(previewObj, "to_send", "toSend")
-
-	if blocked != 3 {
-		t.Fatalf("blocked_by_limit: expected all 3 guests blocked by maxContacts=1, got %d", blocked)
+	assertExportCountsSuppressed(t, previewObj, "in_segment", "with_contact", "blocked_by_limit", "control", "to_send")
+	second, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("limit-key-2"))
+	if err != nil {
+		t.Fatalf("second export: %v", err)
 	}
-	if toSend != 0 {
-		t.Fatalf("to_send: expected 0 when every guest is blocked, got %d", toSend)
-	}
+	s.RequireStatus(second, 409, "repeat export blocked by contact limit")
 }
 
 func TestContactLimitStrictestRuleWins(t *testing.T) {
@@ -84,10 +81,12 @@ func TestContactLimitStrictestRuleWins(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	blocked, _ := harness.IntField(previewObj, "blocked_by_limit", "blockedByLimit")
-	if blocked != 2 {
-		t.Fatalf("the strictest rule (maxContacts=1) must block both guests, got %d blocked", blocked)
+	assertExportCountsSuppressed(t, previewObj, "in_segment", "with_contact", "blocked_by_limit", "control", "to_send")
+	second, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("strict-key-2"))
+	if err != nil {
+		t.Fatalf("second export: %v", err)
 	}
+	s.RequireStatus(second, 409, "strictest contact limit blocks repeat export")
 }
 
 func TestContactLimitIsChannelScoped(t *testing.T) {
@@ -122,10 +121,12 @@ func TestContactLimitIsChannelScoped(t *testing.T) {
 		t.Fatalf("decode preview: %v", err)
 	}
 	previewObj, _ := previewBody.(map[string]any)
-	blocked, _ := harness.IntField(previewObj, "blocked_by_limit", "blockedByLimit")
-	if blocked != 2 {
-		t.Fatalf("sms limit must block both guests on the sms channel, got %d", blocked)
+	assertExportCountsSuppressed(t, previewObj, "in_segment", "with_contact", "blocked_by_limit", "control", "to_send")
+	second, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("channel-key-2"))
+	if err != nil {
+		t.Fatalf("second export: %v", err)
 	}
+	s.RequireStatus(second, 409, "sms limit blocks repeat sms export")
 }
 
 func TestContactLimitControlGroupNotLogged(t *testing.T) {
@@ -153,8 +154,11 @@ func TestContactLimitControlGroupNotLogged(t *testing.T) {
 	exportID := harness.StringField(obj, "id")
 	trackExport(s, exportID)
 
-	control, _ := harness.IntField(obj, "control_count", "controlCount")
-	exported, _ := harness.IntField(obj, "exported_count", "exportedCount")
+	assertExportCountsSuppressed(t, obj, "total_in_segment", "no_contact_count", "blocked_by_limit_count", "control_count", "exported_count")
+	var control, exported int
+	if err := s.DB.QueryRowContext(ctx, `SELECT control_count, exported_count FROM export_job WHERE id = $1`, exportID).Scan(&control, &exported); err != nil {
+		t.Fatalf("read export counts: %v", err)
+	}
 
 	logs, err := s.DB.Count(ctx, `SELECT COUNT(*) FROM contact_log WHERE export_id = $1`, exportID)
 	if err != nil {

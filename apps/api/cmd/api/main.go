@@ -67,6 +67,9 @@ func run(log *slog.Logger, cfg config.Config) error {
 	if err := seedAdmin(ctx, users, clock, idg); err != nil {
 		return err
 	}
+	if err := bootstrapManager(ctx, store.DB, clock, idg); err != nil {
+		return err
+	}
 	catalog := repository.NewImportCatalogSQL(store.DB)
 	if err := catalog.EnsureEventTypes(ctx, clock, idg); err != nil {
 		return err
@@ -80,11 +83,19 @@ func run(log *slog.Logger, cfg config.Config) error {
 		return err
 	}
 	authSvc := service.NewAuthService(users, tokens, clock, idg)
+	accessSvc := service.NewAccessGrantService(repository.NewAccessSQL(store.DB), clock, idg, users)
+	accessSvc.SetTenantRepository(repository.NewTenantSQL(store.DB))
+	accessSvc.SetAuditRepository(repository.NewAuditSQL(store.DB))
+	authSvc.SetAccess(accessSvc)
 	authHandler := handler.NewAuthHandler(authSvc)
+	accessHandler := handler.NewAccessGrantHandler(accessSvc)
+	invitationHandler := handler.NewInvitationHandler(service.NewInvitationService(repository.NewInvitationSQL(store.DB), accessSvc, nil, clock, idg))
 	userHandler := handler.NewUserHandler(authSvc)
 	auditHandler := handler.NewAuditHandler(service.NewAuditService(repository.NewAuditSQL(store.DB)))
 	campaignHandler := handler.NewCampaignHandler(service.NewCampaignService(repository.NewCampaignSQL(store.DB)))
-	analyticsHandler := handler.NewAnalyticsHandler(service.NewAnalyticsService(store.DB))
+	analyticsSvc := service.NewAnalyticsService(store.DB)
+	analyticsHandler := handler.NewAnalyticsHandler(analyticsSvc)
+	tenantAccessHandler := handler.NewTenantAccessHandler(accessSvc, analyticsSvc)
 	q := queue.NewDBQueue(store.DB, clock, idg)
 	guests := repository.NewGuestSQL(store.DB)
 	identifiers := repository.NewGuestIdentifierSQL(store.DB)
@@ -92,9 +103,11 @@ func run(log *slog.Logger, cfg config.Config) error {
 	contacts := repository.NewContactLogSQL(store.DB)
 	profileSvc := service.NewProfileService(guests, identifiers, events, contacts)
 	guestHandler := handler.NewGuestHandler(profileSvc)
+	tenantGuestSvc := service.NewTenantGuestService(repository.NewTenantGuestSQL(store.DB), accessSvc)
+	tenantGuestHandler := handler.NewTenantGuestHandler(tenantGuestSvc, guestHandler)
 	mergeSQL := repository.NewMergeSQL(store.DB)
 	blocks := repository.NewUnmergeBlockSQL(store.DB)
-	identitySvc := service.NewIdentityService(mergeSQL, blocks, mergeSQL)
+	identitySvc := service.NewIdentityService(mergeSQL, blocks, mergeSQL, q)
 	identityHandler := handler.NewIdentityHandler(identitySvc)
 	segmentRepo := repository.NewSegmentSQL(store.DB)
 	if err := segmentRepo.EnsureTemplates(ctx, clock, idg); err != nil {
@@ -102,7 +115,8 @@ func run(log *slog.Logger, cfg config.Config) error {
 	}
 	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), q)
 	segmentHandler := handler.NewSegmentHandler(segmentSvc)
-	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), recommend.NewWeightedRecommender(store.DB))
+	recommender := recommend.NewWeightedRecommender(store.DB, cfg.Recommend)
+	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), recommender)
 	recoHandler := handler.NewRecommendationHandler(recoSvc)
 	exportSvc := service.NewExportService(
 		repository.NewExportSQL(store.DB),
@@ -133,6 +147,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		repository.NewEventTypeSQL(store.DB),
 	)
 	refHandler := handler.NewReferenceHandler(refSvc)
+	tenantReferenceHandler := handler.NewTenantReferenceHandler(accessSvc, refSvc, refHandler)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -144,14 +159,32 @@ func run(log *slog.Logger, cfg config.Config) error {
 		api.Post("/auth/login", authHandler.Login)
 		api.Post("/auth/refresh", authHandler.Refresh)
 		api.Post("/auth/logout", authHandler.Logout)
+		api.Post("/auth/invitations/accept", invitationHandler.Accept)
 		api.Group(func(priv chi.Router) {
 			priv.Use(auth.Middleware(tokens))
+			priv.Use(auth.RequireActiveUser(users))
+			priv.Use(handler.DeniedAuditMiddleware(repository.NewAuditSQL(store.DB), idg, clock))
+			priv.Use(handler.PermissionMiddleware(accessSvc))
 			priv.Get("/auth/me", authHandler.Me)
+			priv.Route("/access", func(a chi.Router) {
+				a.Get("/permissions", accessHandler.Permissions)
+				a.Get("/presets", accessHandler.Presets)
+				a.Get("/effective", accessHandler.EffectiveSubject)
+				a.Post("/simulate", accessHandler.Simulate)
+				a.Get("/audit", accessHandler.Audit)
+				a.Get("/grants", accessHandler.List)
+				a.Post("/grants", accessHandler.Create)
+				a.Get("/grants/{id}", accessHandler.Get)
+				a.Patch("/grants/{id}", accessHandler.Update)
+				a.Post("/grants/{id}/activate", accessHandler.Activate)
+				a.Post("/grants/{id}/suspend", accessHandler.Suspend)
+				a.Post("/grants/{id}/revoke", accessHandler.Revoke)
+			})
 			priv.Route("/guests", func(g chi.Router) {
-				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/", guestHandler.Search)
-				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}", guestHandler.Get)
-				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/events", guestHandler.Events)
-				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/contacts", guestHandler.Contacts)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", guestHandler.Search)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/{id}", tenantGuestHandler.Get)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/{id}/events", tenantGuestHandler.Events)
+				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}/contacts", guestHandler.Contacts)
 				g.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/merge", identityHandler.Merge)
 				g.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", guestHandler.Delete)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/recommendations", recoHandler.List)
@@ -196,9 +229,9 @@ func run(log *slog.Logger, cfg config.Config) error {
 				c.With(auth.RequireRole(domain.RoleMarketer)).Delete("/{id}", limitHandler.Delete)
 			})
 			priv.Route("/tenants", func(t chi.Router) {
-				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", refHandler.ListTenants)
+				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/", tenantReferenceHandler.List)
 				t.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", refHandler.CreateTenant)
-				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}", refHandler.GetTenant)
+				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/{id}", tenantReferenceHandler.Get)
 				t.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/{id}", refHandler.UpdateTenant)
 				t.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", refHandler.DeleteTenant)
 			})
@@ -241,6 +274,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 			priv.With(auth.RequireRole(domain.RoleAnalyst)).Post("/data-source-types", dataSourceHandler.CreateType)
 			priv.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/data-source-types/{id}", dataSourceHandler.UpdateType)
 			priv.Route("/users", func(u chi.Router) {
+				u.With(auth.RequireRole(domain.RoleManager)).Post("/invitations", invitationHandler.Issue)
 				u.With(auth.RequireRole(domain.RoleManager)).Get("/", userHandler.List)
 				u.With(auth.RequireRole(domain.RoleManager)).Post("/", userHandler.Create)
 				u.With(auth.RequireRole(domain.RoleManager)).Get("/{id}", userHandler.Get)
@@ -259,7 +293,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 				d.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/penetration", analyticsHandler.Penetration)
 				d.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/metrics", analyticsHandler.Metrics)
 			})
-			priv.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/tenants/{id}/aggregates", analyticsHandler.TenantAggregates)
+			priv.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/tenants/{id}/aggregates", tenantAccessHandler.Aggregates)
 			priv.With(auth.RequireRole(domain.RoleManager, domain.RoleAnalyst)).Get("/data-quality/sources", analyticsHandler.DataQuality)
 		})
 	})

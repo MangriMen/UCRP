@@ -65,9 +65,10 @@ type SegmentPreviewExample struct {
 }
 
 type SegmentPreviewResponse struct {
-	Size     int                     `json:"size"`
-	Examples []SegmentPreviewExample `json:"examples"`
-	Cached   bool                    `json:"cached"`
+	Size       *int                    `json:"size"`
+	Examples   []SegmentPreviewExample `json:"examples"`
+	Cached     bool                    `json:"cached"`
+	Suppressed bool                    `json:"suppressed"`
 }
 
 type SegmentCreateRequest struct {
@@ -107,7 +108,8 @@ type SegmentDTO struct {
 	CurrentVersionNo int             `json:"currentVersionNo"`
 	Status           string          `json:"status"`
 	VersionStatus    string          `json:"versionStatus,omitempty"`
-	MemberCount      int             `json:"memberCount"`
+	MemberCount      *int            `json:"memberCount"`
+	Suppressed       bool            `json:"suppressed"`
 	ComputedAt       string          `json:"computedAt,omitempty"`
 	Rule             json.RawMessage `json:"rule,omitempty"`
 	CreatedBy        string          `json:"createdBy,omitempty"`
@@ -126,10 +128,20 @@ func (s *SegmentService) Preview(ctx context.Context, req SegmentPreviewRequest)
 		return nil, err
 	}
 	out := make([]SegmentPreviewExample, 0, len(examples))
-	for _, id := range examples {
-		out = append(out, SegmentPreviewExample{GuestID: id})
+	count, suppressed := visibleSegmentCount(&size)
+	if !suppressed {
+		for _, id := range examples {
+			out = append(out, SegmentPreviewExample{GuestID: id})
+		}
 	}
-	return &SegmentPreviewResponse{Size: size, Examples: out, Cached: false}, nil
+	return &SegmentPreviewResponse{Size: count, Examples: out, Cached: false, Suppressed: suppressed}, nil
+}
+
+func visibleSegmentCount(count *int) (*int, bool) {
+	if count == nil || *count < 5 {
+		return nil, true
+	}
+	return count, false
 }
 
 func (s *SegmentService) Create(ctx context.Context, req SegmentCreateRequest, actorUserID string) (*SegmentDTO, error) {
@@ -178,6 +190,7 @@ func (s *SegmentService) Get(ctx context.Context, id string) (*SegmentDTO, error
 }
 
 func toSegmentDTO(seg *domain.Segment, ver *domain.SegmentVersion) *SegmentDTO {
+	count, suppressed := visibleSegmentCount(ver.MemberCount)
 	dto := &SegmentDTO{
 		ID:               seg.ID,
 		Name:             seg.Name,
@@ -187,14 +200,12 @@ func toSegmentDTO(seg *domain.Segment, ver *domain.SegmentVersion) *SegmentDTO {
 		CurrentVersionNo: seg.CurrentVersionNo,
 		Status:           string(seg.Status),
 		VersionStatus:    string(ver.Status),
-		MemberCount:      0,
+		MemberCount:      count,
+		Suppressed:       suppressed,
 		Rule:             json.RawMessage(ver.Rule),
 		CreatedBy:        seg.CreatedBy,
 		CreatedAt:        seg.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:        seg.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-	}
-	if ver.MemberCount != nil {
-		dto.MemberCount = *ver.MemberCount
 	}
 	if ver.ComputedAt != nil {
 		dto.ComputedAt = ver.ComputedAt.UTC().Format("2006-01-02T15:04:05Z07:00")
@@ -223,7 +234,7 @@ func (s *SegmentService) List(ctx context.Context, limit, offset int) (*SegmentP
 			IsTemplate:       seg.IsTemplate,
 			CurrentVersionNo: seg.CurrentVersionNo,
 			Status:           string(seg.Status),
-			MemberCount:      0,
+			Suppressed:       true,
 			CreatedAt:        seg.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 			UpdatedAt:        seg.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		})
@@ -313,12 +324,14 @@ func (s *SegmentService) Versions(ctx context.Context, id string) ([]SegmentVers
 	}
 	out := make([]SegmentVersionDTO, 0, len(items))
 	for _, v := range items {
+		count, suppressed := visibleSegmentCount(v.MemberCount)
 		d := SegmentVersionDTO{
 			ID:          v.ID,
 			VersionNo:   v.VersionNo,
 			Rule:        json.RawMessage(v.Rule),
 			Status:      string(v.Status),
-			MemberCount: v.MemberCount,
+			MemberCount: count,
+			Suppressed:  suppressed,
 			CreatedAt:   v.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		}
 		if v.ComputedAt != nil {
@@ -335,6 +348,7 @@ type SegmentVersionDTO struct {
 	Rule        json.RawMessage `json:"rule"`
 	Status      string          `json:"status"`
 	MemberCount *int            `json:"memberCount"`
+	Suppressed  bool            `json:"suppressed"`
 	ComputedAt  string          `json:"computedAt,omitempty"`
 	CreatedAt   string          `json:"createdAt"`
 }
@@ -393,7 +407,7 @@ func (s *SegmentService) Templates(ctx context.Context) ([]SegmentDTO, error) {
 			IsTemplate:       seg.IsTemplate,
 			CurrentVersionNo: seg.CurrentVersionNo,
 			Status:           string(seg.Status),
-			MemberCount:      0,
+			Suppressed:       true,
 			CreatedAt:        seg.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 			UpdatedAt:        seg.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		})

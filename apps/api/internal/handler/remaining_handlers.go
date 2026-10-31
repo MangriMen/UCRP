@@ -71,7 +71,7 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, offset+len(items))
 }
 
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +101,10 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var req service.UserUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
+		return
+	}
+	if req.Role != "" || req.TenantID != "" || req.Password != "" || req.IsActive != nil {
+		httpx.WriteError(w, r, http.StatusForbidden, "forbidden_permission", "Недостаточно прав для изменения учётных данных")
 		return
 	}
 	item, err := h.auth.UpdateUser(r.Context(), chi.URLParam(r, "id"), req)
@@ -140,7 +144,7 @@ func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, offset+len(items))
 }
 
 type CampaignHandler struct {
@@ -158,7 +162,7 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, offset+len(items))
 }
 
 func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -228,21 +232,29 @@ func (h *AnalyticsHandler) Penetration(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("to"); v != "" {
 		to, _ = time.Parse(time.RFC3339, v)
 	}
-	res, err := h.analytics.Penetration(r.Context(), from, to)
+	res, err := h.analytics.Penetration(r.Context(), from, to, q.Get("granularity"))
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, res)
+	httpx.WriteJSON(w, http.StatusOK, penetrationResponse(res))
 }
 
 func (h *AnalyticsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
-	res, err := h.analytics.Metrics(r.Context())
+	q := r.URL.Query()
+	var from, to time.Time
+	if v := q.Get("from"); v != "" {
+		from, _ = time.Parse(time.RFC3339, v)
+	}
+	if v := q.Get("to"); v != "" {
+		to, _ = time.Parse(time.RFC3339, v)
+	}
+	res, err := h.analytics.Metrics(r.Context(), from, to)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, res)
+	httpx.WriteJSON(w, http.StatusOK, dashboardMetricsResponse(res))
 }
 
 func (h *AnalyticsHandler) TenantAggregates(w http.ResponseWriter, r *http.Request) {
@@ -265,5 +277,5 @@ func (h *AnalyticsHandler) DataQuality(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writeItems(w, items)
 }

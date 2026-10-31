@@ -14,17 +14,30 @@ type Recommendation struct {
 	Explanation      string
 	AlgorithmVersion string
 	ComputedAt       time.Time
+	Factors          []RecommendationFactor
+}
+
+type RecommendationFactor struct {
+	RecommendationID string
+	FactorCode       string
+	RawValue         float64
+	Weight           float64
+	Contribution     float64
 }
 
 type SegmentTenantScore struct {
-	TenantID string
-	Score    float64
-	Guests   int
+	TenantID        string
+	TenantName      string
+	CategoryName    string
+	GuestCount      int
+	EligibleCount   int
+	SegmentCount    int
+	AverageScore    float64
+	IncompleteCount int
 }
 
 type RecommendationRepo interface {
 	ListByGuest(ctx context.Context, guestID string) ([]Recommendation, error)
-	TopTenantsForSegment(ctx context.Context, segmentID string, limit int) ([]SegmentTenantScore, error)
 }
 
 type Recommender interface {
