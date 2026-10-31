@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -85,8 +88,14 @@ func (h *SegmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_failed", "Некорректное тело")
 		return
 	}
-	res, err := h.segments.Preview(r.Context(), req)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	res, err := h.segments.Preview(ctx, req)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			httpx.WriteError(w, r, http.StatusGatewayTimeout, "timeout", "Превышен таймаут предпросмотра, сузьте период")
+			return
+		}
 		httpx.WriteDomainError(w, r, err)
 		return
 	}

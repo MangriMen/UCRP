@@ -71,11 +71,8 @@ func run(log *slog.Logger, cfg config.Config) error {
 		repository.NewMergeSQL(store.DB),
 		repository.NewUnmergeBlockSQL(store.DB),
 	)
-	segmentSvc := service.NewSegmentService(
-		repository.NewSegmentSQL(store.DB),
-		segments.NewSqlEvaluator(store.DB),
-		q,
-	)
+	segmentRepo := repository.NewSegmentSQL(store.DB)
+	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), q)
 	jobTypes := []string{"import.process", "connector.pull", "identity.resolve", "segment.recompute"}
 	maxAttempts := 3
 
@@ -106,7 +103,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		}
 
 		log.Info("job taken", "id", job.ID, "type", job.JobType)
-		if err := handleJob(ctx, imports, resolver, segmentSvc, job); err != nil {
+		if err := handleJob(ctx, imports, resolver, segmentSvc, segmentRepo, q, job); err != nil {
 			log.Error("job failed", "id", job.ID, "type", job.JobType, "err", err)
 			if job.Attempts >= maxAttempts {
 				if failErr := q.Fail(ctx, job.ID, err.Error(), time.Time{}); failErr != nil {
@@ -126,7 +123,15 @@ func run(log *slog.Logger, cfg config.Config) error {
 	}
 }
 
-func handleJob(ctx context.Context, imports *service.ImportService, resolver *identity.Resolver, segmentSvc *service.SegmentService, job *domain.Job) error {
+func handleJob(
+	ctx context.Context,
+	imports *service.ImportService,
+	resolver *identity.Resolver,
+	segmentSvc *service.SegmentService,
+	segmentRepo domain.SegmentRepo,
+	q domain.Queue,
+	job *domain.Job,
+) error {
 	var payload struct {
 		BatchID   string `json:"batch_id"`
 		SegmentID string `json:"segment_id"`
@@ -140,7 +145,15 @@ func handleJob(ctx context.Context, imports *service.ImportService, resolver *id
 		if payload.BatchID == "" {
 			return domain.ErrValidation
 		}
-		return resolver.ResolveBatch(ctx, payload.BatchID)
+		if err := resolver.ResolveBatch(ctx, payload.BatchID); err != nil {
+			return err
+		}
+		return enqueueActiveSegmentRecompute(ctx, segmentRepo, q)
+	case "connector.pull":
+		if payload.BatchID == "" {
+			return domain.ErrValidation
+		}
+		return imports.ProcessBatch(ctx, payload.BatchID)
 	case "segment.recompute":
 		if payload.SegmentID == "" {
 			return domain.ErrValidation
@@ -152,4 +165,28 @@ func handleJob(ctx context.Context, imports *service.ImportService, resolver *id
 		}
 		return imports.ProcessBatch(ctx, payload.BatchID)
 	}
+}
+
+func enqueueActiveSegmentRecompute(ctx context.Context, segmentsRepo domain.SegmentRepo, q domain.Queue) error {
+	items, err := segmentsRepo.List(ctx, 100, 0)
+	if err != nil {
+		return err
+	}
+	for _, seg := range items {
+		if seg.Status != domain.SegmentActive || seg.IsTemplate {
+			continue
+		}
+		payload, err := json.Marshal(map[string]string{"segment_id": seg.ID})
+		if err != nil {
+			return err
+		}
+		if err := q.Enqueue(ctx, domain.Job{
+			JobType:  "segment.recompute",
+			Payload:  string(payload),
+			DedupKey: "segment:" + seg.ID + ":auto",
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

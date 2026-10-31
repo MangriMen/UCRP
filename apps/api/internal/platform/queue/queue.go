@@ -33,26 +33,14 @@ func (q *DBQueue) Enqueue(ctx context.Context, job domain.Job) error {
 	if job.Status == "" {
 		job.Status = domain.JobQueued
 	}
-	if job.DedupKey != "" {
-		var exists int
-		err := q.db.QueryRowContext(ctx, `
-			SELECT 1 FROM job_queue
-			WHERE dedup_key = $1 AND status IN ('queued','running')
-			LIMIT 1`, job.DedupKey).Scan(&exists)
-		if err == nil {
-			return nil
-		}
-		if err != sql.ErrNoRows {
-			return err
-		}
-	}
 	var dedup any
 	if job.DedupKey != "" {
 		dedup = job.DedupKey
 	}
 	_, err := q.db.ExecContext(ctx, `
 		INSERT INTO job_queue (id, job_type, payload, dedup_key, status, attempts, run_after, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (dedup_key) WHERE status IN ('queued','running') DO NOTHING`,
 		job.ID, job.JobType, job.Payload, dedup, string(job.Status), job.Attempts, job.RunAfter, job.CreatedAt,
 	)
 	if err != nil {
@@ -111,7 +99,6 @@ func (q *DBQueue) Take(ctx context.Context, jobTypes []string, workerID string) 
 	}
 	job.Status = domain.JobStatus(status)
 	job.LockedBy = workerID
-	job.Attempts++
 	return &job, nil
 }
 

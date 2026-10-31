@@ -169,6 +169,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/members", segmentHandler.Members)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/versions", segmentHandler.Versions)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/{id}/recompute", segmentHandler.Recompute)
+				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/recommendations", recoHandler.SegmentRecommendations)
 			})
 			priv.Route("/exports", func(x chi.Router) {
 				x.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", exportHandler.List)
@@ -223,6 +224,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 				d.With(auth.RequireRole(domain.RoleAnalyst, domain.RoleManager, domain.RoleMarketer)).Get("/{id}", dataSourceHandler.Get)
 				d.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/sync", importHandler.Sync)
 			})
+			priv.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/segment-templates", segmentHandler.Templates)
 			priv.With(auth.RequireRole(domain.RoleAnalyst, domain.RoleManager, domain.RoleMarketer)).Get("/data-source-types", dataSourceHandler.ListTypes)
 		})
 	})

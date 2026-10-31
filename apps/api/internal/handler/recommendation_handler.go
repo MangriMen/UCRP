@@ -26,6 +26,15 @@ func (h *RecommendationHandler) List(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
+func (h *RecommendationHandler) SegmentRecommendations(w http.ResponseWriter, r *http.Request) {
+	items, err := h.recommendations.ForSegment(r.Context(), chi.URLParam(r, "id"), 10)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+}
+
 func (h *RecommendationHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	items, err := h.recommendations.Refresh(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {

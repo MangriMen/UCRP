@@ -171,6 +171,16 @@ func (s *ImportService) Create(ctx context.Context, in CreateImportInput) (*Crea
 		StorageKey:    storageKey,
 	}
 	if err := s.batches.CreateQueued(ctx, batch, jobImportProcess, "import:"+batchID); err != nil {
+		if errors.Is(err, domain.ErrConflict) {
+			if existing, findErr := s.batches.FindByHash(ctx, in.DataSourceID, hash); findErr == nil {
+				return &CreateImportResult{
+					BatchID:    existing.ID,
+					Status:     string(existing.Status),
+					Duplicate:  true,
+					HTTPStatus: http.StatusOK,
+				}, nil
+			}
+		}
 		return nil, err
 	}
 	return &CreateImportResult{
@@ -313,6 +323,9 @@ func (s *ImportService) processPull(ctx context.Context, batch *domain.ImportBat
 	}
 	if err := json.Unmarshal([]byte(ds.Config), &cfg); err != nil || cfg.URL == "" {
 		return s.pipeline.Fail(ctx, batch.ID, "Для pull-источника не задан config.url")
+	}
+	if !strings.HasPrefix(cfg.URL, "http://") && !strings.HasPrefix(cfg.URL, "https://") {
+		return s.pipeline.Fail(ctx, batch.ID, "URL источника должен быть http или https")
 	}
 	mapping, err := ingestion.ParseFieldMapping(ds.FieldMapping)
 	if err != nil {

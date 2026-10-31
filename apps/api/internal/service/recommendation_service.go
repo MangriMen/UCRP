@@ -26,6 +26,28 @@ type RecommendationDTO struct {
 	ComputedAt       string  `json:"computed_at"`
 }
 
+type SegmentRecommendationDTO struct {
+	TenantID string  `json:"tenant_id"`
+	Score    float64 `json:"score"`
+	Guests   int     `json:"guests"`
+}
+
+func (s *RecommendationService) ForSegment(ctx context.Context, segmentID string, limit int) ([]SegmentRecommendationDTO, error) {
+	items, err := s.repo.TopTenantsForSegment(ctx, segmentID, limit)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]SegmentRecommendationDTO, 0, len(items))
+	for _, it := range items {
+		out = append(out, SegmentRecommendationDTO{
+			TenantID: it.TenantID,
+			Score:    it.Score,
+			Guests:   it.Guests,
+		})
+	}
+	return out, nil
+}
+
 func (s *RecommendationService) ForGuest(ctx context.Context, guestID string) ([]RecommendationDTO, error) {
 	if _, err := s.guests.GetByID(ctx, guestID); err != nil {
 		return nil, err
