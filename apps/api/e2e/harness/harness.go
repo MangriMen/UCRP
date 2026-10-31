@@ -77,7 +77,7 @@ func (s *Suite) WithDB() *Suite {
 		return s
 	}
 	if s.Cfg.DatabaseURL == "" {
-		s.T.Skip("UCRP_E2E_DATABASE_URL is not set: fixtures need direct database access (docs/e2e/05-implementation.md)")
+		s.T.Skip("UCRP_E2E_DATABASE_URL is not set: fixtures need direct database access (see apps/api/README.md, e2e/run.sh)")
 	}
 	db, err := fixtures.OpenDB(context.Background(), s.Cfg.DatabaseURL)
 	if err != nil {
