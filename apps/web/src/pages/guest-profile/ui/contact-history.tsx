@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { contactChannelLabels, useGuestContacts, type GuestContact } from '@/entities/guest'
+import { hasErrorCode } from '@/shared/api/errors'
 import { formatDateTime } from '@/shared/lib/format'
 import { DataTable, type Column } from '@/shared/ui/data-table'
-import { isFieldForbidden } from '../lib/is-field-forbidden'
 
 const columns: Column<GuestContact>[] = [
   { id: 'contactedAt', header: 'Дата', cell: (c) => formatDateTime(c.contactedAt) },
@@ -13,7 +13,7 @@ export function ContactHistory({ guestId }: { guestId: string }) {
   const [page, setPage] = useState(1)
   const contacts = useGuestContacts(guestId, { page })
 
-  if (isFieldForbidden(contacts.error)) return null
+  if (hasErrorCode(contacts.error, 'forbidden_field')) return null
 
   return (
     <section className="flex flex-col gap-3">

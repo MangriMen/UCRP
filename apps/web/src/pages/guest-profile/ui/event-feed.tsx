@@ -1,20 +1,18 @@
 import { CircleDot, MapPin, ShoppingBag, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useGuestEvents, type GuestEvent } from '@/entities/guest'
-import { formatDate, formatMoney } from '@/shared/lib/format'
+import { hasErrorCode } from '@/shared/api/errors'
+import { formatDate, formatMoney, formatTime } from '@/shared/lib/format'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { TablePagination } from '@/shared/ui/table-pagination'
 import { groupEventsByDay } from '../lib/group-events'
-import { isFieldForbidden } from '../lib/is-field-forbidden'
 
 const eventPresentation: Record<string, { label: string; icon: LucideIcon }> = {
   purchase: { label: 'Покупка', icon: ShoppingBag },
   visit: { label: 'Визит', icon: MapPin },
 }
-
-const timeFormat = new Intl.DateTimeFormat('ru-RU', { timeStyle: 'short' })
 
 function EventRow({ event }: { event: GuestEvent }) {
   const code = event.eventTypeCode ?? ''
@@ -31,9 +29,7 @@ function EventRow({ event }: { event: GuestEvent }) {
       </div>
       <div className="text-right text-sm">
         {event.amountMinor != null && <div>{formatMoney(event.amountMinor)}</div>}
-        <div className="text-xs text-muted-foreground">
-          {timeFormat.format(new Date(event.occurredAt))}
-        </div>
+        <div className="text-xs text-muted-foreground">{formatTime(event.occurredAt)}</div>
       </div>
     </li>
   )
@@ -43,7 +39,7 @@ export function EventFeed({ guestId }: { guestId: string }) {
   const [page, setPage] = useState(1)
   const events = useGuestEvents(guestId, { page })
 
-  if (isFieldForbidden(events.error)) return null
+  if (hasErrorCode(events.error, 'forbidden_field')) return null
 
   return (
     <section className="flex flex-col gap-3">
