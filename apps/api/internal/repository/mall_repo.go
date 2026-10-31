@@ -79,7 +79,7 @@ func (r *MallSQL) Update(ctx context.Context, m *domain.Mall) error {
 
 func (r *MallSQL) Delete(ctx context.Context, id string) error {
 	var tenants int
-	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM tenant WHERE mall_id = $1 AND deleted_at IS NULL`, id).Scan(&tenants); err != nil {
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM tenant WHERE mall_id = $1`, id).Scan(&tenants); err != nil {
 		return err
 	}
 	if tenants > 0 {
