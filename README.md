@@ -30,8 +30,10 @@
 ├── apps/
 │   ├── api/            # Go: HTTP API + воркеры (cmd/api, cmd/worker, internal/, migrations/)
 │   └── web/            # React + Vite + TypeScript (SPA)
-├── packages/           # Общие TS-пакеты (типы API, UI-кит, конфиги)
-├── docs/               # Проектная документация: аналитика, ER, C4, DFD, контракты
+├── packages/           # Общие пакеты (сейчас только api-docs: Swagger UI)
+├── docs/               # Документация: требования, дизайн, OpenAPI (см. docs/README.md)
+├── archive/            # Завершённые планы и анализ (история)
+├── ARCHITECTURE.md     # Правила слоёв и границ модулей
 ├── .github/workflows/  # CI: frontend (bun/turbo) и backend (go)
 ├── turbo.jsonc         # Пайплайн задач монорепозитория
 └── lefthook.yml        # Git-хуки: Go-проверки, линт JS/TS, Conventional Commits
@@ -101,7 +103,7 @@ bun run clean        # очистка артефактов сборки
 ```text
 apps/api    # Go HTTP API + workers
 apps/web    # React + Vite + TypeScript SPA
-packages/   # Shared TypeScript packages
+packages/   # Shared packages (currently api-docs only)
 docs/       # Project documentation (analysis, ER, C4, DFD, API contracts)
 ```
 

@@ -4,28 +4,28 @@ Project documentation for UCRP, a unified recommendation platform for shopping c
 
 ## Where things live
 
-| Location                   | What belongs there                                                                    | Lifecycle                   |
-| -------------------------- | ------------------------------------------------------------------------------------- | --------------------------- |
-| `../ARCHITECTURE.md`       | Stable technical rules: layers, dependency direction, module boundaries               | Changes rarely              |
-| `requirements/`            | What the system must do: customer input, assumptions, use cases, open questions       | Updated when scope changes  |
-| `design/`                  | How it is designed: data model, diagrams, CRUD matrix, traceability, registry         | Updated together with code  |
-| `openapi.json`, `openapi/` | API contract, the **source of truth** for paths, schemas and roles                    | Updated with every endpoint |
-| `proposals/`               | Ideas not accepted yet. Move to `design/` once agreed, delete if rejected             | Short-lived                 |
-| `../archive/`              | Finished planning artifacts kept for history. Frozen; live docs must not depend on it | Never updated               |
+| Location                   | What belongs there                                                                          | Lifecycle                   |
+| -------------------------- | ------------------------------------------------------------------------------------------- | --------------------------- |
+| `../ARCHITECTURE.md`       | Stable technical rules: layers, dependency direction, module boundaries                     | Changes rarely              |
+| `requirements/`            | What the system must do: customer input, assumptions, use cases, open questions             | Updated when scope changes  |
+| `design/`                  | How it is designed: data model, diagrams, CRUD matrix, traceability, registry               | Updated together with code  |
+| `openapi.json`, `openapi/` | API contract, the **source of truth** for paths, schemas and roles                          | Updated with every endpoint |
+| `proposals/`               | Ideas not accepted yet. Move to `design/` once agreed, delete if rejected                   | Short-lived                 |
+| `../archive/`              | Finished planning artifacts kept for history. Frozen; live docs may cite it only as history | Never updated               |
 
 Rule of thumb: a document that describes the system as it is or must be goes to `requirements/` or `design/`. A document about how the work was planned or analyzed, once that work is done, goes to `archive/`.
 
 ## Requirements
 
-| File                                     | Content                                                     |
-| ---------------------------------------- | ----------------------------------------------------------- |
-| `requirements/case.txt`                  | Original case statement                                     |
-| `requirements/customer-faq.md`           | Customer answers to 10 questions; wins over everything else |
-| `requirements/01-summary-assumptions.md` | System summary, assumptions A-1…A-23, scope                 |
-| `requirements/02-glossary.md`            | Roles R-1…R-6, entities E-1…E-21 and T-1, terms, metrics    |
-| `requirements/03-use-cases.md`           | Use case diagrams and the UC-1…UC-20 table                  |
-| `requirements/04-user-stories.md`        | US-1…US-11 with Given/When/Then criteria                    |
-| `requirements/00-open-questions.md`      | Questions Q-1…Q-27 and decisions D-1…D-38 with their status |
+| File                                     | Content                                                      |
+| ---------------------------------------- | ------------------------------------------------------------ |
+| `requirements/case.txt`                  | Original case statement                                      |
+| `requirements/customer-faq.md`           | Customer answers to 10 questions; wins over everything else  |
+| `requirements/01-summary-assumptions.md` | System summary, assumptions A-1…A-23, scope                  |
+| `requirements/02-glossary.md`            | Roles R-1…R-6, entities E-1…E-21 and T-1…T-3, terms, metrics |
+| `requirements/03-use-cases.md`           | Use case diagrams and the UC-1…UC-21 table                   |
+| `requirements/04-user-stories.md`        | US-1…US-11 with Given/When/Then criteria                     |
+| `requirements/00-open-questions.md`      | Questions Q-1…Q-27 and decisions D-1…D-38 with their status  |
 
 ## Design
 
@@ -37,7 +37,7 @@ Rule of thumb: a document that describes the system as it is or must be goes to 
 | `design/08-activity-diagrams.md` | Activity diagrams AD-1a…AD-5                                                     |
 | `design/09-sequence-diagrams.md` | Sequence diagrams SD-1…SD-9                                                      |
 | `design/10-class-diagram.md`     | Go interfaces and contracts CL-1…CL-6                                            |
-| `design/11-component-diagram.md` | Components CMP-1…CMP-10, ports, scaling, change impact                           |
+| `design/11-component-diagram.md` | Components CMP-1…CMP-11, ports, scaling, change impact                           |
 | `design/12-c4.md`                | C4 levels 1 to 4                                                                 |
 | `design/13-dfd.md`               | Data flow diagrams, data stores D1…D7                                            |
 | `design/14-traceability.md`      | US/UC → activity → sequence → ER → CRUD → component → API                        |

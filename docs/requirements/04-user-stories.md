@@ -20,7 +20,7 @@
 6. Given источник типа API с расписанием, When наступает время или R-4 нажимает «Синхронизировать», Then воркер подтягивает события без файла и создаёт загрузку `mode=pull`.
 7. Негатив: Given файл больше 100 тыс. строк, When загрузка, Then 413 с понятной причиной; Given неподдерживаемый формат или нет обязательных колонок (по маппингу источника), Then 422 без создания событий; Given пользователь R-1/R-3, Then 403.
 
-**Экран React:** `/import` (выбор источника, drag-n-drop, список загрузок), `/import/:batchId` (статус, счётчики, таблица отклонённых строк с пагинацией и экспортом CSV) — `features/import`, TanStack Table + Query (polling).
+**Экран React:** `/import` (выбор источника, drag-n-drop, список загрузок), `/import/:id` (статус, счётчики, таблица отклонённых строк с пагинацией и экспортом CSV), TanStack Table + Query (polling).
 **Эндпоинты Go:** `POST /imports`, `GET /imports`, `GET /imports/{id}`, `GET /imports/{id}/rejected-rows`, `POST /data-sources/{id}/sync`; `handler.ImportHandler` → `service.ImportService` → `repository.ImportBatchRepo`, `RejectedRowRepo`, `EventRepo`; воркер `internal/ingestion`.
 
 ---
@@ -37,7 +37,7 @@
 4. Given поиск по телефону в любом формате (`+7 900…`, `8900…`), When R-1 вводит запрос, Then найден тот же гость (поиск по нормализованному значению).
 5. Негатив: Given гость был поглощён склейкой, When открывают его старый `id`, Then ответ содержит `merged_into_id` и интерфейс перенаправляет на актуальный профиль; Given несуществующий `id`, Then 404; Given роль R-3, Then 403.
 
-**Экран React:** `/guests` (поиск и таблица), `/guests/:guestId` (шапка, идентификаторы, лента событий, вкладка рекомендаций, история контактов) — `features/profiles`.
+**Экран React:** `/guests` (поиск и таблица), `/guests/:id` (шапка, идентификаторы, лента событий, вкладка рекомендаций, история контактов).
 **Эндпоинты Go:** `GET /guests`, `GET /guests/{id}`, `GET /guests/{id}/events`, `GET /guests/{id}/contacts`; `handler.GuestHandler` → `service.ProfileService` → `repository.GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `ContactLogRepo`.
 
 ---
@@ -54,7 +54,7 @@
 4. Given правило изменено и сохранено, When сохранение успешно, Then создаётся новая версия правила, прежние версии доступны для просмотра.
 5. Негатив: Given арендатор указан одновременно в «был» и «не был», When предпросмотр, Then 400 с указанием поля; Given предпросмотр дольше 10 с, Then 504 и сообщение «сузьте период»; Given роль R-3, Then 403.
 
-**Экран React:** `/segments` (список с размерами), `/segments/new` и `/segments/:id` (конструктор на React Hook Form: блоки «был в», «не был в», период, контакт; панель размера; вкладки «Состав», «Версии») — `features/segments`.
+**Экран React:** `/segments` (список с размерами), `/segments/:id` (конструктор на React Hook Form: блоки «был в», «не был в», период, контакт; панель размера; вкладки «Состав», «Версии»).
 **Эндпоинты Go:** `GET /segment-templates`, `POST /segments/preview`, `POST /segments`, `GET /segments/{id}`, `PUT /segments/{id}`, `GET /segments/{id}/members`, `GET /segments/{id}/versions`; `handler.SegmentHandler` → `service.SegmentService` → `internal/segments` (`SegmentEvaluator`) → `repository.SegmentRepo`, `SegmentVersionRepo`, `SegmentMemberRepo`.
 
 ---
@@ -72,7 +72,7 @@
 5. Given у гостя новое событие, When завершён пересчёт, Then рекомендации обновлены (`computed_at` меняется).
 6. Негатив: Given кандидатов не осталось (все посещены), When открыт профиль, Then пустое состояние с пояснением, не ошибка; Given роль R-3, Then 403.
 
-**Экран React:** вкладка «Рекомендации» в `/guests/:guestId`, блок «Куда приглашать» в `/segments/:id` — `features/recommendations`.
+**Экран React:** вкладка «Рекомендации» в `/guests/:id`, блок «Куда приглашать» в `/segments/:id`.
 **Эндпоинты Go:** `GET /guests/{id}/recommendations`, `POST /guests/{id}/recommendations/refresh`, `GET /segments/{id}/recommendations`; `handler.RecommendationHandler` → `service.RecommendationService` → `internal/recommend` (`Recommender`) → `repository.RecommendationRepo`, `EventRepo`, `TenantRepo`, `TenantCategoryRelationRepo`.
 
 ---
@@ -90,7 +90,7 @@
 5. Given повторный запрос с тем же `Idempotency-Key`, When сервер получает его, Then возвращается та же выгрузка, новый ContactLog не создаётся.
 6. Негатив: Given сегмент ещё считается, When создаётся выгрузка, Then 409; Given все гости заблокированы лимитом, Then 409 с причиной (US-10); Given нет `Idempotency-Key`, Then 400; Given роль R-2/R-3/R-4, Then 403.
 
-**Экран React:** `/exports/new?segmentId=` (мастер: канал → контрольная группа → предпросмотр → подтверждение), `/exports` (журнал), `/exports/:id` (счётчики, скачивание, ссылка на API) — `features/export`.
+**Экран React:** диалог создания на `/exports` (мастер: канал → контрольная группа → предпросмотр → подтверждение), журнал выгрузок на `/exports` (счётчики, скачивание, ссылка на API).
 **Эндпоинты Go:** `POST /exports/preview`, `POST /exports`, `GET /exports`, `GET /exports/{id}`, `GET /exports/{id}/members`, `GET /exports/{id}/download`; `handler.ExportHandler` → `service.ExportService` → `internal/export` (`ExportChannel`: `sms`, `push`, `email`; `ExportFormat`: `csv`, `api`) → `repository.ExportRepo`, `ExportMemberRepo`, `ContactLogRepo`, `ContactLimitRepo`.
 
 ---
@@ -107,7 +107,7 @@
 4. Given пересчёт сегмента запущен, When приходят ещё события, Then задания схлопываются по `dedup_key` и не дублируются.
 5. Негатив: Given воркер упал при пересчёте, When задание перезапущено, Then результат идемпотентен (повторный пересчёт не создаёт дублей членов); Given пересчёт не завершён, Then сегмент имеет статус `computing`, а выгрузка из него блокируется (409).
 
-**Экран React:** индикатор «обновлено/пересчитывается» в `/guests/:guestId` и `/segments/:id` — `features/profiles`, `features/segments`; без отдельного экрана.
+**Экран React:** индикатор «обновлено/пересчитывается» в `/guests/:id` и `/segments/:id`; без отдельного экрана.
 **Эндпоинты Go:** чтение `GET /guests/{id}/events`, `GET /segments/{id}` (поля `status`, `computed_at`, `member_count`); принудительно `POST /segments/{id}/recompute`; фоновые задания `identity.resolve`, `segment.recompute`, `recommend.refresh` (`internal/ingestion` → очередь → `internal/segments`, `internal/recommend`).
 
 ---
@@ -123,7 +123,7 @@
 3. Given метрики успеха, When открыта вкладка «Метрики», Then первой показана главная метрика — первая покупка гостя у нового арендатора (A-17), а также match rate, доля оспоренных склеек, время сегмент → выгрузка, конверсия и инкремент (если есть данные).
 4. Негатив: Given `from > to` или период > 24 месяцев, Then 400; Given роль R-3, Then 403; Given нет данных, Then пустое состояние.
 
-**Экран React:** `/dashboard` (карточки, столбчатая диаграмма Recharts, график динамики) — `features/dashboard`.
+**Экран React:** `/dashboard` (карточки, столбчатая диаграмма Recharts, график динамики).
 **Эндпоинты Go:** `GET /dashboard/penetration`, `GET /dashboard/metrics`; `handler.DashboardHandler` → `service.DashboardService` → `repository.AnalyticsRepo` (агрегирующие запросы по `event`, `merge_candidate`, `export_job`).
 
 ---
@@ -145,7 +145,7 @@
 5. Given R-2 открывает агрегаты любого арендатора (например, при продлении договора), When запрос выполнен, Then ответ 200.
 6. Негатив: Given токен R-3 без `tenant_id` в claims, Then 403; Given арендатор деактивирован, Then 404.
 
-**Экран React:** `/tenant` (карточки показателей и график; для R-3 единственный экран кроме `/login`; в меню нет остальных разделов) — `features/tenant`. Для R-2 — переключатель арендатора на `/dashboard`.
+**Экран React:** `/tenant` (карточки показателей и график; для R-3 единственный экран кроме `/login`; в меню нет остальных разделов). Для R-2 — переключатель арендатора на `/dashboard`.
 **Эндпоинты Go:** `GET /tenants/{id}/aggregates`, `GET /tenants/{id}`, `GET /auth/me`; `handler.TenantHandler` → `service.TenantAggregateService` (сверка `claims.tenant_id == id`) → `repository.TenantAggregateRepo` (`WHERE tenant_id = :claimTenant`, без выдачи `guest_id`).
 
 ---
@@ -161,7 +161,7 @@
 3. Given выбран источник, When открыта деталь, Then виден график отклонённых по загрузкам и ссылка на конкретную загрузку.
 4. Негатив: Given источник без загрузок, Then «данных нет», не ошибка; Given роль R-1/R-3, Then 403.
 
-**Экран React:** `/data-quality` (таблица TanStack Table, детали источника) — `features/dq`.
+**Экран React:** `/data-quality` (таблица TanStack Table, детали источника).
 **Эндпоинты Go:** `GET /data-quality/sources`, `GET /data-quality/sources/{id}`; `handler.DataQualityHandler` → `service.DataQualityService` → `repository.ImportBatchRepo`, `RejectedRowRepo`, `MergeCandidateRepo`.
 
 ---
@@ -180,7 +180,7 @@
 4. Given гость в контрольной группе, When считается лимит, Then он в лимите не учитывается и ContactLog для него не создаётся.
 5. Негатив: Given выгрузка, где лимит исключил всех, When создаётся, Then 409 с причиной «все гости превысили лимит контактов (правило: …)»; Given `max_contacts < 1` или `period_days < 1`, Then 400; Given роль R-4, Then 403 на изменение (чтение доступно).
 
-**Экран React:** `/settings/contact-limits` (таблица правил, форма) и счётчик «исключено лимитом» в мастере выгрузки — `features/export`.
+**Экран React:** `/settings/contact-limits` (таблица правил, форма) и счётчик «исключено лимитом» в мастере выгрузки.
 **Эндпоинты Go:** `GET/POST /contact-limits`, `PATCH/DELETE /contact-limits/{id}`, `POST /exports/preview`, `POST /exports`; `handler.ContactLimitHandler` → `service.ContactLimitService` → `repository.ContactLimitRepo`, `ContactLogRepo`.
 
 ---
@@ -198,23 +198,23 @@
 5. Given пара под запретом, When новая загрузка снова даёт общий телефон, Then автосклейка не происходит и в очередь пара не возвращается.
 6. Негатив: Given пара уже решена другим пользователем, When повторно подтверждают, Then 409; Given ручное объединение пары под запретом, Then 409 (запрет снимается отдельным `DELETE /unmerge-blocks/{id}`); Given роль R-3, Then 403.
 
-**Экран React:** `/identity/queue` (очередь с фильтрами, сравнение двух профилей, кнопки «Объединить / Отклонить / Разъединить»), кнопка «Разъединить» в профиле — `features/profiles`.
+**Экран React:** `/identity/queue` (очередь с фильтрами, сравнение двух профилей, кнопки «Объединить / Отклонить / Разъединить»), кнопка «Разъединить» в профиле.
 **Эндпоинты Go:** `GET /merge-candidates`, `GET /merge-candidates/{id}`, `POST /merge-candidates/{id}/confirm`, `/reject`, `/revert`, `POST /guests/{id}/merge`, `GET /unmerge-blocks`, `DELETE /unmerge-blocks/{id}`; `handler.IdentityHandler` → `service.IdentityService` → `internal/identity` (`IdentityResolver`, `MergeExecutor`) → `repository.MergeCandidateRepo`, `UnmergeBlockRepo`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `AuditRepo`.
 
 ---
 
 ## Сводка US → экран → эндпоинты
 
-| US    | UC    | Экран (React)                    | Основные эндпоинты                         | Роли              |
-| ----- | ----- | -------------------------------- | ------------------------------------------ | ----------------- |
-| US-1  | UC-1  | `/import`, `/import/:batchId`    | `POST /imports`, `GET /imports/{id}`       | R-4               |
-| US-2  | UC-2  | `/guests`, `/guests/:guestId`    | `GET /guests/{id}`                         | R-1, R-4          |
-| US-3  | UC-3  | `/segments/new`, `/segments/:id` | `POST /segments/preview`, `POST /segments` | R-1, R-4          |
-| US-4  | UC-4  | вкладка в профиле                | `GET /guests/{id}/recommendations`         | R-1, R-4          |
-| US-5  | UC-5  | `/exports/new`                   | `POST /exports`                            | R-1               |
-| US-6  | UC-6  | индикаторы                       | `GET /segments/{id}`                       | R-1, R-4 (чтение) |
-| US-7  | UC-7  | `/dashboard`                     | `GET /dashboard/penetration`               | R-2 (R-1, R-4)    |
-| US-8  | UC-8  | `/tenant`                        | `GET /tenants/{id}/aggregates`             | R-3 (own)         |
-| US-9  | UC-9  | `/data-quality`                  | `GET /data-quality/sources`                | R-4, R-2          |
-| US-10 | UC-10 | `/settings/contact-limits`       | `/contact-limits`, `POST /exports`         | R-1               |
-| US-11 | UC-11 | `/identity/queue`                | `POST /merge-candidates/{id}/confirm`      | R-4               |
+| US    | UC    | Экран (React)              | Основные эндпоинты                         | Роли              |
+| ----- | ----- | -------------------------- | ------------------------------------------ | ----------------- |
+| US-1  | UC-1  | `/import`, `/import/:id`   | `POST /imports`, `GET /imports/{id}`       | R-4               |
+| US-2  | UC-2  | `/guests`, `/guests/:id`   | `GET /guests/{id}`                         | R-1, R-4          |
+| US-3  | UC-3  | `/segments/:id`            | `POST /segments/preview`, `POST /segments` | R-1, R-4          |
+| US-4  | UC-4  | вкладка в профиле          | `GET /guests/{id}/recommendations`         | R-1, R-4          |
+| US-5  | UC-5  | `/exports`                 | `POST /exports`                            | R-1               |
+| US-6  | UC-6  | индикаторы                 | `GET /segments/{id}`                       | R-1, R-4 (чтение) |
+| US-7  | UC-7  | `/dashboard`               | `GET /dashboard/penetration`               | R-2 (R-1, R-4)    |
+| US-8  | UC-8  | `/tenant`                  | `GET /tenants/{id}/aggregates`             | R-3 (own)         |
+| US-9  | UC-9  | `/data-quality`            | `GET /data-quality/sources`                | R-4, R-2          |
+| US-10 | UC-10 | `/settings/contact-limits` | `/contact-limits`, `POST /exports`         | R-1               |
+| US-11 | UC-11 | `/identity/queue`          | `POST /merge-candidates/{id}/confirm`      | R-4               |

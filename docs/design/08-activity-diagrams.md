@@ -8,7 +8,7 @@ Mermaid не имеет нативных swimlanes: используется `fl
 
 ```mermaid
 flowchart TB
-  subgraph FE["Frontend: features/import"]
+  subgraph FE["Frontend"]
     F1["Выбор источника и файла"]
     F2["Опрос GET /imports/id каждые 2 с"]
   end
@@ -40,7 +40,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  subgraph FE["Frontend: features/import"]
+  subgraph FE["Frontend"]
     F1["Статус и счётчики, ссылка на отклонённые строки"]
   end
   subgraph WK["Worker: internal/ingestion"]
@@ -88,7 +88,7 @@ flowchart TB
   subgraph DB["DB"]
     D1[("guest, guest_identifier, event, merge_candidate, audit_log")]
   end
-  subgraph FE["Frontend + API: features/profiles"]
+  subgraph FE["Frontend + API"]
     F1["Очередь GET /merge-candidates, пара рядом"]
     F2["POST confirm / reject / revert"]
   end
@@ -108,7 +108,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  subgraph FE["Frontend: features/segments"]
+  subgraph FE["Frontend"]
     F1["Конструктор: был в A и B, не был в C, период"]
     F2["Размер и 20 примеров"]
     F3["Сохранить и опрос GET /segments/id"]
@@ -143,7 +143,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  subgraph FE["Frontend: features/recommendations"]
+  subgraph FE["Frontend"]
     F1["Карточка гостя: до 3 мест с обоснованием"]
     F2["Кнопка Обновить"]
   end
@@ -174,7 +174,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  subgraph FE["Frontend: features/export"]
+  subgraph FE["Frontend"]
     F1["Канал, формат, контроль %, предпросмотр счётчиков"]
     F2["Создать выгрузку с Idempotency-Key"]
     F3["Скачать CSV или показ 409 с причиной"]
