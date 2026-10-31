@@ -3,19 +3,19 @@ pre-commit:
 
   jobs:
     - name: go:fmt
-      root: 'apps/api/'
-      glob: '**/*.go'
+      root: "apps/api/"
+      glob: "**/*.go"
       run: gofmt -l -w {staged_files}
       stage_fixed: true
 
     - name: go:vet
-      root: 'apps/api/'
-      glob: '**/*.go'
+      root: "apps/api/"
+      glob: "**/*.go"
       run: go vet ./...
 
     - name: go:lint
-      root: 'apps/api/'
-      glob: '**/*.go'
+      root: "apps/api/"
+      glob: "**/*.go"
       run: |
         version=2.15.0
         if ! golangci-lint version 2>/dev/null | grep -q "version $version"; then
@@ -25,12 +25,12 @@ pre-commit:
         golangci-lint run ./...
 
     - name: fmt
-      glob: '**/*.{js,jsx,ts,tsx,json,jsonc,css,md,yml,yaml}'
+      glob: "**/*.{js,jsx,ts,tsx,json,jsonc,css,md,yml,yaml}"
       run: bun x oxfmt --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
 
     - name: js:lint
-      glob: '**/*.{js,jsx,ts,tsx,json,jsonc,css}'
+      glob: "**/*.{js,jsx,ts,tsx,json,jsonc,css}"
       run: bun run lint
 
 commit-msg:
@@ -38,4 +38,11 @@ commit-msg:
     - name: conventional-commit
       run: |
         head -1 {1} | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: .+' \
-          || { echo "Сообщение коммита должно соответствовать Conventional Commits"; exit 1; }
+          || { echo "Commit message must follow Conventional Commits"; exit 1; }
+
+    - name: commit-message-language
+      run: |
+        if head -1 {1} | LC_ALL=C grep -q '[^ -~]'; then
+          echo "Commit message must be written in English (ASCII only)"
+          exit 1
+        fi

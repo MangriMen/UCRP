@@ -27,7 +27,7 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 - CI: the frontend job must not require Go; Go lint/build/test run in the separate `go` job.
 - Turbo runs in strict env mode: new env vars must be listed in `turbo.jsonc` (`passThroughEnv`).
 - Commits: Conventional Commits (enforced by lefthook). Don't bypass hooks with `--no-verify`.
-- PR text: English, see `.agents/skills/pr-description/SKILL.md`.
+- Commit messages and PR titles/bodies: **English only**. The `commit-message-language` lefthook job rejects non-ASCII commit subjects; PR text rules are in `.agents/skills/pr-description/SKILL.md`.
 - Skills live in `.agents/skills/` (`.claude/skills` is a symlink to it).
 
 ## Code style (anti-neuroslop)
