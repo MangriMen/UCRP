@@ -21,6 +21,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/platform/logging"
 	"github.com/MangriMen/UCRP/internal/repository"
 	"github.com/MangriMen/UCRP/internal/repository/sqlstore"
+	"github.com/MangriMen/UCRP/internal/segments"
 	"github.com/MangriMen/UCRP/internal/service"
 	"github.com/MangriMen/UCRP/migrations"
 )
@@ -74,6 +75,8 @@ func run(log *slog.Logger, cfg config.Config) error {
 		events,
 	)
 	identityHandler := handler.NewIdentityHandler(identitySvc)
+	segmentSvc := service.NewSegmentService(repository.NewSegmentSQL(store.DB), segments.NewSqlEvaluator(store.DB))
+	segmentHandler := handler.NewSegmentHandler(segmentSvc)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -97,6 +100,12 @@ func run(log *slog.Logger, cfg config.Config) error {
 				m.Post("/{id}/confirm", identityHandler.Confirm)
 				m.Post("/{id}/reject", identityHandler.Reject)
 				m.Post("/{id}/revert", identityHandler.Revert)
+			})
+			priv.Route("/segments", func(s chi.Router) {
+				s.Get("/", segmentHandler.List)
+				s.Post("/preview", segmentHandler.Preview)
+				s.Post("/", segmentHandler.Create)
+				s.Get("/{id}", segmentHandler.Get)
 			})
 		})
 	})
