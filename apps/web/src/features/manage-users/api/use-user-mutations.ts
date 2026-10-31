@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { userKeys, type UserUpdateRequest } from '@/entities/user'
 import { api } from '@/shared/api/api'
-import { requestBlob } from '@/shared/api/client'
 
 function useInvalidateUsers() {
   const queryClient = useQueryClient()
@@ -27,8 +26,6 @@ export function useDeleteUser() {
 
 export function useRecoverUser() {
   return useMutation({
-    mutationFn: async (id: string) => {
-      await requestBlob(`/users/${encodeURIComponent(id)}/recovery`, { method: 'POST' })
-    },
+    mutationFn: (id: string) => api.post('/users/{id}/recovery', { params: { id } }),
   })
 }
