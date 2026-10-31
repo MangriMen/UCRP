@@ -31,7 +31,7 @@ sequenceDiagram
     else успех
       S->>R: TouchLastLogin(ctx, id)
       S-->>H: access JWT 15 мин с role и tenant_id, refresh
-      H-->>SPA: 200 access, Set-Cookie refresh httpOnly
+      H-->>SPA: 200 access, пользователь с эффективными правами, Set-Cookie refresh httpOnly
     end
   end
   Note over SPA,H: Через 15 мин access истекает, любой запрос даёт 401
@@ -40,7 +40,7 @@ sequenceDiagram
   alt refresh просрочен или отозван
     H-->>SPA: 401, SPA переходит на экран входа
   else
-    H-->>SPA: 200 новый access
+    H-->>SPA: 200 новый access и актуальные права
   end
 ```
 

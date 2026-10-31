@@ -34,19 +34,19 @@ flowchart LR
 
 Пояснение. Единственная связь между «записывающими» компонентами идёт через очередь: `Ingestion` не вызывает `Identity`, а ставит `identity.resolve`; `Identity` после привязки ставит пересчёт сегментов и рекомендаций. Это развязывает скорость приёма от скорости пересчёта и делает компоненты независимо масштабируемыми. `Profile and Events` — владелец данных гостей и событий, остальные читают их через репозитории-интерфейсы. `Access and Auth` и `Audit` — сквозные: каждый компонент получает `Principal` из `context.Context` и пишет аудит через `AuditService` (стрелки не показаны ради читаемости, см. CMP-D2). `Analytics` читает данные только на чтение; арендатору (R-3) доступны исключительно агрегаты через `TenantAggregateRepo` с фильтром `tenant_id`.
 
-| Компонент                | Go-пакет / слой                                                                                                           | API-контракт                                                                                                      |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| CMP-1 Ingestion          | `internal/ingestion`, `service.ImportService`                                                                             | `POST /imports`, `GET /imports*`, `POST /data-sources/{id}/sync`; очереди `import.process`, `connector.pull`      |
-| CMP-2 Identity           | `internal/identity`, `service.IdentityService`                                                                            | `/merge-candidates*`, `POST /guests/{id}/merge`, `/merge-blocks*`; очереди `identity.resolve`, `identity.rematch` |
-| CMP-3 Profile and Events | `service.ProfileService`, `service.TenantGuestService`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `ContactLogRepo` | `GET /guests*`, `DELETE /guests/{id}`                                                                             |
-| CMP-4 Segments           | `internal/segments`, `service.SegmentService`                                                                             | `/segments*`, `/segment-templates`; очередь `segment.recompute`                                                   |
-| CMP-5 Recommendations    | `internal/recommend`, `service.RecommendationService`                                                                     | `GET /guests/{id}/recommendations`, `GET /segments/{id}/recommendations`; очередь `recommend.refresh`             |
-| CMP-6 Export             | `internal/export`, `service.ExportService`, `ContactLimitService`, `CampaignService`                                      | `/exports*`, `/contact-limits*`, `/campaigns*`; очередь `export.build`                                            |
-| CMP-7 Analytics          | `DashboardService`, `TenantAggregateService`, `DataQualityService`                                                        | `/dashboard/*`, `GET /tenants/{id}/aggregates`, `/data-quality/*`                                                 |
-| CMP-8 Access and Auth    | `internal/platform/auth`, `AuthService`, `UserService`, `InvitationService`                                               | `/auth/*`, `/users*`, `/users/invitations`                                                                        |
-| CMP-9 Audit              | `AuditService`, `AuditRepo`                                                                                               | `GET /audit-logs`                                                                                                 |
-| CMP-10 Reference         | `ReferenceService`, `TenantRepo` и др. справочные репозитории                                                             | `/tenants*`, `/tenant-categories*`, `/projects*`, `/event-types*`, `/data-sources*`, `/data-source-types*`        |
-| CMP-11 Access Policy     | `internal/access`, `service.AccessGrantService`, `AccessInspectService`, истечение грантов                                | `/access/*`                                                                                                       |
+| Компонент                | Go-пакет / слой                                                                                                           | API-контракт                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| CMP-1 Ingestion          | `internal/ingestion`, `service.ImportService`                                                                             | `POST /imports`, `GET /imports*`, `POST /data-sources/{id}/sync`; очереди `import.process`, `connector.pull`                |
+| CMP-2 Identity           | `internal/identity`, `service.IdentityService`                                                                            | `/merge-candidates*`, `POST /guests/{id}/merge`, `/merge-blocks*`; очереди `identity.resolve`, `identity.rematch`           |
+| CMP-3 Profile and Events | `service.ProfileService`, `service.TenantGuestService`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `ContactLogRepo` | `GET /guests*`, `DELETE /guests/{id}`                                                                                       |
+| CMP-4 Segments           | `internal/segments`, `service.SegmentService`                                                                             | `/segments*`, `/segment-templates`; очередь `segment.recompute`                                                             |
+| CMP-5 Recommendations    | `internal/recommend` (в т.ч. оценка `Evaluator`), `service.RecommendationService`                                         | `GET /guests/{id}/recommendations`, `GET /segments/{id}/recommendations`; очереди `recommend.refresh`, `recommend.evaluate` |
+| CMP-6 Export             | `internal/export`, `service.ExportService`, `ContactLimitService`, `CampaignService`                                      | `/exports*`, `/contact-limits*`, `/campaigns*`; очередь `export.build`                                                      |
+| CMP-7 Analytics          | `service.AnalyticsService` (дашборд, агрегаты арендатора, качество данных)                                                | `/dashboard/*`, `GET /tenants/{id}/aggregates`, `/data-quality/*`                                                           |
+| CMP-8 Access and Auth    | `internal/platform/auth`, `AuthService` (в т.ч. пользователи), `InvitationService`                                        | `/auth/*`, `/users*`, `/users/invitations`, `/users/{id}/recovery`                                                          |
+| CMP-9 Audit              | `AuditService`, `AuditRepo`                                                                                               | `GET /audit-logs`                                                                                                           |
+| CMP-10 Reference         | `ReferenceService`, `MallService`, `DataSourceService`, `TenantRepo` и др. справочные репозитории                         | `/malls*`, `/tenants*`, `/tenant-categories*`, `/projects*`, `/event-types*`, `/data-sources*`, `/data-source-types*`       |
+| CMP-11 Access Policy     | `internal/access`, `service.AccessGrantService` (в т.ч. просмотр прав и аудит доступа), истечение грантов (`GrantExpiry`) | `/access/*`                                                                                                                 |
 
 ## CMP-D2. Сквозные порты и изоляция R-3
 
@@ -67,7 +67,7 @@ flowchart TB
   REPO -.->|"чужой tenant_id невозможен"| R3
 ```
 
-Пояснение. Все компоненты обращаются к инфраструктуре через порты из `domain` (очередь, хранилище файлов, кэш, часы), поэтому SQLite→PostgreSQL, локальный диск→объектное хранилище и in-memory→Redis заменяются без правок сервисов. Изоляция R-3 реализована в несколько слоёв: `RequireRole` в `handler` ограничивает набор эндпоинтов, `access.Decide` проверяет потолок роли и грант с областью собственного арендатора, `service` сверяет `tenant_id` пути с claim (иначе 403, D-13), `repository` не имеет метода без `tenant_id` для данных арендатора. Аудит вызывается из service в той же транзакции, что и изменение.
+Пояснение. Все компоненты обращаются к инфраструктуре через порты из `domain` (очередь, хранилище файлов, кэш, часы), поэтому локальный диск→объектное хранилище и in-memory→Redis заменяются без правок сервисов. Изоляция R-3 реализована в несколько слоёв: `RequireRole` в `handler` ограничивает набор эндпоинтов, `PermissionMiddleware` и `access.Decide` проверяет потолок роли и грант с областью собственного арендатора, `service` сверяет `tenant_id` пути с claim (иначе 403, D-13), `repository` не имеет метода без `tenant_id` для данных арендатора. Аудит вызывается из service в той же транзакции, что и изменение.
 
 ## Порты и контракты между компонентами
 
@@ -84,15 +84,14 @@ flowchart TB
 
 ## Точки масштабирования
 
-| Что                       | Как масштабируется                                                            | Условие / порог                                   | Компонент           |
-| ------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------- | ------------------- |
-| API                       | Stateless: JWT без серверной сессии, несколько инстансов за балансировщиком   | Рост пользователей УК                             | CMP-8 и все handler |
-| Очередь импорта           | Несколько процессов `cmd/worker`, захват через `locked_by` и `run_after`      | Файлы до 100 тыс. строк, 80–150 арендаторов       | CMP-1, 2            |
-| Кэш размеров сегментов    | In-memory TTL 60 с по хэшу правила (D-27), замена на Redis через порт `Cache` | Несколько инстансов API                           | CMP-4               |
-| SQLite → PostgreSQL       | Те же миграции goose, диалектный слой в `sqlstore`                            | Более 1–3 млн событий (Q-11), несколько писателей | все репозитории     |
-| Реплика на чтение         | Отдельный пул чтения для `AnalyticsRepo`, `SegmentEvaluator.Preview`          | Нагрузка дашбордов и предпросмотров               | CMP-7, CMP-4        |
-| Партиционирование `event` | PG-миграция по `occurred_at`                                                  | Более нескольких млн событий                      | CMP-3               |
-| Брокер вместо `job_queue` | Новая реализация `Queue` (D-8)                                                | Тысячи заданий в минуту                           | CMP-1…CMP-6         |
+| Что                       | Как масштабируется                                                            | Условие / порог                             | Компонент           |
+| ------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------- | ------------------- |
+| API                       | Stateless: JWT без серверной сессии, несколько инстансов за балансировщиком   | Рост пользователей УК                       | CMP-8 и все handler |
+| Очередь импорта           | Несколько процессов `cmd/worker`, захват через `locked_by` и `run_after`      | Файлы до 100 тыс. строк, 80–150 арендаторов | CMP-1, 2            |
+| Кэш размеров сегментов    | In-memory TTL 60 с по хэшу правила (D-27), замена на Redis через порт `Cache` | Несколько инстансов API                     | CMP-4               |
+| Реплика на чтение         | Отдельный пул чтения для `AnalyticsRepo`, `SegmentEvaluator.Preview`          | Нагрузка дашбордов и предпросмотров         | CMP-7, CMP-4        |
+| Партиционирование `event` | PG-миграция по `occurred_at`                                                  | Более нескольких млн событий                | CMP-3               |
+| Брокер вместо `job_queue` | Новая реализация `Queue` (D-8)                                                | Тысячи заданий в минуту                     | CMP-1…CMP-6         |
 
 ## Матрица влияния изменений требований
 

@@ -23,10 +23,10 @@ Rule of thumb: a document that describes the system as it is or must be goes to 
 | `requirements/case.txt`                  | Original case statement                                      |
 | `requirements/customer-faq.md`           | Customer answers to 10 questions; wins over everything else  |
 | `requirements/01-summary-assumptions.md` | System summary, assumptions A-1…A-23, scope                  |
-| `requirements/02-glossary.md`            | Roles R-1…R-6, entities E-1…E-21 and T-1…T-3, terms, metrics |
+| `requirements/02-glossary.md`            | Roles R-1…R-6, entities E-1…E-22 and T-1…T-4, terms, metrics |
 | `requirements/03-use-cases.md`           | Use case diagrams and the UC-1…UC-21 table                   |
 | `requirements/04-user-stories.md`        | US-1…US-11 with Given/When/Then criteria                     |
-| `requirements/00-open-questions.md`      | Questions Q-1…Q-37 and decisions D-1…D-39 with their status  |
+| `requirements/00-open-questions.md`      | Questions Q-1…Q-40 and decisions D-1…D-39 with their status  |
 
 ## Design
 

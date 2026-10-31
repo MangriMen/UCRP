@@ -37,7 +37,7 @@
 4. Given поиск по телефону в любом формате (`+7 900…`, `8900…`), When R-1 вводит запрос, Then найден тот же гость (поиск по нормализованному значению).
 5. Негатив: Given гость был поглощён объединением, When открывают его старый `id`, Then ответ содержит `merged_into_id` и интерфейс перенаправляет на актуальный профиль; Given несуществующий `id`, Then 404; Given роль R-3, Then 403.
 
-**Экран React:** `/guests` (поиск и таблица), `/guests/:id` (шапка, идентификаторы, лента событий, вкладка рекомендаций, история контактов).
+**Экран React:** `/guests` (поиск и таблица, идентификаторы маскированы), `/guests/:id` (шапка и вкладки «Обзор» с блоком «Следующий шаг», «История», «Покупки», «Арендаторы», «Профиль» с идентификаторами и историей контактов).
 **Эндпоинты Go:** `GET /guests`, `GET /guests/{id}`, `GET /guests/{id}/events`, `GET /guests/{id}/contacts`; `handler.GuestHandler` → `service.ProfileService` → `repository.GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `ContactLogRepo`.
 
 ---
@@ -54,7 +54,7 @@
 4. Given правило изменено и сохранено, When сохранение успешно, Then создаётся новая версия правила, прежние версии доступны для просмотра.
 5. Негатив: Given арендатор указан одновременно в «был» и «не был», When предпросмотр, Then 400 с указанием поля; Given предпросмотр дольше 10 с, Then 504 и сообщение «сузьте период»; Given роль R-3, Then 403.
 
-**Экран React:** `/segments` (список с размерами), `/segments/:id` (конструктор на React Hook Form: блоки «был в», «не был в», период, контакт; панель размера; вкладки «Состав», «Версии»).
+**Экран React:** `/segments` (список с размерами, конструктор на React Hook Form: блоки «был в», «не был в», период, контакт; панель размера и шаблоны), `/segments/:id` (правило, рекомендации, участники, история версий).
 **Эндпоинты Go:** `GET /segment-templates`, `POST /segments/preview`, `POST /segments`, `GET /segments/{id}`, `PUT /segments/{id}`, `GET /segments/{id}/members`, `GET /segments/{id}/versions`; `handler.SegmentHandler` → `service.SegmentService` → `internal/segments` (`SegmentEvaluator`) → `repository.SegmentRepo`, `SegmentVersionRepo`, `SegmentMemberRepo`.
 
 ---
@@ -72,8 +72,8 @@
 5. Given у гостя новое событие, When завершён пересчёт, Then рекомендации обновлены (`computed_at` меняется).
 6. Негатив: Given кандидатов не осталось (все посещены), When открыт профиль, Then пустое состояние с пояснением, не ошибка; Given роль R-3, Then 403.
 
-**Экран React:** вкладка «Рекомендации» в `/guests/:id`, блок «Куда приглашать» в `/segments/:id`.
-**Эндпоинты Go:** `GET /guests/{id}/recommendations`, `POST /guests/{id}/recommendations/refresh`, `GET /segments/{id}/recommendations`; `handler.RecommendationHandler` → `service.RecommendationService` → `internal/recommend` (`Recommender`) → `repository.RecommendationRepo`, `EventRepo`, `TenantRepo`, `TenantCategoryRelationRepo`.
+**Экран React:** блок «Следующий шаг» на вкладке «Обзор» в `/guests/:id`, блок «Кого приглашать» в `/segments/:id`.
+**Эндпоинты Go:** `GET /guests/{id}/recommendations`, `POST /guests/{id}/recommendations/refresh`, `GET /segments/{id}/recommendations`; `handler.RecommendationHandler` → `service.RecommendationService` → `internal/recommend` (`WeightedRecommender`, реализует `domain.Recommender`) → `repository.RecommendationSQL`, `PresenceSQL`.
 
 ---
 
@@ -90,7 +90,7 @@
 5. Given повторный запрос с тем же `Idempotency-Key`, When сервер получает его, Then возвращается та же выгрузка, новый ContactLog не создаётся.
 6. Негатив: Given сегмент ещё считается, When создаётся выгрузка, Then 409; Given все гости заблокированы лимитом, Then 409 с причиной (US-10); Given нет `Idempotency-Key`, Then 400; Given роль R-2/R-3/R-4, Then 403.
 
-**Экран React:** диалог создания на `/exports` (мастер: канал → контрольная группа → предпросмотр → подтверждение), журнал выгрузок на `/exports` (счётчики, скачивание, ссылка на API).
+**Экран React:** диалог создания на `/exports` (мастер: канал → контрольная группа → предпросмотр → подтверждение), журнал выгрузок на `/exports` (счётчики, скачивание, ссылка на API), карточка `/exports/:id` (вкладки «Получатели» и «Контрольная группа»).
 **Эндпоинты Go:** `POST /exports/preview`, `POST /exports`, `GET /exports`, `GET /exports/{id}`, `GET /exports/{id}/members`, `GET /exports/{id}/download`; `handler.ExportHandler` → `service.ExportService` → `internal/export` (`ExportChannel`: `sms`, `push`, `email`; `ExportFormat`: `csv`, `api`) → `repository.ExportRepo`, `ExportMemberRepo`, `ContactLogRepo`, `ContactLimitRepo`.
 
 ---
@@ -108,7 +108,7 @@
 5. Негатив: Given воркер упал при пересчёте, When задание перезапущено, Then результат идемпотентен (повторный пересчёт не создаёт дублей членов); Given пересчёт не завершён, Then сегмент имеет статус `computing`, а выгрузка из него блокируется (409).
 
 **Экран React:** индикатор «обновлено/пересчитывается» в `/guests/:id` и `/segments/:id`; без отдельного экрана.
-**Эндпоинты Go:** чтение `GET /guests/{id}/events`, `GET /segments/{id}` (поля `status`, `computed_at`, `member_count`); принудительно `POST /segments/{id}/recompute`; фоновые задания `identity.resolve`, `segment.recompute`, `recommend.refresh` (`internal/ingestion` → очередь → `internal/segments`, `internal/recommend`).
+**Эндпоинты Go:** чтение `GET /guests/{id}/events`, `GET /segments/{id}` (поля `status`, `computed_at`, `member_count`); принудительно `POST /segments/{id}/recompute`; фоновые задания `identity.resolve`, `segment.recompute`, `recommend.refresh` (после него ставится `recommend.evaluate`) (`internal/ingestion` → очередь → `internal/segments`, `internal/recommend`).
 
 ---
 
@@ -123,7 +123,7 @@
 3. Given метрики успеха, When открыта вкладка «Метрики», Then первой показана главная метрика — первая покупка гостя у нового арендатора (A-17), а также match rate, доля оспоренных объединений, время сегмент → выгрузка, конверсия и инкремент (если есть данные).
 4. Негатив: Given `from > to` или период > 24 месяцев, Then 400; Given роль R-3, Then 403; Given нет данных, Then пустое состояние.
 
-**Экран React:** `/dashboard` (карточки, столбчатая диаграмма Recharts, график динамики).
+**Экран React:** `/dashboard` (карточки, столбчатая диаграмма Recharts, график динамики, блок «Арендаторы за период»; период хранится в URL).
 **Эндпоинты Go:** `GET /dashboard/cross-tenant`, `GET /dashboard/metrics`; `handler.DashboardHandler` → `service.DashboardService` → `repository.AnalyticsRepo` (агрегирующие запросы по `event`, `merge_candidate`, `export_job`).
 
 ---
@@ -138,14 +138,14 @@
 
 **Acceptance Criteria**
 
-1. Given пользователь R-3 привязан к арендатору T, When он открывает «Мои показатели», Then видит число новых гостей, пришедших через комплекс (определение A-13), и динамику по месяцам только для T.
+1. Given пользователь R-3 привязан к арендатору T, When он открывает «Мои показатели», Then видит число новых гостей, пришедших через комплекс (определение A-13), и динамику по дням только для T.
 2. Given пользователь R-3 запрашивает `/tenants/{чужой id}/aggregates`, When запрос обработан, Then ответ 403, в ответе нет данных; в интерфейсе нет навигации на чужие страницы.
 3. Given R-3 вызывает любой другой эндпоинт (профили, сегменты, выгрузки, справочники кроме собственной карточки арендатора), When запрос обработан, Then 403.
 4. Given значение агрегата меньше k = 5, When оно рассчитывается, Then скрывается («менее 5»), чтобы нельзя было вычислить отдельного гостя.
 5. Given R-2 открывает агрегаты любого арендатора (например, при продлении договора), When запрос выполнен, Then ответ 200.
 6. Негатив: Given токен R-3 без `tenant_id` в claims, Then 403; Given арендатор деактивирован, Then 404.
 
-**Экран React:** `/tenant` (карточки показателей и график; для R-3 единственный экран кроме `/login`; в меню нет остальных разделов). Для R-2 — переключатель арендатора на `/dashboard`.
+**Экран React:** `/tenant` (карточки показателей и график; для R-3 единственный экран кроме `/login`; в меню нет остальных разделов). Для R-2 — карточка арендатора `/tenants/:id` (вкладка «Обзор» с теми же агрегатами; также «Гости», «Источники и импорты», «Настройки»).
 **Эндпоинты Go:** `GET /tenants/{id}/aggregates`, `GET /tenants/{id}`, `GET /auth/me`; `handler.TenantHandler` → `service.TenantAggregateService` (сверка `claims.tenant_id == id`) → `repository.TenantAggregateRepo` (`WHERE tenant_id = :claimTenant`, без выдачи `guest_id`).
 
 ---
@@ -198,7 +198,7 @@
 5. Given пара под запретом, When новая загрузка снова даёт общий телефон, Then автообъединение не происходит и в очередь пара не возвращается.
 6. Негатив: Given пара уже решена другим пользователем, When повторно подтверждают, Then 409; Given ручное объединение пары под запретом, Then 409 (запрет снимается отдельным `DELETE /merge-blocks/{id}`); Given роль R-3, Then 403.
 
-**Экран React:** `/identity/merge-candidates` (очередь с фильтрами, сравнение двух профилей, кнопки «Объединить / Отклонить / Разъединить»), кнопка «Разъединить» в профиле.
+**Экран React:** `/identity/merge-candidates` (очередь с фильтрами), `/identity/merge-candidates/:id` (сравнение двух профилей, кнопки «Объединить / Отклонить / Разъединить»), `/identity/merge-blocks` (запреты объединения), кнопка «Разъединить» в профиле.
 **Эндпоинты Go:** `GET /merge-candidates`, `GET /merge-candidates/{id}`, `POST /merge-candidates/{id}/confirm`, `/reject`, `/revert`, `POST /guests/{id}/merge`, `GET /merge-blocks`, `DELETE /merge-blocks/{id}`; `handler.IdentityHandler` → `service.IdentityService` → `internal/identity` (`IdentityResolver`, `MergeExecutor`) → `repository.MergeCandidateRepo`, `MergeBlockRepo`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `AuditRepo`.
 
 ---
@@ -214,7 +214,7 @@
 | US-5  | UC-5  | `/exports`                   | `POST /exports`                            | R-1               |
 | US-6  | UC-6  | индикаторы                   | `GET /segments/{id}`                       | R-1, R-4 (чтение) |
 | US-7  | UC-7  | `/dashboard`                 | `GET /dashboard/cross-tenant`              | R-2 (R-1, R-4)    |
-| US-8  | UC-8  | `/tenant`                    | `GET /tenants/{id}/aggregates`             | R-3 (own)         |
+| US-8  | UC-8  | `/tenant`, `/tenants/:id`    | `GET /tenants/{id}/aggregates`             | R-3 (own)         |
 | US-9  | UC-9  | `/data-quality`              | `GET /data-quality/sources`                | R-4, R-2          |
 | US-10 | UC-10 | `/settings/contact-limits`   | `/contact-limits`, `POST /exports`         | R-1               |
 | US-11 | UC-11 | `/identity/merge-candidates` | `POST /merge-candidates/{id}/confirm`      | R-4               |
