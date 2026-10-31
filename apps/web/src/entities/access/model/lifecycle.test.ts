@@ -33,6 +33,16 @@ describe('grant lifecycle', () => {
     expect(availableTransitions(grant({ status: 'expired' }), now)).toEqual([])
   })
 
+  it('freezes staff role grants but not the tenant role grant', () => {
+    const staff = grant({ subjectType: 'role', subjectId: 'marketer' })
+    expect(availableTransitions(staff, now)).toEqual([])
+    expect(isGrantEditable(staff, now)).toBe(false)
+
+    const tenantRole = grant({ subjectType: 'role', subjectId: 'tenant' })
+    expect(availableTransitions(tenantRole, now)).toEqual(['suspend', 'revoke'])
+    expect(isGrantEditable(tenantRole, now)).toBe(true)
+  })
+
   it('freezes a grant whose end has passed', () => {
     const ended = grant({ validTo: '2026-11-01T11:00:00Z' })
     expect(availableTransitions(ended, now)).toEqual([])

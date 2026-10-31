@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react'
-import type { AccessSubject } from '@/entities/access'
+import { TENANT_ROLE_ID, type AccessSubject } from '@/entities/access'
 import { useTenants } from '@/entities/tenant'
 import { useAuth, useUsers } from '@/entities/user'
-import { TENANT_ROLE_ID, type DirectoryUser } from '../model/subject'
+import type { DirectoryUser } from '../model/subject'
 
 const DIRECTORY_PAGE_SIZE = 200
 const SYSTEM_LABEL = 'Система'

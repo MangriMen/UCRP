@@ -1,4 +1,4 @@
-import type { AccessSubject, GrantableRole } from '@/entities/access'
+import { TENANT_ROLE_ID, type AccessSubject, type GrantableRole } from '@/entities/access'
 
 export type SubjectKind = 'tenant' | 'tenant_user' | 'tenant_role' | 'manager'
 
@@ -14,7 +14,6 @@ export interface DirectoryUser {
   tenantId: string | null
 }
 
-export const TENANT_ROLE_ID = 'tenant'
 export const SELF_TENANT_SCOPE = 'self'
 
 export const subjectKindLabels: Record<SubjectKind, string> = {
@@ -34,7 +33,9 @@ export function toSubject({ kind, id }: SubjectValue): AccessSubject | null {
 }
 
 export function fromSubject(subject: AccessSubject, users: DirectoryUser[]): SubjectValue {
-  if (subject.subjectType === 'role') return { kind: 'tenant_role', id: '' }
+  if (subject.subjectType === 'role') {
+    return { kind: subject.subjectId === TENANT_ROLE_ID ? 'tenant_role' : 'tenant_user', id: '' }
+  }
   if (subject.subjectType === 'tenant') return { kind: 'tenant', id: subject.subjectId }
   const user = users.find((candidate) => candidate.id === subject.subjectId)
   return { kind: user?.role === 'manager' ? 'manager' : 'tenant_user', id: subject.subjectId }
