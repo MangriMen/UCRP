@@ -6,8 +6,8 @@
                                                                              "Segments"
                                                                          ],
                                                                 "operationId":  "listSegmentTemplates",
-                                                                "summary":  "Пять предустановленных шаблонов сегментов",
-                                                                "description":  "«Спящий сосед», «Один магазин», «Риск ухода», «Новичок», «Высокая ценность». Шаблон — тот же сегмент с `isTemplate=true` и готовым правилом.",
+                                                                "summary":  "Five built-in segment templates",
+                                                                "description":  "\"Sleeping neighbor\", \"Single store\", \"Churn risk\", \"Newcomer\", \"High value\". A template is the same segment with `isTemplate=true` and a ready-made rule.",
                                                                 "x-roles":  [
                                                                                 "R-1",
                                                                                 "R-4"
@@ -17,7 +17,7 @@
                                                                          ],
                                                                 "responses":  {
                                                                                   "200":  {
-                                                                                              "description":  "Шаблоны",
+                                                                                              "description":  "Templates",
                                                                                               "content":  {
                                                                                                               "application/json":  {
                                                                                                                                        "schema":  {
@@ -44,7 +44,7 @@
                                                                     "Segments"
                                                                 ],
                                                        "operationId":  "listSegments",
-                                                       "summary":  "Список сегментов с размером и computedAt",
+                                                       "summary":  "List segments with size and computedAt",
                                                        "x-roles":  [
                                                                        "R-1",
                                                                        "R-2",
@@ -78,7 +78,7 @@
                                                                       ],
                                                        "responses":  {
                                                                          "200":  {
-                                                                                     "description":  "Страница сегментов",
+                                                                                     "description":  "Segment page",
                                                                                      "content":  {
                                                                                                      "application/json":  {
                                                                                                                               "schema":  {
@@ -100,8 +100,8 @@
                                                                      "Segments"
                                                                  ],
                                                         "operationId":  "createSegment",
-                                                        "summary":  "Создать сегмент",
-                                                        "description":  "Создаёт сегмент и версию правила №1 со статусом `pending`, пишет аудит и ставит задание `segment.recompute` (`dedupKey = segment:{id}:{versionNo}`). Ответ 201 приходит сразу, состав считается воркером.",
+                                                        "summary":  "Create a segment",
+                                                        "description":  "Creates the segment and rule version 1 with status `pending`, writes an audit record, and enqueues `segment.recompute` (`dedupKey = segment:{id}:{versionNo}`). The 201 response returns immediately; membership is computed by the worker.",
                                                         "x-roles":  [
                                                                         "R-1",
                                                                         "R-4"
@@ -122,7 +122,7 @@
                                                                         },
                                                         "responses":  {
                                                                           "201":  {
-                                                                                      "description":  "Сегмент создан",
+                                                                                      "description":  "Segment created",
                                                                                       "content":  {
                                                                                                       "application/json":  {
                                                                                                                                "schema":  {
@@ -149,8 +149,8 @@
                                                                              "Segments"
                                                                          ],
                                                                 "operationId":  "previewSegment",
-                                                                "summary":  "Размер и 20 примеров по несохранённому правилу",
-                                                                "description":  "Не пишет в БД. Результат кэшируется по хэшу правила (TTL 60 с). Дедлайн 10 с; при превышении — 504 `timeout` с подсказкой сузить период. Арендатор, указанный одновременно в `was` и `wasNot`, → 400 с указанием поля.",
+                                                                "summary":  "Size and 20 examples for an unsaved rule",
+                                                                "description":  "Does not write to the database. The result is cached by rule hash (TTL 60 s). Deadline 10 s; on timeout — 504 `timeout` suggesting a narrower period. A tenant listed in both `was` and `wasNot` → 400 with the field indicated.",
                                                                 "x-roles":  [
                                                                                 "R-1",
                                                                                 "R-4"
@@ -170,7 +170,7 @@
                                                                                 },
                                                                 "responses":  {
                                                                                   "200":  {
-                                                                                              "description":  "Размер и примеры",
+                                                                                              "description":  "Size and examples",
                                                                                               "content":  {
                                                                                                               "application/json":  {
                                                                                                                                        "schema":  {

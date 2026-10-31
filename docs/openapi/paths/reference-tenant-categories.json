@@ -6,7 +6,7 @@
                                                                              "Reference"
                                                                          ],
                                                                 "operationId":  "listTenantCategories",
-                                                                "summary":  "Список категорий арендаторов",
+                                                                "summary":  "List tenant categories",
                                                                 "x-roles":  [
                                                                                 "R-1",
                                                                                 "R-2",
@@ -17,7 +17,7 @@
                                                                          ],
                                                                 "responses":  {
                                                                                   "200":  {
-                                                                                              "description":  "Категории",
+                                                                                              "description":  "Categories",
                                                                                               "content":  {
                                                                                                               "application/json":  {
                                                                                                                                        "schema":  {
@@ -42,7 +42,7 @@
                                                                               "Reference"
                                                                           ],
                                                                  "operationId":  "createTenantCategory",
-                                                                 "summary":  "Создать категорию",
+                                                                 "summary":  "Create a category",
                                                                  "x-roles":  [
                                                                                  "R-4"
                                                                              ],
@@ -61,7 +61,7 @@
                                                                                  },
                                                                  "responses":  {
                                                                                    "201":  {
-                                                                                               "description":  "Категория создана",
+                                                                                               "description":  "Category created",
                                                                                                "content":  {
                                                                                                                "application/json":  {
                                                                                                                                         "schema":  {
@@ -96,7 +96,7 @@
                                                                                     "Reference"
                                                                                 ],
                                                                        "operationId":  "updateTenantCategory",
-                                                                       "summary":  "Изменить категорию",
+                                                                       "summary":  "Update a category",
                                                                        "x-roles":  [
                                                                                        "R-4"
                                                                                    ],
@@ -115,7 +115,7 @@
                                                                                        },
                                                                        "responses":  {
                                                                                          "200":  {
-                                                                                                     "description":  "Обновлённая категория",
+                                                                                                     "description":  "Updated category",
                                                                                                      "content":  {
                                                                                                                      "application/json":  {
                                                                                                                                               "schema":  {
@@ -143,8 +143,8 @@
                                                                                      "Reference"
                                                                                  ],
                                                                         "operationId":  "deleteTenantCategory",
-                                                                        "summary":  "Удалить категорию",
-                                                                        "description":  "Удаление запрещено, если категория используется арендаторами или связями — 409 `category_in_use`.",
+                                                                        "summary":  "Delete a category",
+                                                                        "description":  "Deletion is not allowed when the category is used by tenants or relations — 409 `category_in_use`.",
                                                                         "x-roles":  [
                                                                                         "R-4"
                                                                                     ],
@@ -181,8 +181,8 @@
                                                                                             "Reference"
                                                                                         ],
                                                                                "operationId":  "getTenantCategoryRelations",
-                                                                               "summary":  "Смежность и конкуренция категорий",
-                                                                               "description":  "Возвращает связи категории в обе стороны. Используются скорингом рекомендаций: `adjacent` повышает оценку, `competitor` исключает кандидата.",
+                                                                               "summary":  "Category adjacency and competition",
+                                                                               "description":  "Returns the category relations in both directions. Used by recommendation scoring: `adjacent` boosts the score, `competitor` excludes the candidate.",
                                                                                "x-roles":  [
                                                                                                "R-1",
                                                                                                "R-2",
@@ -194,7 +194,7 @@
                                                                                         ],
                                                                                "responses":  {
                                                                                                  "200":  {
-                                                                                                             "description":  "Набор связей",
+                                                                                                             "description":  "Relation set",
                                                                                                              "content":  {
                                                                                                                              "application/json":  {
                                                                                                                                                       "schema":  {
@@ -219,8 +219,8 @@
                                                                                             "Reference"
                                                                                         ],
                                                                                "operationId":  "replaceTenantCategoryRelations",
-                                                                               "summary":  "Заменить набор связей категории",
-                                                                               "description":  "Полная замена набора (идемпотентно). Связь категории с самой собой и дубликаты пар отклоняются — 400.",
+                                                                               "summary":  "Replace the category relation set",
+                                                                               "description":  "Full set replacement (idempotent). Self-relations and duplicate pairs are rejected — 400.",
                                                                                "x-roles":  [
                                                                                                "R-4"
                                                                                            ],
@@ -239,7 +239,7 @@
                                                                                                },
                                                                                "responses":  {
                                                                                                  "200":  {
-                                                                                                             "description":  "Новый набор связей",
+                                                                                                             "description":  "New relation set",
                                                                                                              "content":  {
                                                                                                                              "application/json":  {
                                                                                                                                                       "schema":  {

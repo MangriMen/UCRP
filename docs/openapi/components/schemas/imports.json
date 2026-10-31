@@ -55,7 +55,7 @@
                                            "fileHash":  {
                                                             "type":  "string",
                                                             "nullable":  true,
-                                                            "description":  "sha256 файла"
+                                                            "description":  "File sha256"
                                                         },
                                            "status":  {
                                                           "$ref": "./imports.json#/ImportStatus"
@@ -126,7 +126,7 @@
                                                          },
                                               "duplicate":  {
                                                                 "type":  "boolean",
-                                                                "description":  "true — файл с таким sha256 уже загружался для этого источника"
+                                                                "description":  "true — a file with this sha256 was already uploaded for this source"
                                                             },
                                               "createdAt":  {
                                                                 "type":  "string",
@@ -184,7 +184,7 @@
                                                          },
                                            "errorMessage":  {
                                                                 "type":  "string",
-                                                                "description":  "Причина на русском языке"
+                                                                "description":  "Reason"
                                                             },
                                            "rawData":  {
                                                            "type":  "object",

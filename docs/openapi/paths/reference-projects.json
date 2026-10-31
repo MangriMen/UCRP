@@ -6,7 +6,7 @@
                                                                     "Reference"
                                                                 ],
                                                        "operationId":  "listProjects",
-                                                       "summary":  "Список проектов",
+                                                       "summary":  "List projects",
                                                        "x-roles":  [
                                                                        "R-1",
                                                                        "R-2",
@@ -32,7 +32,7 @@
                                                                       ],
                                                        "responses":  {
                                                                          "200":  {
-                                                                                     "description":  "Страница проектов",
+                                                                                     "description":  "Project page",
                                                                                      "content":  {
                                                                                                      "application/json":  {
                                                                                                                               "schema":  {
@@ -54,8 +54,8 @@
                                                                      "Reference"
                                                                  ],
                                                         "operationId":  "createProject",
-                                                        "summary":  "Создать проект",
-                                                        "description":  "Пара `(tenantId, code)` уникальна — 409 `duplicate_project_code`.",
+                                                        "summary":  "Create a project",
+                                                        "description":  "The `(tenantId, code)` pair is unique — 409 `duplicate_project_code`.",
                                                         "x-roles":  [
                                                                         "R-4"
                                                                     ],
@@ -74,7 +74,7 @@
                                                                         },
                                                         "responses":  {
                                                                           "201":  {
-                                                                                      "description":  "Проект создан",
+                                                                                      "description":  "Project created",
                                                                                       "content":  {
                                                                                                       "application/json":  {
                                                                                                                                "schema":  {
@@ -109,7 +109,7 @@
                                                                            "Reference"
                                                                        ],
                                                               "operationId":  "updateProject",
-                                                              "summary":  "Изменить проект",
+                                                              "summary":  "Update a project",
                                                               "x-roles":  [
                                                                               "R-4"
                                                                           ],
@@ -128,7 +128,7 @@
                                                                               },
                                                               "responses":  {
                                                                                 "200":  {
-                                                                                            "description":  "Обновлённый проект",
+                                                                                            "description":  "Updated project",
                                                                                             "content":  {
                                                                                                             "application/json":  {
                                                                                                                                      "schema":  {
@@ -156,8 +156,8 @@
                                                                             "Reference"
                                                                         ],
                                                                "operationId":  "deleteProject",
-                                                               "summary":  "Удалить проект",
-                                                               "description":  "Удаление запрещено, если у проекта есть события — 409 `project_has_events`.",
+                                                               "summary":  "Delete a project",
+                                                               "description":  "Deletion is not allowed when the project has events — 409 `project_has_events`.",
                                                                "x-roles":  [
                                                                                "R-4"
                                                                            ],

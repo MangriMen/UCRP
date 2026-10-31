@@ -6,8 +6,8 @@
                                                                    "Reference"
                                                                ],
                                                       "operationId":  "listTenants",
-                                                      "summary":  "Список арендаторов",
-                                                      "description":  "R-3 видит только собственную запись: фильтр `tenant_id = :claimTenant` применяется в repository, значение из запроса игнорируется.",
+                                                      "summary":  "List tenants",
+                                                      "description":  "R-3 sees only its own record: the `tenant_id = :claimTenant` filter is applied in the repository and any value from the request is ignored.",
                                                       "x-roles":  [
                                                                       "R-1",
                                                                       "R-2",
@@ -50,7 +50,7 @@
                                                                      ],
                                                       "responses":  {
                                                                         "200":  {
-                                                                                    "description":  "Страница арендаторов",
+                                                                                    "description":  "Tenant page",
                                                                                     "content":  {
                                                                                                     "application/json":  {
                                                                                                                              "schema":  {
@@ -72,7 +72,7 @@
                                                                     "Reference"
                                                                 ],
                                                        "operationId":  "createTenant",
-                                                       "summary":  "Создать арендатора",
+                                                       "summary":  "Create a tenant",
                                                        "x-roles":  [
                                                                        "R-4"
                                                                    ],
@@ -91,7 +91,7 @@
                                                                        },
                                                        "responses":  {
                                                                          "201":  {
-                                                                                     "description":  "Арендатор создан",
+                                                                                     "description":  "Tenant created",
                                                                                      "content":  {
                                                                                                      "application/json":  {
                                                                                                                               "schema":  {
@@ -126,8 +126,8 @@
                                                                         "Reference"
                                                                     ],
                                                            "operationId":  "getTenant",
-                                                           "summary":  "Карточка арендатора",
-                                                           "description":  "R-3 допускается только к собственной записи; чужой `id` → 403 `forbidden_tenant`.",
+                                                           "summary":  "Tenant details",
+                                                           "description":  "R-3 is allowed only its own record; a foreign `id` → 403 `forbidden_tenant`.",
                                                            "x-roles":  [
                                                                            "R-1",
                                                                            "R-2",
@@ -140,7 +140,7 @@
                                                                     ],
                                                            "responses":  {
                                                                              "200":  {
-                                                                                         "description":  "Арендатор",
+                                                                                         "description":  "Tenant",
                                                                                          "content":  {
                                                                                                          "application/json":  {
                                                                                                                                   "schema":  {
@@ -165,8 +165,8 @@
                                                                           "Reference"
                                                                       ],
                                                              "operationId":  "updateTenant",
-                                                             "summary":  "Изменить арендатора",
-                                                             "description":  "R-1 вправе менять только поле `priority` (приоритет в скоринге рекомендаций); попытка изменить любое другое поле → 403 `forbidden_field`.",
+                                                             "summary":  "Update a tenant",
+                                                             "description":  "R-1 may change only the `priority` field (recommendation scoring priority); changing any other field → 403 `forbidden_field`.",
                                                              "x-roles":  [
                                                                              "R-4",
                                                                              "R-1 (priority)"
@@ -186,7 +186,7 @@
                                                                              },
                                                              "responses":  {
                                                                                "200":  {
-                                                                                           "description":  "Обновлённый арендатор",
+                                                                                           "description":  "Updated tenant",
                                                                                            "content":  {
                                                                                                            "application/json":  {
                                                                                                                                     "schema":  {
@@ -214,8 +214,8 @@
                                                                            "Reference"
                                                                        ],
                                                               "operationId":  "deleteTenant",
-                                                              "summary":  "Soft-delete арендатора",
-                                                              "description":  "Удаление запрещено, если у арендатора есть события — 409 `tenant_has_events`.",
+                                                              "summary":  "Soft-delete a tenant",
+                                                              "description":  "Deletion is not allowed when the tenant has events — 409 `tenant_has_events`.",
                                                               "x-roles":  [
                                                                               "R-4"
                                                                           ],

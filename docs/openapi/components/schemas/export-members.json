@@ -18,7 +18,7 @@
                                                           },
                                             "identifierId":  {
                                                                  "type":  "string",
-                                                                 "description":  "Использованный контакт канала"
+                                                                 "description":  "Channel contact used"
                                                              },
                                             "contact":  {
                                                             "type":  "object",
@@ -32,7 +32,7 @@
                                                                                           },
                                                                                "value":  {
                                                                                              "type":  "string",
-                                                                                             "description":  "Нормализованное значение контакта"
+                                                                                             "description":  "Normalized contact value"
                                                                                          }
                                                                            }
                                                         }
@@ -75,7 +75,7 @@
                                                                          "push",
                                                                          "email"
                                                                      ],
-                                                            "description":  "null — правило для всех каналов"
+                                                            "description":  "null — rule applies to all channels"
                                                         },
                                             "maxContacts":  {
                                                                 "type":  "integer",

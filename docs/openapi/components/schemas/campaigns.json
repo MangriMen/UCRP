@@ -47,7 +47,7 @@
                                                                 "minimum":  1,
                                                                 "maximum":  90,
                                                                 "default":  14,
-                                                                "description":  "Окно атрибуции после контакта"
+                                                                "description":  "Attribution window after contact"
                                                             },
                                         "status":  {
                                                        "$ref": "./campaigns.json#/CampaignStatus"
@@ -181,7 +181,7 @@
                                                "recipients":  {
                                                                   "type":  "integer",
                                                                   "minimum":  0,
-                                                                  "description":  "Число получателей (contact_log)"
+                                                                  "description":  "Number of recipients (contact_log)"
                                                               },
                                                "controlGroup":  {
                                                                     "type":  "integer",
@@ -190,12 +190,12 @@
                                                "conversions":  {
                                                                    "type":  "integer",
                                                                    "minimum":  0,
-                                                                   "description":  "Получатели с визитом в окне атрибуции"
+                                                                   "description":  "Recipients with a visit within the attribution window"
                                                                },
                                                "conversionRate":  {
                                                                       "type":  "number",
                                                                       "format":  "double",
-                                                                      "description":  "Доля конверсии получателей"
+                                                                      "description":  "Recipient conversion rate"
                                                                   },
                                                "controlConversions":  {
                                                                           "type":  "integer",
@@ -208,17 +208,17 @@
                                                "incrementalRate":  {
                                                                        "type":  "number",
                                                                        "format":  "double",
-                                                                       "description":  "Разность конверсий: получатели минус контрольная группа"
+                                                                       "description":  "Conversion difference: recipients minus control group"
                                                                    },
                                                "incrementalVisits":  {
                                                                          "type":  "integer",
-                                                                         "description":  "Оценка дополнительных визитов"
+                                                                         "description":  "Estimated incremental visits"
                                                                      },
                                                "pValue":  {
                                                               "type":  "number",
                                                               "format":  "double",
                                                               "nullable":  true,
-                                                              "description":  "Значимость (двухвыборочный тест долей)"
+                                                              "description":  "Significance (two-sample test of proportions)"
                                                           },
                                                "isSignificant":  {
                                                                      "type":  "boolean",

@@ -24,22 +24,22 @@
                                                        },
                                               "connectorKey":  {
                                                                    "type":  "string",
-                                                                   "description":  "Ключ реализации SourceConnector в коде",
+                                                                   "description":  "SourceConnector implementation key in code",
                                                                    "example":  "csv_excel"
                                                                },
                                               "supportsFile":  {
                                                                    "type":  "boolean",
-                                                                   "description":  "Поддерживает загрузку файла"
+                                                                   "description":  "Supports file upload"
                                                                },
                                               "supportsPull":  {
                                                                    "type":  "boolean",
-                                                                   "description":  "Поддерживает подтягивание по API"
+                                                                   "description":  "Supports API pull"
                                                                },
                                               "configSchema":  {
                                                                    "type":  "object",
                                                                    "nullable":  true,
                                                                    "additionalProperties":  true,
-                                                                   "description":  "JSON-схема конфигурации источника этого типа"
+                                                                   "description":  "JSON schema for the configuration of this source type"
                                                                },
                                               "isActive":  {
                                                                "type":  "boolean"
@@ -90,7 +90,7 @@
                               },
     "FieldMapping":  {
                          "type":  "object",
-                         "description":  "Сопоставление полей источника с полями платформы",
+                         "description":  "Mapping of source fields to platform fields",
                          "additionalProperties":  {
                                                       "type":  "string"
                                                   },
@@ -117,7 +117,7 @@
                                           "tenantId":  {
                                                            "type":  "string",
                                                            "nullable":  true,
-                                                           "description":  "null — общий источник УК (Wi-Fi, парковка)"
+                                                           "description":  "null — shared management company source (Wi-Fi, parking)"
                                                        },
                                           "tenantName":  {
                                                              "type":  "string",
@@ -146,7 +146,7 @@
                                           "scheduleCron":  {
                                                                "type":  "string",
                                                                "nullable":  true,
-                                                               "description":  "Расписание pull в cron-формате",
+                                                               "description":  "Pull schedule in cron format",
                                                                "example":  "0 * * * *"
                                                            },
                                           "isActive":  {

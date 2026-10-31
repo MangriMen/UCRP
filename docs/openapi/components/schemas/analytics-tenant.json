@@ -12,7 +12,7 @@
                                                     "newGuests":  {
                                                                       "type":  "integer",
                                                                       "nullable":  true,
-                                                                      "description":  "null, если значение меньше порога k = 5"
+                                                                      "description":  "null if the value is below the k = 5 threshold"
                                                                   },
                                                     "repeatVisits":  {
                                                                          "type":  "integer",
@@ -48,7 +48,7 @@
                                                 "newGuestsViaComplex":  {
                                                                             "type":  "integer",
                                                                             "nullable":  true,
-                                                                            "description":  "Новые гости, пришедшие через комплекс (A-13). null при значении \u003c k"
+                                                                            "description":  "New guests acquired through the complex (A-13). null when the value is < k"
                                                                         },
                                                 "repeatVisits":  {
                                                                      "type":  "integer",
@@ -56,7 +56,7 @@
                                                                  },
                                                 "suppressed":  {
                                                                    "type":  "boolean",
-                                                                   "description":  "true — часть ячеек скрыта порогом k = 5"
+                                                                   "description":  "true — some cells are suppressed by the k = 5 threshold"
                                                                },
                                                 "suppressionThreshold":  {
                                                                              "type":  "integer",
@@ -102,19 +102,19 @@
                                                  "rejectedShare30d":  {
                                                                           "type":  "number",
                                                                           "format":  "double",
-                                                                          "description":  "Доля отклонённых строк за 30 дней"
+                                                                          "description":  "Share of rejected rows over 30 days"
                                                                       },
                                                  "pendingMergeCandidates":  {
                                                                                 "type":  "integer",
                                                                                 "minimum":  0,
-                                                                                "description":  "Спорные профили, связанные с источником"
+                                                                                "description":  "Disputed profiles linked to the source"
                                                                             },
                                                  "hasWarning":  {
                                                                     "type":  "boolean"
                                                                 },
                                                  "warningReasons":  {
                                                                         "type":  "array",
-                                                                        "description":  "Например: `rejected_share_above_10pct`, `data_older_than_7_days`",
+                                                                        "description":  "For example: `rejected_share_above_10pct`, `data_older_than_7_days`",
                                                                         "items":  {
                                                                                       "type":  "string"
                                                                                   }

@@ -11,8 +11,8 @@
                                                                               "Identity"
                                                                           ],
                                                                  "operationId":  "mergeGuests",
-                                                                 "summary":  "Ручное объединение профилей",
-                                                                 "description":  "Объединяет гостя `{id}` с `targetGuestId`. Объединение с самим собой → 400; пара под запретом склейки → 409 `merge_blocked` (запрет снимается через `DELETE /unmerge-blocks/{id}`).",
+                                                                 "summary":  "Manual profile merge",
+                                                                 "description":  "Merges guest `{id}` into `targetGuestId`. Merging with itself → 400; a blocked pair → 409 `merge_blocked` (remove the block via `DELETE /unmerge-blocks/{id}`).",
                                                                  "x-roles":  [
                                                                                  "R-4"
                                                                              ],
@@ -31,7 +31,7 @@
                                                                                  },
                                                                  "responses":  {
                                                                                    "200":  {
-                                                                                               "description":  "Результат объединения",
+                                                                                               "description":  "Merge result",
                                                                                                "content":  {
                                                                                                                "application/json":  {
                                                                                                                                         "schema":  {
@@ -64,7 +64,7 @@
                                                                           "Identity"
                                                                       ],
                                                              "operationId":  "listUnmergeBlocks",
-                                                             "summary":  "Список запретов склейки",
+                                                             "summary":  "List merge blocks",
                                                              "x-roles":  [
                                                                              "R-4"
                                                                          ],
@@ -81,7 +81,7 @@
                                                                             ],
                                                              "responses":  {
                                                                                "200":  {
-                                                                                           "description":  "Страница запретов",
+                                                                                           "description":  "Merge block page",
                                                                                            "content":  {
                                                                                                            "application/json":  {
                                                                                                                                     "schema":  {
@@ -110,8 +110,8 @@
                                                                                   "Identity"
                                                                               ],
                                                                      "operationId":  "deleteUnmergeBlock",
-                                                                     "summary":  "Снять запрет склейки",
-                                                                     "description":  "После снятия пара снова может быть склеена автосклейкой при появлении общего надёжного ключа.",
+                                                                     "summary":  "Remove a merge block",
+                                                                     "description":  "Once removed, the pair can be merged automatically again when a shared reliable key appears.",
                                                                      "x-roles":  [
                                                                                      "R-4"
                                                                                  ],

@@ -29,7 +29,7 @@
                           "properties":  {
                                              "accessToken":  {
                                                                  "type":  "string",
-                                                                 "description":  "JWT access-токен"
+                                                                 "description":  "JWT access token"
                                                              },
                                              "tokenType":  {
                                                                "type":  "string",
@@ -40,7 +40,7 @@
                                                            },
                                              "expiresIn":  {
                                                                "type":  "integer",
-                                                               "description":  "Время жизни access-токена в секундах",
+                                                               "description":  "Access token lifetime in seconds",
                                                                "example":  900
                                                            }
                                          }
@@ -89,11 +89,11 @@
                                           "tenantId":  {
                                                            "type":  "string",
                                                            "nullable":  true,
-                                                           "description":  "Арендатор пользователя. Обязателен для роли `tenant`, иначе null."
+                                                           "description":  "User tenant. Required for the `tenant` role, otherwise null."
                                                        },
                                           "permissions":  {
                                                               "type":  "array",
-                                                              "description":  "Список разрешений для построения меню SPA",
+                                                              "description":  "Permission list used to build the SPA menu",
                                                               "items":  {
                                                                             "type":  "string"
                                                                         },
@@ -176,7 +176,7 @@
                                                  "tenantId":  {
                                                                   "type":  "string",
                                                                   "nullable":  true,
-                                                                  "description":  "Обязателен, если role = `tenant`"
+                                                                  "description":  "Required when role = `tenant`"
                                                               },
                                                  "isActive":  {
                                                                   "type":  "boolean",
@@ -204,7 +204,7 @@
                                                               },
                                                  "resetPassword":  {
                                                                        "type":  "boolean",
-                                                                       "description":  "Инициировать сброс пароля и отозвать refresh-токены пользователя"
+                                                                       "description":  "Trigger a password reset and revoke the user refresh tokens"
                                                                    }
                                              }
                           },

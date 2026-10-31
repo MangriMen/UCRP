@@ -26,7 +26,7 @@
                                                      },
                                               "guestAId":  {
                                                                "type":  "string",
-                                                               "description":  "Меньший идентификатор пары (канонический порядок)"
+                                                               "description":  "Smaller identifier of the pair (canonical order)"
                                                            },
                                               "guestBId":  {
                                                                "type":  "string"
@@ -34,17 +34,17 @@
                                               "reasonCode":  {
                                                                  "type":  "string",
                                                                  "example":  "shared_phone_names_differ",
-                                                                 "description":  "Код причины совпадения"
+                                                                 "description":  "Match reason code"
                                                              },
                                               "reasonText":  {
                                                                  "type":  "string",
-                                                                 "description":  "Причина на русском языке"
+                                                                 "description":  "Reason"
                                                              },
                                               "score":  {
                                                             "type":  "integer",
                                                             "minimum":  0,
                                                             "maximum":  100,
-                                                            "description":  "Оценка уверенности склейки"
+                                                            "description":  "Merge confidence score"
                                                         },
                                               "resolution":  {
                                                                  "$ref": "./identity.json#/MergeResolution"
@@ -93,7 +93,7 @@
                                                                                  },
                                                                       "sharedKeys":  {
                                                                                          "type":  "array",
-                                                                                         "description":  "Совпавшие нормализованные ключи",
+                                                                                         "description":  "Matching normalized keys",
                                                                                          "items":  {
                                                                                                        "type":  "object",
                                                                                                        "properties":  {
@@ -108,7 +108,7 @@
                                                                                      },
                                                                       "differingFields":  {
                                                                                               "type":  "array",
-                                                                                              "description":  "Различающиеся признаки (например, displayName)",
+                                                                                              "description":  "Differing attributes (for example, displayName)",
                                                                                               "items":  {
                                                                                                             "type":  "string"
                                                                                                         }
@@ -143,7 +143,7 @@
                          "properties":  {
                                             "targetGuestId":  {
                                                                   "type":  "string",
-                                                                  "description":  "Профиль-победитель, к которому присоединяется гость из пути"
+                                                                  "description":  "Winning profile that the guest from the path is merged into"
                                                               }
                                         }
                      },
@@ -205,7 +205,7 @@
                                                                         "manual_reject",
                                                                         "auto_conflict"
                                                                     ],
-                                                           "description":  "Причина запрета склейки"
+                                                           "description":  "Reason for the merge block"
                                                        },
                                             "candidateId":  {
                                                                 "type":  "string",

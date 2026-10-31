@@ -6,8 +6,8 @@
                                                                           "Exports"
                                                                       ],
                                                              "operationId":  "listContactLimits",
-                                                             "summary":  "Правила лимита контактов",
-                                                             "description":  "`channel = null` — общее правило для всех каналов. При нескольких применимых правилах действует самое строгое.",
+                                                             "summary":  "Contact limit rules",
+                                                             "description":  "`channel = null` — a general rule for all channels. When several rules apply, the strictest one wins.",
                                                              "x-roles":  [
                                                                              "R-1",
                                                                              "R-2",
@@ -18,7 +18,7 @@
                                                                       ],
                                                              "responses":  {
                                                                                "200":  {
-                                                                                           "description":  "Правила",
+                                                                                           "description":  "Rules",
                                                                                            "content":  {
                                                                                                            "application/json":  {
                                                                                                                                     "schema":  {
@@ -43,8 +43,8 @@
                                                                            "Exports"
                                                                        ],
                                                               "operationId":  "createContactLimit",
-                                                              "summary":  "Создать правило лимита",
-                                                              "description":  "`maxContacts \u003e= 1`, `periodDays \u003e= 1`, иначе 400.",
+                                                              "summary":  "Create a contact limit rule",
+                                                              "description":  "`maxContacts >= 1`, `periodDays >= 1`, otherwise 400.",
                                                               "x-roles":  [
                                                                               "R-1"
                                                                           ],
@@ -63,7 +63,7 @@
                                                                               },
                                                               "responses":  {
                                                                                 "201":  {
-                                                                                            "description":  "Правило создано",
+                                                                                            "description":  "Rule created",
                                                                                             "content":  {
                                                                                                             "application/json":  {
                                                                                                                                      "schema":  {
@@ -95,7 +95,7 @@
                                                                                  "Exports"
                                                                              ],
                                                                     "operationId":  "updateContactLimit",
-                                                                    "summary":  "Изменить правило лимита",
+                                                                    "summary":  "Update a contact limit rule",
                                                                     "x-roles":  [
                                                                                     "R-1"
                                                                                 ],
@@ -114,7 +114,7 @@
                                                                                     },
                                                                     "responses":  {
                                                                                       "200":  {
-                                                                                                  "description":  "Обновлённое правило",
+                                                                                                  "description":  "Updated rule",
                                                                                                   "content":  {
                                                                                                                   "application/json":  {
                                                                                                                                            "schema":  {
@@ -142,7 +142,7 @@
                                                                                   "Exports"
                                                                               ],
                                                                      "operationId":  "deleteContactLimit",
-                                                                     "summary":  "Удалить правило лимита",
+                                                                     "summary":  "Delete a contact limit rule",
                                                                      "x-roles":  [
                                                                                      "R-1"
                                                                                  ],

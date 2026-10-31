@@ -6,8 +6,8 @@
                                                                             "Exports"
                                                                         ],
                                                                "operationId":  "previewExport",
-                                                               "summary":  "Подсчёт до создания выгрузки",
-                                                               "description":  "Возвращает четыре числа: всего в сегменте, с контактом канала, блокировано лимитом, в контрольной группе. Ничего не пишет в БД. Фильтр по контакту выполняется до лимита и контрольной группы.",
+                                                               "summary":  "Counts before creating an export",
+                                                               "description":  "Returns four numbers: total in segment, with a channel contact, blocked by limit, in control group. Writes nothing to the database. The contact filter runs before the limit and the control group.",
                                                                "x-roles":  [
                                                                                "R-1"
                                                                            ],
@@ -27,7 +27,7 @@
                                                                                },
                                                                "responses":  {
                                                                                  "200":  {
-                                                                                             "description":  "Счётчики предпросмотра",
+                                                                                             "description":  "Preview counts",
                                                                                              "content":  {
                                                                                                              "application/json":  {
                                                                                                                                       "schema":  {
@@ -57,8 +57,8 @@
                                                                     "Exports"
                                                                 ],
                                                        "operationId":  "createExport",
-                                                       "summary":  "Создать выгрузку сегмента в канал",
-                                                       "description":  "Обязателен заголовок `Idempotency-Key`: повтор с тем же ключом возвращает ту же выгрузку и не создаёт новых `contact_log`. Порядок: проверка ключа → версия сегмента `ready` (иначе 409 `segment_not_ready`) → фильтр по контакту канала (`sms`/`push` — телефон, `email` — email) → самое строгое правило лимита → контрольная группа по `controlSeed` → транзакционная запись с повторной проверкой лимита. Если не осталось ни одного получателя — 409 `contact_limit_exceeded` с разбивкой причин. До 20 000 членов — синхронно (201), больше — задание `export.build` (202).",
+                                                       "summary":  "Create a segment export to a channel",
+                                                       "description":  "The `Idempotency-Key` header is required: repeating the same key returns the same export and creates no new `contact_log` rows. Order: key check → segment version `ready` (otherwise 409 `segment_not_ready`) → channel contact filter (`sms`/`push` — phone, `email` — email) → strictest limit rule → control group by `controlSeed` → transactional write with a repeated limit check. If no recipients remain — 409 `contact_limit_exceeded` with a breakdown of reasons. Up to 20,000 members are built synchronously (201); larger exports use the `export.build` job (202).",
                                                        "x-roles":  [
                                                                        "R-1"
                                                                    ],
@@ -83,7 +83,7 @@
                                                                        },
                                                        "responses":  {
                                                                          "201":  {
-                                                                                     "description":  "Выгрузка готова",
+                                                                                     "description":  "Export ready",
                                                                                      "content":  {
                                                                                                      "application/json":  {
                                                                                                                               "schema":  {
@@ -93,7 +93,7 @@
                                                                                                  }
                                                                                  },
                                                                          "202":  {
-                                                                                     "description":  "Выгрузка строится асинхронно",
+                                                                                     "description":  "Export is being built asynchronously",
                                                                                      "content":  {
                                                                                                      "application/json":  {
                                                                                                                               "schema":  {
@@ -127,7 +127,7 @@
                                                                    "Exports"
                                                                ],
                                                       "operationId":  "listExports",
-                                                      "summary":  "Журнал выгрузок",
+                                                      "summary":  "Export log",
                                                       "x-roles":  [
                                                                       "R-1",
                                                                       "R-2",
@@ -174,7 +174,7 @@
                                                                      ],
                                                       "responses":  {
                                                                         "200":  {
-                                                                                    "description":  "Страница выгрузок",
+                                                                                    "description":  "Export page",
                                                                                     "content":  {
                                                                                                     "application/json":  {
                                                                                                                              "schema":  {
@@ -203,8 +203,8 @@
                                                                         "Exports"
                                                                     ],
                                                            "operationId":  "getExport",
-                                                           "summary":  "Карточка и счётчики выгрузки",
-                                                           "description":  "Инвариант: `exportedCount + controlCount + noContactCount + blockedByLimitCount = totalInSegment`.",
+                                                           "summary":  "Export details and counters",
+                                                           "description":  "Invariant: `exportedCount + controlCount + noContactCount + blockedByLimitCount = totalInSegment`.",
                                                            "x-roles":  [
                                                                            "R-1",
                                                                            "R-2",
@@ -215,7 +215,7 @@
                                                                     ],
                                                            "responses":  {
                                                                              "200":  {
-                                                                                         "description":  "Выгрузка",
+                                                                                         "description":  "Export",
                                                                                          "content":  {
                                                                                                          "application/json":  {
                                                                                                                                   "schema":  {

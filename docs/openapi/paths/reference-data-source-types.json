@@ -6,8 +6,8 @@
                                                                              "Reference"
                                                                          ],
                                                                 "operationId":  "listDataSourceTypes",
-                                                                "summary":  "Типы источников данных",
-                                                                "description":  "Базовые типы: `crm`, `pos`, `api`, `csv_excel`. `connectorKey` указывает на реализацию `SourceConnector` в коде.",
+                                                                "summary":  "Data source types",
+                                                                "description":  "Base types: `crm`, `pos`, `api`, `csv_excel`. `connectorKey` points to the `SourceConnector` implementation in code.",
                                                                 "x-roles":  [
                                                                                 "R-1",
                                                                                 "R-2",
@@ -18,7 +18,7 @@
                                                                          ],
                                                                 "responses":  {
                                                                                   "200":  {
-                                                                                              "description":  "Типы источников",
+                                                                                              "description":  "Source types",
                                                                                               "content":  {
                                                                                                               "application/json":  {
                                                                                                                                        "schema":  {
@@ -43,8 +43,8 @@
                                                                               "Reference"
                                                                           ],
                                                                  "operationId":  "createDataSourceType",
-                                                                 "summary":  "Зарегистрировать тип источника",
-                                                                 "description":  "Коннектор с указанным `connectorKey` должен существовать в коде, иначе 400 `connector_not_registered`.",
+                                                                 "summary":  "Register a source type",
+                                                                 "description":  "A connector with the given `connectorKey` must exist in code, otherwise 400 `connector_not_registered`.",
                                                                  "x-roles":  [
                                                                                  "R-4"
                                                                              ],
@@ -63,7 +63,7 @@
                                                                                  },
                                                                  "responses":  {
                                                                                    "201":  {
-                                                                                               "description":  "Тип источника создан",
+                                                                                               "description":  "Source type created",
                                                                                                "content":  {
                                                                                                                "application/json":  {
                                                                                                                                         "schema":  {
@@ -98,7 +98,7 @@
                                                                                     "Reference"
                                                                                 ],
                                                                        "operationId":  "updateDataSourceType",
-                                                                       "summary":  "Изменить тип источника",
+                                                                       "summary":  "Update a source type",
                                                                        "x-roles":  [
                                                                                        "R-4"
                                                                                    ],
@@ -117,7 +117,7 @@
                                                                                        },
                                                                        "responses":  {
                                                                                          "200":  {
-                                                                                                     "description":  "Обновлённый тип источника",
+                                                                                                     "description":  "Updated source type",
                                                                                                      "content":  {
                                                                                                                      "application/json":  {
                                                                                                                                               "schema":  {
