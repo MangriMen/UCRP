@@ -56,8 +56,16 @@ func run(log *slog.Logger, cfg config.Config) error {
 	idg := idgen.UUID{}
 	tokens := auth.NewManager(cfg.JWTSecret, cfg.JWTAccessTTL)
 	users := repository.NewUserSQL(store.DB)
+	if err := seedAdmin(ctx, users, clock, idg); err != nil {
+		return err
+	}
 	authSvc := service.NewAuthService(users, tokens, clock, idg)
 	authHandler := handler.NewAuthHandler(authSvc)
+	guests := repository.NewGuestSQL(store.DB)
+	identifiers := repository.NewGuestIdentifierSQL(store.DB)
+	events := repository.NewEventSQL(store.DB)
+	profileSvc := service.NewProfileService(guests, identifiers, events)
+	guestHandler := handler.NewGuestHandler(profileSvc)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -70,6 +78,11 @@ func run(log *slog.Logger, cfg config.Config) error {
 		api.Group(func(priv chi.Router) {
 			priv.Use(auth.Middleware(tokens))
 			priv.Get("/auth/me", authHandler.Me)
+			priv.Route("/guests", func(g chi.Router) {
+				g.Get("/", guestHandler.Search)
+				g.Get("/{id}", guestHandler.Get)
+				g.Get("/{id}/events", guestHandler.Events)
+			})
 		})
 	})
 

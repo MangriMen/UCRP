@@ -1,0 +1,124 @@
+package repository
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"strings"
+
+	"github.com/MangriMen/UCRP/internal/domain"
+)
+
+type GuestSQL struct {
+	db *sql.DB
+}
+
+func NewGuestSQL(db *sql.DB) *GuestSQL {
+	return &GuestSQL{db: db}
+}
+
+func (r *GuestSQL) GetByID(ctx context.Context, id string) (*domain.Guest, error) {
+	var g domain.Guest
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, COALESCE(display_name, ''), status, COALESCE(merged_into_id, ''), created_at, updated_at, deleted_at
+		FROM guest WHERE id = $1`, id).Scan(
+		&g.ID, &g.DisplayName, &g.Status, &g.MergedIntoID, &g.CreatedAt, &g.UpdatedAt, &g.DeletedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &g, nil
+}
+
+func (r *GuestSQL) Search(ctx context.Context, q string, limit, offset int) ([]domain.Guest, error) {
+	q = strings.TrimSpace(q)
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if q == "" {
+		rows, err = r.db.QueryContext(ctx, `
+			SELECT id, COALESCE(display_name, ''), status, COALESCE(merged_into_id, ''), created_at, updated_at, deleted_at
+			FROM guest WHERE status <> 'deleted'
+			ORDER BY created_at DESC
+			LIMIT $1 OFFSET $2`, limit, offset)
+	} else {
+		rows, err = r.db.QueryContext(ctx, `
+			SELECT DISTINCT g.id, COALESCE(g.display_name, ''), g.status, COALESCE(g.merged_into_id, ''), g.created_at, g.updated_at, g.deleted_at
+			FROM guest g
+			LEFT JOIN guest_identifier i ON i.guest_id = g.id
+			WHERE g.status <> 'deleted' AND (
+				g.display_name ILIKE '%' || $1 || '%'
+				OR i.value_normalized = $1
+				OR i.value_normalized LIKE '%' || $1 || '%'
+			)
+			ORDER BY g.created_at DESC
+			LIMIT $2 OFFSET $3`, q, limit, offset)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]domain.Guest, 0)
+	for rows.Next() {
+		var g domain.Guest
+		if err := rows.Scan(&g.ID, &g.DisplayName, &g.Status, &g.MergedIntoID, &g.CreatedAt, &g.UpdatedAt, &g.DeletedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}
+
+func (r *GuestSQL) Insert(ctx context.Context, g *domain.Guest) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO guest (id, display_name, status, merged_into_id, created_at, updated_at, deleted_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		g.ID, nullIfEmpty(g.DisplayName), string(g.Status), nullIfEmpty(g.MergedIntoID), g.CreatedAt, g.UpdatedAt, g.DeletedAt,
+	)
+	return err
+}
+
+func (r *GuestSQL) TenantCount(ctx context.Context, guestID string) (int, error) {
+	var n int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(DISTINCT t.id)
+		FROM event e
+		JOIN event_type et ON et.id = e.event_type_id
+		JOIN tenant t ON t.id = e.tenant_id
+		WHERE e.guest_id = $1 AND et.counts_as_presence`, guestID).Scan(&n)
+	return n, err
+}
+
+func (r *GuestSQL) TenantNames(ctx context.Context, guestID string) ([]string, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT DISTINCT t.name
+		FROM event e
+		JOIN event_type et ON et.id = e.event_type_id
+		JOIN tenant t ON t.id = e.tenant_id
+		WHERE e.guest_id = $1 AND et.counts_as_presence
+		ORDER BY t.name`, guestID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]string, 0)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		out = append(out, name)
+	}
+	return out, rows.Err()
+}

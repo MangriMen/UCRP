@@ -5,11 +5,13 @@ x-build: &build
   dockerfile: docker/Dockerfile
 
 x-environment: &environment
-  UCRP_HTTP_ADDR: ":8080"
-  UCRP_DATABASE_URL: "postgres://${POSTGRES_USER:-ucrp}:${POSTGRES_PASSWORD:-ucrp}@db:5432/${POSTGRES_DB:-ucrp}?sslmode=disable"
+  UCRP_HTTP_ADDR: ':8080'
+  UCRP_DATABASE_URL: 'postgres://${POSTGRES_USER:-ucrp}:${POSTGRES_PASSWORD:-ucrp}@db:5432/${POSTGRES_DB:-ucrp}?sslmode=disable'
   UCRP_JWT_SECRET: ${UCRP_JWT_SECRET:-dev-secret-change-me}
   UCRP_UPLOAD_DIR: /data/uploads
   UCRP_LOG_LEVEL: ${UCRP_LOG_LEVEL:-info}
+  UCRP_ADMIN_EMAIL: ${UCRP_ADMIN_EMAIL:-admin@ucrp.local}
+  UCRP_ADMIN_PASSWORD: ${UCRP_ADMIN_PASSWORD:-admin12345}
 
 services:
   db:
@@ -20,11 +22,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ucrp}
       POSTGRES_DB: ${POSTGRES_DB:-ucrp}
     ports:
-      - "${POSTGRES_PORT:-5543}:5432"
+      - '${POSTGRES_PORT:-5543}:5432'
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ucrp} -d ${POSTGRES_DB:-ucrp}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-ucrp} -d ${POSTGRES_DB:-ucrp}']
       interval: 3s
       timeout: 3s
       retries: 20
@@ -39,7 +41,7 @@ services:
     environment:
       <<: *environment
     ports:
-      - "${UCRP_HTTP_PORT:-8080}:8080"
+      - '${UCRP_HTTP_PORT:-8080}:8080'
     volumes:
       - api-data:/data
     depends_on:
