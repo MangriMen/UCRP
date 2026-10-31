@@ -8,6 +8,8 @@ import { MergeCandidatePage } from '@/pages/merge-candidate'
 import { MergeQueuePage } from '@/pages/merge-queue'
 import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
+import { SegmentDetailsPage } from '@/pages/segment-details'
+import { SegmentsPage } from '@/pages/segments'
 import { UnmergeBlocksPage } from '@/pages/unmerge-blocks'
 import { AppLayout } from './layout/app-layout'
 import { HomeRedirect } from './layout/home-redirect'
@@ -45,6 +47,13 @@ export const router = createBrowserRouter([
             children: [
               { path: 'identity/queue', element: <MergeQueuePage /> },
               { path: 'identity/queue/:id', element: <MergeCandidatePage /> },
+            ],
+          },
+          {
+            element: <RoleGuard roles={['marketer', 'analyst', 'manager']} />,
+            children: [
+              { path: 'segments', element: <SegmentsPage /> },
+              { path: 'segments/:id', element: <SegmentDetailsPage /> },
             ],
           },
           {
