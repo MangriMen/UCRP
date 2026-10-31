@@ -16,10 +16,10 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 		return LoginResult{}, domain.ErrUnauthorized
 	}
 	u, err := s.users.GetByID(ctx, p.UserID)
-	if err != nil || !u.IsActive {
+	if err != nil || !u.IsActive || u.AuthVersion != p.AuthVersion {
 		return LoginResult{}, domain.ErrUnauthorized
 	}
-	pair, err := s.tokens.Issue(domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID})
+	pair, err := s.tokens.Issue(domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID, AuthVersion: u.AuthVersion})
 	if err != nil {
 		return LoginResult{}, err
 	}

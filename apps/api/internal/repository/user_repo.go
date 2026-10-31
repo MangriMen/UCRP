@@ -19,13 +19,13 @@ func NewUserSQL(db *sql.DB) *UserSQL {
 
 func (r *UserSQL) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	return r.getOne(ctx, `
-		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at
+		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, auth_version
 		FROM app_user WHERE id = $1`, id)
 }
 
 func (r *UserSQL) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	return r.getOne(ctx, `
-		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at
+		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, auth_version
 		FROM app_user WHERE email = $1`, email)
 }
 
@@ -43,7 +43,7 @@ func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, e
 		limit = 50
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at
+		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, auth_version
 		FROM app_user ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, e
 			lastLogin sql.NullTime
 			created   time.Time
 		)
-		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created, &u.AuthVersion); err != nil {
 			return nil, err
 		}
 		u.Role = domain.Role(role)
@@ -108,7 +108,7 @@ func (r *UserSQL) getOne(ctx context.Context, query string, arg any) (*domain.Us
 		created   time.Time
 	)
 	err := r.db.QueryRowContext(ctx, query, arg).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created,
+		&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created, &u.AuthVersion,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrNotFound

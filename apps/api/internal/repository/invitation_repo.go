@@ -19,12 +19,16 @@ func (r *InvitationSQL) CreateInvitation(ctx context.Context, invite domain.User
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	var targetVersion any
+	if invite.Purpose == "recovery" { targetVersion = invite.TargetAuthVersion }
 	result, err := tx.ExecContext(ctx, `
-		INSERT INTO user_invitation (id, email, display_name, role, tenant_id, token_hash, created_by, created_at, expires_at, policy_version)
-		SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10 FROM access_policy_state
-		WHERE id = 1 AND version = $10 AND NOT EXISTS (SELECT 1 FROM app_user WHERE email = $2)`,
+		INSERT INTO user_invitation (id, email, display_name, role, tenant_id, token_hash, created_by, created_at, expires_at, policy_version, purpose, target_user_id, target_auth_version)
+		SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13 FROM access_policy_state
+		WHERE id = 1 AND version = $10 AND (
+			($11 = 'invite' AND NOT EXISTS (SELECT 1 FROM app_user WHERE email = $2)) OR
+			($11 = 'recovery' AND EXISTS (SELECT 1 FROM app_user WHERE id = $12 AND email = $2 AND role = $4 AND tenant_id IS NOT DISTINCT FROM $5 AND auth_version = $13 AND is_active)))`,
 		invite.ID, invite.Email, invite.DisplayName, invite.Role, nullIfEmpty(invite.TenantID), invite.TokenHash,
-		invite.CreatedBy, invite.CreatedAt, invite.ExpiresAt, invite.PolicyVersion)
+		invite.CreatedBy, invite.CreatedAt, invite.ExpiresAt, invite.PolicyVersion, invite.Purpose, nullIfEmpty(invite.TargetUserID), targetVersion)
 	if err != nil {
 		return err
 	}
@@ -71,31 +75,44 @@ func (r *InvitationSQL) AcceptInvitation(ctx context.Context, hash []byte, userI
 	var creator string
 	err = tx.QueryRowContext(ctx, `
 		SELECT u.id FROM user_invitation i JOIN app_user u ON u.id = i.created_by
-		WHERE i.token_hash = $1 AND u.role = 'manager' AND u.is_active FOR SHARE OF u`, hash).Scan(&creator)
+		WHERE i.token_hash = $1 AND u.role = 'manager' AND u.is_active FOR UPDATE OF u`, hash).Scan(&creator)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.ErrUnauthorized
 	}
 	if err != nil {
 		return err
 	}
-	var invitationID, email, name, role string
-	var tenantID sql.NullString
+	var invitationID, email, name, role, purpose string
+	var tenantID, targetUserID sql.NullString
+	var targetVersion sql.NullInt64
 	err = tx.QueryRowContext(ctx, `
 		UPDATE user_invitation SET consumed_at = $2
 		WHERE token_hash = $1 AND consumed_at IS NULL AND revoked_at IS NULL AND expires_at > $2 AND policy_version = $3
 		AND EXISTS (SELECT 1 FROM app_user WHERE id = created_by AND role = 'manager' AND is_active)
-		RETURNING id, email, display_name, role, tenant_id`, hash, now, version).Scan(&invitationID, &email, &name, &role, &tenantID)
+		RETURNING id, email, display_name, role, tenant_id, purpose, target_user_id, target_auth_version`, hash, now, version).Scan(&invitationID, &email, &name, &role, &tenantID, &purpose, &targetUserID, &targetVersion)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.ErrUnauthorized
 	}
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO app_user (id, email, password_hash, display_name, role, tenant_id, is_active, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,TRUE,$7)`, userID, email, passwordHash, name, role, tenantID, now)
-	if err != nil {
-		return err
+	if purpose == "invite" {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO app_user (id, email, password_hash, display_name, role, tenant_id, is_active, created_at)
+			VALUES ($1,$2,$3,$4,$5,$6,TRUE,$7)`, userID, email, passwordHash, name, role, tenantID, now)
+		if err != nil { return err }
+	} else if purpose == "recovery" && targetUserID.Valid && targetVersion.Valid {
+		userID = targetUserID.String
+		result, updateErr := tx.ExecContext(ctx, `
+			UPDATE app_user SET password_hash = $2, auth_version = auth_version + 1
+			WHERE id = $1 AND email = $3 AND role = $4 AND tenant_id IS NOT DISTINCT FROM $5 AND auth_version = $6 AND is_active`,
+			userID, passwordHash, email, role, tenantID, targetVersion.Int64)
+		if updateErr != nil { return updateErr }
+		count, countErr := result.RowsAffected()
+		if countErr != nil { return countErr }
+		if count != 1 { return domain.ErrUnauthorized }
+	} else {
+		return domain.ErrUnauthorized
 	}
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO audit_log (id, actor_user_id, actor_role, action, entity_type, entity_id, created_at)

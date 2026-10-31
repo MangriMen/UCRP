@@ -30,10 +30,13 @@ type InvitationService struct {
 	sender     InvitationSender
 	clock      domain.Clock
 	ids        domain.IDGen
+	users      domain.UserRepo
 }
 
-func NewInvitationService(repo domain.InvitationRepo, authorizer InvitationAuthorizer, sender InvitationSender, clock domain.Clock, ids domain.IDGen) *InvitationService {
-	return &InvitationService{repo: repo, authorizer: authorizer, sender: sender, clock: clock, ids: ids}
+func NewInvitationService(repo domain.InvitationRepo, authorizer InvitationAuthorizer, sender InvitationSender, clock domain.Clock, ids domain.IDGen, users ...domain.UserRepo) *InvitationService {
+	svc := &InvitationService{repo: repo, authorizer: authorizer, sender: sender, clock: clock, ids: ids}
+	if len(users) > 0 { svc.users = users[0] }
+	return svc
 }
 
 func (s *InvitationService) Issue(ctx context.Context, actor domain.Principal, email, displayName string, role domain.Role, tenantID string) error {
@@ -48,7 +51,21 @@ func (s *InvitationService) Issue(ctx context.Context, actor domain.Principal, e
 	if role != domain.RoleManager && role != domain.RoleTenant || role == domain.RoleManager && tenantID != "" || role == domain.RoleTenant && tenantID == "" {
 		return domain.ErrValidation
 	}
-	version, err := s.authorizer.CanInvite(ctx, actor, role, tenantID)
+	return s.send(ctx, actor, domain.UserInvitation{Email: email, DisplayName: displayName, Role: role, TenantID: tenantID, Purpose: "invite"})
+}
+
+func (s *InvitationService) IssueRecovery(ctx context.Context, actor domain.Principal, userID string) error {
+	if s.sender == nil { return ErrInvitationDeliveryUnavailable }
+	if s.users == nil { return domain.ErrForbidden }
+	user, err := s.users.GetByID(ctx, userID)
+	if err != nil { return err }
+	if !user.IsActive { return domain.ErrForbidden }
+	return s.send(ctx, actor, domain.UserInvitation{Email: user.Email, DisplayName: user.DisplayName, Role: user.Role,
+		TenantID: user.TenantID, Purpose: "recovery", TargetUserID: user.ID, TargetAuthVersion: user.AuthVersion})
+}
+
+func (s *InvitationService) send(ctx context.Context, actor domain.Principal, invite domain.UserInvitation) error {
+	version, err := s.authorizer.CanInvite(ctx, actor, invite.Role, invite.TenantID)
 	if err != nil {
 		return err
 	}
@@ -59,12 +76,12 @@ func (s *InvitationService) Issue(ctx context.Context, actor domain.Principal, e
 	token := base64.RawURLEncoding.EncodeToString(bytes[:])
 	hash := sha256.Sum256(bytes[:])
 	now := s.clock.Now().UTC()
-	invite := domain.UserInvitation{ID: s.ids.NewID(ctx), Email: email, DisplayName: displayName, Role: role, TenantID: tenantID,
-		CreatedBy: actor.UserID, AuditID: s.ids.NewID(ctx), TokenHash: hash[:], PolicyVersion: version, CreatedAt: now, ExpiresAt: now.Add(24 * time.Hour)}
+	invite.ID, invite.AuditID, invite.CreatedBy = s.ids.NewID(ctx), s.ids.NewID(ctx), actor.UserID
+	invite.TokenHash, invite.PolicyVersion, invite.CreatedAt, invite.ExpiresAt = hash[:], version, now, now.Add(24*time.Hour)
 	if err := s.repo.CreateInvitation(ctx, invite); err != nil {
 		return err
 	}
-	if err := s.sender.SendInvitation(ctx, email, token, invite.ExpiresAt); err != nil {
+	if err := s.sender.SendInvitation(ctx, invite.Email, token, invite.ExpiresAt); err != nil {
 		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 		defer cancel()
 		if revokeErr := s.repo.RevokeInvitation(cleanup, invite.ID, s.clock.Now().UTC()); revokeErr != nil {

@@ -16,7 +16,7 @@ func RequireActiveUser(users domain.UserRepo) func(http.Handler) http.Handler {
 				return
 			}
 			user, err := users.GetByID(r.Context(), principal.UserID)
-			if err != nil || !user.IsActive || user.Role != principal.Role || user.TenantID != principal.TenantID {
+			if err != nil || !user.IsActive || user.Role != principal.Role || user.TenantID != principal.TenantID || user.AuthVersion != principal.AuthVersion {
 				httpx.WriteError(w, r, http.StatusUnauthorized, "invalid_credentials", "Пользователь недоступен или его права изменились")
 				return
 			}
