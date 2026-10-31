@@ -1,5 +1,7 @@
 import type { RequestHandler } from 'msw'
+import { contactLimitHandlers } from '@/entities/contact-limit/mocks'
 import { dataSourceHandlers } from '@/entities/data-source/mocks'
+import { exportHandlers } from '@/entities/export/mocks'
 import { guestHandlers } from '@/entities/guest/mocks'
 import { importHandlers } from '@/entities/import-batch/mocks'
 import { mergeCandidateHandlers } from '@/entities/merge-candidate/mocks'
@@ -17,4 +19,6 @@ export const handlers: RequestHandler[] = [
   ...unmergeBlockHandlers,
   ...segmentHandlers,
   ...recommendationHandlers,
+  ...exportHandlers,
+  ...contactLimitHandlers,
 ]
