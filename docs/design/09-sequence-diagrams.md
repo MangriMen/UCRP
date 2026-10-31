@@ -46,13 +46,6 @@ sequenceDiagram
 
 Пояснение. Логин сверяет хэш пароля и активность учётной записи; одинаковый 401 на неверный email и неверный пароль не раскрывает существование пользователя. В `access` кладутся `role` и, для R-3, `tenant_id` — это единственный источник арендатора для всех последующих проверок. `refresh` хранится в httpOnly-cookie и обновляется эндпоинтом `/auth/refresh`; при 401 SPA один раз пытается обновить токен (single-flight, D-29), затем отправляет на вход. Все обращения к БД принимают `ctx`.
 
-| Элемент     | Go-пакет / слой                                       | React-модуль                                              | API-контракт                                                                  |
-| ----------- | ----------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| SPA auth    | —                                                     | `auth/` (LoginPage, AuthProvider, `api/` интерцептор 401) | —                                                                             |
-| AuthHandler | `internal/handler`, `platform/auth` (JWT, middleware) | —                                                         | `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me` |
-| AuthService | `internal/service` (AuthService)                      | —                                                         | claims `sub, role, tenant_id, exp`                                            |
-| UserRepo    | `internal/repository` (UserRepo)                      | —                                                         | таблица `app_user`                                                            |
-
 ## SD-2. Загрузка файла: async 202, статус и построчные ошибки (UC-1, UC-6)
 
 ```mermaid
@@ -102,14 +95,6 @@ sequenceDiagram
 
 Пояснение. Клиент получает 202 сразу и далее только читает статус: тело запроса не ждёт обработки (UC-1, US-1). Повторная загрузка того же файла даёт 200 с `duplicate=true` и существующим `batch_id` (D-9); дублей событий нет также на уровне уникального индекса события, поэтому даже изменённый файл с частично теми же строками не создаёт дублей. Построчные ошибки (`bad_date`, `no_external_id`, `bad_amount`) попадают в `rejected_row`, их можно скачать CSV. Задание `import.process` безопасно перезапускается (`dedup_key import:{batch_id}`).
 
-| Элемент       | Go-пакет / слой                                                                     | React-модуль                                               | API-контракт                                                                                    |
-| ------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| SPA import    | —                                                                                   | `features/import` (UploadForm, BatchStatus, RejectedTable) | —                                                                                               |
-| ImportHandler | `internal/handler`                                                                  | —                                                          | `POST /imports` 202/200/400/404/413/422, `GET /imports/{id}`, `GET /imports/{id}/rejected-rows` |
-| ImportService | `internal/service` (ImportService)                                                  | —                                                          | —                                                                                               |
-| Repo / Queue  | `ImportBatchRepo`, `RejectedRowRepo`, `EventRepo`, `JobQueueRepo`, `platform/queue` | —                                                          | таблицы `import_batch`, `rejected_row`, `event`, `job_queue`                                    |
-| Worker        | `cmd/worker`, `internal/ingestion`                                                  | —                                                          | очереди `import.process`, `identity.resolve`                                                    |
-
 ## SD-3. API-коннектор подтягивает события (UC-14)
 
 ```mermaid
@@ -152,13 +137,6 @@ sequenceDiagram
 ```
 
 Пояснение. Pull запускается по расписанию (раз в час, Q-10) или вручную; ручной вызов возвращает 409, если для того же окна уже есть активное задание (уникальный `dedup_key`). `SourceConnector` приводит ответ любой системы к общему виду строк, после чего конвейер валидации и вставки тот же, что у файлов (AD-1b), поэтому идемпотентность и счётчики идентичны. Сетевые сбои повторяются с экспоненциальной паузой до N попыток, постоянные ошибки (неверные учётные данные источника) переводят загрузку в `failed` и отражаются в качестве источников (UC-9). Внешний вызов имеет собственный `ctx` с таймаутом 30 с, наследующий отмену задания.
-
-| Элемент             | Go-пакет / слой                                                   | React-модуль                                | API-контракт                                             |
-| ------------------- | ----------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
-| Scheduler           | `cmd/worker`, `platform/queue`                                    | —                                           | очередь `connector.pull`                                 |
-| SourceConnector API | `internal/ingestion` (`SourceConnector`, реализация ApiConnector) | —                                           | исходящий HTTP к системе арендатора                      |
-| ImportHandler       | `internal/handler`, `service.ImportService`                       | `features/import` (кнопка Синхронизировать) | `POST /data-sources/{id}/sync` 202/404/409               |
-| Repo                | `ImportBatchRepo`, `DataSourceRepo`, `EventRepo`                  | —                                           | `import_batch.mode='pull'`, `data_source.last_import_at` |
 
 ## SD-4. Сегмент с предпросмотром размера (UC-3, UC-13)
 
@@ -212,14 +190,6 @@ sequenceDiagram
 ```
 
 Пояснение. Предпросмотр не пишет в БД и защищён кэшем и дедлайном 10 с; ответ 400 содержит поля с ошибками правила, 504 — подсказку сузить период (D-6). Сохранение быстрое (201), пересчёт состава выполняет воркер; пока статус `pending` или `computing`, выгрузка из сегмента вернёт 409 (SD-5). Правка через `PUT /segments/{id}` повторяет ту же схему с `version_no+1`. Новое событие (UC-6) ставит `segment.recompute` для сегментов, затронутых гостем, и обновляет `computed_at`.
-
-| Элемент                | Go-пакет / слой                          | React-модуль                                                 | API-контракт                                                                         |
-| ---------------------- | ---------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| SPA segments           | —                                        | `features/segments` (RuleBuilder, PreviewPanel, SegmentCard) | —                                                                                    |
-| SegmentHandler         | `internal/handler`                       | —                                                            | `POST /segments/preview` 200/400/504, `POST /segments` 201/400, `GET /segments/{id}` |
-| SegmentService / Cache | `internal/service`, `platform/cache`     | —                                                            | —                                                                                    |
-| SegmentEvaluator       | `internal/segments` (`SegmentEvaluator`) | —                                                            | —                                                                                    |
-| Worker                 | `cmd/worker`, `internal/segments`        | —                                                            | очередь `segment.recompute`                                                          |
 
 ## SD-5. Выгрузка сегмента: лимит контактов и 409 (UC-5, UC-10)
 
@@ -284,14 +254,6 @@ sequenceDiagram
 
 Пояснение. Предпросмотр показывает, сколько гостей будет исключено лимитом, до создания записи. Повтор `POST /exports` с тем же `Idempotency-Key` не создаёт вторую выгрузку и не дублирует контакты. Лимит применяется только при наличии правил: заказчик не задаёт жёсткий лимит частоты (FAQ В-9, A-12), поэтому при пустой таблице `contact_limit` выгрузка проходит без ограничения. Если правила есть, лимит проверяется дважды: при отборе и повторно внутри транзакции с блокировкой записи, чтобы две параллельные выгрузки не обошли лимит (D-26). Если ни один гость не прошёл, возвращается 409 с причинами (нет контакта, лимит). Контрольная группа опциональна: при `control_percent = 0` она не выделяется, иначе детерминирована по `control_seed` (D-17) и не пишется в `contact_log` (A-19). CSV содержит только не-контрольных получателей; API-выгрузка для провайдера — `GET /exports/{id}/members`.
 
-| Элемент             | Go-пакет / слой                                                                               | React-модуль                                   | API-контракт                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| SPA export          | —                                                                                             | `features/export` (ExportWizard, ExportResult) | —                                                                                              |
-| ExportHandler       | `internal/handler`                                                                            | —                                              | `POST /exports/preview`, `POST /exports` 201/202/400/404/409/504, `GET /exports/{id}/download` |
-| ExportService       | `internal/service` (ExportService), `internal/export` (`ExportChannel`)                       | —                                              | —                                                                                              |
-| ContactLimitService | `internal/service` (ContactLimitService)                                                      | `features/export` (LimitSettings)              | `GET/POST/PATCH /contact-limits`                                                               |
-| Repo                | `ExportRepo`, `ExportMemberRepo`, `ContactLogRepo`, `ContactLimitRepo`, `GuestIdentifierRepo` | —                                              | таблицы `export_job`, `export_member`, `contact_log`, `contact_limit`                          |
-
 ## SD-6. Ручное объединение и разъединение профилей (UC-11)
 
 ```mermaid
@@ -347,13 +309,6 @@ sequenceDiagram
 
 Пояснение. Склейка и разъединение — одна транзакция, поэтому профиль никогда не бывает наполовину слитым. Обратимость основана на `origin_guest_id` в `event` и `guest_identifier` (D-5), включая автосклейки (`auto_merged`). Revert и reject создают запись в `unmerge_block`, после чего автосклейка эту пару не повторит; снять запрет может только R-4 (`DELETE /unmerge-blocks/{id}`). После изменения состава профилей ставятся пересчёты сегментов и рекомендаций обоих гостей. Любое действие пишет `audit_log` с `request_id`. R-1 видит очередь только на чтение, при `confirm` получит 403.
 
-| Элемент         | Go-пакет / слой                                                                                        | React-модуль                                                  | API-контракт                                                                                  |
-| --------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| SPA profiles    | —                                                                                                      | `features/profiles` (MergeQueue, MergeCompare, UnmergeBlocks) | —                                                                                             |
-| IdentityHandler | `internal/handler`                                                                                     | —                                                             | `GET /merge-candidates/{id}`, `POST /merge-candidates/{id}/confirm                            | reject | revert`, `POST /guests/{id}/merge`, `DELETE /unmerge-blocks/{id}` |
-| IdentityService | `internal/service` (IdentityService), `internal/identity`                                              | —                                                             | —                                                                                             |
-| Repo            | `MergeCandidateRepo`, `UnmergeBlockRepo`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `AuditRepo` | —                                                             | таблицы `merge_candidate`, `unmerge_block`, `guest`, `event`, `guest_identifier`, `audit_log` |
-
 ## SD-7. Сквозная цепочка ошибок 400 / 401 / 403 / 404 / 409 и изоляция R-3
 
 ```mermaid
@@ -399,13 +354,6 @@ sequenceDiagram
 
 Пояснение. Проверки идут в фиксированном порядке: аутентификация (401), роль по реестру (403), валидация (400), бизнес-правила (403 для чужого арендатора, 404, 409). Изоляция R-3 двойная: `service` сравнивает `tenant_id` из пути с claim и возвращает 403 (D-13), а `repository` предоставляет только методы `...ForTenant` с обязательным `WHERE tenant_id = :claimTenant`, поэтому даже ошибка в сервисе не отдаст чужие строки. R-3 допущен лишь к `GET /tenants`, `GET /tenants/{id}`, `GET /tenants/{id}/aggregates`, `GET /auth/me`; ячейки меньше k=5 скрываются (Q-18). Frontend прячет недоступные пункты меню, но решающая проверка всегда на backend. Коды ошибок и тело — единый формат реестра.
 
-| Элемент        | Go-пакет / слой                                                                   | React-модуль                 | API-контракт                                |
-| -------------- | --------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------- |
-| MW             | `internal/platform/auth` (JWT, Principal), `platform/httpx` (request_id, recover) | `api/` (интерцептор 401/403) | заголовок `Authorization`                   |
-| Handler        | `internal/handler` (RequireRole по реестру)                                       | `routes/` (RoleGuard)        | все маршруты `/api/v1`                      |
-| Service        | `service.TenantAggregateService` и др. (проверка `Principal.TenantID`)            | `features/tenant`            | `GET /tenants/{id}/aggregates` 200/403/404  |
-| Repo ForTenant | `repository.TenantAggregateRepo` (`...ForTenant`)                                 | —                            | `event` агрегируется с фильтром `tenant_id` |
-
 ## SD-8. Таймауты и распространение context.Context
 
 ```mermaid
@@ -438,12 +386,6 @@ sequenceDiagram
 ```
 
 Пояснение. Каждый входящий запрос получает собственный `ctx` с дедлайном (30 с по умолчанию, 10 с для предпросмотра и принудительного пересчёта, 25 с для синхронной выгрузки); `ctx` первым аргументом проходит через `handler → service → repository` до `QueryContext`/`ExecContext`, поэтому отмена клиента и истечение срока прерывают запросы и откатывают транзакции. Таймаут превращается в 504 `timeout`, обрыв клиента не порождает ответа. Воркер на SIGTERM отменяет корневой `ctx`, доводит текущую транзакцию в пределах grace-периода и возвращает недоделанное задание в очередь; повтор безопасен благодаря идемпотентности (`dedup_key`, уникальный индекс события). Внешние вызовы коннектора имеют вложенный `ctx` 30 с.
-
-| Элемент              | Go-пакет / слой                                                                         | React-модуль                             | API-контракт                                                                           |
-| -------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
-| Middleware timeout   | `internal/platform/httpx`                                                               | `api/` (обработка 504, повтор по кнопке) | ответ `error.code="timeout"`, 504                                                      |
-| Handler/Service/Repo | `internal/handler`, `internal/service`, `internal/repository` (`ctx` первым параметром) | —                                        | `POST /guests/{id}/recommendations/refresh`, `POST /segments/preview`, `POST /exports` |
-| Worker shutdown      | `cmd/worker`, `platform/queue`                                                          | —                                        | очередь `job_queue` (`status`, `run_after`, `attempts`)                                |
 
 ## SD-9. Профиль гостя, рекомендации и видимое обновление (UC-2, UC-4, UC-6)
 
@@ -487,14 +429,3 @@ sequenceDiagram
 ```
 
 Пояснение. Поиск нормализует введённое значение теми же правилами, что и при импорте, поэтому `+7 900…` и `8900…` находят одного гостя. Для слитого профиля ответ несёт `merged_into_id`, и интерфейс переходит на актуальный профиль; для несуществующего возвращается 404, для R-3 любой маршрут `/guests*` закрыт в `handler` (403). Профиль, лента и рекомендации читаются отдельными быстрыми запросами; чтение рекомендаций не пересчитывает их (D-12). После нового события фоновые задания обновляют ленту, сегменты и рекомендации, а интерфейс видит изменение при опросе с интервалом 5 с (D-22), без ручного запуска (UC-6).
-
-| Элемент                               | Go-пакет / слой                                                       | React-модуль                                                                           | API-контракт                                                         |
-| ------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| SPA profiles                          | —                                                                     | `features/profiles` (GuestSearch, GuestProfile, EventFeed), `features/recommendations` | —                                                                    |
-| GuestHandler                          | `internal/handler` (RequireRole R-1, R-4)                             | —                                                                                      | `GET /guests`, `GET /guests/{id}` 200/404, `GET /guests/{id}/events` |
-| ProfileService, RecommendationService | `internal/service`                                                    | —                                                                                      | `GET /guests/{id}/recommendations`                                   |
-| Repo                                  | `GuestRepo`, `GuestIdentifierRepo`, `EventRepo`, `RecommendationRepo` | —                                                                                      | таблицы `guest`, `guest_identifier`, `event`, `recommendation`       |
-
-## Чекпойнт
-
-Создано: SD-1…SD-9. Эндпоинты только из `endpoint-registry.md`; использованы UC-1, UC-2, UC-3, UC-4, UC-5, UC-6, UC-8, UC-10, UC-11, UC-13, UC-14, UC-16; E-2, E-3, E-10…E-13, E-16…E-20, E-21; T-1. Ошибки 400/401/403/404/409/413/422/429/504 показаны; изоляция R-3 — SD-7. Решения: D-26, D-29; вопросы: Q-23.

@@ -72,12 +72,6 @@ classDiagram
 
 Пояснение. Первая строка кассы (e-1) принесла телефон 79001234567: резолвер не нашёл такого ключа и создал гостя g-1001 с идентификатором i-1. Событие e-2 из CRM фитнеса содержит тот же телефон в другом написании (`+7 (900) 123-45-67`), после нормализации ключ найден, событие привязано к g-1001, а новый ключ — email — добавлен как i-2; автосклейка здесь не потребовалась, это поиск по ключу. В профиле видны три события у двух арендаторов, число посещённых арендаторов (`tenant_count`) равно 2. Повторная загрузка `kassa_2026-09.csv` вернёт 200 `duplicate=true` по sha256 файла, а любая другая загрузка с `CHK-77120` даст строку `duplicate` благодаря `UNIQUE(data_source_id, event_type_id, external_id)`. Match rate по этим трём событиям равен 100%.
 
-| Элемент                 | Go-пакет / слой                                  | React-модуль        | API-контракт              |
-| ----------------------- | ------------------------------------------------ | ------------------- | ------------------------- |
-| import_batch, event     | `internal/ingestion`, `repository.EventRepo`     | `features/import`   | `GET /imports/{id}`       |
-| guest, guest_identifier | `internal/identity` (`IdentityResolver.Resolve`) | `features/profiles` | `GET /guests/{id}`        |
-| события в профиле       | `service.ProfileService`                         | `/guests/:guestId`  | `GET /guests/{id}/events` |
-
 ---
 
 ## Сценарий (b): спорная склейка в очереди и ручное разъединение
@@ -190,12 +184,6 @@ classDiagram
 ```
 
 Пояснение. Хронология: R-4 подтвердил пару (`POST /merge-candidates/mc-1/confirm`) — g-2002 стал `merged` с `merged_into_id = g-2001`, а e-22 и i-12 перешли к g-2001 (`origin_guest_id` остался g-2002); в `audit_log` появилась запись `merge.confirm` (a-1). Затем аналитик понял, что это разные люди, и вызвал `POST /merge-candidates/mc-1/revert`: строки с `origin_guest_id = g-2002` вернулись к g-2002, профиль снова `active`, кандидат получил `resolution = reverted`, создан `unmerge_block ub-1` и запись `merge.revert` (a-2) — всё в одной транзакции. На диаграмме показано конечное состояние. Новая загрузка с тем же общим телефоном пару не склеит и в очередь не вернёт, пока запрет не снят `DELETE /unmerge-blocks/ub-1`.
-
-| Элемент         | Go-пакет / слой                                                        | React-модуль                            | API-контракт                                                              |
-| --------------- | ---------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------- |
-| merge_candidate | `internal/identity` (`MergeExecutor`), `repository.MergeCandidateRepo` | `features/profiles` (`/identity/queue`) | `GET /merge-candidates`, `POST /merge-candidates/{id}/confirm`, `/revert` |
-| unmerge_block   | `repository.UnmergeBlockRepo`                                          | то же                                   | `GET /unmerge-blocks`, `DELETE /unmerge-blocks/{id}`                      |
-| audit_log       | `service.AuditService`                                                 | `features/admin`                        | `GET /audit-logs?entity_id=mc-1`                                          |
 
 ---
 
@@ -338,14 +326,3 @@ classDiagram
 ```
 
 Пояснение. Для g-1001 кандидатами считаются только арендаторы, где она ещё не была, поэтому Кофейня Bean и ФитЗона в списке отсутствуют. Первая рекомендация — Кинотеатр Синема: оценка 0,78 складывается из вкладов факторов (похожие гости 0,34, смежность категорий 0,175, свежесть 0,225, расстояние и этаж 0,04; приоритет арендатора нейтральный и вклада не даёт); текст обоснования хранится снимком в `explanation`. Прямые конкуренты не исключаются, а понижаются фактором `competitor_penalty` — в примере такого кандидата в топ-3 не оказалось из-за низкой суммы, а не из-за фильтра (A-18, D-34). После выгрузки x-1 создана запись `contact_log` для g-1001, которая учитывается лимитом контактов и конверсией (визит в кино до 2026-11-13 — окно 14 дней по умолчанию, `campaign.attribution_days`). Диаграмма иллюстрирует инвариант: `recommendation.tenant_id` ∉ множества арендаторов событий гостя.
-
-| Элемент                                               | Go-пакет / слой                                  | React-модуль               | API-контракт                                                                               |
-| ----------------------------------------------------- | ------------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------ |
-| segment, segment_version, segment_member              | `internal/segments` (`SegmentEvaluator`)         | `features/segments`        | `POST /segments`, `GET /segments/{id}/members`                                             |
-| contact_limit, export_job, export_member, contact_log | `internal/export`, `service.ContactLimitService` | `features/export`          | `POST /exports/preview`, `POST /exports` (`Idempotency-Key`), `GET /exports/{id}/download` |
-| campaign                                              | `service.CampaignService`                        | `features/export`          | `GET /campaigns/{id}/results`                                                              |
-| recommendation, recommendation_factor                 | `internal/recommend` (`Recommender`, `Scorer`)   | `features/recommendations` | `GET /guests/{id}/recommendations`                                                         |
-
-## Чекпойнт
-
-Создано: 3 сценария (a, b1–b2, c1–c2) с экземплярами E-1, E-2, E-3, E-4, E-5, E-8, E-10, E-11, E-12, E-13, E-15, E-16, E-17, E-18, E-19, E-20, E-21. Использованы эндпоинты из реестра; инварианты: нет посещённых мест в рекомендациях, только гости с телефоном в SMS-выгрузке, сумма счётчиков выгрузки равна размеру сегмента.

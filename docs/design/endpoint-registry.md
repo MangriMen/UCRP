@@ -185,7 +185,3 @@
 | `segment.recompute` | событие применено / `POST /segments/{id}/recompute` / правка правила | `internal/segments`                      | `segment:{id}:{version_no}`   | UC-13 |
 | `recommend.refresh` | изменение ленты гостя                                                | `internal/recommend`                     | `reco:{guest_id}`             | UC-15 |
 | `export.build`      | `POST /exports` (большие)                                            | `internal/export`                        | `export:{export_id}`          | UC-5  |
-
-## Чекпойнт
-
-Создано: реестр из 104 REST-операций и 7 типов заданий очереди. Использованы роли R-1…R-4, R-6 (R-5 без доступа). Открытые вопросы: Q-6, Q-16, Q-18 (см. `00-open-questions.md`).

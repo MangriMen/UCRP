@@ -116,13 +116,6 @@ erDiagram
 
 Пояснение. Диаграмма показывает, что `event` — центральный факт: он связан с арендатором, типом события, источником, необязательным проектом и необязательным гостем (`guest_id` NULL, пока ключи не сопоставлены, — такие строки составляют знаменатель match rate). Справочники (`tenant_category`, `event_type`, `data_source_type`) отделены от фактов, поэтому новый тип источника или события добавляется строкой, а не изменением схемы. У `data_source.tenant_id` допускается NULL для общих источников УК (Wi-Fi, парковка; Q-3). `guest_identifier` хранит несколько ключей на гостя и не уникален глобально (A-15), а `origin_guest_id` в `guest_identifier` и `event` нужен для обратимости склейки. Связи `tenant_category_relation` дают скорингу смежность и конкурентов без отдельных таблиц под каждый тип.
 
-| Элемент                                     | Go-пакет / слой                                                                                                                         | React-модуль                        | API-контракт                                                        |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------- |
-| tenant, tenant_category(+relation), project | `internal/domain` (Tenant…), `repository.TenantRepo`, `TenantCategoryRepo`, `ProjectRepo`; `service.ReferenceService`                   | `features/admin`                    | `GET/POST/PATCH/DELETE /tenants`, `/tenant-categories`, `/projects` |
-| event_type, data_source_type, data_source   | `repository.EventTypeRepo`, `DataSourceTypeRepo`, `DataSourceRepo`; `internal/ingestion` (регистр `SourceConnector` по `connector_key`) | `features/admin`, `features/import` | `/event-types`, `/data-source-types`, `/data-sources`               |
-| guest, guest_identifier                     | `repository.GuestRepo`, `GuestIdentifierRepo`; `internal/identity`                                                                      | `features/profiles`                 | `GET /guests`, `GET /guests/{id}`                                   |
-| event                                       | `repository.EventRepo`; `internal/ingestion`                                                                                            | `features/profiles`                 | `GET /guests/{id}/events`                                           |
-
 ### 2.2. Идентификация и импорт
 
 ```mermaid
@@ -189,13 +182,6 @@ erDiagram
 
 Пояснение. Загрузка (`import_batch`) хранит хэш файла и счётчики с инвариантом `accepted + rejected + duplicate = total`; уникальность `(data_source_id, file_hash)` делает повторную загрузку идемпотентной, а `rejected_row` даёт построчные причины (US-1). `merge_candidate` одновременно служит очередью спорных пар, журналом автосклеек и историей решений, поэтому доля оспоренных склеек считается одним запросом. `unmerge_block` создаётся при разъединении и отклонении и проверяется резолвером перед каждым автослиянием. Пара хранится в каноническом порядке (`guest_a_id < guest_b_id`), чтобы исключить зеркальные дубли. Каждое решение дополнительно пишется в `audit_log` (он append-only).
 
-| Элемент                        | Go-пакет / слой                                                          | React-модуль                  | API-контракт                                                            |
-| ------------------------------ | ------------------------------------------------------------------------ | ----------------------------- | ----------------------------------------------------------------------- |
-| import_batch, rejected_row     | `repository.ImportBatchRepo`, `RejectedRowRepo`; `internal/ingestion`    | `features/import`             | `POST /imports`, `GET /imports/{id}`, `GET /imports/{id}/rejected-rows` |
-| merge_candidate, unmerge_block | `repository.MergeCandidateRepo`, `UnmergeBlockRepo`; `internal/identity` | `features/profiles` (очередь) | `/merge-candidates`, `/unmerge-blocks`                                  |
-| audit_log                      | `repository.AuditRepo` (только Insert/List); `service.AuditService`      | `features/admin`              | `GET /audit-logs`                                                       |
-| app_user                       | `repository.UserRepo`; `internal/platform/auth`                          | `auth/`, `features/admin`     | `/auth/*`, `/users`                                                     |
-
 ### 2.3. Сегменты и рекомендации
 
 ```mermaid
@@ -254,12 +240,6 @@ erDiagram
 
 Пояснение. Сегмент разделён на неизменяемые версии правила (`segment_version.rule` — JSON DSL), поэтому выгрузка ссылается на конкретную версию и остаётся воспроизводимой даже после правки правила. Состав материализован в `segment_member` (быстрые выгрузка и пересечения), размер кэшируется в `member_count` (допустимая контролируемая денормализация: производное значение, пересчитывается воркером). Шаблоны хранятся теми же таблицами (`is_template = TRUE`), поэтому пятый шаблон добавляется INSERT-ом. Рекомендация хранит ранг ≤ 3, оценку и снимок обоснования, а `recommendation_factor` раскладывает оценку по факторам для прозрачности; уникальность `(guest_id, tenant_id)` не даёт предложить одно место дважды.
 
-| Элемент                                  | Go-пакет / слой                                                                          | React-модуль               | API-контракт                                                |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------- | ----------------------------------------------------------- |
-| segment, segment_version, segment_member | `repository.SegmentRepo`, `SegmentVersionRepo`, `SegmentMemberRepo`; `internal/segments` | `features/segments`        | `/segments`, `/segments/{id}/members`, `/segment-templates` |
-| campaign                                 | `repository.CampaignRepo`; `service.CampaignService`                                     | `features/export`          | `/campaigns`                                                |
-| recommendation, recommendation_factor    | `repository.RecommendationRepo`; `internal/recommend`                                    | `features/recommendations` | `GET /guests/{id}/recommendations`                          |
-
 ### 2.4. Выгрузка, контакты, очередь
 
 ```mermaid
@@ -312,12 +292,6 @@ erDiagram
 ```
 
 Пояснение. `export_job` фиксирует версию сегмента, канал, формат, процент и seed контрольной группы, а `UNIQUE (created_by, idempotency_key)` защищает от повторной выгрузки. `export_member` хранит и получателей, и контрольных (флаг `is_control`) вместе с использованным контактом, что гарантирует «только гости с контактом нужного канала». `contact_log` создаётся только для получателей и служит источником правила лимита (подсчёт за `period_days`) и конверсии (визиты в окне 14 дней после `contacted_at`). `contact_limit` независим от выгрузок. `job_queue` — служебная таблица очереди воркеров, не связана внешними ключами с бизнес-сущностями (полезная нагрузка в JSON), поэтому её можно заменить внешним брокером без изменения модели.
-
-| Элемент                    | Go-пакет / слой                                                                | React-модуль      | API-контракт                                   |
-| -------------------------- | ------------------------------------------------------------------------------ | ----------------- | ---------------------------------------------- |
-| export_job, export_member  | `repository.ExportRepo`, `ExportMemberRepo`; `internal/export`                 | `features/export` | `/exports`, `/exports/{id}/members`            |
-| contact_log, contact_limit | `repository.ContactLogRepo`, `ContactLimitRepo`; `service.ContactLimitService` | `features/export` | `/contact-limits`, `GET /guests/{id}/contacts` |
-| job_queue                  | `internal/platform/queue` (`Queue`, интерфейс)                                 | —                 | нет (внутренний)                               |
 
 ## 3. Обоснование 3НФ по таблицам
 
@@ -419,7 +393,3 @@ erDiagram
 | `user_invitation`     | Приглашение (`invite`) или восстановление (`recovery`) для ролей `manager` и `tenant`; токен хранится хэшем, одноразовый, со сроком      |
 
 Решение принимает `access.Decide`: разрешение должно входить в потолок роли; для R-3 обязателен грант с областью `tenant`, совпадающей с его арендатором; `deny` в подходящем гранте запрещает операцию; пределы (`period_days`, `row_limit`, `k_threshold` по умолчанию 5, `field_mask`) берутся из подходящих грантов. REST-операции — `endpoint-registry.md`, раздел 12; код — `apps/api/internal/access`.
-
-## Чекпойнт
-
-Создано: ER-диаграммы 2.1–2.4 (27 таблиц), таблицы всех E-1…E-21 + T-1. Открытые: Q-3, Q-12; решения: D-1, D-2, D-3, D-4, D-5, D-6, D-7, D-8, D-11, D-18, D-19.

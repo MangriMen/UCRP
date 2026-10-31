@@ -216,7 +216,3 @@ React-маршруты и модули (`src/`): `features/import`, `features/pr
 | US-9  | UC-9  | `/data-quality`                  | `GET /data-quality/sources`                | R-4, R-2          |
 | US-10 | UC-10 | `/settings/contact-limits`       | `/contact-limits`, `POST /exports`         | R-1               |
 | US-11 | UC-11 | `/identity/queue`                | `POST /merge-candidates/{id}/confirm`      | R-4               |
-
-## Чекпойнт
-
-Создано: US-1…US-11 с AC (Given/When/Then, позитив + негатив), экраны React, эндпоинты Go. Ссылки на A-13, D-14; отдельно использованы Q-13, Q-18 и порог 10% / 7 дней (D-21 ниже в open-questions).

@@ -31,15 +31,6 @@ flowchart LR
 
 Пояснение. Аналитик (R-4) загружает файлы (UC-1), разбирает спорные склейки (UC-11), смотрит качество источников (UC-9) и ведёт справочники (UC-17); маркетолог (R-1) может только читать очередь склеек. Система (R-6) по расписанию подтягивает события из API (UC-14). Оба пути приёма событий включают автосклейку (UC-12), которая сливает профили по надёжным ключам, а спорные пары передаёт в UC-11. Разъединение (revert) — часть UC-11 и создаёт запрет склейки E-12. Диаграмма показывает только приём и идентификацию; сегменты и выгрузки — на диаграмме B.
 
-| Элемент | Go-пакет / слой                                  | React-модуль                         | API-контракт                                                   |
-| ------- | ------------------------------------------------ | ------------------------------------ | -------------------------------------------------------------- |
-| UC-1    | `internal/ingestion`, `service.ImportService`    | `features/import`                    | `POST /imports`, `GET /imports/{id}`                           |
-| UC-14   | `internal/ingestion` (`SourceConnector`), worker | `features/import` (кнопка sync)      | `POST /data-sources/{id}/sync`                                 |
-| UC-12   | `internal/identity` (`IdentityResolver`)         | — (результат в `features/profiles`)  | очередь `identity.resolve`                                     |
-| UC-11   | `internal/identity`, `service.IdentityService`   | `features/profiles` (очередь склеек) | `GET /merge-candidates`, `POST /merge-candidates/{id}/confirm` |
-| UC-9    | `service.DataQualityService`                     | `features/dq`                        | `GET /data-quality/sources`                                    |
-| UC-17   | `service.ReferenceService`                       | `features/admin`                     | `GET/POST/PATCH /data-sources`, `/tenants`, …                  |
-
 ## 2. Диаграмма B: сегменты, рекомендации, выгрузка
 
 ```mermaid
@@ -73,18 +64,6 @@ flowchart LR
 
 Пояснение. Маркетолог (R-1) смотрит профиль (UC-2), собирает сегмент (UC-3), получает рекомендации (UC-4), выгружает сегмент (UC-5) и задаёт лимит контактов (UC-10); эффект кампании оценивается в UC-20. Новое событие запускает UC-6, который включает пересчёт сегментов (UC-13) и рекомендаций (UC-15) без участия человека. Выгрузка всегда включает проверку лимита (UC-10) и фильтр по наличию контакта нужного канала. Посетитель (R-5) не работает с системой: он только получает рассылку через внешнего провайдера. Для аналитика (R-4) UC-2, UC-3, UC-4 тоже доступны, но на схеме опущены ради читаемости.
 
-| Элемент | Go-пакет / слой                          | React-модуль                               | API-контракт                                                             |
-| ------- | ---------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------ |
-| UC-2    | `service.ProfileService`                 | `features/profiles`                        | `GET /guests/{id}`, `GET /guests/{id}/events`                            |
-| UC-3    | `internal/segments` (`SegmentEvaluator`) | `features/segments`                        | `POST /segments/preview`, `POST /segments`                               |
-| UC-4    | `internal/recommend` (`Recommender`)     | `features/recommendations`                 | `GET /guests/{id}/recommendations`                                       |
-| UC-5    | `internal/export` (`ExportChannel`)      | `features/export`                          | `POST /exports`, `GET /exports/{id}/download`                            |
-| UC-6    | `internal/ingestion` → очередь           | `features/profiles` (индикатор обновления) | `GET /segments/{id}` (поле `computed_at`)                                |
-| UC-10   | `service.ContactLimitService`            | `features/export` (настройки лимита)       | `GET/POST/PATCH /contact-limits`                                         |
-| UC-13   | `internal/segments`, worker              | `features/segments`                        | очередь `segment.recompute`, `POST /segments/{id}/recompute`             |
-| UC-15   | `internal/recommend`, worker             | `features/recommendations`                 | очередь `recommend.refresh`, `POST /guests/{id}/recommendations/refresh` |
-| UC-20   | `service.CampaignService`                | `features/export` (кампании)               | `GET /campaigns/{id}/results`                                            |
-
 ## 3. Диаграмма C: аналитика, доступ, администрирование
 
 ```mermaid
@@ -112,14 +91,6 @@ flowchart LR
 
 Пояснение. Управляющий (R-2) смотрит распределение гостей по числу арендаторов (UC-7), управляет пользователями (UC-18) и читает аудит (UC-19). Арендатор (R-3) имеет единственный прецедент — собственные агрегаты (UC-8); его `tenant_id` определяется только токеном, чужие данные недоступны ни в UI, ни через API. Любой пользователь входит через UC-16, который включается в остальные. Аналитик (R-4) читает аудит, чтобы проверять склейки. Связи R-1 с UC-7 (чтение) на схеме не показаны.
 
-| Элемент | Go-пакет / слой                                                     | React-модуль         | API-контракт                                           |
-| ------- | ------------------------------------------------------------------- | -------------------- | ------------------------------------------------------ |
-| UC-7    | `service.DashboardService`                                          | `features/dashboard` | `GET /dashboard/penetration`, `GET /dashboard/metrics` |
-| UC-8    | `service.TenantAggregateService` (+`repository` фильтр `tenant_id`) | `features/tenant`    | `GET /tenants/{id}/aggregates`                         |
-| UC-16   | `internal/platform/auth`                                            | `auth/`              | `POST /auth/login`, `POST /auth/refresh`               |
-| UC-18   | `service.UserService`                                               | `features/admin`     | `/users`                                               |
-| UC-19   | `service.AuditService`                                              | `features/admin`     | `GET /audit-logs`                                      |
-
 ## 4. Таблица UC
 
 | UC    | Название                               | US                             | Актор            | Предусловие                         | Основной сценарий / результат                                                                                            | Включает     | Приоритет   |
@@ -146,7 +117,3 @@ flowchart LR
 | UC-20 | Кампании и оценка эффекта              | — (поддерж. US-5, метрики §8)  | R-1 (R-2 чтение) | Выгрузка по кампании                | Конверсия и (при непустой контрольной группе) инкремент по кампании                                                      | —            | 2-я очередь |
 
 Негативные потоки (кратко): UC-1 — неверный формат → 422, файл >100 тыс. строк → 413, строка без `external_id` → в E-14; UC-5 — все исключены лимитом → 409; UC-8 — чужой `tenant_id` → 403; UC-11 — пара под запретом → 409.
-
-## Чекпойнт
-
-Создано: UC-1…UC-11 (≡ US-1…US-11), служебные UC-12…UC-20; три диаграммы (A, B, C). Открытые вопросы: Q-6, Q-8, Q-16, Q-20; решения: D-8, D-14.

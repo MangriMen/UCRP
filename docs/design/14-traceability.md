@@ -51,7 +51,3 @@
 | Идемпотентность импорта            | AD-1a/AD-1b, SD-2, `UNIQUE (data_source_id, file_hash)`, `UNIQUE (data_source_id, event_type_id, external_id)` |
 | Обратимость склейки                | AD-2, SD-6, `origin_guest_id`, `unmerge_block`, `audit_log`                                                    |
 | Выгрузка только с контактом канала | AD-5 (S3), SD-5, `export_member.identifier_id`, `ExportChannel.ContactType`                                    |
-
-## Чекпойнт
-
-Охвачены UC-1…UC-20, US-1…US-11, все 7 типов заданий. Для UC без собственной диаграммы указаны причины (UC-2, UC-7, UC-8, UC-9, UC-16…UC-20 — Activity; UC-12, UC-14 — REST). Добавлена SD-9 (UC-2). Открытых вопросов не прибавилось.
