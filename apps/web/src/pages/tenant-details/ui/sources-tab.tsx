@@ -3,14 +3,14 @@ import { useDataSources, type DataSource } from '@/entities/data-source'
 import { useDataSourceTypes } from '@/entities/data-source-type'
 import { ImportStatusBadge } from '@/entities/import-batch'
 import { formatDateTime } from '@/shared/lib/format'
+import { useListParams } from '@/shared/lib/list-params'
 import { ActiveBadge } from '@/shared/ui/active-badge'
 import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
-const SOURCES_PAGE_SIZE = 200
-
 export function SourcesTab({ tenantId }: { tenantId: string }) {
-  const sources = useDataSources({ tenantId, pageSize: SOURCES_PAGE_SIZE })
+  const { page, pageSize, setPage, setPageSize } = useListParams()
+  const sources = useDataSources({ tenantId, page, pageSize })
   const types = useDataSourceTypes()
   const typeById = new Map((types.data ?? []).map((type) => [type.id, type]))
 
@@ -46,6 +46,9 @@ export function SourcesTab({ tenantId }: { tenantId: string }) {
         isLoading={sources.isLoading}
         error={sources.error}
         emptyTitle="У арендатора нет источников данных"
+        meta={sources.data?.meta}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
       />
     </div>
   )
