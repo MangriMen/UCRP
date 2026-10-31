@@ -58,8 +58,8 @@ export function MergeCandidatesPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Склейка профилей"
-        description="Спорные пары профилей и история решений"
+        title="Объединение профилей"
+        description="Спорные объединения и история решений"
         actions={
           <OptionSelect
             items={resolutionItems}

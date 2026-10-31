@@ -13,7 +13,7 @@ export function CreateExportButton({ segmentId, disabled }: CreateExportButtonPr
   return (
     <>
       <Button disabled={disabled} onClick={() => setOpen(true)}>
-        Экспортировать
+        Выгрузить
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

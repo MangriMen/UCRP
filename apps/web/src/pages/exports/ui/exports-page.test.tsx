@@ -39,7 +39,7 @@ describe('ExportsPage', () => {
     expect((await screen.findAllByRole('button', { name: 'Скачать CSV' })).length).toBeGreaterThan(
       0,
     )
-    expect(screen.getByRole('button', { name: 'Экспортировать' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Выгрузить' })).toBeInTheDocument()
     expect(screen.queryByText('Формат')).not.toBeInTheDocument()
   })
 
@@ -47,6 +47,6 @@ describe('ExportsPage', () => {
     renderAs(userId)
     await waitFor(() => expect(screen.getAllByRole('row').length).toBeGreaterThan(1))
     expect(screen.queryByRole('button', { name: 'Скачать CSV' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Экспортировать' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Выгрузить' })).not.toBeInTheDocument()
   })
 })
