@@ -48,6 +48,26 @@ func (c *Client) Post(ctx context.Context, path string, body any) (*Response, er
 	return c.do(ctx, http.MethodPost, path, nil, payload, map[string]string{"Content-Type": "application/json"})
 }
 
+func (c *Client) Put(ctx context.Context, path string, body any) (*Response, error) {
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request body: %w", err)
+	}
+	return c.do(ctx, http.MethodPut, path, nil, payload, map[string]string{"Content-Type": "application/json"})
+}
+
+func (c *Client) Patch(ctx context.Context, path string, body any) (*Response, error) {
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request body: %w", err)
+	}
+	return c.do(ctx, http.MethodPatch, path, nil, payload, map[string]string{"Content-Type": "application/json"})
+}
+
+func (c *Client) Delete(ctx context.Context, path string) (*Response, error) {
+	return c.do(ctx, http.MethodDelete, path, nil, nil, nil)
+}
+
 func (c *Client) PostMultipart(ctx context.Context, path string, fields map[string]string, fileName string, fileContent []byte) (*Response, error) {
 	buf := &bytes.Buffer{}
 	writer := multipart.NewWriter(buf)
