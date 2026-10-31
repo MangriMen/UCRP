@@ -32,7 +32,7 @@ func (h *RecommendationHandler) SegmentRecommendations(w http.ResponseWriter, r 
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, segmentRecommendationResponse(items))
 }
 
 func (h *RecommendationHandler) Refresh(w http.ResponseWriter, r *http.Request) {

@@ -91,18 +91,16 @@
         "tags": ["Analytics"],
         "operationId": "getTenantAggregates",
         "summary": "Tenant aggregates",
-        "description": "R-3 receives only its own aggregates: the `tenantId` from the path is compared with the claim in the service, a mismatch → 403 `forbidden_tenant`; the repository uses only `...ForTenant` methods. The response contains no guest identifiers. Cells below k = 5 are suppressed (`suppressed = true`, value `null`). R-2, R-1, and R-4 may request any tenant.",
+        "description": "A tenant with tenant.aggregates.own can request only its own tenant. Without metric.visits_count.read the response is empty. With that permission, the response contains visits_count and suppressed; visits_count is null when the number of distinct guests is below the effective k threshold (at least 5).",
         "x-roles": ["R-3 (own)", "R-2", "R-1", "R-4"],
         "x-uc": ["UC-8"],
         "parameters": [
           {
-            "$ref": "../components/parameters.json#/From"
-          },
-          {
-            "$ref": "../components/parameters.json#/To"
-          },
-          {
-            "$ref": "../components/parameters.json#/Granularity"
+            "name": "metrics",
+            "in": "query",
+            "required": false,
+            "description": "Explicitly request visits_count. Unsupported or unauthorized metrics return 403.",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -111,7 +109,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "../components/schemas/analytics-tenant.json#/TenantAggregates"
+                  "oneOf": [
+                    { "$ref": "../components/schemas/tenant-guest.json#/TenantVisitAggregate" },
+                    { "$ref": "../components/schemas/tenant-guest.json#/EmptyTenantAggregate" }
+                  ]
                 }
               }
             }
@@ -136,7 +137,7 @@
         "tags": ["Analytics"],
         "operationId": "listDataQualitySources",
         "summary": "Data quality by source",
-        "description": "For each source: last successful import date, share of rejected rows over 30 days, number of disputed profiles. A warning is raised when the rejected share exceeds 10% or the data is older than 7 days.",
+        "description": "For each source: name, last import and pending merge count when at least five distinct guests are represented. Rejected rate and warning remain suppressed because rejected rows cannot be linked to distinct guests.",
         "x-roles": ["R-4", "R-2"],
         "x-uc": ["UC-9"],
         "responses": {
@@ -145,9 +146,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "../components/schemas/analytics-tenant.json#/DataQualitySource"
+                  "type": "object",
+                  "required": ["items", "meta"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "../components/schemas/analytics-tenant.json#/DataQualityListItem" }
+                    },
+                    "meta": { "$ref": "../components/schemas/common.json#/PageMeta" }
                   }
                 }
               }

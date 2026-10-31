@@ -16,10 +16,12 @@ npx @redocly/cli bundle docs/openapi.json --output docs/openapi.bundled.json
 npx @redocly/cli preview-docs docs/openapi.json
 ```
 
-## paths/ — operations (90 endpoints from `endpoint-registry.md`)
+## paths/ — operations (104 operations from `endpoint-registry.md`)
 
 | File                               | Registry section  | Endpoints                                                              |
 | ---------------------------------- | ----------------- | ---------------------------------------------------------------------- |
+| `access.json`, `access-grants.json` | 12. Access         | grants, permissions, presets, simulation, effective rights and audit     |
+| `invitations.json` | 1–2. Auth and users | create and accept employee invitations; delivery is not configured |
 | `auth.json`                        | 1. Authentication | login, refresh, logout, me                                             |
 | `users.json`                       | 2. Users          | `/users`, `/users/{id}`                                                |
 | `reference-tenants.json`           | 3. Reference data | `/tenants`, `/tenants/{id}`                                            |
@@ -47,6 +49,8 @@ npx @redocly/cli preview-docs docs/openapi.json
 
 | File                               | ER entities / purpose                                                                                  |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `access.json`, `access-results.json` | Access permissions, grants, simulation and audit responses |
+| `tenant-guest.json`                 | Tenant-scoped guest, events and aggregate responses |
 | `common.json`                      | `ErrorResponse`, `ErrorDetail`, `PageMeta`, `UserRole`, `Granularity`, `JobAccepted`, `HealthResponse` |
 | `users.json`                       | E-20 `User`, authentication (`LoginRequest`, `TokenResponse`, `MeResponse`)                            |
 | `reference-tenants.json`           | E-4 `Tenant` + create/update/page                                                                      |

@@ -36,37 +36,32 @@ func (r *RecommendationSQL) ListByGuest(ctx context.Context, guestID string) ([]
 	return out, rows.Err()
 }
 
-func (r *RecommendationSQL) TopTenantsForSegment(ctx context.Context, segmentID string, limit int) ([]domain.SegmentTenantScore, error) {
-	if limit <= 0 || limit > 20 {
-		limit = 10
+func (r *RecommendationSQL) ListFactors(ctx context.Context, recommendationIDs []string) (map[string][]domain.RecommendationFactor, error) {
+	out := map[string][]domain.RecommendationFactor{}
+	if len(recommendationIDs) == 0 {
+		return out, nil
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT e.tenant_id, COUNT(DISTINCT m.guest_id)::float8 AS score, COUNT(DISTINCT m.guest_id) AS guests
-		FROM segment_member m
-		JOIN segment_version v ON v.id = m.segment_version_id
-		JOIN segment s ON s.id = v.segment_id AND s.current_version_no = v.version_no
-		JOIN event e ON e.guest_id = m.guest_id
-		JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
-		WHERE s.id = $1
-		  AND NOT EXISTS (
-			SELECT 1 FROM event e0
-			JOIN event_type et0 ON et0.id = e0.event_type_id AND et0.counts_as_presence
-			WHERE e0.guest_id = m.guest_id AND e0.tenant_id = e.tenant_id
-		  )
-		GROUP BY e.tenant_id
-		ORDER BY score DESC, e.tenant_id
-		LIMIT $2`, segmentID, limit)
+		SELECT recommendation_id, factor_code, raw_value, weight, contribution
+		FROM recommendation_factor
+		ORDER BY recommendation_id, factor_code`)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
-	out := make([]domain.SegmentTenantScore, 0)
+	wanted := map[string]bool{}
+	for _, id := range recommendationIDs {
+		wanted[id] = true
+	}
 	for rows.Next() {
-		var s domain.SegmentTenantScore
-		if err := rows.Scan(&s.TenantID, &s.Score, &s.Guests); err != nil {
+		var f domain.RecommendationFactor
+		if err := rows.Scan(&f.RecommendationID, &f.FactorCode, &f.RawValue, &f.Weight, &f.Contribution); err != nil {
 			return nil, err
 		}
-		out = append(out, s)
+		if !wanted[f.RecommendationID] {
+			continue
+		}
+		out[f.RecommendationID] = append(out[f.RecommendationID], f)
 	}
 	return out, rows.Err()
 }

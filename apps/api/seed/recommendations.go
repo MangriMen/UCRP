@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/MangriMen/UCRP/internal/platform/config"
 	"github.com/MangriMen/UCRP/internal/recommend"
 )
 
 func (s *Seeder) seedRecommendations(ctx context.Context) error {
-	recommender := recommend.NewWeightedRecommender(s.db)
+	recommender := recommend.NewWeightedRecommender(s.db, config.DefaultRecommendConfig())
 	keys := make([]string, 0, s.opts.Guests+len(demoPersonas()))
 	for i := 0; i < s.opts.Guests; i++ {
 		keys = append(keys, backgroundGuestKey(i))

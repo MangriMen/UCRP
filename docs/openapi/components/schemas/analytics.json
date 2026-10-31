@@ -5,18 +5,24 @@
     "properties": {
       "one": {
         "type": "integer",
+        "nullable": true,
         "minimum": 0,
         "description": "Guests with 1 tenant"
       },
       "two": {
         "type": "integer",
+        "nullable": true,
         "minimum": 0,
         "description": "Guests with 2 tenants"
       },
       "threePlus": {
         "type": "integer",
+        "nullable": true,
         "minimum": 0,
         "description": "Guests with 3 or more tenants"
+      },
+      "suppressed": {
+        "type": "boolean"
       }
     }
   },
@@ -35,6 +41,7 @@
           },
           "penetrationRate": {
             "type": "number",
+            "nullable": true,
             "format": "double",
             "description": "Share of guests with 2 or more tenants"
           }
@@ -62,8 +69,12 @@
       },
       "penetrationRate": {
         "type": "number",
+        "nullable": true,
         "format": "double",
         "description": "Share of active guests with 2 or more tenants"
+      },
+      "suppressed": {
+        "type": "boolean"
       },
       "series": {
         "type": "array",
@@ -87,22 +98,29 @@
       },
       "matchRate": {
         "type": "number",
+        "nullable": true,
         "format": "double",
         "description": "Events with guestId ÷ all accepted events in the period (target ≥ 0.70)"
       },
       "disputedMergeRate": {
         "type": "number",
+        "nullable": true,
         "format": "double",
         "description": "reverted ÷ (auto_merged + confirmed + reverted) (target < 0.01)"
       },
       "segmentToExportMedianSeconds": {
         "type": "number",
+        "nullable": true,
         "format": "double",
         "description": "Median time from segment version creation to the first export (target ≤ 300 s)"
       },
       "segmentToExportP95Seconds": {
         "type": "number",
+        "nullable": true,
         "format": "double"
+      },
+      "suppressed": {
+        "type": "boolean"
       },
       "conversionRate": {
         "type": "number",

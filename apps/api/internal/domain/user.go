@@ -13,6 +13,7 @@ type User struct {
 	Role         Role
 	TenantID     string
 	IsActive     bool
+	AuthVersion  int64
 	LastLoginAt  *time.Time
 	CreatedAt    time.Time
 }

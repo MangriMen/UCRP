@@ -79,7 +79,7 @@ func (r *CampaignSQL) List(ctx context.Context, limit, offset int) ([]domain.Cam
 		limit = 50
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, name, tenant_id, segment_id, attribution_days, status, COALESCE(created_by, ''), created_at, updated_at
+		SELECT id, name, COALESCE(target_tenant_id, ''), COALESCE(segment_id, ''), attribution_days, status, COALESCE(created_by, ''), created_at, created_at
 		FROM campaign ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (r *CampaignSQL) List(ctx context.Context, limit, offset int) ([]domain.Cam
 
 func (r *CampaignSQL) GetByID(ctx context.Context, id string) (*domain.Campaign, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, name, tenant_id, segment_id, attribution_days, status, COALESCE(created_by, ''), created_at, updated_at
+		SELECT id, name, COALESCE(target_tenant_id, ''), COALESCE(segment_id, ''), attribution_days, status, COALESCE(created_by, ''), created_at, created_at
 		FROM campaign WHERE id = $1`, id)
 	c, err := scanCampaign(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -109,18 +109,18 @@ func (r *CampaignSQL) GetByID(ctx context.Context, id string) (*domain.Campaign,
 
 func (r *CampaignSQL) Insert(ctx context.Context, c *domain.Campaign) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO campaign (id, name, tenant_id, segment_id, attribution_days, status, created_by, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-		c.ID, c.Name, c.TenantID, c.SegmentID, c.AttributionDays, c.Status, nullIfEmpty(c.CreatedBy), c.CreatedAt, c.UpdatedAt,
+		INSERT INTO campaign (id, name, target_tenant_id, segment_id, attribution_days, status, created_by, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+		c.ID, c.Name, nullIfEmpty(c.TenantID), nullIfEmpty(c.SegmentID), c.AttributionDays, c.Status, nullIfEmpty(c.CreatedBy), c.CreatedAt,
 	)
 	return err
 }
 
 func (r *CampaignSQL) Update(ctx context.Context, c *domain.Campaign) error {
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE campaign SET name = $2, segment_id = $3, attribution_days = $4, status = $5, updated_at = $6
+		UPDATE campaign SET name = $2, target_tenant_id = $3, segment_id = $4, attribution_days = $5, status = $6
 		WHERE id = $1`,
-		c.ID, c.Name, c.SegmentID, c.AttributionDays, c.Status, c.UpdatedAt,
+		c.ID, c.Name, nullIfEmpty(c.TenantID), nullIfEmpty(c.SegmentID), c.AttributionDays, c.Status,
 	)
 	return err
 }

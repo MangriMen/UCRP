@@ -82,11 +82,16 @@
   },
   "SegmentPreviewResponse": {
     "type": "object",
-    "required": ["size", "examples", "cached"],
+    "required": ["size", "examples", "cached", "suppressed"],
     "properties": {
       "size": {
         "type": "integer",
-        "minimum": 0
+        "minimum": 0,
+        "nullable": true,
+        "description": "Null when fewer than five guests match; examples are then empty."
+      },
+      "suppressed": {
+        "type": "boolean"
       },
       "examples": {
         "type": "array",

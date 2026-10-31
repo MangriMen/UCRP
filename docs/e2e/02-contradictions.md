@@ -51,15 +51,13 @@
   нагрузочных проверок. На функциональные E2E не влияет, на performance — влияет.
 - **Уточнение:** какое значение считать целевым для пилота.
 
-### D5. Формат токена: `accessToken` или `access_token`
+### D5. Формат токена: `accessToken` или `access_token` — **устарело**
 
-- **Что:** OpenAPI `TokenResponse`/`LoginResponse` — `accessToken`, `tokenType`,
-  `expiresIn`. `apps/web/src/shared/api/client.ts` читает `data.access_token`.
-  Реализация `internal/handler/auth_handler.go` отдаёт `access_token`, `expires_in`.
-- **Влияние:** контрактный тест логина по схеме OpenAPI упадёт на текущей
-  реализации; фронтенд при этом работает. Один из трёх артефактов обязательно неверен.
-- **Уточнение:** зафиксировать `camelCase` (как в остальном контракте) и исправить
-  реализацию и клиент, либо зафиксировать `snake_case` и исправить OpenAPI.
+- **Что было:** расхождение OpenAPI (`accessToken`) и ранней реализации (`access_token`).
+- **Статус:** закрыто. `internal/handler/auth_handler.go` и клиент
+  `apps/web/src/shared/api/client.ts` используют camelCase `accessToken`,
+  `tokenType`, `expiresIn`. OpenAPI и реализация согласованы.
+- **Влияние:** тесты логина/refresh по контракту применимы без выбора стороны.
 
 ### D6. Устаревшие утверждения о состоянии проекта
 

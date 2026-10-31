@@ -54,7 +54,7 @@
   },
   "MeResponse": {
     "type": "object",
-    "required": ["userId", "email", "role", "displayName", "permissions"],
+    "required": ["userId", "email", "role", "displayName", "permissions", "policyVersion"],
     "properties": {
       "userId": {
         "type": "string"
@@ -74,9 +74,10 @@
         "nullable": true,
         "description": "User tenant. Required for the `tenant` role, otherwise null."
       },
+      "policyVersion": { "type": "integer", "format": "int64" },
       "permissions": {
         "type": "array",
-        "description": "Permission list used to build the SPA menu",
+        "description": "Effective permission codes for building the SPA menu",
         "items": {
           "type": "string"
         },

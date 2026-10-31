@@ -100,8 +100,8 @@
         "tags": ["Guests"],
         "operationId": "getGuest",
         "summary": "Unified guest profile",
-        "description": "Returns identifiers, the number of visited tenants (`tenantCount`), segments, and feed aggregates. If the guest was absorbed by a merge, the 200 response contains `mergedIntoId` and the UI redirects to the current profile.",
-        "x-roles": ["R-1", "R-4"],
+        "description": "Returns a unified profile for management users. A tenant with a guest.profile.read grant receives a tenant-scoped profile only when its own event exists within the permitted period; identifiers require separate grants and are limited to the tenant’s data sources. The global display name and cross-tenant details are not returned.",
+        "x-roles": ["R-1", "R-2", "R-3 (with grant)", "R-4"],
         "x-uc": ["UC-2"],
         "responses": {
           "200": {
@@ -109,7 +109,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "../components/schemas/guests.json#/GuestProfile"
+                  "oneOf": [
+                    { "$ref": "../components/schemas/guests.json#/GuestProfile" },
+                    { "$ref": "../components/schemas/tenant-guest.json#/TenantGuestProfile" }
+                  ]
                 }
               }
             }
@@ -158,39 +161,12 @@
         "tags": ["Guests"],
         "operationId": "listGuestEvents",
         "summary": "Guest event feed",
-        "description": "Sorted by `occurredAt` descending. Each record contains type, tenant, project, date, and amount.",
-        "x-roles": ["R-1", "R-4"],
+        "description": "Sorted by `occurredAt` descending. Tenant users with guest.event.read receive only events for their own tenant in the permitted period. Amount and external ID require separate field permissions; raw payload is not returned.",
+        "x-roles": ["R-1", "R-2", "R-3 (with grant)", "R-4"],
         "x-uc": ["UC-2", "UC-6"],
         "parameters": [
-          {
-            "$ref": "../components/parameters.json#/Page"
-          },
-          {
-            "$ref": "../components/parameters.json#/PageSize"
-          },
-          {
-            "name": "from",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          },
-          {
-            "name": "tenant_id",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 200 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "minimum": 0 } }
         ],
         "responses": {
           "200": {
@@ -198,7 +174,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "../components/schemas/events.json#/EventPage"
+                  "oneOf": [
+                    { "$ref": "../components/schemas/events.json#/EventPage" },
+                    { "$ref": "../components/schemas/tenant-guest.json#/TenantGuestEvents" }
+                  ]
                 }
               }
             }

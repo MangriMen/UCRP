@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
-	"github.com/MangriMen/UCRP/internal/platform/auth"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
 )
 
@@ -16,10 +15,10 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 		return LoginResult{}, domain.ErrUnauthorized
 	}
 	u, err := s.users.GetByID(ctx, p.UserID)
-	if err != nil || !u.IsActive {
+	if err != nil || !u.IsActive || u.AuthVersion != p.AuthVersion {
 		return LoginResult{}, domain.ErrUnauthorized
 	}
-	pair, err := s.tokens.Issue(domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID})
+	pair, err := s.tokens.Issue(domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID, AuthVersion: u.AuthVersion})
 	if err != nil {
 		return LoginResult{}, err
 	}
@@ -105,34 +104,15 @@ func (s *AuthService) CreateUserService(ctx context.Context, req UserCreateReque
 }
 
 func (s *AuthService) UpdateUser(ctx context.Context, id string, req UserUpdateRequest) (*UserDTO, error) {
+	if req.Role != "" || req.TenantID != "" || req.Password != "" || req.IsActive != nil {
+		return nil, domain.ErrForbidden
+	}
 	u, err := s.users.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if req.DisplayName != "" {
 		u.DisplayName = req.DisplayName
-	}
-	if req.Role != "" {
-		u.Role = domain.Role(req.Role)
-	}
-	if req.TenantID != "" || u.Role == domain.RoleTenant {
-		u.TenantID = req.TenantID
-	}
-	if req.Password != "" {
-		hash, err := auth.HashPassword(req.Password)
-		if err != nil {
-			return nil, err
-		}
-		u.PasswordHash = hash
-	}
-	if req.IsActive != nil {
-		u.IsActive = *req.IsActive
-	}
-	if u.Role == domain.RoleTenant && u.TenantID == "" {
-		return nil, domain.ErrValidation
-	}
-	if u.Role != domain.RoleTenant {
-		u.TenantID = ""
 	}
 	if err := s.users.Update(ctx, u); err != nil {
 		return nil, err

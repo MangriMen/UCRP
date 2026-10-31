@@ -13,4 +13,5 @@ type Principal struct {
 	UserID   string
 	Role     Role
 	TenantID string
+	AuthVersion int64
 }

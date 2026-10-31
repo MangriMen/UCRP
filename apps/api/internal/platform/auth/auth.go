@@ -53,6 +53,7 @@ func (m *Manager) sign(p domain.Principal, ttl time.Duration, refresh bool) (str
 		"role": string(p.Role),
 		"exp":  now.Add(ttl).Unix(),
 		"iat":  now.Unix(),
+		"ver":  p.AuthVersion,
 	}
 	if refresh {
 		claims["typ"] = "refresh"
@@ -93,6 +94,14 @@ func (m *Manager) parse(token string, refresh bool) (domain.Principal, error) {
 	sub, _ := claims["sub"].(string)
 	role, _ := claims["role"].(string)
 	tenantID, _ := claims["tenant_id"].(string)
+	version := int64(0)
+	if value, ok := claims["ver"]; ok {
+		number, valid := value.(float64)
+		if !valid || number < 0 || number != float64(int64(number)) {
+			return domain.Principal{}, domain.ErrUnauthorized
+		}
+		version = int64(number)
+	}
 	if sub == "" || role == "" {
 		return domain.Principal{}, domain.ErrUnauthorized
 	}
@@ -100,6 +109,7 @@ func (m *Manager) parse(token string, refresh bool) (domain.Principal, error) {
 		UserID:   sub,
 		Role:     domain.Role(role),
 		TenantID: tenantID,
+		AuthVersion: version,
 	}, nil
 }
 

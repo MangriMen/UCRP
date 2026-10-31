@@ -228,21 +228,29 @@ func (h *AnalyticsHandler) Penetration(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("to"); v != "" {
 		to, _ = time.Parse(time.RFC3339, v)
 	}
-	res, err := h.analytics.Penetration(r.Context(), from, to)
+	res, err := h.analytics.Penetration(r.Context(), from, to, q.Get("granularity"))
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, res)
+	httpx.WriteJSON(w, http.StatusOK, penetrationResponse(res))
 }
 
 func (h *AnalyticsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
-	res, err := h.analytics.Metrics(r.Context())
+	q := r.URL.Query()
+	var from, to time.Time
+	if v := q.Get("from"); v != "" {
+		from, _ = time.Parse(time.RFC3339, v)
+	}
+	if v := q.Get("to"); v != "" {
+		to, _ = time.Parse(time.RFC3339, v)
+	}
+	res, err := h.analytics.Metrics(r.Context(), from, to)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, res)
+	httpx.WriteJSON(w, http.StatusOK, dashboardMetricsResponse(res))
 }
 
 func (h *AnalyticsHandler) TenantAggregates(w http.ResponseWriter, r *http.Request) {

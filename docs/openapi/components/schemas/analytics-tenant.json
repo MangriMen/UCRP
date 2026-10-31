@@ -61,6 +61,19 @@
       }
     }
   },
+  "DataQualityListItem": {
+    "type": "object",
+    "required": ["data_source_id", "name", "rejected_rate", "pending_merges", "warning", "suppressed"],
+    "properties": {
+      "data_source_id": { "type": "string" },
+      "name": { "type": "string" },
+      "last_import_at": { "type": "string", "format": "date-time" },
+      "rejected_rate": { "type": "number", "nullable": true },
+      "pending_merges": { "type": "integer", "nullable": true },
+      "warning": { "type": "boolean", "nullable": true },
+      "suppressed": { "type": "boolean" }
+    }
+  },
   "DataQualitySource": {
     "type": "object",
     "required": [

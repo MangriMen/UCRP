@@ -74,7 +74,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (LoginR
 	if !u.IsActive || !auth.CheckPassword(u.PasswordHash, password) {
 		return LoginResult{}, domain.ErrUnauthorized
 	}
-	pair, err := s.tokens.Issue(domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID})
+	pair, err := s.tokens.Issue(domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID, AuthVersion: u.AuthVersion})
 	if err != nil {
 		return LoginResult{}, err
 	}
