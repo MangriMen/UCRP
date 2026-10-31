@@ -2,16 +2,17 @@ package service
 
 import (
 	"context"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"strings"
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
+	"github.com/MangriMen/UCRP/internal/export"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
 )
+
+const xlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 type ExportService struct {
 	exports  domain.ExportRepo
@@ -208,7 +209,13 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 	return toExportDTO(job), nil
 }
 
-func (s *ExportService) CSV(ctx context.Context, exportID string) ([]byte, error) {
+type ExportFile struct {
+	Data        []byte
+	ContentType string
+	Extension   string
+}
+
+func (s *ExportService) Download(ctx context.Context, exportID string) (*ExportFile, error) {
 	job, err := s.exports.GetByID(ctx, exportID)
 	if err != nil {
 		return nil, err
@@ -220,17 +227,26 @@ func (s *ExportService) CSV(ctx context.Context, exportID string) ([]byte, error
 	if err != nil {
 		return nil, err
 	}
-	buf := &strings.Builder{}
-	w := csv.NewWriter(buf)
-	_ = w.Write([]string{"guest_id", "contact"})
+	rows := make([][]string, 0, len(members)+1)
+	rows = append(rows, []string{"guest_id", "contact"})
 	for _, m := range members {
 		if m.IsControl {
 			continue
 		}
-		_ = w.Write([]string{m.GuestID, m.Contact})
+		rows = append(rows, []string{m.GuestID, m.Contact})
 	}
-	w.Flush()
-	return []byte(buf.String()), w.Error()
+	if job.Format == domain.FormatXLSX {
+		data, err := export.XLSX(rows)
+		if err != nil {
+			return nil, err
+		}
+		return &ExportFile{Data: data, ContentType: xlsxContentType, Extension: "xlsx"}, nil
+	}
+	data, err := export.CSV(rows)
+	if err != nil {
+		return nil, err
+	}
+	return &ExportFile{Data: data, ContentType: "text/csv; charset=utf-8", Extension: "csv"}, nil
 }
 
 func (s *ExportService) List(ctx context.Context, limit, offset int) ([]ExportDTO, error) {
@@ -447,6 +463,15 @@ func validateChannel(channel string) error {
 	}
 }
 
+func validExportFormat(format string) bool {
+	switch domain.ExportFormat(format) {
+	case "", domain.FormatCSV, domain.FormatAPI, domain.FormatXLSX:
+		return true
+	default:
+		return false
+	}
+}
+
 func validateExportRequest(segmentID, channel, format string, percent int, idemKey string) error {
 	if segmentID == "" {
 		return domain.ErrValidation
@@ -454,7 +479,7 @@ func validateExportRequest(segmentID, channel, format string, percent int, idemK
 	if err := validateChannel(channel); err != nil {
 		return err
 	}
-	if format != "" && format != string(domain.FormatCSV) && format != string(domain.FormatAPI) {
+	if !validExportFormat(format) {
 		return domain.ErrValidation
 	}
 	if percent < 0 || percent > 50 {

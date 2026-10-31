@@ -4,7 +4,14 @@ export { DownloadExportButton } from './ui/download-export-button'
 export { ExportStatusBadge } from './ui/export-status-badge'
 export { exportKeys } from './model/keys'
 export type { ExportListFilters } from './model/keys'
-export { exportChannelLabels, exportStatusLabels, isExportActive } from './model/status'
+export {
+  exportChannelLabels,
+  exportFileFormat,
+  exportFileFormatLabels,
+  exportStatusLabels,
+  isExportActive,
+} from './model/status'
+export type { ExportFileFormat } from './model/status'
 export type {
   Export,
   ExportChannel,

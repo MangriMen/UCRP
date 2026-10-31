@@ -1,4 +1,4 @@
-import type { ExportChannel, ExportStatus } from './types'
+import type { ExportChannel, ExportFormat, ExportStatus } from './types'
 
 export const exportStatusLabels: Record<ExportStatus, string> = {
   queued: 'В очереди',
@@ -14,3 +14,13 @@ export const exportChannelLabels: Record<ExportChannel, string> = {
 }
 
 export const isExportActive = (status: ExportStatus) => status === 'queued' || status === 'building'
+
+export type ExportFileFormat = Extract<ExportFormat, 'csv' | 'xlsx'>
+
+export const exportFileFormatLabels: Record<ExportFileFormat, string> = {
+  csv: 'CSV',
+  xlsx: 'Excel',
+}
+
+export const exportFileFormat = (format: ExportFormat): ExportFileFormat =>
+  format === 'xlsx' ? 'xlsx' : 'csv'

@@ -17,7 +17,8 @@ const downloadColumn: Column<Export> = {
   id: 'download',
   header: '',
   className: 'text-right',
-  cell: (e) => (e.status === 'ready' ? <DownloadExportButton exportId={e.id} /> : null),
+  cell: (e) =>
+    e.status === 'ready' ? <DownloadExportButton exportId={e.id} format={e.format} /> : null,
 }
 
 const baseColumns: Column<Export>[] = [

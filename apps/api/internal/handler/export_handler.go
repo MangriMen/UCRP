@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -82,12 +83,14 @@ func (h *ExportHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ExportHandler) Download(w http.ResponseWriter, r *http.Request) {
-	data, err := h.exports.CSV(r.Context(), chi.URLParam(r, "id"))
+	id := chi.URLParam(r, "id")
+	file, err := h.exports.Download(r.Context(), id)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Type", file.ContentType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="export-%s.%s"`, id, file.Extension))
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
+	_, _ = w.Write(file.Data)
 }
