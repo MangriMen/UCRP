@@ -17,7 +17,7 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 - Open questions are in `docs/00-open-questions.md`. Don't silently pick answers; ask.
 - Don't add dependencies, change CI, hooks, or tooling versions unasked.
 - Never commit, push, or open a PR unless asked.
-- Commits (only when the user asks): message in Russian, single line, no body/description, author = the user (`git commit` without agent attribution tricks).
+- Commits (only when the user asks): message in English, single line, no body/description, author = the user (`git commit` without agent attribution tricks).
 
 ## Repo facts
 

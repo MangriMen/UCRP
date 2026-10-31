@@ -7,14 +7,13 @@ metadata:
 
 # Pull request description
 
-Write the PR title and body in English, even though the repo docs and the PR template are in Russian.
+Write the PR title and body in English.
 
 ## Rules
 
 - Title: Conventional Commits format, e.g. `feat(api): add guest import endpoint`.
-- Body: short. A few bullets or two to three sentences on what changes and why; no file-by-file listing, the diff shows that.
-- Follow the sections of `.github/PULL_REQUEST_TEMPLATE.md` (what was done, related tasks, how to verify, checklist), with English headings: `What`, `Related`, `How to verify`, `Checklist`.
-- Related: use project ids (`US-1`, `UC-3`) or issue numbers; write `—` if there are none.
-- Checklist: tick only what you actually ran. Leave unticked items that do not apply and say why in a few words.
-- State anything left open or deliberately skipped; do not hide it.
+- Body: two to five lines or a few bullets on what changes and why. No file-by-file listing, the diff shows that.
+- No template sections, headings, checklists, "How to verify" or "Related" blocks. Add a line only when it carries real information (a breaking change, a manual step needed after merge, something deliberately left out).
+- Mention a task or issue only if there is one, as plain text (`Closes #12`).
+- Do not claim checks you did not run; if relevant, say what was not run.
 - Do not add attribution lines or generated-by footers.
