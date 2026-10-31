@@ -89,15 +89,15 @@ docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up 
 
 ## Env (см. `.env.example` в корне)
 
-| Переменная          | Назначение                                      |
-| ------------------- | ----------------------------------------------- |
-| `UCRP_HTTP_ADDR`    | напр. `:8080`                                   |
-| `UCRP_DATABASE_URL` | `sqlite:///data/ucrp.db` → позже `postgres://…` |
-| `UCRP_JWT_SECRET`   | подпись JWT                                     |
-| `UCRP_UPLOAD_DIR`   | BlobStore (D-28)                                |
-| `UCRP_LOG_LEVEL`    | debug…error                                     |
-| `UCRP_BOOTSTRAP_MANAGER_EMAIL` | Email первого управляющего УК, если в базе ещё нет менеджеров |
-| `UCRP_BOOTSTRAP_MANAGER_PASSWORD` | Пароль первого управляющего УК; задаётся вместе с email |
+| Переменная                        | Назначение                                                    |
+| --------------------------------- | ------------------------------------------------------------- |
+| `UCRP_HTTP_ADDR`                  | напр. `:8080`                                                 |
+| `UCRP_DATABASE_URL`               | `sqlite:///data/ucrp.db` → позже `postgres://…`               |
+| `UCRP_JWT_SECRET`                 | подпись JWT                                                   |
+| `UCRP_UPLOAD_DIR`                 | BlobStore (D-28)                                              |
+| `UCRP_LOG_LEVEL`                  | debug…error                                                   |
+| `UCRP_BOOTSTRAP_MANAGER_EMAIL`    | Email первого управляющего УК, если в базе ещё нет менеджеров |
+| `UCRP_BOOTSTRAP_MANAGER_PASSWORD` | Пароль первого управляющего УК; задаётся вместе с email       |
 
 Обе переменные bootstrap необязательны, но должны быть заданы вместе. При первом запуске на базе без менеджеров создаются учётная запись и персональный грант на данные; операция выполняется один раз. Наличие любого менеджера, включая неактивного, отключает bootstrap. Повторный запуск не восстанавливает отозванный грант. Пароль храните в секретах окружения, не добавляйте его в Git. Для отдельного PostgreSQL-теста bootstrap можно задать `UCRP_BOOTSTRAP_TEST_DATABASE_URL`; тест создаёт и удаляет изолированную схему.
 
@@ -113,4 +113,4 @@ docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up 
 - [x] Dockerfile + compose в `deploy/`
 - [x] `migrations/ddl.sql` — копия `docs/appendix/ddl.sql` (source of truth в docs)
 - [ ] Реализация слоёв (по этапам / базовому промпту)
-- [ ] goose-файлы `migrations/common/00001_…` по `migrations-plan.md`
+- [ ] goose-файлы `migrations/common/00001_…` по `docs/appendix/migrations-plan.md`

@@ -1,6 +1,6 @@
 # 04. User Stories US-1…US-11
 
-Формулировки и приёмка взяты из `analysis.md` §6.1; критерии переписаны в формате Given/When/Then с позитивными и негативными сценариями. MVP-ядро: US-1…US-6, US-10, US-11; US-7, US-8, US-9 — вторая очередь (в модель и матрицы включены сразу). Эндпоинты — из `appendix/endpoint-registry.md` (префикс `/api/v1`), Go-слои: `handler` (`internal/handler`) → `service` (`internal/service`) → `repository` (`internal/repository`).
+Формулировки и приёмка взяты из `archive/docs/analysis.md` §6.1; критерии переписаны в формате Given/When/Then с позитивными и негативными сценариями. MVP-ядро: US-1…US-6, US-10, US-11; US-7, US-8, US-9 — вторая очередь (в модель и матрицы включены сразу). Эндпоинты — из `appendix/endpoint-registry.md` (префикс `/api/v1`), Go-слои: `handler` (`internal/handler`) → `service` (`internal/service`) → `repository` (`internal/repository`).
 
 React-маршруты и модули (`src/`): `features/import`, `features/profiles` (включая очередь склеек), `features/segments`, `features/recommendations`, `features/export` (включая лимиты и кампании), `features/dashboard`, `features/tenant`, `features/dq`, `features/admin` (D-14), `auth/`, `routes/`, `components/`, `api/`.
 
