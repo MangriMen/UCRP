@@ -6,7 +6,7 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-func TestCommonMigrationVersionsAreUnique(t *testing.T) {
+func TestCommonMigrations_HaveUniqueVersions(t *testing.T) {
 	goose.SetBaseFS(FS)
 	t.Cleanup(func() { goose.SetBaseFS(nil) })
 	if _, err := goose.CollectMigrations("common", 0, goose.MaxVersion); err != nil {
