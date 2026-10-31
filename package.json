@@ -1,0 +1,31 @@
+{
+  "name": "@ucrp/monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Единая рекомендательная клиентская платформа для торговых центров",
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ]
+  },
+  "scripts": {
+    "build": "turbo run build --continue",
+    "clean": "turbo run clean && bun x rimraf .turbo",
+    "dev": "turbo run dev",
+    "format": "turbo run format --continue",
+    "lint": "turbo run lint --continue",
+    "test": "turbo run test --continue",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "lefthook": "^2.2.2",
+    "turbo": "^2.11.9",
+    "typescript": "^6.0.3"
+  },
+  "packageManager": "bun@1.4.2",
+  "engines": {
+    "node": ">=24"
+  }
+}

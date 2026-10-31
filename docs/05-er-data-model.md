@@ -62,6 +62,7 @@ erDiagram
   tenant {
     text id PK
     text category_id FK
+    varchar kind
     smallint floor
     smallint priority
   }
@@ -74,6 +75,7 @@ erDiagram
     text id PK
     varchar code UK
     boolean counts_as_presence
+    text reverses_event_type_id FK
   }
   data_source_type {
     text id PK
@@ -107,6 +109,7 @@ erDiagram
     varchar external_id
     timestamp occurred_at
     bigint amount_minor
+    text reverses_event_id FK
     text raw_payload
   }
 ```
@@ -324,9 +327,9 @@ erDiagram
 |---|---|---|
 | `tenant_category` | `id` | Атрибуты зависят только от категории |
 | `tenant_category_relation` | (`category_id`, `related_category_id`, `relation_type`) | Единственный неключевой атрибут `weight_pct` зависит от всего ключа |
-| `tenant` | `id` | Категория — по FK, название категории не дублируется; `floor`, `x_m`, `y_m`, `priority` зависят от арендатора |
+| `tenant` | `id` | Категория — по FK, название категории не дублируется; `kind` (`mall`/`external`) отделяет арендатора комплекса от внешнего партнёра (A-22, D-38); `floor`, `x_m`, `y_m`, `priority` зависят от арендатора |
 | `project` | `id`, `UNIQUE(tenant_id, code)` | Принадлежность арендатору по FK |
-| `event_type` | `id` | Свойства типа (`has_amount`, `counts_as_presence`) вынесены из события |
+| `event_type` | `id` | Свойства типа (`has_amount`, `counts_as_presence`, `reverses_event_type_id`) вынесены из события. Отдельные типы `top_up` и `usage` с `counts_as_presence=false` различают пополнение и посещение (A-20, D-36) |
 | `data_source_type` | `id` | `connector_key` и возможности зависят от типа, а не от экземпляра |
 | `data_source` | `id` | Тип по FK. `tenant_id` — владелец источника (NULL = общий источник УК) |
 | `app_user` | `id` | `tenant_id` зависит от пользователя; CHECK связывает роль и арендатора |
@@ -357,7 +360,7 @@ erDiagram
 | Изменение требований | Что делаем | Что НЕ меняется |
 |---|---|---|
 | Новый тип источника (например, iiko, 1С) | `INSERT data_source_type (code, connector_key, supports_*, config_schema)`; новая реализация `SourceConnector` в `internal/ingestion/connectors`; `INSERT data_source` с `field_mapping` | Схема БД, `event`, API |
-| Новый тип события (например, «парковка», «абонемент») | `INSERT event_type (code='parking', has_amount=false, counts_as_presence=true)`; в маппинге источника — соответствие значений | Схема, сегменты, скоринг |
+| Новый тип события (например, «парковка», «абонемент») | `INSERT event_type (code='parking', has_amount=false, counts_as_presence=true)`; в маппинге источника — соответствие значений. Так же добавлены `top_up`, `usage`, `reversal` (A-20, D-36) | Схема, сегменты, скоринг |
 | Новая категория или связь смежности/конкуренции | `INSERT tenant_category`, `tenant_category_relation` | Код скоринга (читает связи) |
 | Новый шаблон сегмента | `INSERT segment (is_template=TRUE, template_code=…)` + `segment_version` с JSON-правилом | Схема; вычислитель читает DSL |
 | Новое условие правила (например, «сумма > X») | Новый оператор в DSL `rule` и в `SegmentEvaluator` (регистрация оператора) | Схема, версии старых правил (хранят старый DSL) |
@@ -407,7 +410,7 @@ erDiagram
 | 8 | `00008_campaign_reco.sql` | campaign, recommendation, recommendation_factor | 1, 2, 3, 7 |
 | 9 | `00009_export_contact.sql` | export_job, export_member, contact_limit, contact_log | 3, 7, 8 |
 | 10 | `00010_job_queue.sql` | job_queue + частичный уникальный индекс | — |
-| 11 | `00011_seed_reference.sql` | Seed: типы событий (`visit`, `purchase`, `booking`), типы источников (`crm`, `pos`, `api`, `csv_excel`), 5 шаблонов сегментов, базовые категории, права ролей не хранятся (в коде) | 1, 7 |
+| 11 | `00011_seed_reference.sql` | Seed: типы событий (`visit`, `purchase`, `booking`, `top_up`, `usage`, `reversal`), типы источников (`crm`, `pos`, `api`, `csv_excel`), 5 шаблонов сегментов, базовые категории, права ролей не хранятся (в коде) | 1, 7 |
 | 12 | `postgres/00101_pg_types.sql` | `TIMESTAMP → TIMESTAMPTZ`, `TEXT → JSONB` для `rule`, `raw_payload`, `match_keys`, `config`, `field_mapping`, `details`, `payload`, `config_schema`; GIN-индекс по `event.raw_payload` при необходимости | 1–10 |
 | 13 | `postgres/00102_pg_perf.sql` | Партиционирование `event` по месяцам (по необходимости), доп. индексы, `FOR UPDATE SKIP LOCKED` обеспечивается кодом | 12 |
 

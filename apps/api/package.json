@@ -1,0 +1,9 @@
+{
+  "name": "@ucrp/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Go-бэкенд: нужен только чтобы turbo запускал его вместе с остальными. Сборка, линт и тесты Go идут отдельно (см. .github/workflows/ci.yml)",
+  "scripts": {
+    "dev": "go run ./cmd/api"
+  }
+}
