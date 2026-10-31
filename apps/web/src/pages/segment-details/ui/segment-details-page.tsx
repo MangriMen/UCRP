@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router'
 import { SegmentTopTenants } from '@/entities/recommendation'
 import { isSegmentComputing, SegmentStatusBadge, useSegment } from '@/entities/segment'
 import { useAuth } from '@/entities/user'
+import { CreateExportButton } from '@/features/create-export'
 import { RecomputeSegmentButton } from '@/features/recompute-segment'
 import { formatDateTime } from '@/shared/lib/format'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
@@ -34,6 +35,9 @@ export function SegmentDetailsPage() {
           <>
             <SegmentStatusBadge status={segment.status} />
             {canManage && <RecomputeSegmentButton segmentId={segment.id} status={segment.status} />}
+            {role === 'marketer' && (
+              <CreateExportButton segmentId={segment.id} disabled={segment.status !== 'ready'} />
+            )}
             <Button variant="outline" render={<Link to="/segments" />}>
               К списку
             </Button>

@@ -1,5 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { RoleGuard } from '@/entities/user'
+import { ContactLimitsPage } from '@/pages/contact-limits'
+import { ExportsPage } from '@/pages/exports'
 import { GuestProfilePage } from '@/pages/guest-profile'
 import { GuestsPage } from '@/pages/guests'
 import { ImportDetailsPage } from '@/pages/import-details'
@@ -54,6 +56,8 @@ export const router = createBrowserRouter([
             children: [
               { path: 'segments', element: <SegmentsPage /> },
               { path: 'segments/:id', element: <SegmentDetailsPage /> },
+              { path: 'exports', element: <ExportsPage /> },
+              { path: 'settings/contact-limits', element: <ContactLimitsPage /> },
             ],
           },
           {
