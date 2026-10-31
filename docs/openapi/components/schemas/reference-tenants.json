@@ -1,7 +1,17 @@
 {
   "Tenant": {
     "type": "object",
-    "required": ["id", "code", "name", "categoryId", "floor", "priority", "isActive", "createdAt", "updatedAt"],
+    "required": [
+      "id",
+      "code",
+      "name",
+      "categoryId",
+      "floor",
+      "priority",
+      "isActive",
+      "createdAt",
+      "updatedAt"
+    ],
     "properties": {
       "id": { "type": "string" },
       "code": { "type": "string", "maxLength": 64 },
@@ -10,8 +20,18 @@
       "categoryName": { "type": "string", "readOnly": true },
       "floor": { "type": "integer", "description": "Complex floor" },
       "areaSqm": { "type": "number", "format": "double", "nullable": true },
-      "xM": { "type": "number", "format": "double", "nullable": true, "description": "X coordinate on the floor plan, meters" },
-      "yM": { "type": "number", "format": "double", "nullable": true, "description": "Y coordinate on the floor plan, meters" },
+      "xM": {
+        "type": "number",
+        "format": "double",
+        "nullable": true,
+        "description": "X coordinate on the floor plan, meters"
+      },
+      "yM": {
+        "type": "number",
+        "format": "double",
+        "nullable": true,
+        "description": "Y coordinate on the floor plan, meters"
+      },
       "priority": {
         "type": "integer",
         "minimum": 0,

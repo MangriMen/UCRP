@@ -65,10 +65,7 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
   query?: Record<string, string | number | boolean | undefined>
 }
 
-export async function request<T>(
-  path: string,
-  options: RequestOptions = {},
-): Promise<T> {
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, query, headers, ...init } = options
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -79,8 +76,7 @@ export async function request<T>(
   const send = () => {
     const h = new Headers(headers)
     if (accessToken) h.set('Authorization', `Bearer ${accessToken}`)
-    if (body !== undefined && !(body instanceof FormData))
-      h.set('Content-Type', 'application/json')
+    if (body !== undefined && !(body instanceof FormData)) h.set('Content-Type', 'application/json')
     return fetch(url, {
       ...init,
       headers: h,

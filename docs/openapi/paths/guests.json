@@ -1,259 +1,223 @@
 {
-    "paths":  {
-                  "/api/v1/guests":  {
-                                         "get":  {
-                                                     "tags":  [
-                                                                  "Guests"
-                                                              ],
-                                                     "operationId":  "searchGuests",
-                                                     "summary":  "Search guests",
-                                                     "description":  "Searches by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Merged profiles (`status=merged`) are excluded from results.",
-                                                     "x-roles":  [
-                                                                     "R-1",
-                                                                     "R-4"
-                                                                 ],
-                                                     "x-uc":  [
-                                                                  "UC-2"
-                                                              ],
-                                                     "parameters":  [
-                                                                        {
-                                                                            "name":  "q",
-                                                                            "in":  "query",
-                                                                            "required":  true,
-                                                                            "description":  "Phone, email, card, or name",
-                                                                            "schema":  {
-                                                                                           "type":  "string",
-                                                                                           "minLength":  2,
-                                                                                           "maxLength":  200
-                                                                                       }
-                                                                        },
-                                                                        {
-                                                                            "$ref": "../components/parameters.json#/Page"
-                                                                        },
-                                                                        {
-                                                                            "$ref": "../components/parameters.json#/PageSize"
-                                                                        }
-                                                                    ],
-                                                     "responses":  {
-                                                                       "200":  {
-                                                                                   "description":  "Search result page",
-                                                                                   "content":  {
-                                                                                                   "application/json":  {
-                                                                                                                            "schema":  {
-                                                                                                                                           "$ref": "../components/schemas/guests.json#/GuestPage"
-                                                                                                                                       }
-                                                                                                                        }
-                                                                                               }
-                                                                               },
-                                                                       "400":  {
-                                                                                   "$ref": "../components/responses.json#/BadRequest"
-                                                                               },
-                                                                       "401":  {
-                                                                                   "$ref": "../components/responses.json#/Unauthorized"
-                                                                               },
-                                                                       "403":  {
-                                                                                   "$ref": "../components/responses.json#/Forbidden"
-                                                                               }
-                                                                   }
-                                                 }
-                                     },
-                  "/api/v1/guests/{id}":  {
-                                              "parameters":  [
-                                                                 {
-                                                                     "$ref": "../components/parameters.json#/IdPath"
-                                                                 }
-                                                             ],
-                                              "get":  {
-                                                          "tags":  [
-                                                                       "Guests"
-                                                                   ],
-                                                          "operationId":  "getGuest",
-                                                          "summary":  "Unified guest profile",
-                                                          "description":  "Returns identifiers, the number of visited tenants (`tenantCount`), segments, and feed aggregates. If the guest was absorbed by a merge, the 200 response contains `mergedIntoId` and the UI redirects to the current profile.",
-                                                          "x-roles":  [
-                                                                          "R-1",
-                                                                          "R-4"
-                                                                      ],
-                                                          "x-uc":  [
-                                                                       "UC-2"
-                                                                   ],
-                                                          "responses":  {
-                                                                            "200":  {
-                                                                                        "description":  "Guest profile",
-                                                                                        "content":  {
-                                                                                                        "application/json":  {
-                                                                                                                                 "schema":  {
-                                                                                                                                                "$ref": "../components/schemas/guests.json#/GuestProfile"
-                                                                                                                                            }
-                                                                                                                             }
-                                                                                                    }
-                                                                                    },
-                                                                            "401":  {
-                                                                                        "$ref": "../components/responses.json#/Unauthorized"
-                                                                                    },
-                                                                            "403":  {
-                                                                                        "$ref": "../components/responses.json#/Forbidden"
-                                                                                    },
-                                                                            "404":  {
-                                                                                        "$ref": "../components/responses.json#/NotFound"
-                                                                                    }
-                                                                        }
-                                                      },
-                                              "delete":  {
-                                                             "tags":  [
-                                                                          "Guests"
-                                                                      ],
-                                                             "operationId":  "deleteGuest",
-                                                             "summary":  "Soft-delete a guest",
-                                                             "description":  "Sets `status=deleted` and `deletedAt`. There is no hard delete: events and identifiers are preserved for reversibility and audit.",
-                                                             "x-roles":  [
-                                                                             "R-4"
-                                                                         ],
-                                                             "x-uc":  [
-                                                                          "UC-2"
-                                                                      ],
-                                                             "responses":  {
-                                                                               "204":  {
-                                                                                           "$ref": "../components/responses.json#/NoContent"
-                                                                                       },
-                                                                               "401":  {
-                                                                                           "$ref": "../components/responses.json#/Unauthorized"
-                                                                                       },
-                                                                               "403":  {
-                                                                                           "$ref": "../components/responses.json#/Forbidden"
-                                                                                       },
-                                                                               "404":  {
-                                                                                           "$ref": "../components/responses.json#/NotFound"
-                                                                                       }
-                                                                           }
-                                                         }
-                                          },
-                  "/api/v1/guests/{id}/events":  {
-                                                     "parameters":  [
-                                                                        {
-                                                                            "$ref": "../components/parameters.json#/IdPath"
-                                                                        }
-                                                                    ],
-                                                     "get":  {
-                                                                 "tags":  [
-                                                                              "Guests"
-                                                                          ],
-                                                                 "operationId":  "listGuestEvents",
-                                                                 "summary":  "Guest event feed",
-                                                                 "description":  "Sorted by `occurredAt` descending. Each record contains type, tenant, project, date, and amount.",
-                                                                 "x-roles":  [
-                                                                                 "R-1",
-                                                                                 "R-4"
-                                                                             ],
-                                                                 "x-uc":  [
-                                                                              "UC-2",
-                                                                              "UC-6"
-                                                                          ],
-                                                                 "parameters":  [
-                                                                                    {
-                                                                                        "$ref": "../components/parameters.json#/Page"
-                                                                                    },
-                                                                                    {
-                                                                                        "$ref": "../components/parameters.json#/PageSize"
-                                                                                    },
-                                                                                    {
-                                                                                        "name":  "from",
-                                                                                        "in":  "query",
-                                                                                        "schema":  {
-                                                                                                       "type":  "string",
-                                                                                                       "format":  "date-time"
-                                                                                                   }
-                                                                                    },
-                                                                                    {
-                                                                                        "name":  "to",
-                                                                                        "in":  "query",
-                                                                                        "schema":  {
-                                                                                                       "type":  "string",
-                                                                                                       "format":  "date-time"
-                                                                                                   }
-                                                                                    },
-                                                                                    {
-                                                                                        "name":  "tenant_id",
-                                                                                        "in":  "query",
-                                                                                        "schema":  {
-                                                                                                       "type":  "string"
-                                                                                                   }
-                                                                                    }
-                                                                                ],
-                                                                 "responses":  {
-                                                                                   "200":  {
-                                                                                               "description":  "Event page",
-                                                                                               "content":  {
-                                                                                                               "application/json":  {
-                                                                                                                                        "schema":  {
-                                                                                                                                                       "$ref": "../components/schemas/events.json#/EventPage"
-                                                                                                                                                   }
-                                                                                                                                    }
-                                                                                                           }
-                                                                                           },
-                                                                                   "401":  {
-                                                                                               "$ref": "../components/responses.json#/Unauthorized"
-                                                                                           },
-                                                                                   "403":  {
-                                                                                               "$ref": "../components/responses.json#/Forbidden"
-                                                                                           },
-                                                                                   "404":  {
-                                                                                               "$ref": "../components/responses.json#/NotFound"
-                                                                                           }
-                                                                               }
-                                                             }
-                                                 },
-                  "/api/v1/guests/{id}/contacts":  {
-                                                       "parameters":  [
-                                                                          {
-                                                                              "$ref": "../components/parameters.json#/IdPath"
-                                                                          }
-                                                                      ],
-                                                       "get":  {
-                                                                   "tags":  [
-                                                                                "Guests"
-                                                                            ],
-                                                                   "operationId":  "listGuestContacts",
-                                                                   "summary":  "Guest contact history",
-                                                                   "description":  "`contact_log` records across all exports. The control group is not logged as contacts.",
-                                                                   "x-roles":  [
-                                                                                   "R-1",
-                                                                                   "R-4"
-                                                                               ],
-                                                                   "x-uc":  [
-                                                                                "UC-2",
-                                                                                "UC-10"
-                                                                            ],
-                                                                   "parameters":  [
-                                                                                      {
-                                                                                          "$ref": "../components/parameters.json#/Page"
-                                                                                      },
-                                                                                      {
-                                                                                          "$ref": "../components/parameters.json#/PageSize"
-                                                                                      }
-                                                                                  ],
-                                                                   "responses":  {
-                                                                                     "200":  {
-                                                                                                 "description":  "Contact page",
-                                                                                                 "content":  {
-                                                                                                                 "application/json":  {
-                                                                                                                                          "schema":  {
-                                                                                                                                                         "$ref": "../components/schemas/events.json#/ContactLogPage"
-                                                                                                                                                     }
-                                                                                                                                      }
-                                                                                                             }
-                                                                                             },
-                                                                                     "401":  {
-                                                                                                 "$ref": "../components/responses.json#/Unauthorized"
-                                                                                             },
-                                                                                     "403":  {
-                                                                                                 "$ref": "../components/responses.json#/Forbidden"
-                                                                                             },
-                                                                                     "404":  {
-                                                                                                 "$ref": "../components/responses.json#/NotFound"
-                                                                                             }
-                                                                                 }
-                                                               }
-                                                   }
+  "paths": {
+    "/api/v1/guests": {
+      "get": {
+        "tags": ["Guests"],
+        "operationId": "searchGuests",
+        "summary": "Search guests",
+        "description": "Searches by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Merged profiles (`status=merged`) are excluded from results.",
+        "x-roles": ["R-1", "R-4"],
+        "x-uc": ["UC-2"],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "Phone, email, card, or name",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200
+            }
+          },
+          {
+            "$ref": "../components/parameters.json#/Page"
+          },
+          {
+            "$ref": "../components/parameters.json#/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search result page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/guests.json#/GuestPage"
+                }
               }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/guests/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Guests"],
+        "operationId": "getGuest",
+        "summary": "Unified guest profile",
+        "description": "Returns identifiers, the number of visited tenants (`tenantCount`), segments, and feed aggregates. If the guest was absorbed by a merge, the 200 response contains `mergedIntoId` and the UI redirects to the current profile.",
+        "x-roles": ["R-1", "R-4"],
+        "x-uc": ["UC-2"],
+        "responses": {
+          "200": {
+            "description": "Guest profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/guests.json#/GuestProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Guests"],
+        "operationId": "deleteGuest",
+        "summary": "Soft-delete a guest",
+        "description": "Sets `status=deleted` and `deletedAt`. There is no hard delete: events and identifiers are preserved for reversibility and audit.",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-2"],
+        "responses": {
+          "204": {
+            "$ref": "../components/responses.json#/NoContent"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/guests/{id}/events": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Guests"],
+        "operationId": "listGuestEvents",
+        "summary": "Guest event feed",
+        "description": "Sorted by `occurredAt` descending. Each record contains type, tenant, project, date, and amount.",
+        "x-roles": ["R-1", "R-4"],
+        "x-uc": ["UC-2", "UC-6"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/Page"
+          },
+          {
+            "$ref": "../components/parameters.json#/PageSize"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/events.json#/EventPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/guests/{id}/contacts": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Guests"],
+        "operationId": "listGuestContacts",
+        "summary": "Guest contact history",
+        "description": "`contact_log` records across all exports. The control group is not logged as contacts.",
+        "x-roles": ["R-1", "R-4"],
+        "x-uc": ["UC-2", "UC-10"],
+        "parameters": [
+          {
+            "$ref": "../components/parameters.json#/Page"
+          },
+          {
+            "$ref": "../components/parameters.json#/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/events.json#/ContactLogPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    }
+  }
 }

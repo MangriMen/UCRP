@@ -4,15 +4,15 @@
 
 ## Хранилища данных
 
-| ID | Хранилище | Таблицы ER | Пишут процессы | Читают процессы |
-|---|---|---|---|---|
-| D1 | Профили и события | `guest`, `guest_identifier`, `event` | P1.2 (event), P1.3 | P2, P3, P4, P5 |
-| D2 | Справочники | `tenant`, `tenant_category`, `tenant_category_relation`, `project`, `event_type`, `data_source_type`, `data_source` | P5 (администрирование R-4) | P1, P3, P4, P5 |
-| D3 | Идентичность | `merge_candidate`, `unmerge_block` | P1.3, P1.4 | P1.4, P5 |
-| D4 | Импорт | `import_batch`, `rejected_row`, файлы `BlobStore` | P1.1, P1.2 | P1.2, P5 |
-| D5 | Сегменты и рекомендации | `segment`, `segment_version`, `segment_member`, `recommendation`, `recommendation_factor`, `campaign` | P2, P3 | P2, P3, P4 |
-| D6 | Выгрузки и контакты | `export_job`, `export_member`, `contact_limit`, `contact_log` | P4 | P4, P5 |
-| D7 | Очередь, аудит, доступ (в диаграммах «Очередь и аудит») | `app_user`, `audit_log`, `job_queue` | все процессы (аудит), P0 | P0, P1.2, P1.3, P2, P3, P5 |
+| ID  | Хранилище                                               | Таблицы ER                                                                                                          | Пишут процессы             | Читают процессы            |
+| --- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------- | -------------------------- |
+| D1  | Профили и события                                       | `guest`, `guest_identifier`, `event`                                                                                | P1.2 (event), P1.3         | P2, P3, P4, P5             |
+| D2  | Справочники                                             | `tenant`, `tenant_category`, `tenant_category_relation`, `project`, `event_type`, `data_source_type`, `data_source` | P5 (администрирование R-4) | P1, P3, P4, P5             |
+| D3  | Идентичность                                            | `merge_candidate`, `unmerge_block`                                                                                  | P1.3, P1.4                 | P1.4, P5                   |
+| D4  | Импорт                                                  | `import_batch`, `rejected_row`, файлы `BlobStore`                                                                   | P1.1, P1.2                 | P1.2, P5                   |
+| D5  | Сегменты и рекомендации                                 | `segment`, `segment_version`, `segment_member`, `recommendation`, `recommendation_factor`, `campaign`               | P2, P3                     | P2, P3, P4                 |
+| D6  | Выгрузки и контакты                                     | `export_job`, `export_member`, `contact_limit`, `contact_log`                                                       | P4                         | P4, P5                     |
+| D7  | Очередь, аудит, доступ (в диаграммах «Очередь и аудит») | `app_user`, `audit_log`, `job_queue`                                                                                | все процессы (аудит), P0   | P0, P1.2, P1.3, P2, P3, P5 |
 
 ## DFD-0. Контекстная диаграмма (уровень 0)
 
@@ -40,14 +40,14 @@ flowchart LR
 
 Пояснение. Платформа — единый процесс между шестью внешними сущностями. Данные входят от арендаторов (файлы и API) и аналитика (решения, справочники), выходят маркетологу, управляющему, аналитику и провайдерам; посетитель (R-5) внешней сущностью DFD не является, поскольку напрямую с системой не взаимодействует (он получает сообщение от провайдера). Арендатор имеет ровно один входящий и один исходящий поток: запрос своих агрегатов и обезличенный ответ; этот контур изолирован фильтром `tenant_id` из токена.
 
-| Элемент | Go-пакет / слой | React-модуль | API-контракт |
-|---|---|---|---|
-| Поток TS → P0 | `internal/ingestion` | `features/import` | `POST /imports`, ответ системы арендатора при `connector.pull` |
-| R-4 ↔ P0 | `service.ImportService`, `IdentityService`, `ReferenceService` | `features/import`, `profiles`, `admin`, `dq` | `/imports*`, `/merge-candidates*`, `/data-sources*`, `/data-quality/*` |
-| R-1 ↔ P0 | `service.SegmentService`, `ExportService`, `ProfileService` | `features/segments`, `export`, `recommendations`, `profiles` | `/segments*`, `/exports*`, `/contact-limits*`, `/guests*` |
-| R-2 ↔ P0 | `DashboardService`, `UserService`, `AuditService` | `features/dashboard`, `admin` | `/dashboard/*`, `/users*`, `/audit-logs` |
-| R-3 ↔ P0 | `TenantAggregateService` | `features/tenant` | `GET /tenants/{id}/aggregates` (own) |
-| P0 → PRV | `internal/export` | `features/export` | `GET /exports/{id}/download`, `GET /exports/{id}/members` |
+| Элемент       | Go-пакет / слой                                                | React-модуль                                                 | API-контракт                                                           |
+| ------------- | -------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Поток TS → P0 | `internal/ingestion`                                           | `features/import`                                            | `POST /imports`, ответ системы арендатора при `connector.pull`         |
+| R-4 ↔ P0      | `service.ImportService`, `IdentityService`, `ReferenceService` | `features/import`, `profiles`, `admin`, `dq`                 | `/imports*`, `/merge-candidates*`, `/data-sources*`, `/data-quality/*` |
+| R-1 ↔ P0      | `service.SegmentService`, `ExportService`, `ProfileService`    | `features/segments`, `export`, `recommendations`, `profiles` | `/segments*`, `/exports*`, `/contact-limits*`, `/guests*`              |
+| R-2 ↔ P0      | `DashboardService`, `UserService`, `AuditService`              | `features/dashboard`, `admin`                                | `/dashboard/*`, `/users*`, `/audit-logs`                               |
+| R-3 ↔ P0      | `TenantAggregateService`                                       | `features/tenant`                                            | `GET /tenants/{id}/aggregates` (own)                                   |
+| P0 → PRV      | `internal/export`                                              | `features/export`                                            | `GET /exports/{id}/download`, `GET /exports/{id}/members`              |
 
 ## DFD-1A. Уровень 1: приём и идентификация
 
@@ -83,13 +83,13 @@ flowchart LR
 
 Пояснение. Файл или событие API проходят цепочку 1.1→1.2→1.3, где границы между процессами проходят через очередь (хранилище D7), что совпадает с SD-2 и SD-3. Процесс 1.2 пишет события в D1 без привязки и ошибки в D4; 1.3 ищет и объединяет профили (AD-2), автосклейки и спорные пары фиксирует в D3. Процесс 1.4 — действия R-4 над D3; разъединение возвращает данные по `origin_guest_id` и создаёт запрет. В D7 записывается аудит любого изменения профилей; после привязки 1.3 ставит `segment.recompute` и `recommend.refresh` (потоки в DFD-1B).
 
-| Элемент | Go-пакет / слой | React-модуль | API-контракт |
-|---|---|---|---|
-| 1.1 Приём | `service.ImportService`, `internal/ingestion` | `features/import` | `POST /imports`, `POST /data-sources/{id}/sync` |
-| 1.2 Обработка строк | `internal/ingestion` (pipeline) | `features/import` (RejectedTable) | очередь `import.process`; `GET /imports/{id}`, `/rejected-rows` |
-| 1.3 Привязка | `internal/identity` | — | очередь `identity.resolve`, `identity.rematch` |
-| 1.4 Разбор склеек | `service.IdentityService` | `features/profiles` | `POST /merge-candidates/{id}/confirm|reject|revert` |
-| D1/D2/D3/D4/D7 | `internal/repository` | — | таблицы по списку выше |
+| Элемент             | Go-пакет / слой                               | React-модуль                      | API-контракт                                                    |
+| ------------------- | --------------------------------------------- | --------------------------------- | --------------------------------------------------------------- |
+| 1.1 Приём           | `service.ImportService`, `internal/ingestion` | `features/import`                 | `POST /imports`, `POST /data-sources/{id}/sync`                 |
+| 1.2 Обработка строк | `internal/ingestion` (pipeline)               | `features/import` (RejectedTable) | очередь `import.process`; `GET /imports/{id}`, `/rejected-rows` |
+| 1.3 Привязка        | `internal/identity`                           | —                                 | очередь `identity.resolve`, `identity.rematch`                  |
+| 1.4 Разбор склеек   | `service.IdentityService`                     | `features/profiles`               | `POST /merge-candidates/{id}/confirm                            | reject | revert` |
+| D1/D2/D3/D4/D7      | `internal/repository`                         | —                                 | таблицы по списку выше                                          |
 
 ## DFD-1B. Уровень 1: сегменты, рекомендации, выгрузка, аналитика
 
@@ -129,25 +129,26 @@ flowchart LR
 
 Пояснение. Процесс 2 строит сегменты (предпросмотр читает D1 напрямую, SD-4; пересчёт запускается заданием `segment.recompute` из D7; состав материализуется в D5), процесс 3 пересчитывает рекомендации по заданию из D7 (AD-4), процесс 4 читает состав из D5, контакты и лимиты из D6, пишет выгрузку и отдаёт получателей провайдеру (SD-5, AD-5). Процесс 5 строит метрики и сводки: R-2 получает сводные данные, R-3 получает только агрегаты своего арендатора; в процесс 5 для R-3 не доходит ни одной строки гостя: репозиторий применяет `WHERE tenant_id = claim`, малые ячейки скрываются (k=5). Данные D6 (журнал контактов) нужны одновременно лимитам и расчёту конверсии, поэтому читаются процессами 4 и 5. Диаграмма разделена на два уровня-листа ради лимита узлов; аудит и R-4 в ней не показаны (см. DFD-1A).
 
-| Элемент | Go-пакет / слой | React-модуль | API-контракт |
-|---|---|---|---|
-| P2 Сегменты и профиль | `internal/segments`, `service.SegmentService`, `ProfileService` | `features/segments`, `profiles` | `POST /segments/preview`, `POST /segments`, `GET /guests/{id}` |
-| P3 Рекомендации | `internal/recommend`, `service.RecommendationService` | `features/recommendations` | очередь `recommend.refresh`, `GET /guests/{id}/recommendations` |
-| P4 Выгрузка | `internal/export`, `ExportService`, `ContactLimitService` | `features/export` | `POST /exports`, `/exports/{id}/download|members`, `/contact-limits` |
-| P5 Аналитика | `DashboardService`, `TenantAggregateService`, `DataQualityService`, `CampaignService` | `features/dashboard`, `tenant`, `dq`, `export` (кампании) | `/dashboard/*`, `GET /tenants/{id}/aggregates`, `/data-quality/*`, `GET /campaigns/{id}/results` |
-| D5, D6 | `SegmentRepo`, `RecommendationRepo`, `ExportRepo`, `ContactLogRepo` | — | таблицы по списку выше |
+| Элемент               | Go-пакет / слой                                                                       | React-модуль                                              | API-контракт                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| P2 Сегменты и профиль | `internal/segments`, `service.SegmentService`, `ProfileService`                       | `features/segments`, `profiles`                           | `POST /segments/preview`, `POST /segments`, `GET /guests/{id}`                                   |
+| P3 Рекомендации       | `internal/recommend`, `service.RecommendationService`                                 | `features/recommendations`                                | очередь `recommend.refresh`, `GET /guests/{id}/recommendations`                                  |
+| P4 Выгрузка           | `internal/export`, `ExportService`, `ContactLimitService`                             | `features/export`                                         | `POST /exports`, `/exports/{id}/download                                                         | members`, `/contact-limits` |
+| P5 Аналитика          | `DashboardService`, `TenantAggregateService`, `DataQualityService`, `CampaignService` | `features/dashboard`, `tenant`, `dq`, `export` (кампании) | `/dashboard/*`, `GET /tenants/{id}/aggregates`, `/data-quality/*`, `GET /campaigns/{id}/results` |
+| D5, D6                | `SegmentRepo`, `RecommendationRepo`, `ExportRepo`, `ContactLogRepo`                   | —                                                         | таблицы по списку выше                                                                           |
 
 ## Сверка потоков
 
-| DFD-поток | Sequence | C4 |
-|---|---|---|
-| TS → 1.1 → D4/D7 | SD-2, SD-3 | L2: SPA/API → БД, Worker → HTTP pull |
-| 1.2 → D1/D4 | SD-2 (worker) | L3a: `ingestion` → `repository` |
-| 1.3, 1.4 ↔ D1, D3 | SD-6 | L3a, L4 identity |
-| R-1 → P2 → D5 | SD-4 | L3a: `segments` |
-| P4 → D6, PRV | SD-5 | L2: PRV → API (members) |
-| R-3 ↔ P5 | SD-7 | L1, L2, L3a: RequireRole + ForTenant |
-| D7 (аудит, очередь) | SD-1…SD-6 | L2: БД с `job_queue` |
+| DFD-поток           | Sequence      | C4                                   |
+| ------------------- | ------------- | ------------------------------------ |
+| TS → 1.1 → D4/D7    | SD-2, SD-3    | L2: SPA/API → БД, Worker → HTTP pull |
+| 1.2 → D1/D4         | SD-2 (worker) | L3a: `ingestion` → `repository`      |
+| 1.3, 1.4 ↔ D1, D3   | SD-6          | L3a, L4 identity                     |
+| R-1 → P2 → D5       | SD-4          | L3a: `segments`                      |
+| P4 → D6, PRV        | SD-5          | L2: PRV → API (members)              |
+| R-3 ↔ P5            | SD-7          | L1, L2, L3a: RequireRole + ForTenant |
+| D7 (аудит, очередь) | SD-1…SD-6     | L2: БД с `job_queue`                 |
 
 ## Чекпойнт
+
 Создано: DFD-0, DFD-1A, DFD-1B; процессы P0, P1.1–P1.4, P2–P5; хранилища D1…D7 (покрывают все 27 таблиц DDL); внешние сущности TS, R-1…R-4, PRV. Решения: D-28 (BlobStore в D4); вопросы: Q-24.
