@@ -197,7 +197,7 @@ N-37, N-38, N-39 нереализуемы без тестового режима
 | HTTP-клиент   | `net/http` + тонкая обёртка                | без внешних зависимостей                                                                               |
 | Проверка схем | `github.com/santhosh-tekuri/jsonschema/v6` | валидирует ответы по `docs/openapi.json`                                                               |
 | Фикстуры      | SQL через `database/sql` + `pgx`           | справочники нельзя создать через API (G2)                                                              |
-| Окружение     | `docker compose` (Postgres + api + worker) | уже есть `apps/api/docker/docker-compose.yml`                                                          |
+| Окружение     | `docker compose` (Postgres + api + worker) | уже есть `deploy/docker-compose.yml` + `deploy/docker-compose.dev.yml`                                 |
 | Отчёт         | `go test -json` → JUnit через `gotestsum`  | пригодно для CI                                                                                        |
 
 Альтернатива (если нужен единый JS-стек): **Vitest + `openapi-fetch`** в
@@ -252,7 +252,7 @@ UCRP_E2E_OPENAPI       путь к docs/openapi.json
 Запуск:
 
 ```sh
-docker compose -f apps/api/docker/docker-compose.yml up -d db
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up -d db
 cd apps/api && go test ./e2e/... -race -count=1
 ```
 
