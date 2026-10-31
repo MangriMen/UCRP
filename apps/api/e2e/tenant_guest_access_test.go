@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -193,4 +194,106 @@ func TestTenantGuestDataAccess(t *testing.T) {
 	s.RequireStatus(revoked, 200, "revoke tenant grant")
 	get(tenantClient, profilePath, 403)
 	get(tenantClient, eventsPath, 403)
+}
+
+func TestTenantAggregateMetrics_TenantRoleSeesOnlyGrantedMetrics(t *testing.T) {
+	s := harness.New(t).WithDB()
+	w := buildWorld(t, s, "tenant-metric-access")
+	seedTenantPurchases(t, s, w, "tenant-metric-access")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+	manager, err := s.Reg.User(ctx, "tenant-metric-manager", "manager", "")
+	if err != nil {
+		t.Fatalf("fixture manager: %v", err)
+	}
+	tenant, err := s.Reg.User(ctx, "tenant-metric-user", "tenant", w.tenantA.ID)
+	if err != nil {
+		t.Fatalf("fixture tenant: %v", err)
+	}
+	t.Cleanup(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cleanupCancel()
+		for _, query := range []string{
+			`DELETE FROM access_grant_item WHERE grant_id IN (SELECT id FROM access_grant WHERE subject_type = 'tenant' AND subject_id = $1)`,
+			`DELETE FROM access_grant_scope WHERE grant_id IN (SELECT id FROM access_grant WHERE subject_type = 'tenant' AND subject_id = $1)`,
+			`DELETE FROM audit_log WHERE entity_id IN (SELECT id FROM access_grant WHERE subject_type = 'tenant' AND subject_id = $1)`,
+			`DELETE FROM access_grant WHERE subject_type = 'tenant' AND subject_id = $1`,
+		} {
+			if err := s.DB.Exec(cleanupCtx, query, w.tenantA.ID); err != nil {
+				t.Errorf("cleanup access fixture: %v", err)
+			}
+		}
+		if err := s.DB.Exec(cleanupCtx, `DELETE FROM audit_log WHERE actor_user_id IN ($1,$2)`, manager.ID, tenant.ID); err != nil {
+			t.Errorf("cleanup access audit: %v", err)
+		}
+		if err := s.DB.Exec(cleanupCtx, `UPDATE access_policy_state SET version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = 1`); err != nil {
+			t.Errorf("invalidate access policy after fixture cleanup: %v", err)
+		}
+	})
+
+	managerClient := s.As(manager.Email, manager.Password)
+	tenantClient := s.As(tenant.Email, tenant.Password)
+	now := time.Now().UTC()
+	grant := func(want int, permissions ...string) {
+		t.Helper()
+		items := make([]map[string]string, 0, len(permissions))
+		for _, permission := range permissions {
+			items = append(items, map[string]string{"permission": permission, "effect": "allow"})
+		}
+		resp, err := managerClient.Post(ctx, "/api/v1/access/grants", map[string]any{
+			"subjectType": "tenant", "subjectId": w.tenantA.ID, "status": "active",
+			"validFrom": now.Add(-time.Minute).Format(time.RFC3339), "validTo": now.Add(time.Hour).Format(time.RFC3339),
+			"reason": "E2E tenant metrics", "items": items,
+			"scopes": []map[string]string{{"type": "tenant", "value": w.tenantA.ID}},
+		})
+		if err != nil {
+			t.Fatalf("create tenant grant: %v", err)
+		}
+		s.RequireStatus(resp, want, "create tenant grant")
+	}
+	aggregates := func(path string, query url.Values, want int) map[string]any {
+		t.Helper()
+		resp, err := tenantClient.Get(ctx, path, query)
+		if err != nil {
+			t.Fatalf("GET %s: %v", path, err)
+		}
+		s.RequireStatus(resp, want, "GET "+path+" as tenant")
+		if want != 200 {
+			return nil
+		}
+		s.RequireSchema("GET", "/api/v1/tenants/{id}/aggregates", resp)
+		return jsonObject(t, resp, "tenant aggregates")
+	}
+	ownPath := "/api/v1/tenants/" + w.tenantA.ID + "/aggregates"
+
+	grant(400, "tenant.aggregates.own", "metric.visits_count.read", "metric.revenue_total.read")
+	grant(201, "tenant.aggregates.own", "metric.visits_count.read")
+	body := aggregates(ownPath, lastWeek(), 200)
+	if v, _ := harness.IntField(body, "visitsCount"); v != 10 {
+		t.Fatalf("granted visits must be visible: %v", body)
+	}
+	for _, field := range []string{"repeatVisitsCount", "revenueTotalMinor", "avgCheckMinor", "firstPurchasesCount", "newGuestsCount"} {
+		if body[field] != nil {
+			t.Fatalf("%s is not granted and must be null: %v", field, body)
+		}
+	}
+	series, _ := body["series"].([]any)
+	for _, raw := range series {
+		point, _ := raw.(map[string]any)
+		if point["repeatVisitsCount"] != nil || point["revenueTotalMinor"] != nil {
+			t.Fatalf("an ungranted daily value leaked: %v", point)
+		}
+	}
+	aggregates(ownPath, url.Values{"metrics": {"repeat_visits"}}, 403)
+	aggregates(ownPath, url.Values{"metrics": {"revenue_total"}}, 403)
+	aggregates("/api/v1/tenants/"+w.tenantB.ID+"/aggregates", lastWeek(), 403)
+
+	grant(201, "metric.repeat_visits.read")
+	body = aggregates(ownPath, lastWeek(), 200)
+	if v, _ := harness.IntField(body, "repeatVisitsCount"); v != 5 {
+		t.Fatalf("granted repeat visits must be visible: %v", body)
+	}
+	if body["revenueTotalMinor"] != nil || body["avgCheckMinor"] != nil {
+		t.Fatalf("money stays outside the tenant role: %v", body)
+	}
 }

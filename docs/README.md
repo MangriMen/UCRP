@@ -26,7 +26,7 @@ Rule of thumb: a document that describes the system as it is or must be goes to 
 | `requirements/02-glossary.md`            | Roles R-1…R-6, entities E-1…E-21 and T-1…T-3, terms, metrics |
 | `requirements/03-use-cases.md`           | Use case diagrams and the UC-1…UC-21 table                   |
 | `requirements/04-user-stories.md`        | US-1…US-11 with Given/When/Then criteria                     |
-| `requirements/00-open-questions.md`      | Questions Q-1…Q-32 and decisions D-1…D-38 with their status  |
+| `requirements/00-open-questions.md`      | Questions Q-1…Q-34 and decisions D-1…D-38 with their status  |
 
 ## Design
 

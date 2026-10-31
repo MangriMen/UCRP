@@ -205,33 +205,6 @@ func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*Me
 	return out, nil
 }
 
-type TenantAggregateResponse struct {
-	NewGuests  int  `json:"newGuests"`
-	Suppressed bool `json:"suppressed"`
-}
-
-func (s *AnalyticsService) TenantAggregates(ctx context.Context, tenantID string, claimTenantID string, role domain.Role) (*TenantAggregateResponse, error) {
-	if role == domain.RoleTenant {
-		if claimTenantID == "" || claimTenantID != tenantID {
-			return nil, domain.ErrForbidden
-		}
-	}
-	var n int
-	err := s.db.QueryRowContext(ctx, `
-		SELECT COUNT(DISTINCT e.guest_id)
-		FROM event e
-		JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
-		WHERE e.tenant_id = $1 AND e.guest_id IS NOT NULL`, tenantID).Scan(&n)
-	if err != nil {
-		return nil, err
-	}
-	const k = 5
-	if n < k {
-		return &TenantAggregateResponse{NewGuests: 0, Suppressed: true}, nil
-	}
-	return &TenantAggregateResponse{NewGuests: n}, nil
-}
-
 type DataQualityItem struct {
 	DataSourceID           string  `json:"dataSourceId"`
 	Name                   string  `json:"name"`

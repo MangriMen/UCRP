@@ -14,6 +14,10 @@ import (
 const (
 	visitsMetric          = "metric.visits_count.read"
 	newGuestsMetric       = "metric.new_guests_via_mall.read"
+	repeatVisitsMetric    = "metric.repeat_visits.read"
+	revenueMetric         = "metric.revenue_total.read"
+	avgCheckMetric        = "metric.avg_check.read"
+	firstPurchaseMetric   = "metric.first_purchase_new_tenant.read"
 	minSuppressionK       = 5
 	defaultTenantPageSize = 50
 )

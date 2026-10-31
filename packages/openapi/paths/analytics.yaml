@@ -66,7 +66,7 @@ paths:
         - Analytics
       operationId: getTenantAggregates
       summary: Tenant aggregates
-      description: A tenant with tenant.aggregates.own can request only its own tenant. Without metric.visits_count.read the response is empty. With that permission the response has `visitsCount`, `suppressed` and a day-by-day `series` for the requested period; `guestsCount` accompanies `visitsCount`; `newGuestsCount` is filled with metric.new_guests_via_mall.read. A value is null when the number of distinct guests behind it is below the effective k threshold (at least 5). Without `from` and `to` the totals cover all time and `series` is empty; a period is limited to 366 days.
+      description: A tenant with tenant.aggregates.own can request only its own tenant. Without metric.visits_count.read the response is empty. With that permission the response has `visitsCount`, `suppressed` and a day-by-day `series` for the requested period; `guestsCount` accompanies `visitsCount`; `newGuestsCount` (metric.new_guests_via_mall.read), `repeatVisitsCount` (metric.repeat_visits.read), `revenueTotalMinor` (metric.revenue_total.read), `avgCheckMinor` (metric.avg_check.read) and `firstPurchasesCount` (metric.first_purchase_new_tenant.read) are filled only with their permission. A value is null when the number of distinct guests behind it is below the effective k threshold (at least 5). Without `from` and `to` the totals cover all time and `series` is empty; a period is limited to 366 days.
       x-roles:
         - R-3 (own)
         - R-2
@@ -92,7 +92,7 @@ paths:
         - name: metrics
           in: query
           required: false
-          description: Explicitly request visits_count. Unsupported or unauthorized metrics return 403.
+          description: Comma-separated metrics that must be present, by name (`visits_count`, `new_guests_via_mall`, `repeat_visits`, `revenue_total`, `avg_check`, `first_purchase_new_tenant`) or permission code. Unsupported or unauthorized metrics return 403 `metric_not_granted`.
           schema:
             type: string
       responses:

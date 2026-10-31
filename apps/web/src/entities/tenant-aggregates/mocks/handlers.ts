@@ -11,6 +11,10 @@ export const mockAggregate: TenantVisitAggregate = {
   visitsCount: null,
   guestsCount: null,
   newGuestsCount: null,
+  repeatVisitsCount: null,
+  revenueTotalMinor: null,
+  avgCheckMinor: null,
+  firstPurchasesCount: null,
   suppressed: true,
   suppressionThreshold: SUPPRESSION_THRESHOLD,
   series: [],
@@ -26,6 +30,8 @@ function buildSeries(from: string, to: string): TenantAggregateDay[] {
       date: new Date(time).toISOString().slice(0, 10),
       visitsCount: index % 5 === 0 ? null : 10 + index,
       newGuestsCount: index % 3 === 0 ? null : 5 + (index % 4),
+      repeatVisitsCount: index % 5 === 0 ? null : 5 + (index % 6),
+      revenueTotalMinor: index % 4 === 0 ? null : 150_000 + index * 2_500,
     })
   }
   return days
@@ -39,7 +45,11 @@ function buildAggregate(from: string | null, to: string | null): TenantVisitAggr
     visitsCount: 130,
     guestsCount: 48,
     newGuestsCount: 21,
-    suppressed: false,
+    repeatVisitsCount: 82,
+    revenueTotalMinor: 4_512_000,
+    avgCheckMinor: null,
+    firstPurchasesCount: 17,
+    suppressed: true,
     suppressionThreshold: SUPPRESSION_THRESHOLD,
     series,
   }

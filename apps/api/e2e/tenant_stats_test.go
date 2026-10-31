@@ -301,3 +301,110 @@ func TestTenantCreate_RejectsInvalidReferences(t *testing.T) {
 		s.RequireStatus(resp, 400, "POST /api/v1/tenants with "+name)
 	}
 }
+
+func purchaseEventTypeID(t *testing.T, s *harness.Suite) string {
+	t.Helper()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+	var id string
+	if err := s.DB.DB.QueryRowContext(ctx, `SELECT id FROM event_type WHERE code = 'purchase'`).Scan(&id); err != nil {
+		t.Fatalf("purchase event type: %v", err)
+	}
+	return id
+}
+
+func seedTenantPurchases(t *testing.T, s *harness.Suite, w *world, suffix string) {
+	t.Helper()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+	purchaseType := purchaseEventTypeID(t, s)
+	yesterday := time.Now().UTC().AddDate(0, 0, -1)
+	for i := 0; i < 5; i++ {
+		regular, err := s.Reg.Guest(ctx, suffix+"-regular-"+strconv.Itoa(i))
+		if err != nil {
+			t.Fatalf("fixture guest: %v", err)
+		}
+		w.visit(t, s, regular.ID, w.tenantA.ID, suffix+"-old-"+strconv.Itoa(i), 30)
+		w.visit(t, s, regular.ID, w.tenantA.ID, suffix+"-again-"+strconv.Itoa(i), 2)
+
+		buyer, err := s.Reg.Guest(ctx, suffix+"-buyer-"+strconv.Itoa(i))
+		if err != nil {
+			t.Fatalf("fixture guest: %v", err)
+		}
+		amount := int64(1000 * (i + 1))
+		if _, err := s.Reg.Event(ctx, buyer.ID, w.tenantA.ID, purchaseType, w.source.ID, suffix+"-buy-"+strconv.Itoa(i), yesterday, &amount); err != nil {
+			t.Fatalf("fixture purchase: %v", err)
+		}
+	}
+	lone, err := s.Reg.Guest(ctx, suffix+"-lone")
+	if err != nil {
+		t.Fatalf("fixture guest: %v", err)
+	}
+	amount := int64(7000)
+	if _, err := s.Reg.Event(ctx, lone.ID, w.tenantB.ID, purchaseType, w.source.ID, suffix+"-lone", yesterday, &amount); err != nil {
+		t.Fatalf("fixture purchase: %v", err)
+	}
+}
+
+func lastWeek() url.Values {
+	now := time.Now().UTC()
+	return url.Values{"from": {now.AddDate(0, 0, -6).Format("2006-01-02")}, "to": {now.Format("2006-01-02")}}
+}
+
+func TestTenantAggregates_ReportsRepeatVisitsRevenueAndFirstPurchases(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	w := buildWorld(t, s, "tenant-money")
+	seedTenantPurchases(t, s, w, "tenant-money")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := s.API.Get(ctx, "/api/v1/tenants/"+w.tenantA.ID+"/aggregates", lastWeek())
+	if err != nil {
+		t.Fatalf("GET /api/v1/tenants/{id}/aggregates: %v", err)
+	}
+	s.RequireStatus(resp, 200, "GET /api/v1/tenants/{id}/aggregates with purchase metrics")
+	s.RequireSchema("GET", "/api/v1/tenants/{id}/aggregates", resp)
+
+	aggregate := jsonObject(t, resp, "tenant aggregate")
+	for field, want := range map[string]int{
+		"visitsCount": 10, "guestsCount": 10, "repeatVisitsCount": 5,
+		"revenueTotalMinor": 15000, "avgCheckMinor": 3000, "firstPurchasesCount": 5,
+	} {
+		if got, ok := harness.IntField(aggregate, field); !ok || got != want {
+			t.Fatalf("%s = %v, want %d: %s", field, aggregate[field], want, resp.Snippet())
+		}
+	}
+	if aggregate["suppressed"] != false {
+		t.Fatalf("every value has at least five guests behind it: %s", resp.Snippet())
+	}
+	purchaseDay := time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02")
+	repeatDay := time.Now().UTC().AddDate(0, 0, -2).Format("2006-01-02")
+	series, _ := aggregate["series"].([]any)
+	for _, raw := range series {
+		point, _ := raw.(map[string]any)
+		day := harness.StringField(point, "date")
+		revenue, hasRevenue := harness.IntField(point, "revenueTotalMinor")
+		if day == purchaseDay && (!hasRevenue || revenue != 15000) {
+			t.Fatalf("%s must show the revenue of five buyers: %v", day, point)
+		}
+		repeats, hasRepeats := harness.IntField(point, "repeatVisitsCount")
+		if day == repeatDay && (!hasRepeats || repeats != 5) {
+			t.Fatalf("%s must show five repeat visits: %v", day, point)
+		}
+	}
+
+	lone, err := s.API.Get(ctx, "/api/v1/tenants/"+w.tenantB.ID+"/aggregates", lastWeek())
+	if err != nil {
+		t.Fatalf("GET aggregates of a tenant with one buyer: %v", err)
+	}
+	s.RequireStatus(lone, 200, "GET /api/v1/tenants/{id}/aggregates with one buyer")
+	small := jsonObject(t, lone, "small tenant aggregate")
+	for _, field := range []string{"revenueTotalMinor", "avgCheckMinor", "firstPurchasesCount", "visitsCount"} {
+		if small[field] != nil {
+			t.Fatalf("one buyer is below k = 5, %s must be null: %s", field, lone.Snippet())
+		}
+	}
+	if small["suppressed"] != true {
+		t.Fatalf("a suppressed aggregate must say so: %s", lone.Snippet())
+	}
+}

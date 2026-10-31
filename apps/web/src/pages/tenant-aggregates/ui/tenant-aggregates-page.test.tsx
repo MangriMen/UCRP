@@ -10,7 +10,8 @@ vi.mock('@/entities/user', () => ({
   useAuth: () => ({
     user: { tenantId: auth.tenantId },
     role: 'tenant',
-    can: (permission: string) => permission === 'metric.new_guests_via_mall.read',
+    can: (permission: string) =>
+      ['metric.new_guests_via_mall.read', 'metric.repeat_visits.read'].includes(permission),
   }),
 }))
 
@@ -33,6 +34,8 @@ describe('TenantAggregatesPage', () => {
     expect(await screen.findByText('Часть значений скрыта')).toBeInTheDocument()
     expect(screen.getByTestId('visits-count')).toHaveTextContent('меньше 5')
     expect(screen.getByTestId('new-guests-count')).toHaveTextContent('меньше 5')
+    expect(screen.getByTestId('repeat-visits-count')).toHaveTextContent('меньше 5')
+    expect(screen.queryByTestId('revenue-total')).not.toBeInTheDocument()
   })
 
   it('does not query anything without a session tenant', () => {
