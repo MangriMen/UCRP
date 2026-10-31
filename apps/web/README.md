@@ -8,7 +8,6 @@ bun run dev:mock   # dev server with MSW mocks, no backend needed
 bun run test       # Vitest
 bun run lint       # Oxlint
 bun run build      # type-check and production build
-bun run gen:api    # regenerate src/shared/api/schema.d.ts from docs/openapi.json
 ```
 
-API types are generated from the OpenAPI contract; after changing `packages/openapi/`, run `gen:api` and commit the result.
+API types come from `@ucrp/api-types`, generated from the OpenAPI contract (`packages/openapi`) by turbo before `dev`, `build`, `lint` and `test`. They are never committed.

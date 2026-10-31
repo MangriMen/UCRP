@@ -90,10 +90,11 @@ Inside a slice the segments `ui/ api/ model/ mocks/ lib/` are created as needed;
 
 ## 4. Shared packages (`packages/`)
 
-| Package             | Purpose                                                       |
-| ------------------- | ------------------------------------------------------------- |
-| `packages/openapi`  | OpenAPI contract (YAML), the source of truth for the REST API |
-| `packages/api-docs` | Swagger UI built from `packages/openapi` (`bun run docs`)     |
+| Package              | Purpose                                                              |
+| -------------------- | -------------------------------------------------------------------- |
+| `packages/openapi`   | OpenAPI contract (YAML), the source of truth for the REST API        |
+| `packages/api-types` | TypeScript types generated from the OpenAPI contract (not committed) |
+| `packages/api-docs`  | Swagger UI built from `packages/openapi` (`bun run docs`)            |
 
 A new package goes to `packages/` only if **two or more** applications use it. Otherwise the code lives inside the application.
 
@@ -126,6 +127,6 @@ Test names describe the expected behavior and the condition: `TestMerge_RejectsC
 1. **Do not bloat the tree.** Add a file only when an existing one became unreadable (over ~400 lines) or a new cohesive module appeared.
 2. **Respect the dependency direction.** Importing `repository` from `service` or `handler` is an error even if it compiles.
 3. **Do not change visibility for tests.** Use tests in the same package.
-4. **The API contract source of truth is `packages/openapi/`.** When changing an endpoint, update the spec and regenerate the frontend types (`gen:api` in `apps/web`).
+4. **The API contract source of truth is `packages/openapi/`.** When changing an endpoint, update the spec; the frontend types in `packages/api-types` are generated and never committed.
 5. **Do not add a dependency** without checking that the standard library or an existing package does not already cover it.
 6. **Code without comments and without slop**: `AGENTS.md` plus the `code-simplification` skill.
