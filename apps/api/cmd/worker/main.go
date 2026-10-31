@@ -13,6 +13,7 @@ import (
 	"github.com/MangriMen/UCRP/internal/identity"
 	"github.com/MangriMen/UCRP/internal/platform/config"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
+	"github.com/MangriMen/UCRP/internal/platform/kev"
 	"github.com/MangriMen/UCRP/internal/platform/logging"
 	"github.com/MangriMen/UCRP/internal/platform/queue"
 	"github.com/MangriMen/UCRP/internal/platform/storage"
@@ -80,7 +81,20 @@ func run(log *slog.Logger, cfg config.Config) error {
 	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), q)
 	recommender := recommend.NewWeightedRecommender(store.DB, cfg.Recommend)
 	presence := repository.NewPresenceSQL(store.DB)
-	jobTypes := []string{"import.process", "connector.pull", "identity.resolve", "segment.recompute", "recommend.refresh"}
+	var evaluator *recommend.Evaluator
+	if cfg.Kev.BaseURL != "" {
+		evaluator = recommend.NewEvaluator(
+			repository.NewEventSQL(store.DB),
+			repository.NewRecommendationSQL(store.DB),
+			repository.NewRecommendationEvalSQL(store.DB),
+			presence,
+			kev.New(cfg.Kev.BaseURL, cfg.Kev.Timeout),
+		)
+		log.Info("kev evaluator enabled", "base_url", cfg.Kev.BaseURL)
+	} else {
+		log.Info("kev evaluator disabled")
+	}
+	jobTypes := []string{"import.process", "connector.pull", "identity.resolve", "segment.recompute", "recommend.refresh", "recommend.evaluate"}
 	maxAttempts := 3
 	expiryCtx, cancelExpiry := context.WithCancel(ctx)
 	defer cancelExpiry()
@@ -113,7 +127,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		}
 
 		log.Info("job taken", "id", job.ID, "type", job.JobType)
-		if err := handleJob(ctx, imports, resolver, segmentSvc, segmentRepo, recommender, presence, q, job); err != nil {
+		if err := handleJob(ctx, imports, resolver, segmentSvc, segmentRepo, recommender, evaluator, presence, q, job); err != nil {
 			log.Error("job failed", "id", job.ID, "type", job.JobType, "err", err)
 			if job.Attempts >= maxAttempts {
 				if failErr := q.Fail(ctx, job.ID, err.Error(), time.Time{}); failErr != nil {
@@ -140,6 +154,7 @@ func handleJob(
 	segmentSvc *service.SegmentService,
 	segmentRepo domain.SegmentRepo,
 	recommender *recommend.WeightedRecommender,
+	evaluator *recommend.Evaluator,
 	presence *repository.PresenceSQL,
 	q domain.Queue,
 	job *domain.Job,
@@ -179,14 +194,36 @@ func handleJob(
 		if payload.GuestID == "" {
 			return domain.ErrValidation
 		}
-		_, err := recommender.Refresh(ctx, payload.GuestID)
-		return err
+		if _, err := recommender.Refresh(ctx, payload.GuestID); err != nil {
+			return err
+		}
+		return enqueueRecommendEvaluate(ctx, q, payload.GuestID)
+	case "recommend.evaluate":
+		if payload.GuestID == "" {
+			return domain.ErrValidation
+		}
+		if evaluator == nil {
+			return nil
+		}
+		return evaluator.Evaluate(ctx, payload.GuestID)
 	default:
 		if payload.BatchID == "" {
 			return domain.ErrValidation
 		}
 		return imports.ProcessBatch(ctx, payload.BatchID)
 	}
+}
+
+func enqueueRecommendEvaluate(ctx context.Context, q domain.Queue, guestID string) error {
+	payload, err := json.Marshal(map[string]string{"guest_id": guestID})
+	if err != nil {
+		return err
+	}
+	return q.Enqueue(ctx, domain.Job{
+		JobType:  "recommend.evaluate",
+		Payload:  string(payload),
+		DedupKey: "eval:" + guestID,
+	})
 }
 
 func enqueueRecommendRefreshForBatch(ctx context.Context, presence *repository.PresenceSQL, q domain.Queue, batchID string) error {

@@ -8,6 +8,7 @@ x-environment: &environment
   UCRP_LOG_LEVEL: '${UCRP_LOG_LEVEL:-info}'
   UCRP_ADMIN_EMAIL: '${UCRP_ADMIN_EMAIL:-}'
   UCRP_ADMIN_PASSWORD: '${UCRP_ADMIN_PASSWORD:-}'
+  UCRP_KEV_BASE_URL: '${UCRP_KEV_BASE_URL:-http://kev4b:8080}'
 
 services:
   db:
@@ -63,6 +64,20 @@ services:
     depends_on:
       api:
         condition: service_healthy
+
+  kev4b:
+    image: ghcr.io/mangrimen/ucrp/kev-4b:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://127.0.0.1:8080/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 6g
 
 volumes:
   ucrp_pg:

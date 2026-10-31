@@ -56,6 +56,38 @@ func (r *EventSQL) ListByGuest(ctx context.Context, guestID string, limit, offse
 	return out, rows.Err()
 }
 
+func (r *EventSQL) ActionLog(ctx context.Context, guestID string, limit int) ([]domain.GuestActionLogEntry, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT e.occurred_at, t.name, et.code, e.amount_minor, e.currency
+		FROM event e
+		JOIN tenant t ON t.id = e.tenant_id
+		JOIN event_type et ON et.id = e.event_type_id
+		WHERE e.guest_id = $1
+		ORDER BY e.occurred_at DESC
+		LIMIT $2`, guestID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]domain.GuestActionLogEntry, 0)
+	for rows.Next() {
+		var entry domain.GuestActionLogEntry
+		var amount sql.NullInt64
+		if err := rows.Scan(&entry.OccurredAt, &entry.TenantName, &entry.EventType, &amount, &entry.Currency); err != nil {
+			return nil, err
+		}
+		if amount.Valid {
+			v := amount.Int64
+			entry.AmountMinor = &v
+		}
+		out = append(out, entry)
+	}
+	return out, rows.Err()
+}
+
 func (r *EventSQL) Insert(ctx context.Context, e *domain.Event) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO event (
