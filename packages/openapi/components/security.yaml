@@ -1,0 +1,10 @@
+bearerAuth:
+  type: http
+  scheme: bearer
+  bearerFormat: JWT
+  description: 'Access token (TTL 15 min). Claims: sub (userId), role (marketer | manager | tenant | analyst | system), tenantId (required for the tenant role), exp.'
+cookieAuth:
+  type: apiKey
+  in: cookie
+  name: refresh_token
+  description: Refresh token in an httpOnly cookie, issued by POST /auth/login, used only by POST /auth/refresh.

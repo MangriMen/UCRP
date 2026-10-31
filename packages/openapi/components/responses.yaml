@@ -1,0 +1,56 @@
+NoContent:
+  description: Operation completed, no body
+BadRequest:
+  description: Request validation error (400)
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse
+Unauthorized:
+  description: Token missing, expired, or signature invalid (401)
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse
+Forbidden:
+  description: Role not allowed for this operation, or foreign tenant (403)
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse
+NotFound:
+  description: Resource not found (404)
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse
+Conflict:
+  description: 'State conflict: contact limit, duplicate, busy resource, already resolved merge (409)'
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse
+PayloadTooLarge:
+  description: File too large or more than 100,000 rows (413)
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse
+UnprocessableEntity:
+  description: 'Semantically invalid file: format, encoding, missing required columns (422)'
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse
+TooManyRequests:
+  description: Rate limit exceeded (429)
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse
+GatewayTimeout:
+  description: Operation deadline exceeded (504)
+  content:
+    application/json:
+      schema:
+        $ref: ./schemas/common.yaml#/ErrorResponse

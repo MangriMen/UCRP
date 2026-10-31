@@ -59,7 +59,7 @@ func New(t *testing.T) *Suite {
 	})
 
 	if cfg.BaseURL == "" {
-		t.Skip("UCRP_E2E_BASE_URL is not set: start the API and export the E2E environment (docs/e2e/05-implementation.md)")
+		t.Skip("UCRP_E2E_BASE_URL is not set: start the API and export the E2E environment (see apps/api/README.md, e2e/run.sh)")
 	}
 	s.API = client.New(cfg.BaseURL, cfg.RequestTimeout)
 
@@ -77,7 +77,7 @@ func (s *Suite) WithDB() *Suite {
 		return s
 	}
 	if s.Cfg.DatabaseURL == "" {
-		s.T.Skip("UCRP_E2E_DATABASE_URL is not set: fixtures need direct database access (docs/e2e/05-implementation.md)")
+		s.T.Skip("UCRP_E2E_DATABASE_URL is not set: fixtures need direct database access (see apps/api/README.md, e2e/run.sh)")
 	}
 	db, err := fixtures.OpenDB(context.Background(), s.Cfg.DatabaseURL)
 	if err != nil {
@@ -312,7 +312,7 @@ func loadConfig() Config {
 		DatabaseURL:    os.Getenv("UCRP_E2E_DATABASE_URL"),
 		AdminEmail:     os.Getenv("UCRP_E2E_ADMIN_EMAIL"),
 		AdminPassword:  os.Getenv("UCRP_E2E_ADMIN_PASSWORD"),
-		OpenAPIPath:    getenv("UCRP_E2E_OPENAPI", "../../../docs/openapi.json"),
+		OpenAPIPath:    getenv("UCRP_E2E_OPENAPI", "../../../packages/api-docs/dist/openapi.json"),
 		RunID:          getenv("UCRP_E2E_RUN_ID", randomRunID()),
 		RequestTimeout: 30 * time.Second,
 		ImportTimeout:  60 * time.Second,

@@ -1,0 +1,127 @@
+TenantGuestIdentifier:
+  type: object
+  required:
+    - id
+    - guestId
+    - idType
+    - valueNormalized
+    - createdAt
+  properties:
+    id:
+      type: string
+    guestId:
+      type: string
+    idType:
+      type: string
+    valueNormalized:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+TenantGuestProfile:
+  type: object
+  required:
+    - id
+    - displayName
+    - status
+    - firstSeenAt
+    - identifiers
+    - tenants
+    - segments
+  properties:
+    id:
+      type: string
+    displayName:
+      type: string
+      nullable: true
+      description: "Always null: no tenant-specific name provenance is recorded."
+    status:
+      type: string
+      enum:
+        - active
+    firstSeenAt:
+      type: string
+      format: date-time
+    identifiers:
+      type: array
+      items:
+        $ref: ./tenant-guest.yaml#/TenantGuestIdentifier
+    tenants:
+      type: array
+      items:
+        type: string
+      maxItems: 0
+    segments:
+      type: array
+      items:
+        type: string
+      maxItems: 0
+TenantGuestEvent:
+  type: object
+  required:
+    - id
+    - eventTypeId
+    - tenantId
+    - projectId
+    - externalId
+    - occurredAt
+    - amountMinor
+    - currency
+  properties:
+    id:
+      type: string
+    eventTypeId:
+      type: string
+    tenantId:
+      type: string
+    projectId:
+      type: string
+      nullable: true
+    externalId:
+      type: string
+      nullable: true
+    occurredAt:
+      type: string
+      format: date-time
+    amountMinor:
+      type: integer
+      format: int64
+      nullable: true
+    currency:
+      type: string
+      nullable: true
+TenantGuestEvents:
+  type: object
+  required:
+    - items
+  properties:
+    items:
+      type: array
+      items:
+        $ref: ./tenant-guest.yaml#/TenantGuestEvent
+TenantVisitAggregate:
+  type: object
+  description: Only present when metric.visits_count.read is granted; suppressed if fewer than k distinct guests.
+  required:
+    - visitsCount
+    - suppressed
+  properties:
+    visitsCount:
+      type: integer
+      nullable: true
+    suppressed:
+      type: boolean
+EmptyTenantAggregate:
+  type: object
+  maxProperties: 0
+  description: No metric permission granted.
+ManagementTenantAggregate:
+  type: object
+  required:
+    - newGuests
+    - hidden
+  properties:
+    newGuests:
+      type: integer
+    hidden:
+      type: boolean

@@ -1,0 +1,163 @@
+paths:
+  /api/v1/dashboard/penetration:
+    get:
+      tags:
+        - Analytics
+      operationId: getPenetration
+      summary: Guest distribution by tenant count and its trend
+      description: For active guests, counts the number of distinct `event.tenantId` values among events of types with `countsAsPresence`. Returns the 1 / 2 / 3+ distribution and the share of guests with two or more tenants. The period must not exceed 24 months and `from <= to`, otherwise 400.
+      x-roles:
+        - R-2
+        - R-1
+        - R-4
+      x-uc:
+        - UC-7
+      parameters:
+        - $ref: ../components/parameters.yaml#/From
+        - $ref: ../components/parameters.yaml#/To
+        - $ref: ../components/parameters.yaml#/Granularity
+      responses:
+        '200':
+          description: Distribution and trend
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/analytics.yaml#/PenetrationReport
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+  /api/v1/dashboard/metrics:
+    get:
+      tags:
+        - Analytics
+      operationId: getDashboardMetrics
+      summary: Key platform metrics
+      description: Match rate (target ≥ 70%), disputed merge share (< 1%), segment → export time (median and p95, target ≤ 5 min), campaign conversion (≥ 3%), visit lift. All metrics are computed by queries over the ER tables; there are no dedicated metric tables.
+      x-roles:
+        - R-2
+        - R-1
+        - R-4
+      x-uc:
+        - UC-7
+      parameters:
+        - $ref: ../components/parameters.yaml#/From
+        - $ref: ../components/parameters.yaml#/To
+      responses:
+        '200':
+          description: Metrics for the period
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/analytics.yaml#/DashboardMetrics
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+  /api/v1/tenants/{id}/aggregates:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Analytics
+      operationId: getTenantAggregates
+      summary: Tenant aggregates
+      description: A tenant with tenant.aggregates.own can request only its own tenant. Without metric.visits_count.read the response is empty. With that permission, the response contains visits_count and suppressed; visits_count is null when the number of distinct guests is below the effective k threshold (at least 5).
+      x-roles:
+        - R-3 (own)
+        - R-2
+        - R-1
+        - R-4
+      x-uc:
+        - UC-8
+      parameters:
+        - name: metrics
+          in: query
+          required: false
+          description: Explicitly request visits_count. Unsupported or unauthorized metrics return 403.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tenant aggregates
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: ../components/schemas/tenant-guest.yaml#/TenantVisitAggregate
+                  - $ref: ../components/schemas/tenant-guest.yaml#/EmptyTenantAggregate
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+  /api/v1/data-quality/sources:
+    get:
+      tags:
+        - Analytics
+      operationId: listDataQualitySources
+      summary: Data quality by source
+      description: 'For each source: name, last import and pending merge count when at least five distinct guests are represented. Rejected rate and warning remain suppressed because rejected rows cannot be linked to distinct guests.'
+      x-roles:
+        - R-4
+        - R-2
+      x-uc:
+        - UC-9
+      responses:
+        '200':
+          description: Sources with quality metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - meta
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: ../components/schemas/analytics-tenant.yaml#/DataQualityListItem
+                  meta:
+                    $ref: ../components/schemas/common.yaml#/PageMeta
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+  /api/v1/data-quality/sources/{id}:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Analytics
+      operationId: getDataQualitySource
+      summary: Source details and trend
+      description: Chart of rejected rows per import and links to specific imports. A source without imports is a valid state with empty series, not an error.
+      x-roles:
+        - R-4
+        - R-2
+      x-uc:
+        - UC-9
+      parameters:
+        - $ref: ../components/parameters.yaml#/From
+        - $ref: ../components/parameters.yaml#/To
+      responses:
+        '200':
+          description: Source quality details
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/analytics-tenant.yaml#/DataQualitySourceDetail
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound

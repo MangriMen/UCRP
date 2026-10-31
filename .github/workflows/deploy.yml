@@ -68,8 +68,6 @@ jobs:
             web:
               - 'apps/web/**'
               - 'packages/api-docs/**'
-              - 'docs/openapi.json'
-              - 'docs/openapi/**'
               - 'deploy/web/**'
               - 'package.json'
               - 'bun.lock'

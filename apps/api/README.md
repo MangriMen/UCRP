@@ -1,116 +1,52 @@
-# apps/api — Go backend (UCRP)
+# apps/api
 
-Модуль: `github.com/MangriMen/UCRP`.
-Слои: `handler → service → domain ← repository`; capability-пакеты зависят только от `domain` / `platform/*`.
-Правила — `docs/ARCHITECTURE.md`, дерево — `docs/appendix/go-package-tree.md`, API — `docs/appendix/endpoint-registry.md`.
+Go backend for UCRP: HTTP API (`cmd/api`), background workers (`cmd/worker`) and a demo data generator (`cmd/seed`). Module: `github.com/MangriMen/UCRP`.
 
-## Структура
+Layering and dependency rules are in [ARCHITECTURE.md](../../ARCHITECTURE.md). The API contract is `packages/openapi/`; the data model is explained in `docs/design/05-er-data-model.md`.
 
-```text
-apps/api/
-├── cmd/api/            HTTP-сервер
-├── cmd/worker/         воркеры + планировщик
-├── internal/
-│   ├── domain/         сущности, ошибки, интерфейсы репозиториев и портов
-│   ├── handler/        HTTP + dto/
-│   ├── service/        сценарии
-│   ├── repository/     SQL + sqlstore/
-│   ├── ingestion/      конвейер импорта + connector/
-│   ├── identity/       резолвер склеек + normalize/
-│   ├── segments/       DSL правил, evaluator
-│   ├── recommend/      скоринг + factors/
-│   ├── export/         каналы и форматы выгрузки
-│   └── platform/       auth, httpx, queue, cache, storage, config, logging, scheduler
-├── migrations/         goose (common/ + postgres/)
-```
-
-## Команды
+## Commands
 
 ```sh
 cd apps/api
 go build ./...
-go run ./cmd/api      # scaffold
-go run ./cmd/worker
 go test ./...
+go run ./cmd/api
+go run ./cmd/worker
 ```
 
-Демонстрационные данные:
+End-to-end tests against a running API live in `e2e/` (`e2e/run.sh` or `e2e/run.ps1`). Reports are written to `apps/api/e2e-report.xml` and `apps/api/e2e-contract-drift.md` and are git-ignored.
 
-```sh
-cd apps/api
-go run ./cmd/seed -dsn "postgres://ucrp:ucrp@127.0.0.1:5543/ucrp?sslmode=disable"
-go run ./cmd/seed -guests 300   # количество фоновых гостей (10..2000)
-go run ./cmd/seed -reset       # удалить только демо-данные
-```
+The contract is read from a bundled JSON. The run scripts build it with `bun run --cwd packages/api-docs bundle:json` into `packages/api-docs/dist/openapi.json` (the default of `UCRP_E2E_OPENAPI`) unless `UCRP_E2E_OPENAPI` is already set. When you run `go test ./e2e/...` directly, build the bundle first or point `UCRP_E2E_OPENAPI` at one. The source spec is `packages/openapi`; `docs/openapi.json` no longer exists.
 
-Подробности — в `seed/README.md`.
-
-Docker:
+Docker (see `deploy/`), from the repository root:
 
 ```sh
 cp deploy/.env.example deploy/.env
 docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up --build
-# API: http://localhost:8080/healthz
 ```
 
-## Базовые зависимости
+The API then answers on `http://localhost:8080/healthz`.
 
-Выбор продиктован архитектурой (SQLite → PG, очередь на таблице, JWT, без CGO в Docker).
-В `go.mod` подключаются **после первого импорта** в коде; здесь — согласованный список.
+## Migrations
 
-| Пакет                                                      | Зачем                                                                                     | Где в системе                          |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------- |
-| `github.com/go-chi/chi/v5`                                 | Лёгкий роутер + middleware (RequireRole, timeouts)                                        | `handler`, `platform/httpx`            |
-| `github.com/mattn/go-sqlite3` **или** `modernc.org/sqlite` | SQLite (старт). Предпочтительнее **modernc** — pure Go, без CGO, проще Docker multi-stage | `repository/sqlstore`                  |
-| `github.com/jackc/pgx/v5`                                  | PostgreSQL (цель), пул соединений                                                         | `repository/sqlstore`                  |
-| `github.com/golang-jwt/jwt/v5`                             | Access/refresh JWT (claims: sub, role, tenant_id)                                         | `platform/auth`                        |
-| `golang.org/x/crypto`                                      | bcrypt хэши паролей                                                                       | `platform/auth`, `service.UserService` |
-| `github.com/google/uuid`                                   | UUIDv7 (NewV7) — идентификаторы из приложения (D-1)                                       | `domain` / `platform` (IDGen)          |
-| `github.com/pressly/goose/v3`                              | Миграции (13 файлов, common + postgres)                                                   | `migrations`, `cmd/*`                  |
-| `golang.org/x/sync`                                        | `errgroup` — параллельные чанки импорта (≤4 горутины)                                     | `ingestion`                            |
-| `github.com/xuri/excelize/v2`                              | Чтение XLSX наравне с CSV (US-1)                                                          | `ingestion/connector`                  |
-| `github.com/stretchr/testify`                              | assert/require/mock — тесты service и repository                                          | `*_test.go`                            |
+The backend currently runs on PostgreSQL only (`pgx`, goose dialect `postgres`). Goose files live in `migrations/common/` (written as portable SQL) and `migrations/postgres/` (PostgreSQL-only steps). Files are named `NNNNN_name.sql` with `-- +goose Up` and `-- +goose Down` blocks. An applied migration is never edited; add a new one.
 
-**Из stdlib (без внешних пакетов):** `net/http` (или chi поверх), `database/sql`, `encoding/csv`, `encoding/json`, `log/slog`, `context`, `time`, `os`.
+## Configuration
 
-**Не берём на старте:** ORMs, GraphQL, Redis, Kafka/NATS (очередь — таблица `job_queue`), собственный mailer/SMS (отдаём CSV/API провайдеру).
+| Variable                                  | Purpose                                                                 |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| `UCRP_HTTP_ADDR`                          | Listen address, for example `:8080`                                     |
+| `UCRP_DATABASE_URL`                       | `sqlite://...` or `postgres://...`                                      |
+| `UCRP_JWT_SECRET`                         | JWT signing key                                                         |
+| `UCRP_UPLOAD_DIR`                         | Directory for uploaded import files                                     |
+| `UCRP_LOG_LEVEL`                          | `debug` to `error`                                                      |
+| `UCRP_BOOTSTRAP_MANAGER_EMAIL`            | Email of the first manager, used only when no manager exists            |
+| `UCRP_BOOTSTRAP_MANAGER_PASSWORD`         | Password of the first manager; must be set together with the email      |
+| `UCRP_ADMIN_EMAIL`, `UCRP_ADMIN_PASSWORD` | Initial administrator used by `cmd/api` and `deploy/docker-compose.yml` |
+| `UCRP_RECOMMEND_*`                        | Recommender weights and windows, see `internal/platform/config`         |
 
-### Пороги и константы (из docs, не из внешних библиотек)
+Bootstrap runs once: on a database without managers it creates the account and a personal data grant. Any existing manager, even an inactive one, disables it, and a restart never restores a revoked grant. Keep the password in environment secrets. A separate PostgreSQL bootstrap test can be pointed at a database with `UCRP_BOOTSTRAP_TEST_DATABASE_URL`; it creates and drops an isolated schema.
 
-| Константа                   | Значение                               | Источник                  |
-| --------------------------- | -------------------------------------- | ------------------------- |
-| Лимит строк импорта         | 100_000 → 413                          | US-1, реестр              |
-| Порог автосклейки           | score ≥ 80                             | AD-2, Q-12                |
-| Порог скрытия ячеек R-3     | k = 5                                  | US-8, DFD                 |
-| Окно атрибуции по умолчанию | 14 дней                                | campaign.attribution_days |
-| Таймаут preview сегмента    | 10 с → 504                             | US-3, SD-4                |
-| Синхронная выгрузка         | 25 с; >20k членов → 202 `export.build` | AD-5, Q-23                |
-| Опрос UI                    | import 2 с; segments/reco 5 с          | US-1, US-6                |
+## Demo data
 
-## Env (см. `.env.example` в корне)
-
-| Переменная          | Назначение                                      |
-| ------------------- | ----------------------------------------------- |
-| `UCRP_HTTP_ADDR`    | напр. `:8080`                                   |
-| `UCRP_DATABASE_URL` | `sqlite:///data/ucrp.db` → позже `postgres://…` |
-| `UCRP_JWT_SECRET`   | подпись JWT                                     |
-| `UCRP_UPLOAD_DIR`   | BlobStore (D-28)                                |
-| `UCRP_LOG_LEVEL`    | debug…error                                     |
-| `UCRP_BOOTSTRAP_MANAGER_EMAIL` | Email первого управляющего УК, если в базе ещё нет менеджеров |
-| `UCRP_BOOTSTRAP_MANAGER_PASSWORD` | Пароль первого управляющего УК; задаётся вместе с email |
-
-Обе переменные bootstrap необязательны, но должны быть заданы вместе. При первом запуске на базе без менеджеров создаются учётная запись и персональный грант на данные; операция выполняется один раз. Наличие любого менеджера, включая неактивного, отключает bootstrap. Повторный запуск не восстанавливает отозванный грант. Пароль храните в секретах окружения, не добавляйте его в Git. Для отдельного PostgreSQL-теста bootstrap можно задать `UCRP_BOOTSTRAP_TEST_DATABASE_URL`; тест создаёт и удаляет изолированную схему.
-
-## Docker
-
-Сборка и деплой — в `deploy/` (`api/Dockerfile`, `web/Dockerfile`, `docker-compose.yml`, `docker-compose.dev.yml` для локальной сборки).
-Образ без root (uid 10001), CGO off, healthcheck на `/healthz`.
-
-## Статус
-
-- [x] Дерево пакетов по `go-package-tree.md`
-- [x] `go.mod` (`github.com/MangriMen/UCRP`), заглушки `cmd/*`, package docs
-- [x] Dockerfile + compose в `deploy/`
-- [x] `migrations/ddl.sql` — копия `docs/appendix/ddl.sql` (source of truth в docs)
-- [ ] Реализация слоёв (по этапам / базовому промпту)
-- [ ] goose-файлы `migrations/common/00001_…` по `migrations-plan.md`
+`cmd/seed` fills the database with synthetic tenants, guests, events, segments, recommendations, campaigns and exports. See [seed/README.md](seed/README.md).

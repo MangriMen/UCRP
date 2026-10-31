@@ -1,0 +1,190 @@
+paths:
+  /api/v1/imports:
+    post:
+      tags:
+        - Imports
+      operationId: createImport
+      summary: Upload a source file
+      description: |-
+        Accepts a multipart request, streams the sha256, and creates an `ImportBatch` with status `queued`, enqueuing the `import.process` job (`dedupKey = import:{batchId}`) in the same transaction as the audit record. The 202 response returns immediately and the UI polls `GET /imports/{id}` every 2 s.
+
+        If the same file (sha256) was already uploaded for this source, a 200 is returned with the existing `batchId` and `duplicate=true`, and no new events are created.
+
+        Limits: up to 100,000 rows; an unsupported format or missing required columns per the mapping → 422 without creating events.
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-1
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - data_source_id
+                - file
+              properties:
+                data_source_id:
+                  type: string
+                  description: Source identifier (E-5)
+                file:
+                  type: string
+                  format: binary
+                  description: CSV or XLSX, UTF-8
+      responses:
+        '200':
+          description: 'Duplicate file: the existing import is returned'
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/imports.yaml#/ImportAccepted
+        '202':
+          description: File accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/imports.yaml#/ImportAccepted
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '413':
+          $ref: ../components/responses.yaml#/PayloadTooLarge
+        '422':
+          $ref: ../components/responses.yaml#/UnprocessableEntity
+    get:
+      tags:
+        - Imports
+      operationId: listImports
+      summary: List imports
+      x-roles:
+        - R-4
+        - R-2
+      x-uc:
+        - UC-1
+        - UC-9
+      parameters:
+        - name: data_source_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: ../components/schemas/imports.yaml#/ImportStatus
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
+      responses:
+        '200':
+          description: Import page
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/imports.yaml#/ImportBatchPage
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+  /api/v1/imports/{id}:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Imports
+      operationId: getImport
+      summary: Import status and counters
+      description: 'Invariant: `acceptedRows + rejectedRows + duplicateRows = totalRows`. Status `completed_with_errors` is set when `rejectedRows > 0`.'
+      x-roles:
+        - R-4
+        - R-2
+      x-uc:
+        - UC-1
+      responses:
+        '200':
+          description: Import
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/imports.yaml#/ImportBatch
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+  /api/v1/imports/{id}/rejected-rows:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Imports
+      operationId: listRejectedRows
+      summary: Rejected rows with reasons
+      description: 'Reason codes: `bad_date`, `no_external_id`, `bad_amount`, `unknown_event_type`, `bad_phone`. With `format=csv` a downloadable file is returned.'
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-1
+      parameters:
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - json
+              - csv
+            default: json
+      responses:
+        '200':
+          description: Rejected row page or CSV
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/imports.yaml#/RejectedRowPage
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+  /api/v1/data-sources/{id}/sync:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Imports
+      operationId: syncDataSource
+      summary: Manually trigger a pull from an API source
+      description: Enqueues a `connector.pull` job with `dedupKey = pull:{sourceId}:{window}`. If a sync for the same window is already running, returns 409 `sync_in_progress`. A file-only source returns 400.
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-14
+      responses:
+        '202':
+          description: Sync queued
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/imports.yaml#/SyncAccepted
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict

@@ -1,109 +1,40 @@
-# Демонстрационные данные
+# Demo data generator
 
-Генератор наполняет базу синтетическими данными для демонстрации UCRP: арендаторы,
-гости, события, сегменты, рекомендации, кампании и выгрузки.
+Fills the database with synthetic data for demos: tenants, guests, events, segments, recommendations, campaigns and exports.
 
-## Запуск
+## Usage
 
-```powershell
+```sh
 cd apps/api
-
-# наполнить базу (миграции применяются автоматически)
 go run ./cmd/seed -dsn "postgres://ucrp:ucrp@127.0.0.1:5543/ucrp?sslmode=disable"
-
-# посмотреть план без записи в базу
-go run ./cmd/seed -dry-run
-
-# задать количество фоновых гостей (10..2000, по умолчанию 92)
-go run ./cmd/seed -guests 300
-
-# удалить только демонстрационные данные
-go run ./cmd/seed -reset
+go run ./cmd/seed -dry-run      # print the plan without writing
+go run ./cmd/seed -guests 300   # background guests, 10..2000, default 92
+go run ./cmd/seed -reset        # delete demo data only
 ```
 
-`-dsn` можно не указывать: тогда берётся `UCRP_DATABASE_URL`.
+Without `-dsn` the value of `UCRP_DATABASE_URL` is used. Migrations are applied automatically. From the repository root: `bun run --cwd apps/api seed` and `seed:reset`.
 
-`-guests` задаёт только фоновых гостей. К ним всегда добавляются 16 сценарных
-персон, 8 объединённых и 4 удалённых профиля, поэтому итоговое число гостей
-равно `guests + 28`. События, сегменты, рекомендации и выгрузки пересчитываются
-под фактический объём.
+`-guests` sets only background guests; 16 scenario personas, 8 merged and 4 deleted profiles are always added, so the total is `guests + 28`. Events, segments, recommendations and exports scale with it.
 
-Через Bun из корня репозитория:
+## Properties
 
-```powershell
-bun run --cwd apps/api seed
-bun run --cwd apps/api seed:reset
-```
+- **Reproducible.** IDs are UUIDv5 of stable names (`ucrp-demo/tenant/cafe-bean`), so a rerun produces the same rows.
+- **Safe to rerun.** Demo rows are deleted in foreign-key order and recreated. Data created by the app or e2e tests is untouched.
+- **Consistent.** Segments are computed by `segments.SqlEvaluator`, recommendations by `recommend.WeightedRecommender`, exports by `service.ExportService`, so derived data matches the business logic.
+- **No real personal data.** Fictional names, phones in the `79…` range, emails in `demo.ucrp.test`, cards starting with `4000`.
 
-## Свойства
+After seeding, the tool prints a verification table (import row balances, segment and export counters, link integrity, no duplicates) and exits with code 1 if any check fails.
 
-- **Воспроизводимость.** Все идентификаторы — UUIDv5 от стабильных имён
-  (`ucrp-demo/tenant/cafe-bean`), поэтому повторный запуск даёт те же строки.
-- **Повторный запуск.** Перед наполнением демо-строки удаляются в порядке,
-  безопасном для внешних ключей, затем создаются заново. Данные, созданные
-  приложением или e2e-тестами, не затрагиваются.
-- **Согласованность.** Сегменты считаются тем же `segments.SqlEvaluator`,
-  рекомендации — `recommend.WeightedRecommender`, выгрузки — `service.ExportService`.
-  Производные данные не расходятся с бизнес-логикой.
-- **Без реальных персональных данных.** Имена вымышленные, телефоны в диапазоне
-  `79…`, email в домене `demo.ucrp.test`, карты начинаются с `4000`.
+## Accounts
 
-## Что создаётся
+All passwords are `demo12345`. Logins: `marketer`, `manager`, `analyst`, `tenant.cafe`, `tenant.cinema`, `tenant.fit`; email is `<login>@demo.ucrp.test`. The `analyst.old` account is disabled.
 
-| Сущность                                         | Объём                  |
-| ------------------------------------------------ | ---------------------- |
-| `tenant_category` / `tenant_category_relation`   | 12 / 16                |
-| `tenant` / `project`                             | 16 / 8                 |
-| `app_user`                                       | 7 (пароль `demo12345`) |
-| `data_source`                                    | 9                      |
-| `import_batch` / `rejected_row`                  | 12 / 10                |
-| `guest` / `guest_identifier`                     | `guests + 28` / ~1.25× |
-| `event`                                          | ~15× гостей            |
-| `merge_candidate` / `unmerge_block`              | 8 / 3                  |
-| `segment` / `segment_version` / `segment_member` | 8 / 10 / ~215          |
-| `recommendation` / `recommendation_factor`       | ~320 / ~96             |
-| `campaign` / `contact_limit`                     | 3 / 3                  |
-| `export_job` / `export_member` / `contact_log`   | 7 / ~70 / ~56          |
-| `audit_log` / `job_queue`                        | 20 / 2                 |
+## Demo scenarios
 
-## Учётные записи
+- **Sleeping neighbor, cinema.** Segment "visited the cinema, not the cafe"; an SMS export with a 33% control group shows blocking by contact limit and missing phones.
+- **Duplicates.** `g-olga` and `g-igor` share a phone and have a `pending` merge candidate.
+- **Reversal.** `g-reversal` has a purchase and its `reversal`.
+- **Newcomer.** `g-new` has no events, so recommendations fall back to tenant priorities.
+- **Churn.** `g-churn` has its last event 60 days ago.
 
-Пароль у всех — `demo12345`. Логины: `marketer`, `manager`, `analyst`,
-`tenant.cafe`, `tenant.cinema`, `tenant.fit`; email — `<логин>@demo.ucrp.test`.
-Учётная запись `analyst.old` отключена.
-
-Даты регистрации разнесены по времени: от 500 дней назад (`analyst.old`) до
-90 дней (`tenant.fit`), даты последнего входа — от сегодняшнего дня до 120 дней
-назад у отключённой учётной записи.
-
-## Сценарии для демонстрации
-
-- **Спящий сосед, кино** — сегмент «был в кино, не был в кофейне»; выгрузка SMS
-  с контролем 33 % показывает блокировку по лимиту и отсутствие телефона.
-- **Дубликаты** — `g-olga` и `g-igor` делят телефон, кандидат на объединение
-  в статусе `pending`.
-- **Возврат** — `g-reversal` содержит покупку и связанный с ней `reversal`.
-- **Новичок** — `g-new` без событий: рекомендации строятся по приоритетам.
-- **Отток** — `g-churn` с последним событием 60 дней назад.
-
-## Проверка
-
-После наполнения генератор печатает таблицу проверок (балансы строк импорта,
-счётчики сегментов и выгрузок, целостность связей, отсутствие дублей) и
-количество созданных строк. При нарушении любой проверки команда завершается
-с кодом 1.
-
-## Файлы
-
-- `cmd/seed/main.go` — CLI (`-dsn`, `-reset`, `-dry-run`, `-scale`).
-- `seed/seed.go` — оркестратор и очистка.
-- `seed/ids.go` — детерминированные идентификаторы.
-- `seed/reference.go` — категории, арендаторы, проекты, типы событий и источников.
-- `seed/users.go`, `seed/sources.go`, `seed/batches.go` — пользователи, источники, импорты.
-- `seed/guests.go`, `seed/persist_guests.go` — гости, идентификаторы, события.
-- `seed/identity.go` — кандидаты на объединение и блокировки.
-- `seed/segments.go`, `seed/recommendations.go` — сегменты и рекомендации.
-- `seed/campaigns.go`, `seed/exports.go` — кампании, лимиты, выгрузки.
-- `seed/audit.go`, `seed/jobs.go` — журнал и очередь задач.
-- `seed/verify.go` — проверки и отчёт.
-- `seed/data/*.csv` — примеры файлов для ручной загрузки через API импорта.
+Sample CSV files for manual import through the API are in `seed/data/`.

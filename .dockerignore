@@ -3,9 +3,7 @@ node_modules
 .turbo
 dist
 coverage
-docs/*
-!docs/openapi.json
-!docs/openapi
+docs
 *.md
 .env
 .env.*

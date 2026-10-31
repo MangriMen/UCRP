@@ -1,0 +1,116 @@
+paths:
+  /api/v1/projects:
+    get:
+      tags:
+        - Reference
+      operationId: listProjects
+      summary: List projects
+      x-roles:
+        - R-1
+        - R-2
+        - R-4
+      x-uc:
+        - UC-17
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
+      responses:
+        '200':
+          description: Project page
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/reference-projects.yaml#/ProjectPage
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+    post:
+      tags:
+        - Reference
+      operationId: createProject
+      summary: Create a project
+      description: The `(tenantId, code)` pair is unique — 409 `duplicate_project_code`.
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-17
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/reference-projects.yaml#/ProjectRequest
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/reference-projects.yaml#/Project
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+  /api/v1/projects/{id}:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    patch:
+      tags:
+        - Reference
+      operationId: updateProject
+      summary: Update a project
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-17
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/reference-projects.yaml#/ProjectRequest
+      responses:
+        '200':
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/reference-projects.yaml#/Project
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+    delete:
+      tags:
+        - Reference
+      operationId: deleteProject
+      summary: Delete a project
+      description: Deletion is not allowed when the project has events — 409 `project_has_events`.
+      x-roles:
+        - R-4
+      x-uc:
+        - UC-17
+      responses:
+        '204':
+          $ref: ../components/responses.yaml#/NoContent
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict

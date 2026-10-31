@@ -1,0 +1,243 @@
+paths:
+  /api/v1/access/grants:
+    get:
+      tags:
+        - Access
+      operationId: listAccessGrants
+      summary: List access grants
+      x-roles:
+        - R-2
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: ../components/schemas/access.yaml#/Grant
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+      parameters:
+        - name: subject_type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: subject_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+    post:
+      tags:
+        - Access
+      operationId: createAccessGrant
+      summary: Create an access grant
+      x-roles:
+        - R-2
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/access.yaml#/Grant
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/access.yaml#/GrantRequest
+  /api/v1/access/grants/{id}:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Access
+      operationId: getAccessGrant
+      summary: Get an access grant
+      x-roles:
+        - R-2
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/access.yaml#/Grant
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+    patch:
+      tags:
+        - Access
+      operationId: updateAccessGrant
+      summary: Update an access grant
+      x-roles:
+        - R-2
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/access.yaml#/Grant
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/access.yaml#/GrantPatch
+  /api/v1/access/grants/{id}/activate:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Access
+      operationId: activateAccessGrant
+      summary: Activate an access grant
+      x-roles:
+        - R-2
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/access.yaml#/Grant
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/access-results.yaml#/TransitionRequest
+  /api/v1/access/grants/{id}/suspend:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Access
+      operationId: suspendAccessGrant
+      summary: Suspend an access grant
+      x-roles:
+        - R-2
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/access.yaml#/Grant
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/access-results.yaml#/TransitionRequest
+  /api/v1/access/grants/{id}/revoke:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Access
+      operationId: revokeAccessGrant
+      summary: Revoke an access grant
+      x-roles:
+        - R-2
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/access.yaml#/Grant
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/access-results.yaml#/TransitionRequest

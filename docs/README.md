@@ -1,73 +1,55 @@
-# Единая рекомендательная клиентская платформа для ТЦ: проектная документация
+# Documentation
 
-Итоговый документ собран из файлов этой папки по структуре раздела 5 плана. Стек: Go (`handler → service → repository`), React + Vite + TypeScript, SQLite с переходом на PostgreSQL, миграции goose. Код приложения на этом этапе не пишется: только текст, таблицы, диаграммы Mermaid, DDL, схемы контрактов и деревья каталогов.
+Project documentation for UCRP, a unified recommendation platform for shopping centers. The documents are written in Russian; READMEs are in English.
 
-**Приоритет источников:** `Ответы_заказчика_Кейс_2_FAQ.md` → `case.txt` → `analysis.md` → `plan.md` → лучшая практика. Ответы заказчика имеют приоритет над аналитикой команды; расхождения и их исправления перечислены в `15-consistency.md` §12.
+## Where things live
 
-## 1. Резюме и допущения
+| Location               | What belongs there                                                                          | Lifecycle                   |
+| ---------------------- | ------------------------------------------------------------------------------------------- | --------------------------- |
+| `../ARCHITECTURE.md`   | Stable technical rules: layers, dependency direction, module boundaries                     | Changes rarely              |
+| `requirements/`        | What the system must do: customer input, assumptions, use cases, open questions             | Updated when scope changes  |
+| `design/`              | How it is designed: data model, diagrams, CRUD matrix, traceability, registry               | Updated together with code  |
+| `../packages/openapi/` | API contract in YAML, the **source of truth** for paths, schemas and roles                  | Updated with every endpoint |
+| `proposals/`           | Ideas not accepted yet. Move to `design/` once agreed, delete if rejected                   | Short-lived                 |
+| `e2e/`                 | E2E test analysis and plan. Kept as is until its fate is decided                            | Not maintained              |
+| `../archive/`          | Finished planning artifacts kept for history. Frozen; live docs may cite it only as history | Never updated               |
 
-| Файл                        | Содержание                                               |
-| --------------------------- | -------------------------------------------------------- |
-| `01-summary-assumptions.md` | Резюме системы, допущения A-1…A-23, границы, охват кейса |
+Rule of thumb: a document that describes the system as it is or must be goes to `requirements/` or `design/`. A document about how the work was planned or analyzed, once that work is done, goes to `archive/`.
 
-## 2. Глоссарий
+## Requirements
 
-| Файл             | Содержание                                               |
-| ---------------- | -------------------------------------------------------- |
-| `02-glossary.md` | Роли R-1…R-6, сущности E-1…E-21 и T-1, термины и метрики |
+| File                                     | Content                                                      |
+| ---------------------------------------- | ------------------------------------------------------------ |
+| `requirements/case.txt`                  | Original case statement                                      |
+| `requirements/customer-faq.md`           | Customer answers to 10 questions; wins over everything else  |
+| `requirements/01-summary-assumptions.md` | System summary, assumptions A-1…A-23, scope                  |
+| `requirements/02-glossary.md`            | Roles R-1…R-6, entities E-1…E-21 and T-1…T-3, terms, metrics |
+| `requirements/03-use-cases.md`           | Use case diagrams and the UC-1…UC-21 table                   |
+| `requirements/04-user-stories.md`        | US-1…US-11 with Given/When/Then criteria                     |
+| `requirements/00-open-questions.md`      | Questions Q-1…Q-27 and decisions D-1…D-38 with their status  |
 
-## 3. Разделы по фазам
+## Design
 
-| Фаза         | Файл                      | Содержание                                                                                  |
-| ------------ | ------------------------- | ------------------------------------------------------------------------------------------- |
-| A. Основа    | `03-use-cases.md`         | Use Case диаграммы и таблица UC-1…UC-20                                                     |
-| A            | `04-user-stories.md`      | US-1…US-11 с критериями Given/When/Then, экраны, эндпоинты                                  |
-| B. Данные    | `05-er-data-model.md`     | ER-диаграммы (27 таблиц), 3НФ, расширяемость, отличия SQLite и PostgreSQL, план миграций    |
-| B            | `06-object-diagrams.md`   | Три сценария: склейка по телефону, спорная склейка и разъединение, сегмент и выгрузка       |
-| B            | `07-crud-matrix.md`       | Матрица роль × сущность, эндпоинты, проверка прав, строка R-3                               |
-| C. Поведение | `08-activity-diagrams.md` | AD-1a…AD-5 (swimlanes, fork/join)                                                           |
-| C            | `09-sequence-diagrams.md` | SD-1…SD-9 (логин, импорт, коннектор, сегмент, выгрузка, склейка, ошибки, таймауты, профиль) |
-| D. Структура | `10-class-diagram.md`     | CL-1…CL-6, Go-интерфейсы                                                                    |
-| D            | `11-component-diagram.md` | Компоненты CMP-1…CMP-10, порты, масштабирование, матрица влияния                            |
-| D            | `12-c4.md`                | C4 L1, L2, L3a, L3b, L4                                                                     |
-| D            | `13-dfd.md`               | DFD уровней 0 и 1, хранилища D1…D7                                                          |
-| E. Проверка  | `14-traceability.md`      | Трассировка US/UC → Activity → Sequence → ER → CRUD → компонент → API                       |
+| File                             | Content                                                                          |
+| -------------------------------- | -------------------------------------------------------------------------------- |
+| `design/05-er-data-model.md`     | ER diagrams, 3NF, extensibility, SQLite vs PostgreSQL, migrations, access tables |
+| `design/06-object-diagrams.md`   | Data scenarios: phone merge, disputed merge and unmerge, segment export          |
+| `design/07-crud-matrix.md`       | Role × entity matrix, permission layers, tenant isolation                        |
+| `design/08-activity-diagrams.md` | Activity diagrams AD-1a…AD-5                                                     |
+| `design/09-sequence-diagrams.md` | Sequence diagrams SD-1…SD-9                                                      |
+| `design/10-class-diagram.md`     | Go interfaces and contracts CL-1…CL-6                                            |
+| `design/11-component-diagram.md` | Components CMP-1…CMP-11, ports, scaling, change impact                           |
+| `design/12-c4.md`                | C4 levels 1 to 4                                                                 |
+| `design/13-dfd.md`               | Data flow diagrams, data stores D1…D7                                            |
+| `design/14-traceability.md`      | US/UC → activity → sequence → ER → CRUD → component → API                        |
+| `design/endpoint-registry.md`    | REST endpoints by role, queue job types                                          |
 
-## 4. Проверка непротиворечивости
+## Proposals
 
-| Файл                | Содержание                                                                                                                                   |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `15-consistency.md` | Чек-лист шага 15, метрики и таблицы запросов, критерии приёмки, покрытие `case.txt`, перечень исправлений, сверка с ответами заказчика (§12) |
+| File                                | Content                                            |
+| ----------------------------------- | -------------------------------------------------- |
+| `proposals/recommendation-model.md` | Proposed recommender model for guests and segments |
 
-## 5. Приложения
+## Reading order
 
-| Файл                            | Содержание                                                                                         |
-| ------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `appendix/ddl.sql`              | Переносимый DDL (27 таблиц)                                                                        |
-| `appendix/migrations-plan.md`   | План миграций goose (13 файлов)                                                                    |
-| `appendix/endpoint-registry.md` | Реестр 90 REST-эндпоинтов, роли, 7 типов заданий очереди (источник истины)                         |
-| `appendix/openapi-fragments.md` | Запросы и ответы ключевых эндпоинтов, единый формат ошибок, 202 и 200 импорта                      |
-| `appendix/go-package-tree.md`   | Дерево Go-пакетов                                                                                  |
-| `appendix/react-module-tree.md` | Дерево React-модулей                                                                               |
-| `openapi.json` + `openapi/`     | OpenAPI 3.0.3: index plus 46 files ≤ 300 lines (22 path files, 20 schema files, shared components) |
-| `../packages/api-docs/`         | Swagger UI generated from the spec; run `bun run docs`, served at `/docs/` in production           |
-
-## 6. Открытые вопросы и решения
-
-| Файл                   | Содержание                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------ |
-| `plan.md`              | Исходный промпт проектирования (история постановки, статус выполнения)                     |
-| `00-open-questions.md` | Единый список вопросов Q-1…Q-27 и спорных решений D-1…D-38; статус после ответов заказчика |
-
-## 7. Входные материалы
-
-| Файл                             | Содержание                                                             |
-| -------------------------------- | ---------------------------------------------------------------------- |
-| `case.txt`                       | Исходный текст кейса                                                   |
-| `analysis.md`                    | Анализ команды Good Enough (конвертирован из PDF)                      |
-| `Ответы_заказчика_Кейс_2_FAQ.md` | Ответы заказчика на 10 вопросов — **источник истины** при расхождениях |
-| `ARCHITECTURE.md`                | Правила структуры кода, слоёв и границ модулей (для реализации)        |
-
-## Порядок чтения
-
-Для быстрого знакомства: `01` → `03` → `04` → `05` → `09` → `12` → `14`. Для проверки полноты: `14`, `15`. Для принятия решений: `00-open-questions.md`. Перед реализацией — `ARCHITECTURE.md`. Любое изменение требований сначала проверяется по матрице влияния в `11-component-diagram.md` и по трассировке в `14-traceability.md`.
+Quick start: `requirements/01` → `03` → `04`, then `design/05` → `09` → `12` → `14`. Decisions and open questions: `requirements/00-open-questions.md`. Before changing code: `../ARCHITECTURE.md`. A requirement change is checked against the impact matrix in `design/11-component-diagram.md` and the traceability table in `design/14-traceability.md`.

@@ -1,0 +1,105 @@
+Permission:
+  type: object
+  required:
+    - code
+    - domain
+    - kind
+    - title
+    - description
+    - isSensitive
+    - minK
+  properties:
+    code:
+      type: string
+    domain:
+      type: string
+    kind:
+      type: string
+      enum:
+        - action
+        - metric
+        - field
+    title:
+      type: string
+    description:
+      type: string
+    isSensitive:
+      type: boolean
+    minK:
+      type: integer
+      nullable: true
+Preset:
+  type: object
+  required:
+    - code
+    - items
+    - available
+  properties:
+    code:
+      type: string
+    items:
+      type: array
+      items:
+        $ref: ./access.yaml#/GrantItem
+    available:
+      type: boolean
+SubjectPermissions:
+  type: object
+  required:
+    - subjectType
+    - subjectId
+    - policyVersion
+    - permissions
+    - userGrantsIncluded
+  properties:
+    subjectType:
+      type: string
+    subjectId:
+      type: string
+    policyVersion:
+      type: integer
+      format: int64
+    permissions:
+      type: array
+      items:
+        type: string
+    userGrantsIncluded:
+      type: boolean
+AuditEntry:
+  type: object
+  required:
+    - id
+    - actorId
+    - actorRole
+    - action
+    - entityId
+    - details
+    - requestId
+    - createdAt
+  properties:
+    id:
+      type: string
+    actorId:
+      type: string
+    actorRole:
+      type: string
+    action:
+      type: string
+    entityId:
+      type: string
+    details:
+      type: string
+      nullable: true
+    requestId:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+TransitionRequest:
+  type: object
+  required:
+    - reason
+  properties:
+    reason:
+      type: string
+      minLength: 1

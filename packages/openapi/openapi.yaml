@@ -1,0 +1,509 @@
+openapi: 3.0.3
+info:
+  title: UCRP — Unified Retail Customer Platform for Shopping Centers
+  version: 1.0.0
+  description: |-
+    REST API specification for the shopping center unified guest profile platform (case #2). Source of truth for paths and methods — `design/endpoint-registry.md` (104 endpoints); for data structure — `design/05-er-data-model.md` (E-1…E-21).
+
+    Conventions:
+    * Base prefix — `/api/v1`; `/healthz` is outside the prefix.
+    * Format — JSON, UTF-8; time in UTC (RFC 3339); money — integer minor units (`amountMinor`, 35000 = 350.00 RUB).
+    * JSON field names — `camelCase`; query parameter names keep the registry notation (`snake_case`).
+    * Authentication — `Authorization: Bearer <JWT access>` (TTL 15 min), refresh — httpOnly cookie. Role and `tenantId` come from the token claims.
+    * Roles: `R-1` Management company marketer, `R-2` Manager, `R-3` Tenant, `R-4` Analyst, `R-6` System (does not use REST). `R-5` Guest has no access.
+    * R-3 isolation: `tenantId` comes only from the claims; a mismatch with the path/request → 403 `forbidden_tenant`; the repository always applies `WHERE tenant_id = :claimTenant`.
+    * Unified error format: `{"error":{"code","message","details":[{"field","reason"}],"request_id"}}`.
+    * Check order: 401 (authentication) → 403 (role) → 400 (validation) → 403 (foreign tenant) → 404 → 409.
+    * Timeout budget: request 30 s, segment preview 10 s, synchronous export 25 s, connector external HTTP 30 s; exceeding → 504 `timeout`.
+    * The `x-roles` and `x-uc` extensions link an operation to the role registry and use cases.
+  contact:
+    name: UCRP API Team
+  license:
+    name: Proprietary
+    url: https://ucrp.local/license
+servers:
+  - url: /
+    description: Current host
+tags:
+  - name: Auth
+    description: Authentication and the current user (UC-16)
+  - name: Users
+    description: Platform user management (UC-18)
+  - name: Reference
+    description: 'Reference data: tenants, categories, projects, event types, source types and instances (UC-17)'
+  - name: Imports
+    description: File uploads, statuses, rejected rows, manual sync (UC-1, UC-14)
+  - name: Guests
+    description: Unified guest profile, event feed, contacts, recommendations (UC-2, UC-4)
+  - name: Identity
+    description: Disputed merge queue, profile merge and split, merge blocks (UC-11, UC-12)
+  - name: Segments
+    description: No-code segment builder, rule versions, membership, recompute (UC-3, UC-13)
+  - name: Campaigns
+    description: Campaigns and effect measurement (UC-20)
+  - name: Exports
+    description: Segment export to a channel, control group, contact limits (UC-5, UC-10)
+  - name: Analytics
+    description: Manager dashboards, tenant aggregates, data quality (UC-7, UC-8, UC-9)
+  - name: Audit
+    description: Audit log (UC-19)
+  - name: System
+    description: Service endpoints
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/users/invitations:
+    $ref: ./paths/invitations.yaml#/paths/~1api~1v1~1users~1invitations
+  /api/v1/auth/invitations/accept:
+    $ref: ./paths/invitations.yaml#/paths/~1api~1v1~1auth~1invitations~1accept
+  /api/v1/access/permissions:
+    $ref: ./paths/access.yaml#/paths/~1api~1v1~1access~1permissions
+  /api/v1/access/presets:
+    $ref: ./paths/access.yaml#/paths/~1api~1v1~1access~1presets
+  /api/v1/access/effective:
+    $ref: ./paths/access.yaml#/paths/~1api~1v1~1access~1effective
+  /api/v1/access/simulate:
+    $ref: ./paths/access.yaml#/paths/~1api~1v1~1access~1simulate
+  /api/v1/access/audit:
+    $ref: ./paths/access.yaml#/paths/~1api~1v1~1access~1audit
+  /api/v1/access/grants:
+    $ref: ./paths/access-grants.yaml#/paths/~1api~1v1~1access~1grants
+  /api/v1/access/grants/{id}:
+    $ref: ./paths/access-grants.yaml#/paths/~1api~1v1~1access~1grants~1{id}
+  /api/v1/access/grants/{id}/activate:
+    $ref: ./paths/access-grants.yaml#/paths/~1api~1v1~1access~1grants~1{id}~1activate
+  /api/v1/access/grants/{id}/suspend:
+    $ref: ./paths/access-grants.yaml#/paths/~1api~1v1~1access~1grants~1{id}~1suspend
+  /api/v1/access/grants/{id}/revoke:
+    $ref: ./paths/access-grants.yaml#/paths/~1api~1v1~1access~1grants~1{id}~1revoke
+  /api/v1/dashboard/penetration:
+    $ref: ./paths/analytics.yaml#/paths/~1api~1v1~1dashboard~1penetration
+  /api/v1/dashboard/metrics:
+    $ref: ./paths/analytics.yaml#/paths/~1api~1v1~1dashboard~1metrics
+  /api/v1/tenants/{id}/aggregates:
+    $ref: ./paths/analytics.yaml#/paths/~1api~1v1~1tenants~1{id}~1aggregates
+  /api/v1/data-quality/sources:
+    $ref: ./paths/analytics.yaml#/paths/~1api~1v1~1data-quality~1sources
+  /api/v1/data-quality/sources/{id}:
+    $ref: ./paths/analytics.yaml#/paths/~1api~1v1~1data-quality~1sources~1{id}
+  /api/v1/audit-logs:
+    $ref: ./paths/audit.yaml#/paths/~1api~1v1~1audit-logs
+  /api/v1/auth/login:
+    $ref: ./paths/auth.yaml#/paths/~1api~1v1~1auth~1login
+  /api/v1/auth/refresh:
+    $ref: ./paths/auth.yaml#/paths/~1api~1v1~1auth~1refresh
+  /api/v1/auth/logout:
+    $ref: ./paths/auth.yaml#/paths/~1api~1v1~1auth~1logout
+  /api/v1/auth/me:
+    $ref: ./paths/auth.yaml#/paths/~1api~1v1~1auth~1me
+  /api/v1/campaigns:
+    $ref: ./paths/campaigns.yaml#/paths/~1api~1v1~1campaigns
+  /api/v1/campaigns/{id}:
+    $ref: ./paths/campaigns.yaml#/paths/~1api~1v1~1campaigns~1{id}
+  /api/v1/campaigns/{id}/results:
+    $ref: ./paths/campaigns.yaml#/paths/~1api~1v1~1campaigns~1{id}~1results
+  /api/v1/contact-limits:
+    $ref: ./paths/contact-limits.yaml#/paths/~1api~1v1~1contact-limits
+  /api/v1/contact-limits/{id}:
+    $ref: ./paths/contact-limits.yaml#/paths/~1api~1v1~1contact-limits~1{id}
+  /api/v1/exports/preview:
+    $ref: ./paths/exports.yaml#/paths/~1api~1v1~1exports~1preview
+  /api/v1/exports:
+    $ref: ./paths/exports.yaml#/paths/~1api~1v1~1exports
+  /api/v1/exports/{id}:
+    $ref: ./paths/exports.yaml#/paths/~1api~1v1~1exports~1{id}
+  /api/v1/exports/{id}/members:
+    $ref: ./paths/exports-delivery.yaml#/paths/~1api~1v1~1exports~1{id}~1members
+  /api/v1/exports/{id}/download:
+    $ref: ./paths/exports-delivery.yaml#/paths/~1api~1v1~1exports~1{id}~1download
+  /api/v1/guests:
+    $ref: ./paths/guests.yaml#/paths/~1api~1v1~1guests
+  /api/v1/guests/{id}:
+    $ref: ./paths/guests.yaml#/paths/~1api~1v1~1guests~1{id}
+  /api/v1/guests/{id}/events:
+    $ref: ./paths/guests.yaml#/paths/~1api~1v1~1guests~1{id}~1events
+  /api/v1/guests/{id}/contacts:
+    $ref: ./paths/guests.yaml#/paths/~1api~1v1~1guests~1{id}~1contacts
+  /api/v1/guests/{id}/recommendations:
+    $ref: ./paths/recommendations.yaml#/paths/~1api~1v1~1guests~1{id}~1recommendations
+  /api/v1/guests/{id}/recommendations/refresh:
+    $ref: ./paths/recommendations.yaml#/paths/~1api~1v1~1guests~1{id}~1recommendations~1refresh
+  /api/v1/segments/{id}/recommendations:
+    $ref: ./paths/recommendations.yaml#/paths/~1api~1v1~1segments~1{id}~1recommendations
+  /api/v1/merge-candidates:
+    $ref: ./paths/identity-merge-candidates.yaml#/paths/~1api~1v1~1merge-candidates
+  /api/v1/merge-candidates/{id}:
+    $ref: ./paths/identity-merge-candidates.yaml#/paths/~1api~1v1~1merge-candidates~1{id}
+  /api/v1/merge-candidates/{id}/confirm:
+    $ref: ./paths/identity-merge-candidates.yaml#/paths/~1api~1v1~1merge-candidates~1{id}~1confirm
+  /api/v1/merge-candidates/{id}/reject:
+    $ref: ./paths/identity-merge-candidates.yaml#/paths/~1api~1v1~1merge-candidates~1{id}~1reject
+  /api/v1/merge-candidates/{id}/revert:
+    $ref: ./paths/identity-merge-candidates.yaml#/paths/~1api~1v1~1merge-candidates~1{id}~1revert
+  /api/v1/guests/{id}/merge:
+    $ref: ./paths/identity-unmerge.yaml#/paths/~1api~1v1~1guests~1{id}~1merge
+  /api/v1/unmerge-blocks:
+    $ref: ./paths/identity-unmerge.yaml#/paths/~1api~1v1~1unmerge-blocks
+  /api/v1/unmerge-blocks/{id}:
+    $ref: ./paths/identity-unmerge.yaml#/paths/~1api~1v1~1unmerge-blocks~1{id}
+  /api/v1/imports:
+    $ref: ./paths/imports.yaml#/paths/~1api~1v1~1imports
+  /api/v1/imports/{id}:
+    $ref: ./paths/imports.yaml#/paths/~1api~1v1~1imports~1{id}
+  /api/v1/imports/{id}/rejected-rows:
+    $ref: ./paths/imports.yaml#/paths/~1api~1v1~1imports~1{id}~1rejected-rows
+  /api/v1/data-sources/{id}/sync:
+    $ref: ./paths/imports.yaml#/paths/~1api~1v1~1data-sources~1{id}~1sync
+  /api/v1/data-sources:
+    $ref: ./paths/reference-data-sources.yaml#/paths/~1api~1v1~1data-sources
+  /api/v1/data-sources/{id}:
+    $ref: ./paths/reference-data-sources.yaml#/paths/~1api~1v1~1data-sources~1{id}
+  /api/v1/data-source-types:
+    $ref: ./paths/reference-data-source-types.yaml#/paths/~1api~1v1~1data-source-types
+  /api/v1/data-source-types/{id}:
+    $ref: ./paths/reference-data-source-types.yaml#/paths/~1api~1v1~1data-source-types~1{id}
+  /api/v1/event-types:
+    $ref: ./paths/reference-event-types.yaml#/paths/~1api~1v1~1event-types
+  /api/v1/event-types/{id}:
+    $ref: ./paths/reference-event-types.yaml#/paths/~1api~1v1~1event-types~1{id}
+  /api/v1/projects:
+    $ref: ./paths/reference-projects.yaml#/paths/~1api~1v1~1projects
+  /api/v1/projects/{id}:
+    $ref: ./paths/reference-projects.yaml#/paths/~1api~1v1~1projects~1{id}
+  /api/v1/tenant-categories:
+    $ref: ./paths/reference-tenant-categories.yaml#/paths/~1api~1v1~1tenant-categories
+  /api/v1/tenant-categories/{id}:
+    $ref: ./paths/reference-tenant-categories.yaml#/paths/~1api~1v1~1tenant-categories~1{id}
+  /api/v1/tenant-categories/{id}/relations:
+    $ref: ./paths/reference-tenant-categories.yaml#/paths/~1api~1v1~1tenant-categories~1{id}~1relations
+  /api/v1/tenants:
+    $ref: ./paths/reference-tenants.yaml#/paths/~1api~1v1~1tenants
+  /api/v1/tenants/{id}:
+    $ref: ./paths/reference-tenants.yaml#/paths/~1api~1v1~1tenants~1{id}
+  /api/v1/segment-templates:
+    $ref: ./paths/segments.yaml#/paths/~1api~1v1~1segment-templates
+  /api/v1/segments:
+    $ref: ./paths/segments.yaml#/paths/~1api~1v1~1segments
+  /api/v1/segments/preview:
+    $ref: ./paths/segments.yaml#/paths/~1api~1v1~1segments~1preview
+  /api/v1/segments/{id}:
+    $ref: ./paths/segments-detail.yaml#/paths/~1api~1v1~1segments~1{id}
+  /api/v1/segments/{id}/members:
+    $ref: ./paths/segments-detail.yaml#/paths/~1api~1v1~1segments~1{id}~1members
+  /api/v1/segments/{id}/versions:
+    $ref: ./paths/segments-detail.yaml#/paths/~1api~1v1~1segments~1{id}~1versions
+  /api/v1/segments/{id}/recompute:
+    $ref: ./paths/segments-detail.yaml#/paths/~1api~1v1~1segments~1{id}~1recompute
+  /healthz:
+    $ref: ./paths/system.yaml#/paths/~1healthz
+  /api/v1/users:
+    $ref: ./paths/users.yaml#/paths/~1api~1v1~1users
+  /api/v1/users/{id}:
+    $ref: ./paths/users.yaml#/paths/~1api~1v1~1users~1{id}
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: ./components/security.yaml#/bearerAuth
+    cookieAuth:
+      $ref: ./components/security.yaml#/cookieAuth
+  parameters:
+    IdPath:
+      $ref: ./components/parameters.yaml#/IdPath
+    Page:
+      $ref: ./components/parameters.yaml#/Page
+    PageSize:
+      $ref: ./components/parameters.yaml#/PageSize
+    From:
+      $ref: ./components/parameters.yaml#/From
+    To:
+      $ref: ./components/parameters.yaml#/To
+    Granularity:
+      $ref: ./components/parameters.yaml#/Granularity
+    IdempotencyKey:
+      $ref: ./components/parameters.yaml#/IdempotencyKey
+  responses:
+    NoContent:
+      $ref: ./components/responses.yaml#/NoContent
+    BadRequest:
+      $ref: ./components/responses.yaml#/BadRequest
+    Unauthorized:
+      $ref: ./components/responses.yaml#/Unauthorized
+    Forbidden:
+      $ref: ./components/responses.yaml#/Forbidden
+    NotFound:
+      $ref: ./components/responses.yaml#/NotFound
+    Conflict:
+      $ref: ./components/responses.yaml#/Conflict
+    PayloadTooLarge:
+      $ref: ./components/responses.yaml#/PayloadTooLarge
+    UnprocessableEntity:
+      $ref: ./components/responses.yaml#/UnprocessableEntity
+    TooManyRequests:
+      $ref: ./components/responses.yaml#/TooManyRequests
+    GatewayTimeout:
+      $ref: ./components/responses.yaml#/GatewayTimeout
+  schemas:
+    GrantItem:
+      $ref: ./components/schemas/access.yaml#/GrantItem
+    GrantScope:
+      $ref: ./components/schemas/access.yaml#/GrantScope
+    GrantRequest:
+      $ref: ./components/schemas/access.yaml#/GrantRequest
+    GrantPatch:
+      $ref: ./components/schemas/access.yaml#/GrantPatch
+    Grant:
+      $ref: ./components/schemas/access.yaml#/Grant
+    Permission:
+      $ref: ./components/schemas/access-results.yaml#/Permission
+    Preset:
+      $ref: ./components/schemas/access-results.yaml#/Preset
+    SubjectPermissions:
+      $ref: ./components/schemas/access-results.yaml#/SubjectPermissions
+    AuditEntry:
+      $ref: ./components/schemas/access-results.yaml#/AuditEntry
+    TransitionRequest:
+      $ref: ./components/schemas/access-results.yaml#/TransitionRequest
+    TenantGuestIdentifier:
+      $ref: ./components/schemas/tenant-guest.yaml#/TenantGuestIdentifier
+    TenantGuestProfile:
+      $ref: ./components/schemas/tenant-guest.yaml#/TenantGuestProfile
+    TenantGuestEvent:
+      $ref: ./components/schemas/tenant-guest.yaml#/TenantGuestEvent
+    TenantGuestEvents:
+      $ref: ./components/schemas/tenant-guest.yaml#/TenantGuestEvents
+    TenantVisitAggregate:
+      $ref: ./components/schemas/tenant-guest.yaml#/TenantVisitAggregate
+    EmptyTenantAggregate:
+      $ref: ./components/schemas/tenant-guest.yaml#/EmptyTenantAggregate
+    ManagementTenantAggregate:
+      $ref: ./components/schemas/tenant-guest.yaml#/ManagementTenantAggregate
+    PenetrationBucket:
+      $ref: ./components/schemas/analytics.yaml#/PenetrationBucket
+    PenetrationPoint:
+      $ref: ./components/schemas/analytics.yaml#/PenetrationPoint
+    PenetrationReport:
+      $ref: ./components/schemas/analytics.yaml#/PenetrationReport
+    DashboardMetrics:
+      $ref: ./components/schemas/analytics.yaml#/DashboardMetrics
+    TenantAggregatePoint:
+      $ref: ./components/schemas/analytics-tenant.yaml#/TenantAggregatePoint
+    TenantAggregates:
+      $ref: ./components/schemas/analytics-tenant.yaml#/TenantAggregates
+    DataQualitySource:
+      $ref: ./components/schemas/analytics-tenant.yaml#/DataQualitySource
+    DataQualityPoint:
+      $ref: ./components/schemas/analytics-tenant.yaml#/DataQualityPoint
+    DataQualitySourceDetail:
+      $ref: ./components/schemas/analytics-tenant.yaml#/DataQualitySourceDetail
+    AuditLog:
+      $ref: ./components/schemas/audit.yaml#/AuditLog
+    AuditLogPage:
+      $ref: ./components/schemas/audit.yaml#/AuditLogPage
+    CampaignStatus:
+      $ref: ./components/schemas/campaigns.yaml#/CampaignStatus
+    Campaign:
+      $ref: ./components/schemas/campaigns.yaml#/Campaign
+    CampaignCreateRequest:
+      $ref: ./components/schemas/campaigns.yaml#/CampaignCreateRequest
+    CampaignUpdateRequest:
+      $ref: ./components/schemas/campaigns.yaml#/CampaignUpdateRequest
+    CampaignPage:
+      $ref: ./components/schemas/campaigns.yaml#/CampaignPage
+    CampaignResults:
+      $ref: ./components/schemas/campaigns.yaml#/CampaignResults
+    ErrorResponse:
+      $ref: ./components/schemas/common.yaml#/ErrorResponse
+    ErrorDetail:
+      $ref: ./components/schemas/common.yaml#/ErrorDetail
+    PageMeta:
+      $ref: ./components/schemas/common.yaml#/PageMeta
+    UserRole:
+      $ref: ./components/schemas/common.yaml#/UserRole
+    Granularity:
+      $ref: ./components/schemas/common.yaml#/Granularity
+    JobAccepted:
+      $ref: ./components/schemas/common.yaml#/JobAccepted
+    HealthResponse:
+      $ref: ./components/schemas/common.yaml#/HealthResponse
+    ExportChannel:
+      $ref: ./components/schemas/exports.yaml#/ExportChannel
+    ExportFormat:
+      $ref: ./components/schemas/exports.yaml#/ExportFormat
+    ExportStatus:
+      $ref: ./components/schemas/exports.yaml#/ExportStatus
+    ExportPreviewRequest:
+      $ref: ./components/schemas/exports.yaml#/ExportPreviewRequest
+    ExportPreviewResponse:
+      $ref: ./components/schemas/exports.yaml#/ExportPreviewResponse
+    ExportCreateRequest:
+      $ref: ./components/schemas/exports.yaml#/ExportCreateRequest
+    Export:
+      $ref: ./components/schemas/exports.yaml#/Export
+    ExportPage:
+      $ref: ./components/schemas/exports.yaml#/ExportPage
+    ExportMember:
+      $ref: ./components/schemas/export-members.yaml#/ExportMember
+    ExportMemberPage:
+      $ref: ./components/schemas/export-members.yaml#/ExportMemberPage
+    ContactLimit:
+      $ref: ./components/schemas/export-members.yaml#/ContactLimit
+    ContactLimitCreateRequest:
+      $ref: ./components/schemas/export-members.yaml#/ContactLimitCreateRequest
+    ContactLimitUpdateRequest:
+      $ref: ./components/schemas/export-members.yaml#/ContactLimitUpdateRequest
+    GuestStatus:
+      $ref: ./components/schemas/guests.yaml#/GuestStatus
+    IdentifierType:
+      $ref: ./components/schemas/guests.yaml#/IdentifierType
+    GuestIdentifier:
+      $ref: ./components/schemas/guests.yaml#/GuestIdentifier
+    Guest:
+      $ref: ./components/schemas/guests.yaml#/Guest
+    GuestTenantSummary:
+      $ref: ./components/schemas/guests.yaml#/GuestTenantSummary
+    GuestSegmentSummary:
+      $ref: ./components/schemas/guests.yaml#/GuestSegmentSummary
+    GuestProfile:
+      $ref: ./components/schemas/guests.yaml#/GuestProfile
+    GuestPage:
+      $ref: ./components/schemas/guests.yaml#/GuestPage
+    Event:
+      $ref: ./components/schemas/events.yaml#/Event
+    EventPage:
+      $ref: ./components/schemas/events.yaml#/EventPage
+    ContactLog:
+      $ref: ./components/schemas/events.yaml#/ContactLog
+    ContactLogPage:
+      $ref: ./components/schemas/events.yaml#/ContactLogPage
+    RecommendationFactor:
+      $ref: ./components/schemas/recommendations.yaml#/RecommendationFactor
+    Recommendation:
+      $ref: ./components/schemas/recommendations.yaml#/Recommendation
+    RecommendationList:
+      $ref: ./components/schemas/recommendations.yaml#/RecommendationList
+    SegmentRecommendation:
+      $ref: ./components/schemas/recommendations.yaml#/SegmentRecommendation
+    SegmentRecommendationList:
+      $ref: ./components/schemas/recommendations.yaml#/SegmentRecommendationList
+    MergeResolution:
+      $ref: ./components/schemas/identity.yaml#/MergeResolution
+    MergeCandidate:
+      $ref: ./components/schemas/identity.yaml#/MergeCandidate
+    MergeCandidateDetail:
+      $ref: ./components/schemas/identity.yaml#/MergeCandidateDetail
+    MergeCandidatePage:
+      $ref: ./components/schemas/identity.yaml#/MergeCandidatePage
+    MergeRequest:
+      $ref: ./components/schemas/identity.yaml#/MergeRequest
+    MergeResult:
+      $ref: ./components/schemas/identity.yaml#/MergeResult
+    UnmergeBlock:
+      $ref: ./components/schemas/identity.yaml#/UnmergeBlock
+    UnmergeBlockPage:
+      $ref: ./components/schemas/identity.yaml#/UnmergeBlockPage
+    ImportStatus:
+      $ref: ./components/schemas/imports.yaml#/ImportStatus
+    ImportMode:
+      $ref: ./components/schemas/imports.yaml#/ImportMode
+    ImportBatch:
+      $ref: ./components/schemas/imports.yaml#/ImportBatch
+    ImportAccepted:
+      $ref: ./components/schemas/imports.yaml#/ImportAccepted
+    ImportBatchPage:
+      $ref: ./components/schemas/imports.yaml#/ImportBatchPage
+    RejectedRow:
+      $ref: ./components/schemas/imports.yaml#/RejectedRow
+    RejectedRowPage:
+      $ref: ./components/schemas/imports.yaml#/RejectedRowPage
+    SyncAccepted:
+      $ref: ./components/schemas/imports.yaml#/SyncAccepted
+    Tenant:
+      $ref: ./components/schemas/reference-tenants.yaml#/Tenant
+    TenantCreateRequest:
+      $ref: ./components/schemas/reference-tenants.yaml#/TenantCreateRequest
+    TenantUpdateRequest:
+      $ref: ./components/schemas/reference-tenants.yaml#/TenantUpdateRequest
+    TenantPage:
+      $ref: ./components/schemas/reference-tenants.yaml#/TenantPage
+    TenantCategory:
+      $ref: ./components/schemas/reference-tenant-categories.yaml#/TenantCategory
+    TenantCategoryRequest:
+      $ref: ./components/schemas/reference-tenant-categories.yaml#/TenantCategoryRequest
+    CategoryRelationType:
+      $ref: ./components/schemas/reference-tenant-categories.yaml#/CategoryRelationType
+    TenantCategoryRelation:
+      $ref: ./components/schemas/reference-tenant-categories.yaml#/TenantCategoryRelation
+    TenantCategoryRelations:
+      $ref: ./components/schemas/reference-tenant-categories.yaml#/TenantCategoryRelations
+    TenantCategoryRelationsReplaceRequest:
+      $ref: ./components/schemas/reference-tenant-categories.yaml#/TenantCategoryRelationsReplaceRequest
+    Project:
+      $ref: ./components/schemas/reference-projects.yaml#/Project
+    ProjectRequest:
+      $ref: ./components/schemas/reference-projects.yaml#/ProjectRequest
+    ProjectPage:
+      $ref: ./components/schemas/reference-projects.yaml#/ProjectPage
+    EventType:
+      $ref: ./components/schemas/reference-event-types.yaml#/EventType
+    EventTypeRequest:
+      $ref: ./components/schemas/reference-event-types.yaml#/EventTypeRequest
+    DataSourceType:
+      $ref: ./components/schemas/reference-data-sources.yaml#/DataSourceType
+    DataSourceTypeRequest:
+      $ref: ./components/schemas/reference-data-sources.yaml#/DataSourceTypeRequest
+    FieldMapping:
+      $ref: ./components/schemas/reference-data-sources.yaml#/FieldMapping
+    DataSource:
+      $ref: ./components/schemas/reference-data-sources.yaml#/DataSource
+    DataSourceCreateRequest:
+      $ref: ./components/schemas/reference-data-sources.yaml#/DataSourceCreateRequest
+    DataSourceUpdateRequest:
+      $ref: ./components/schemas/reference-data-sources.yaml#/DataSourceUpdateRequest
+    DataSourcePage:
+      $ref: ./components/schemas/reference-data-sources.yaml#/DataSourcePage
+    SegmentStatus:
+      $ref: ./components/schemas/segments.yaml#/SegmentStatus
+    SegmentRule:
+      $ref: ./components/schemas/segments.yaml#/SegmentRule
+    SegmentRuleNode:
+      $ref: ./components/schemas/segments.yaml#/SegmentRuleNode
+    SegmentRuleGroup:
+      $ref: ./components/schemas/segments.yaml#/SegmentRuleGroup
+    SegmentVersion:
+      $ref: ./components/schemas/segments.yaml#/SegmentVersion
+    Segment:
+      $ref: ./components/schemas/segments.yaml#/Segment
+    SegmentCreateRequest:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentCreateRequest
+    SegmentUpdateRequest:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentUpdateRequest
+    SegmentPreviewRequest:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentPreviewRequest
+    SegmentPreviewExample:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentPreviewExample
+    SegmentPreviewResponse:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentPreviewResponse
+    SegmentMember:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentMember
+    SegmentMemberPage:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentMemberPage
+    SegmentPage:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentPage
+    SegmentTemplate:
+      $ref: ./components/schemas/segment-requests.yaml#/SegmentTemplate
+    LoginRequest:
+      $ref: ./components/schemas/users.yaml#/LoginRequest
+    TokenResponse:
+      $ref: ./components/schemas/users.yaml#/TokenResponse
+    LoginResponse:
+      $ref: ./components/schemas/users.yaml#/LoginResponse
+    MeResponse:
+      $ref: ./components/schemas/users.yaml#/MeResponse
+    User:
+      $ref: ./components/schemas/users.yaml#/User
+    UserCreateRequest:
+      $ref: ./components/schemas/users.yaml#/UserCreateRequest
+    UserUpdateRequest:
+      $ref: ./components/schemas/users.yaml#/UserUpdateRequest
+    UserPage:
+      $ref: ./components/schemas/users.yaml#/UserPage

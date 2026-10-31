@@ -1,0 +1,92 @@
+TenantCategory:
+  type: object
+  required:
+    - id
+    - code
+    - name
+  properties:
+    id:
+      type: string
+    code:
+      type: string
+      maxLength: 64
+    name:
+      type: string
+      maxLength: 200
+    description:
+      type: string
+      nullable: true
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+TenantCategoryRequest:
+  type: object
+  required:
+    - code
+    - name
+  properties:
+    code:
+      type: string
+      minLength: 1
+      maxLength: 64
+    name:
+      type: string
+      minLength: 1
+      maxLength: 200
+    description:
+      type: string
+      nullable: true
+      maxLength: 1000
+CategoryRelationType:
+  type: string
+  description: '`adjacent` — adjacent category (boosts the score), `competitor` — direct competitor (excludes the candidate)'
+  enum:
+    - adjacent
+    - competitor
+TenantCategoryRelation:
+  type: object
+  required:
+    - categoryId
+    - relatedCategoryId
+    - relationType
+  properties:
+    categoryId:
+      type: string
+    relatedCategoryId:
+      type: string
+    relatedCategoryName:
+      type: string
+      readOnly: true
+    relationType:
+      $ref: ./reference-tenant-categories.yaml#/CategoryRelationType
+    weightPct:
+      type: integer
+      minimum: 0
+      maximum: 100
+      nullable: true
+      description: Relation weight in percent for scoring
+TenantCategoryRelations:
+  type: object
+  required:
+    - categoryId
+    - relations
+  properties:
+    categoryId:
+      type: string
+    relations:
+      type: array
+      items:
+        $ref: ./reference-tenant-categories.yaml#/TenantCategoryRelation
+TenantCategoryRelationsReplaceRequest:
+  type: object
+  required:
+    - relations
+  properties:
+    relations:
+      type: array
+      description: Complete new set of category relations
+      items:
+        $ref: ./reference-tenant-categories.yaml#/TenantCategoryRelation

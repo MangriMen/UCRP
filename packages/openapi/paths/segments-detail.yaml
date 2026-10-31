@@ -1,0 +1,179 @@
+paths:
+  /api/v1/segments/{id}:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Segments
+      operationId: getSegment
+      summary: Segment details
+      description: Contains the current version, the rule in business language (`ruleText`), size, recompute status, and `computedAt`. While the status is `pending` or `computing`, exporting from the segment returns 409.
+      x-roles:
+        - R-1
+        - R-2
+        - R-4
+      x-uc:
+        - UC-3
+        - UC-6
+      responses:
+        '200':
+          description: Segment
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/segments.yaml#/Segment
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+    put:
+      tags:
+        - Segments
+      operationId: updateSegment
+      summary: Change the rule — new version
+      description: Each edit creates an immutable `segment_version` with `versionNo + 1`; previous versions remain available, and exports reference a specific version and stay reproducible.
+      x-roles:
+        - R-1
+        - R-4
+      x-uc:
+        - UC-3
+        - UC-13
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../components/schemas/segment-requests.yaml#/SegmentUpdateRequest
+      responses:
+        '200':
+          description: Segment with the new version
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/segments.yaml#/Segment
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+    delete:
+      tags:
+        - Segments
+      operationId: deleteSegment
+      summary: Archive a segment
+      description: If an active campaign references the segment — 409 `segment_in_active_campaign`.
+      x-roles:
+        - R-1
+        - R-4
+      x-uc:
+        - UC-3
+      responses:
+        '204':
+          $ref: ../components/responses.yaml#/NoContent
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict
+  /api/v1/segments/{id}/members:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Segments
+      operationId: listSegmentMembers
+      summary: Segment membership
+      description: Defaults to the current version; the `version` parameter shows the membership of a historical version.
+      x-roles:
+        - R-1
+        - R-4
+      x-uc:
+        - UC-3
+      parameters:
+        - $ref: ../components/parameters.yaml#/Page
+        - $ref: ../components/parameters.yaml#/PageSize
+        - name: version
+          in: query
+          description: Rule version number
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Member page
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/segment-requests.yaml#/SegmentMemberPage
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+  /api/v1/segments/{id}/versions:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    get:
+      tags:
+        - Segments
+      operationId: listSegmentVersions
+      summary: Rule version history
+      x-roles:
+        - R-1
+        - R-4
+      x-uc:
+        - UC-3
+      responses:
+        '200':
+          description: Versions in descending order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../components/schemas/segments.yaml#/SegmentVersion
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+  /api/v1/segments/{id}/recompute:
+    parameters:
+      - $ref: ../components/parameters.yaml#/IdPath
+    post:
+      tags:
+        - Segments
+      operationId: recomputeSegment
+      summary: Force a recompute (asynchronous)
+      description: Enqueues `segment.recompute` with `dedupKey = segment:{id}:{versionNo}`. If this version is already being recomputed — 409 `recompute_in_progress`.
+      x-roles:
+        - R-1
+        - R-4
+      x-uc:
+        - UC-13
+        - UC-6
+      responses:
+        '202':
+          description: Recompute queued
+          content:
+            application/json:
+              schema:
+                $ref: ../components/schemas/common.yaml#/JobAccepted
+        '401':
+          $ref: ../components/responses.yaml#/Unauthorized
+        '403':
+          $ref: ../components/responses.yaml#/Forbidden
+        '404':
+          $ref: ../components/responses.yaml#/NotFound
+        '409':
+          $ref: ../components/responses.yaml#/Conflict

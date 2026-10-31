@@ -14,7 +14,7 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 ## Ask first
 
 - Do not initialize `apps/web` or `apps/api` (Vite, `go mod init`, frameworks, libraries) without the user's explicit go-ahead.
-- Open questions are in `docs/00-open-questions.md`. Don't silently pick answers; ask.
+- Open questions are in `docs/requirements/00-open-questions.md`. Don't silently pick answers; ask.
 - Don't add dependencies, change CI, hooks, or tooling versions unasked.
 - Never commit, push, or open a PR unless asked.
 - **Never bypass hooks** (`--no-verify`, `LEFTHOOK=0`, `git push --no-verify`). If a hook fails, stop and ask the user what to do, whether the breakage is yours or was already there. Do not silently skip, disable, or work around the failing check.
@@ -31,6 +31,7 @@ Short rules for any AI agent working in this repo. Humans: see `README.md` and `
 - Commits: Conventional Commits (enforced by lefthook). Don't bypass hooks with `--no-verify`.
 - Commit messages and PR titles/bodies: **English only**. The `commit-message-language` lefthook job rejects non-ASCII commit subjects; PR text rules are in `.agents/skills/pr-description/SKILL.md`.
 - Skills live in `.agents/skills/` (`.claude/skills` is a symlink to it).
+- Architecture rules: `ARCHITECTURE.md`. Documentation layout and where new documents go: `docs/README.md`.
 
 ## Code style (anti-neuroslop)
 
