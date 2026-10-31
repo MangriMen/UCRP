@@ -71,7 +71,7 @@ func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, offset+len(items))
 }
 
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -223,10 +223,30 @@ func (h *AnalyticsHandler) CrossTenantReport(w http.ResponseWriter, r *http.Requ
 	q := r.URL.Query()
 	var from, to time.Time
 	if v := q.Get("from"); v != "" {
-		from, _ = time.Parse(time.RFC3339, v)
+		parsed, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректная дата from")
+			return
+		}
+		from = parsed
 	}
 	if v := q.Get("to"); v != "" {
-		to, _ = time.Parse(time.RFC3339, v)
+		parsed, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректная дата to")
+			return
+		}
+		to = parsed
+	}
+	if !from.IsZero() && !to.IsZero() {
+		if from.After(to) {
+			httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "from не может быть позже to")
+			return
+		}
+		if to.Sub(from) > 24*31*24*time.Hour {
+			httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Период не может превышать 24 месяца")
+			return
+		}
 	}
 	res, err := h.analytics.CrossTenantReport(r.Context(), from, to, q.Get("granularity"))
 	if err != nil {

@@ -21,8 +21,8 @@ func (r *SegmentSQL) EnsureTemplates(ctx context.Context, clock domain.Clock, id
 	templates := []struct {
 		code, name, desc string
 	}{
-		{"sleep_neighbor", "Спящий сосед", "Был у одного арендатора, не был у соседей"},
-		{"single_tenant", "Один магазин", "Посещал только один арендатор"},
+		{"sleeping_neighbor", "Спящий сосед", "Был у одного арендатора, не был у соседей"},
+		{"single_store", "Один магазин", "Посещал только один арендатор"},
 		{"churn_risk", "Риск ухода", "Давно не посещал выбранных арендаторов"},
 		{"newcomer", "Новичок", "Мало истории посещений"},
 		{"high_value", "Высокая ценность", "Высокая частота посещений"},
@@ -349,6 +349,40 @@ func (r *SegmentSQL) ListMemberContacts(ctx context.Context, versionID string) (
 			return nil, err
 		}
 		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+func (r *SegmentSQL) CountMembers(ctx context.Context, versionID string) (int, error) {
+	var n int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM segment_member WHERE segment_version_id = $1`, versionID).Scan(&n)
+	return n, err
+}
+
+func (r *SegmentSQL) CurrentVersions(ctx context.Context, segmentIDs []string) (map[string]*domain.SegmentVersion, error) {
+	out := map[string]*domain.SegmentVersion{}
+	if len(segmentIDs) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT v.id, v.segment_id, v.version_no, v.rule, v.status, v.member_count, v.computed_at, COALESCE(v.created_by, ''), v.created_at
+		FROM segment_version v
+		JOIN segment s ON s.id = v.segment_id AND s.current_version_no = v.version_no
+		WHERE v.segment_id = ANY($1)`, segmentIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var (
+			v      domain.SegmentVersion
+			status string
+		)
+		if err := rows.Scan(&v.ID, &v.SegmentID, &v.VersionNo, &v.Rule, &status, &v.MemberCount, &v.ComputedAt, &v.CreatedBy, &v.CreatedAt); err != nil {
+			return nil, err
+		}
+		v.Status = domain.SegmentVersionStatus(status)
+		out[v.SegmentID] = &v
 	}
 	return out, rows.Err()
 }

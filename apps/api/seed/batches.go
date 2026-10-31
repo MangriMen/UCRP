@@ -55,7 +55,7 @@ func demoRejectedRows() []rejectedSpec {
 		{"food-0920", 5, "invalid_date", "Не распознана дата события", "CHK-9005,20.09.2026 12:40,purchase,32000,79161234568,,"},
 		{"food-0920", 7, "invalid_tenant", "Неизвестный арендатор: food-unknown", "CHK-9007,2026-09-20T13:05:00Z,purchase,28000,79161234569,,food-unknown"},
 		{"food-0920", 9, "invalid_amount", "Не распознана сумма", "CHK-9009,2026-09-20T13:45:00Z,purchase,двадцать,79161234570,,"},
-		{"cinema-1020", 4, "bad_event_type", "Неизвестный тип события: refund", "CHK-9104,2026-10-20T18:20:00Z,refund,60000,79161234571,,"},
+		{"cinema-1020", 4, "unknown_event_type", "Неизвестный тип события: refund", "CHK-9104,2026-10-20T18:20:00Z,refund,60000,79161234571,,"},
 		{"cinema-1020", 11, "bad_email", "Не распознан email", "CHK-9111,2026-10-20T20:05:00Z,booking,90000,,broken@@mail,"},
 		{"wifi-1010", 3, "no_external_id", "Не указан внешний идентификатор", ",2026-10-10T10:15:00Z,visit,,79161234572,,"},
 		{"wifi-1010", 8, "invalid_date", "Не распознана дата события", "WIFI-1008,10/10/2026 11:20,visit,,79161234573,,"},

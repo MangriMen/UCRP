@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
@@ -34,14 +35,16 @@ func NewReferenceService(
 }
 
 type TenantDTO struct {
-	ID         string `json:"id"`
-	Code       string `json:"code"`
-	Name       string `json:"name"`
-	CategoryID string `json:"categoryId"`
-	Kind       string `json:"kind"`
-	Floor      int    `json:"floor"`
-	Priority   int    `json:"priority"`
-	IsActive   bool   `json:"isActive"`
+	ID         string    `json:"id"`
+	Code       string    `json:"code"`
+	Name       string    `json:"name"`
+	CategoryID string    `json:"categoryId"`
+	Kind       string    `json:"kind"`
+	Floor      int       `json:"floor"`
+	Priority   int       `json:"priority"`
+	IsActive   bool      `json:"isActive"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
 type TenantCreateRequest struct {
@@ -218,6 +221,7 @@ func (s *ReferenceService) DeleteCategory(ctx context.Context, id string) error 
 }
 
 type RelationDTO struct {
+	CategoryID        string `json:"categoryId"`
 	RelatedCategoryID string `json:"relatedCategoryId"`
 	RelationType      string `json:"relationType"`
 	WeightPct         int    `json:"weightPct"`
@@ -233,7 +237,7 @@ func (s *ReferenceService) ListRelations(ctx context.Context, categoryID string)
 	}
 	out := make([]RelationDTO, 0, len(items))
 	for _, r := range items {
-		out = append(out, RelationDTO{RelatedCategoryID: r.RelatedCategoryID, RelationType: r.RelationType, WeightPct: r.WeightPct})
+		out = append(out, RelationDTO{CategoryID: categoryID, RelatedCategoryID: r.RelatedCategoryID, RelationType: r.RelationType, WeightPct: r.WeightPct})
 	}
 	return out, nil
 }
@@ -245,6 +249,12 @@ func (s *ReferenceService) ReplaceRelations(ctx context.Context, categoryID stri
 	converted := make([]domain.CategoryRelation, 0, len(rels))
 	for _, r := range rels {
 		if r.RelationType != "adjacent" && r.RelationType != "competitor" {
+			return nil, domain.ErrValidation
+		}
+		if strings.TrimSpace(r.CategoryID) == "" || strings.TrimSpace(r.RelatedCategoryID) == "" {
+			return nil, domain.ErrValidation
+		}
+		if r.CategoryID != categoryID {
 			return nil, domain.ErrValidation
 		}
 		converted = append(converted, domain.CategoryRelation{
@@ -409,5 +419,6 @@ func toTenantDTO(t domain.Tenant) TenantDTO {
 	return TenantDTO{
 		ID: t.ID, Code: t.Code, Name: t.Name, CategoryID: t.CategoryID,
 		Kind: t.Kind, Floor: t.Floor, Priority: t.Priority, IsActive: t.IsActive,
+		CreatedAt: t.CreatedAt, UpdatedAt: t.UpdatedAt,
 	}
 }

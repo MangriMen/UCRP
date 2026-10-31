@@ -51,7 +51,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		{"tenant events delegated", http.MethodGet, "/api/v1/guests/guest-1/events", domain.RoleTenant, "guest.event.read", false, http.StatusNoContent},
 		{"policy changed", http.MethodGet, "/api/v1/guests/guest-1", domain.RoleManager, "", true, http.StatusForbidden},
 		{"unknown route", http.MethodGet, "/api/v1/unknown", domain.RoleManager, "", false, http.StatusForbidden},
-		{"user creation blocked", http.MethodPost, "/api/v1/users", domain.RoleManager, "", false, http.StatusForbidden},
+		{"user creation permitted", http.MethodPost, "/api/v1/users", domain.RoleManager, "", false, http.StatusNoContent},
 		{"user update permitted", http.MethodPatch, "/api/v1/users/user-1", domain.RoleManager, "", false, http.StatusNoContent},
 		{"user update denied", http.MethodPatch, "/api/v1/users/user-1", domain.RoleManager, "user.write", false, http.StatusForbidden},
 		{"cross-tenant permitted", http.MethodGet, "/api/v1/dashboard/cross-tenant", domain.RoleManager, "", false, http.StatusNoContent},

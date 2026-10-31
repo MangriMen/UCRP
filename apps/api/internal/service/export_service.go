@@ -47,11 +47,12 @@ type ExportPreviewRequest struct {
 }
 
 type ExportPreviewResponse struct {
-	InSegment      int `json:"inSegment"`
-	WithContact    int `json:"withContact"`
-	BlockedByLimit int `json:"blockedByLimit"`
-	Control        int `json:"control"`
-	ToSend         int `json:"toSend"`
+	InSegment      int  `json:"inSegment"`
+	WithContact    int  `json:"withContact"`
+	BlockedByLimit int  `json:"blockedByLimit"`
+	Control        int  `json:"control"`
+	ToSend         int  `json:"toSend"`
+	Suppressed     bool `json:"suppressed"`
 }
 
 type ExportCreateRequest struct {
@@ -117,6 +118,7 @@ func (s *ExportService) Preview(ctx context.Context, req ExportPreviewRequest) (
 		BlockedByLimit: len(blocked),
 		Control:        len(control),
 		ToSend:         len(allowed) - len(control),
+		Suppressed:     false,
 	}, nil
 }
 
@@ -420,31 +422,32 @@ func hash64(guestID string, seed int64) uint64 {
 }
 
 func toExportDTO(j domain.ExportJob) *ExportDTO {
-	suppressed := j.TotalInSegment < 5 || j.ExportedCount < 5 || j.ControlCount < 5
-	d := &ExportDTO{
-		ID:               j.ID,
-		SegmentID:        j.SegmentID,
-		SegmentVersionID: j.SegmentVersionID,
-		CampaignID:       j.CampaignID,
-		Channel:          string(j.Channel),
-		Format:           string(j.Format),
-		Status:           string(j.Status),
-		ControlPercent:   j.ControlPercent,
-		ControlSeed:      j.ControlSeed,
-		Suppressed:       suppressed,
-		IdempotencyKey:   j.IdempotencyKey,
-		CreatedBy:        j.CreatedBy,
-		CreatedAt:        j.CreatedAt,
-		FinishedAt:       j.FinishedAt,
+	total := j.TotalInSegment
+	noContact := j.NoContactCount
+	blocked := j.BlockedByLimitCount
+	control := j.ControlCount
+	exported := j.ExportedCount
+	return &ExportDTO{
+		ID:                  j.ID,
+		SegmentID:           j.SegmentID,
+		SegmentVersionID:    j.SegmentVersionID,
+		CampaignID:          j.CampaignID,
+		Channel:             string(j.Channel),
+		Format:              string(j.Format),
+		Status:              string(j.Status),
+		ControlPercent:      j.ControlPercent,
+		ControlSeed:         j.ControlSeed,
+		TotalInSegment:      &total,
+		NoContactCount:      &noContact,
+		BlockedByLimitCount: &blocked,
+		ControlCount:        &control,
+		ExportedCount:       &exported,
+		Suppressed:          false,
+		IdempotencyKey:      j.IdempotencyKey,
+		CreatedBy:           j.CreatedBy,
+		CreatedAt:           j.CreatedAt,
+		FinishedAt:          j.FinishedAt,
 	}
-	if !suppressed {
-		d.TotalInSegment = &j.TotalInSegment
-		d.NoContactCount = &j.NoContactCount
-		d.BlockedByLimitCount = &j.BlockedByLimitCount
-		d.ControlCount = &j.ControlCount
-		d.ExportedCount = &j.ExportedCount
-	}
-	return d
 }
 
 func orDefault(v, def string) string {

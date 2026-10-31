@@ -18,12 +18,13 @@ func NewRecommendationHandler(recommendations *service.RecommendationService) *R
 }
 
 func (h *RecommendationHandler) List(w http.ResponseWriter, r *http.Request) {
-	items, err := h.recommendations.ForGuest(r.Context(), chi.URLParam(r, "id"))
+	guestID := chi.URLParam(r, "id")
+	items, err := h.recommendations.ForGuest(r.Context(), guestID)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"guestId": guestID, "items": nonNil(items)})
 }
 
 func (h *RecommendationHandler) SegmentRecommendations(w http.ResponseWriter, r *http.Request) {
@@ -36,10 +37,11 @@ func (h *RecommendationHandler) SegmentRecommendations(w http.ResponseWriter, r 
 }
 
 func (h *RecommendationHandler) Refresh(w http.ResponseWriter, r *http.Request) {
-	items, err := h.recommendations.Refresh(r.Context(), chi.URLParam(r, "id"))
+	guestID := chi.URLParam(r, "id")
+	items, err := h.recommendations.Refresh(r.Context(), guestID)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"guestId": guestID, "items": nonNil(items)})
 }

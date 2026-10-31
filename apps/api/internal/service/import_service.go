@@ -73,10 +73,10 @@ type ImportDTO struct {
 	Mode         string     `json:"mode"`
 	Status       string     `json:"status"`
 	FileName     string     `json:"fileName,omitempty"`
-	Total        int        `json:"total"`
-	Accepted     int        `json:"accepted"`
-	Rejected     int        `json:"rejected"`
-	Duplicate    int        `json:"duplicate"`
+	Total        int        `json:"totalRows"`
+	Accepted     int        `json:"acceptedRows"`
+	Rejected     int        `json:"rejectedRows"`
+	Duplicate    int        `json:"duplicateRows"`
 	ErrorMessage string     `json:"errorMessage,omitempty"`
 	CreatedBy    string     `json:"createdBy,omitempty"`
 	CreatedAt    time.Time  `json:"createdAt"`
@@ -92,10 +92,12 @@ type CreateImportResult struct {
 }
 
 type RejectedRowDTO struct {
-	RowNumber    int    `json:"rowNumber"`
-	ErrorCode    string `json:"errorCode"`
-	ErrorMessage string `json:"errorMessage"`
-	RawLine      string `json:"rawLine"`
+	ID            string `json:"id"`
+	ImportBatchID string `json:"importBatchId"`
+	RowNumber     int    `json:"rowNumber"`
+	ErrorCode     string `json:"errorCode"`
+	ErrorMessage  string `json:"errorMessage"`
+	RawLine       string `json:"rawLine"`
 }
 
 type CreateImportInput struct {
@@ -267,10 +269,12 @@ func (s *ImportService) RejectedRows(ctx context.Context, batchID string, limit,
 	out := make([]RejectedRowDTO, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, RejectedRowDTO{
-			RowNumber:    r.RowNumber,
-			ErrorCode:    r.ErrorCode,
-			ErrorMessage: r.ErrorMessage,
-			RawLine:      r.RawLine,
+			ID:            r.ID,
+			ImportBatchID: r.ImportBatchID,
+			RowNumber:     r.RowNumber,
+			ErrorCode:     r.ErrorCode,
+			ErrorMessage:  r.ErrorMessage,
+			RawLine:       r.RawLine,
 		})
 	}
 	return out, nil

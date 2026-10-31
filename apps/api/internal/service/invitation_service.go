@@ -103,9 +103,6 @@ func (s *InvitationService) send(ctx context.Context, actor domain.Principal, in
 }
 
 func (s *InvitationService) Accept(ctx context.Context, token, password string) error {
-	if s.sender == nil {
-		return ErrInvitationDeliveryUnavailable
-	}
 	raw, err := base64.RawURLEncoding.DecodeString(token)
 	if err != nil || len(raw) != 32 {
 		return domain.ErrUnauthorized

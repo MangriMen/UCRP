@@ -86,6 +86,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 	accessSvc := service.NewAccessGrantService(repository.NewAccessSQL(store.DB), clock, idg, users)
 	accessSvc.SetTenantRepository(repository.NewTenantSQL(store.DB))
 	accessSvc.SetAuditRepository(repository.NewAuditSQL(store.DB))
+	authSvc.SetAccessService(accessSvc)
 	authHandler := handler.NewAuthHandler(authSvc)
 	accessHandler := handler.NewAccessGrantHandler(accessSvc)
 	invitationHandler := handler.NewInvitationHandler(service.NewInvitationService(repository.NewInvitationSQL(store.DB), accessSvc, nil, clock, idg, users))
@@ -107,7 +108,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 	mergeSQL := repository.NewMergeSQL(store.DB)
 	blocks := repository.NewMergeBlockSQL(store.DB)
 	identitySvc := service.NewIdentityService(mergeSQL, blocks, mergeSQL, q)
-	identityHandler := handler.NewIdentityHandler(identitySvc)
+	identityHandler := handler.NewIdentityHandler(identitySvc, profileSvc)
 	segmentRepo := repository.NewSegmentSQL(store.DB)
 	if err := segmentRepo.EnsureTemplates(ctx, clock, idg); err != nil {
 		return err

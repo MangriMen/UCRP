@@ -205,6 +205,12 @@ func (f *fakeSegments) ReplaceMembers(context.Context, string, []string, time.Ti
 func (f *fakeSegments) ListMembers(context.Context, string, int, int) ([]string, error) {
 	return nil, nil
 }
+func (f *fakeSegments) CountMembers(context.Context, string) (int, error) {
+	return 0, nil
+}
+func (f *fakeSegments) CurrentVersions(context.Context, []string) (map[string]*domain.SegmentVersion, error) {
+	return map[string]*domain.SegmentVersion{}, nil
+}
 func (f *fakeSegments) ListMemberContacts(context.Context, string) ([]domain.GuestContact, error) {
 	return f.memberContacts, nil
 }

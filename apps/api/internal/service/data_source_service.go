@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -27,27 +28,27 @@ func NewDataSourceService(sources domain.DataSourceRepo, types domain.DataSource
 }
 
 type DataSourceDTO struct {
-	ID           string     `json:"id"`
-	TenantID     string     `json:"tenantId,omitempty"`
-	TypeID       string     `json:"typeId"`
-	TypeCode     string     `json:"typeCode"`
-	Name         string     `json:"name"`
-	Config       string     `json:"config,omitempty"`
-	FieldMapping string     `json:"fieldMapping,omitempty"`
-	ScheduleCron string     `json:"scheduleCron,omitempty"`
-	IsActive     bool       `json:"isActive"`
-	LastImportAt *time.Time `json:"lastImportAt,omitempty"`
-	CreatedAt    time.Time  `json:"createdAt"`
-	UpdatedAt    time.Time  `json:"updatedAt"`
+	ID           string          `json:"id"`
+	TenantID     string          `json:"tenantId,omitempty"`
+	TypeID       string          `json:"typeId"`
+	TypeCode     string          `json:"typeCode"`
+	Name         string          `json:"name"`
+	Config       json.RawMessage `json:"config,omitempty"`
+	FieldMapping json.RawMessage `json:"fieldMapping,omitempty"`
+	ScheduleCron string          `json:"scheduleCron,omitempty"`
+	IsActive     bool            `json:"isActive"`
+	LastImportAt *time.Time      `json:"lastImportAt,omitempty"`
+	CreatedAt    time.Time       `json:"createdAt"`
+	UpdatedAt    time.Time       `json:"updatedAt"`
 }
 
 type CreateDataSourceRequest struct {
-	TenantID     string `json:"tenantId"`
-	TypeID       string `json:"typeId"`
-	Name         string `json:"name"`
-	Config       string `json:"config"`
-	FieldMapping string `json:"fieldMapping"`
-	ScheduleCron string `json:"scheduleCron"`
+	TenantID     string          `json:"tenantId"`
+	TypeID       string          `json:"typeId"`
+	Name         string          `json:"name"`
+	Config       json.RawMessage `json:"config,omitempty"`
+	FieldMapping json.RawMessage `json:"fieldMapping,omitempty"`
+	ScheduleCron string          `json:"scheduleCron"`
 }
 
 type DataSourceTypeDTO struct {
@@ -64,10 +65,11 @@ func (s *DataSourceService) Create(ctx context.Context, req CreateDataSourceRequ
 	if name == "" || req.TypeID == "" {
 		return nil, domain.ErrValidation
 	}
-	if req.FieldMapping != "" {
-		if _, err := ingestion.ParseFieldMapping(req.FieldMapping); err != nil {
-			return nil, domain.ErrValidation
-		}
+	if len(req.FieldMapping) == 0 {
+		return nil, domain.ErrValidation
+	}
+	if _, err := ingestion.ParseFieldMapping(string(req.FieldMapping)); err != nil {
+		return nil, domain.ErrValidation
 	}
 	now := s.clock.Now()
 	ds := &domain.DataSource{
@@ -75,8 +77,8 @@ func (s *DataSourceService) Create(ctx context.Context, req CreateDataSourceRequ
 		TenantID:     req.TenantID,
 		TypeID:       req.TypeID,
 		Name:         name,
-		Config:       req.Config,
-		FieldMapping: req.FieldMapping,
+		Config:       string(req.Config),
+		FieldMapping: string(req.FieldMapping),
 		ScheduleCron: req.ScheduleCron,
 		IsActive:     true,
 		CreatedAt:    now,
@@ -94,11 +96,11 @@ func (s *DataSourceService) Create(ctx context.Context, req CreateDataSourceRequ
 }
 
 type DataSourceUpdateRequest struct {
-	Name         string `json:"name"`
-	Config       string `json:"config"`
-	FieldMapping string `json:"fieldMapping"`
-	ScheduleCron string `json:"scheduleCron"`
-	IsActive     *bool  `json:"isActive"`
+	Name         string          `json:"name"`
+	Config       json.RawMessage `json:"config,omitempty"`
+	FieldMapping json.RawMessage `json:"fieldMapping,omitempty"`
+	ScheduleCron string          `json:"scheduleCron"`
+	IsActive     *bool           `json:"isActive"`
 }
 
 func (s *DataSourceService) Update(ctx context.Context, id string, req DataSourceUpdateRequest) (*DataSourceDTO, error) {
@@ -109,14 +111,14 @@ func (s *DataSourceService) Update(ctx context.Context, id string, req DataSourc
 	if req.Name != "" {
 		ds.Name = req.Name
 	}
-	if req.Config != "" {
-		ds.Config = req.Config
+	if len(req.Config) > 0 {
+		ds.Config = string(req.Config)
 	}
-	if req.FieldMapping != "" {
-		if _, err := ingestion.ParseFieldMapping(req.FieldMapping); err != nil {
+	if len(req.FieldMapping) > 0 {
+		if _, err := ingestion.ParseFieldMapping(string(req.FieldMapping)); err != nil {
 			return nil, domain.ErrValidation
 		}
-		ds.FieldMapping = req.FieldMapping
+		ds.FieldMapping = string(req.FieldMapping)
 	}
 	if req.ScheduleCron != "" {
 		ds.ScheduleCron = req.ScheduleCron
@@ -225,6 +227,13 @@ func (s *DataSourceService) ListTypes(ctx context.Context) ([]DataSourceTypeDTO,
 	return out, nil
 }
 
+func rawJSONObject(s string) json.RawMessage {
+	if strings.TrimSpace(s) == "" || s == "null" || !json.Valid([]byte(s)) {
+		return nil
+	}
+	return json.RawMessage(s)
+}
+
 func toDataSourceDTO(ds domain.DataSource) DataSourceDTO {
 	return DataSourceDTO{
 		ID:           ds.ID,
@@ -232,8 +241,8 @@ func toDataSourceDTO(ds domain.DataSource) DataSourceDTO {
 		TypeID:       ds.TypeID,
 		TypeCode:     ds.TypeCode,
 		Name:         ds.Name,
-		Config:       ds.Config,
-		FieldMapping: ds.FieldMapping,
+		Config:       rawJSONObject(ds.Config),
+		FieldMapping: rawJSONObject(ds.FieldMapping),
 		ScheduleCron: ds.ScheduleCron,
 		IsActive:     ds.IsActive,
 		LastImportAt: ds.LastImportAt,

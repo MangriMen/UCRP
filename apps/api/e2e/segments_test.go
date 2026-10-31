@@ -29,11 +29,14 @@ func TestSegmentTemplatesFive(t *testing.T) {
 	}
 	for _, raw := range items {
 		item, _ := raw.(map[string]any)
-		if isTemplate, ok := item["isTemplate"].(bool); !ok || !isTemplate {
-			t.Fatalf("every catalogue entry must be flagged as a template: %v", item)
+		if code := harness.StringField(item, "code"); code == "" {
+			t.Fatalf("every template must carry a code: %v", item)
 		}
-		if code := harness.StringField(item, "templateCode"); code == "" {
-			t.Fatalf("every template must carry a templateCode: %v", item)
+		if name := harness.StringField(item, "name"); name == "" {
+			t.Fatalf("every template must carry a name: %v", item)
+		}
+		if rule, ok := item["rule"]; !ok || rule == nil {
+			t.Fatalf("every template must carry a rule: %v", item)
 		}
 	}
 }
@@ -113,9 +116,13 @@ func TestSegmentMembersPaged(t *testing.T) {
 	if len(items) != 2 {
 		t.Fatalf("limit=2 must return at most two members, got %d", len(items))
 	}
-	for _, id := range items {
-		if !containsString(guests, id.(string)) {
-			t.Fatalf("member %v is not one of the fixture guests", id)
+	for _, item := range items {
+		entry, ok := item.(map[string]any)
+		if !ok {
+			t.Fatalf("member %v is not an object", item)
+		}
+		if !containsString(guests, harness.StringField(entry, "guestId")) {
+			t.Fatalf("member %v is not one of the fixture guests", entry)
 		}
 	}
 }

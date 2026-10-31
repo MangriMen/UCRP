@@ -150,3 +150,50 @@ func (r *GuestSQL) SoftDelete(ctx context.Context, id string, now time.Time) err
 	}
 	return nil
 }
+
+func (r *GuestSQL) TenantSummaries(ctx context.Context, guestID string) ([]domain.GuestTenantSummary, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT t.id, t.name, COUNT(*)
+		FROM event e
+		JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+		JOIN tenant t ON t.id = e.tenant_id
+		WHERE e.guest_id = $1
+		GROUP BY t.id, t.name
+		ORDER BY t.name`, guestID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]domain.GuestTenantSummary, 0)
+	for rows.Next() {
+		var s domain.GuestTenantSummary
+		if err := rows.Scan(&s.TenantID, &s.TenantName, &s.EventCount); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+func (r *GuestSQL) SegmentSummaries(ctx context.Context, guestID string) ([]domain.GuestSegmentSummary, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT s.id, s.name, v.version_no
+		FROM segment_member m
+		JOIN segment_version v ON v.id = m.segment_version_id
+		JOIN segment s ON s.id = v.segment_id AND s.current_version_no = v.version_no
+		WHERE m.guest_id = $1
+		ORDER BY s.name`, guestID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]domain.GuestSegmentSummary, 0)
+	for rows.Next() {
+		var s domain.GuestSegmentSummary
+		if err := rows.Scan(&s.SegmentID, &s.Name, &s.VersionNo); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}

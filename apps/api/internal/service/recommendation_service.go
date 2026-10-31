@@ -18,6 +18,8 @@ func NewRecommendationService(guests domain.GuestRepo, repo domain.Recommendatio
 }
 
 type RecommendationDTO struct {
+	ID               string  `json:"id"`
+	GuestID          string  `json:"guestId"`
 	Rank             int     `json:"rank"`
 	TenantID         string  `json:"tenantId"`
 	Score            float64 `json:"score"`
@@ -94,6 +96,8 @@ func toRecoDTOs(items []domain.Recommendation) []RecommendationDTO {
 	out := make([]RecommendationDTO, 0, len(items))
 	for _, it := range items {
 		out = append(out, RecommendationDTO{
+			ID:               it.ID,
+			GuestID:          it.GuestID,
 			Rank:             it.Rank,
 			TenantID:         it.TenantID,
 			Score:            it.Score,

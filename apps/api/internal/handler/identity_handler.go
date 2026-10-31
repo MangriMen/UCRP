@@ -14,10 +14,11 @@ import (
 
 type IdentityHandler struct {
 	identity *service.IdentityService
+	profiles *service.ProfileService
 }
 
-func NewIdentityHandler(identity *service.IdentityService) *IdentityHandler {
-	return &IdentityHandler{identity: identity}
+func NewIdentityHandler(identity *service.IdentityService, profiles *service.ProfileService) *IdentityHandler {
+	return &IdentityHandler{identity: identity, profiles: profiles}
 }
 
 func (h *IdentityHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -30,13 +31,52 @@ func (h *IdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 	writePage(w, items, limit, offset, offset+len(items))
 }
 
+type mergeCandidateDetail struct {
+	service.MergeCandidateDTO
+	GuestA     *service.GuestProfile        `json:"guestA"`
+	GuestB     *service.GuestProfile        `json:"guestB"`
+	SharedKeys []service.GuestIdentifierDTO `json:"sharedKeys"`
+}
+
+func sharedIdentifierKeys(a, b *service.GuestProfile) []service.GuestIdentifierDTO {
+	type key struct{ idType, value string }
+	seen := make(map[key]bool, len(a.Identifiers))
+	for _, id := range a.Identifiers {
+		seen[key{id.IDType, id.ValueNormalized}] = true
+	}
+	out := make([]service.GuestIdentifierDTO, 0, len(b.Identifiers))
+	for _, id := range b.Identifiers {
+		if seen[key{id.IDType, id.ValueNormalized}] {
+			out = append(out, service.GuestIdentifierDTO{
+				ID: id.ID, GuestID: id.GuestID, IDType: id.IDType, ValueNormalized: id.ValueNormalized,
+			})
+		}
+	}
+	return out
+}
+
 func (h *IdentityHandler) Get(w http.ResponseWriter, r *http.Request) {
 	item, err := h.identity.Get(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, item)
+	guestA, err := h.profiles.Get(r.Context(), item.GuestAID)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	guestB, err := h.profiles.Get(r.Context(), item.GuestBID)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, mergeCandidateDetail{
+		MergeCandidateDTO: *item,
+		GuestA:            guestA,
+		GuestB:            guestB,
+		SharedKeys:        sharedIdentifierKeys(guestA, guestB),
+	})
 }
 
 func (h *IdentityHandler) Confirm(w http.ResponseWriter, r *http.Request) {

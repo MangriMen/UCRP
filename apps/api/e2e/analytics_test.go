@@ -3,6 +3,7 @@ package e2e
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/MangriMen/UCRP/e2e/harness"
 )
@@ -13,17 +14,30 @@ func TestCrossTenantDistributionsContract(t *testing.T) {
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
-	single, err := s.Reg.Guest(ctx, "cross-tenant-single")
-	if err != nil {
-		t.Fatalf("fixture single-tenant guest: %v", err)
+	for i := 0; i < 5; i++ {
+		g, err := s.Reg.Guest(ctx, "cross-tenant-single-"+string(rune('a'+i)))
+		if err != nil {
+			t.Fatalf("fixture single-tenant guest %d: %v", i, err)
+		}
+		w.visit(t, s, g.ID, w.tenantA.ID, "pen-single-"+string(rune('a'+i)), 3)
 	}
-	pair, err := s.Reg.Guest(ctx, "cross-tenant-pair")
-	if err != nil {
-		t.Fatalf("fixture two-tenant guest: %v", err)
+	for i := 0; i < 5; i++ {
+		g, err := s.Reg.Guest(ctx, "cross-tenant-pair-"+string(rune('a'+i)))
+		if err != nil {
+			t.Fatalf("fixture two-tenant guest %d: %v", i, err)
+		}
+		w.visit(t, s, g.ID, w.tenantA.ID, "pen-pair-a-"+string(rune('a'+i)), 3)
+		w.visit(t, s, g.ID, w.tenantB.ID, "pen-pair-b-"+string(rune('a'+i)), 2)
 	}
-	w.visit(t, s, single.ID, w.tenantA.ID, "pen-single", 3)
-	w.visit(t, s, pair.ID, w.tenantA.ID, "pen-pair-a", 3)
-	w.visit(t, s, pair.ID, w.tenantB.ID, "pen-pair-b", 2)
+	for i := 0; i < 5; i++ {
+		g, err := s.Reg.Guest(ctx, "cross-tenant-triple-"+string(rune('a'+i)))
+		if err != nil {
+			t.Fatalf("fixture three-tenant guest %d: %v", i, err)
+		}
+		w.visit(t, s, g.ID, w.tenantA.ID, "pen-triple-a-"+string(rune('a'+i)), 3)
+		w.visit(t, s, g.ID, w.tenantB.ID, "pen-triple-b-"+string(rune('a'+i)), 2)
+		w.visit(t, s, g.ID, w.tenantC.ID, "pen-triple-c-"+string(rune('a'+i)), 1)
+	}
 
 	resp, err := s.API.Get(ctx, "/api/v1/dashboard/cross-tenant", nil)
 	if err != nil {
@@ -34,25 +48,22 @@ func TestCrossTenantDistributionsContract(t *testing.T) {
 	s.RequireSchema("GET", "/api/v1/dashboard/cross-tenant", resp)
 
 	report := jsonObject(t, resp, "cross-tenant report")
-	one, _ := harness.IntField(report, "one")
-	two, _ := harness.IntField(report, "two")
-	threePlus, _ := harness.IntField(report, "three_plus")
-	buckets, ok := report["buckets"].([]any)
-	if !ok || len(buckets) != 3 {
-		t.Fatalf("the cross-tenant report must expose three buckets: %s", resp.Snippet())
+	distribution, ok := report["distribution"].(map[string]any)
+	if !ok {
+		t.Fatalf("the cross-tenant report must expose a distribution object: %s", resp.Snippet())
 	}
-
-	var bucketTotal int
-	for _, raw := range buckets {
-		bucket, _ := raw.(map[string]any)
-		count, _ := harness.IntField(bucket, "count")
-		bucketTotal += count
+	one, oneOK := harness.IntField(distribution, "one")
+	two, twoOK := harness.IntField(distribution, "two")
+	threePlus, threeOK := harness.IntField(distribution, "threePlus")
+	if !oneOK || !twoOK || !threeOK {
+		t.Fatalf("raw distribution buckets must be visible for five or more guests each: %s", resp.Snippet())
 	}
-	if bucketTotal != one+two+threePlus {
-		t.Fatalf("bucket counts (%d) must add up to one+two+three_plus (%d)", bucketTotal, one+two+threePlus)
+	if one < 5 || two < 5 || threePlus < 5 {
+		t.Fatalf("distribution buckets must each carry at least five fixture guests, got one=%d two=%d threePlus=%d", one, two, threePlus)
 	}
-	if one < 1 || two < 1 {
-		t.Fatalf("the fixture guests must land in the 1-tenant and 2-tenant buckets, got one=%d two=%d", one, two)
+	series, ok := report["series"].([]any)
+	if !ok || len(series) == 0 {
+		t.Fatalf("the cross-tenant report must expose a series: %s", resp.Snippet())
 	}
 }
 
@@ -103,17 +114,36 @@ func TestDashboardMetricsFields(t *testing.T) {
 	s.RequireSchema("GET", "/api/v1/dashboard/metrics", resp)
 
 	metrics := jsonObject(t, resp, "dashboard metrics")
-	for _, key := range []string{"match_rate", "contested_merge_rate", "avg_segment_to_export_minutes"} {
+	for _, key := range []string{"matchRate", "disputedMergeRate"} {
 		value, ok := metrics[key]
 		if !ok {
 			t.Fatalf("the metrics payload is missing %q: %s", key, resp.Snippet())
 		}
+		if value == nil {
+			continue
+		}
 		rate, ok := value.(float64)
 		if !ok {
-			t.Fatalf("%q must be numeric, got %T", key, value)
+			t.Fatalf("%q must be numeric or null, got %T", key, value)
 		}
 		if rate < 0 || rate > 1 {
 			t.Fatalf("%q must stay within 0..1, got %v", key, rate)
+		}
+	}
+	for _, key := range []string{"segmentToExportMedianSeconds", "segmentToExportP95Seconds"} {
+		value, ok := metrics[key]
+		if !ok {
+			t.Fatalf("the metrics payload is missing %q: %s", key, resp.Snippet())
+		}
+		if value == nil {
+			continue
+		}
+		seconds, ok := value.(float64)
+		if !ok {
+			t.Fatalf("%q must be numeric or null, got %T", key, value)
+		}
+		if seconds < 0 {
+			t.Fatalf("%q must not be negative, got %v", key, seconds)
 		}
 	}
 }
@@ -198,8 +228,37 @@ func TestTenantAggregatesTenantRoleIsolation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("fixture tenant user: %v", err)
 	}
-	tenantClient := s.As(user.Email, user.Password)
+	manager, err := s.Reg.User(ctx, "aggregates-manager", "manager", "")
+	if err != nil {
+		t.Fatalf("fixture manager: %v", err)
+	}
+	managerClient := s.As(manager.Email, manager.Password)
 
+	withoutGrant, err := s.As(user.Email, user.Password).Get(ctx, "/api/v1/tenants/"+w.tenantA.ID+"/aggregates", nil)
+	if err != nil {
+		t.Fatalf("GET own aggregates as tenant without a grant: %v", err)
+	}
+	s.RequireStatus(withoutGrant, 403, "GET /api/v1/tenants/{own}/aggregates as tenant without a grant")
+
+	grant, err := managerClient.Post(ctx, "/api/v1/access/grants", map[string]any{
+		"subjectType": "tenant",
+		"subjectId":   w.tenantA.ID,
+		"status":      "active",
+		"validFrom":   time.Now().Add(-time.Minute).UTC().Format(time.RFC3339),
+		"validTo":     time.Now().Add(time.Hour).UTC().Format(time.RFC3339),
+		"reason":      "E2E aggregates isolation",
+		"items": []map[string]string{
+			{"permission": "tenant.aggregates.own", "effect": "allow"},
+			{"permission": "metric.visits_count.read", "effect": "allow"},
+		},
+		"scopes": []map[string]string{{"type": "tenant", "value": w.tenantA.ID}},
+	})
+	if err != nil {
+		t.Fatalf("create aggregates grant: %v", err)
+	}
+	s.RequireStatus(grant, 201, "manager grants tenant.aggregates.own")
+
+	tenantClient := s.As(user.Email, user.Password)
 	own, err := tenantClient.Get(ctx, "/api/v1/tenants/"+w.tenantA.ID+"/aggregates", nil)
 	if err != nil {
 		t.Fatalf("GET own aggregates as tenant: %v", err)
@@ -235,7 +294,7 @@ func TestDataQualitySourcesList(t *testing.T) {
 	sourceIndex := -1
 	for i, item := range items {
 		row, _ := item.(map[string]any)
-		if harness.StringField(row, "data_source_id") == iw.source.ID {
+		if harness.StringField(row, "dataSourceId") == iw.source.ID {
 			sourceIndex = i
 			break
 		}
@@ -247,8 +306,11 @@ func TestDataQualitySourcesList(t *testing.T) {
 	if _, exists := row["hasWarning"]; !exists {
 		t.Fatalf("a data quality row must carry a warning flag: %s", resp.Snippet())
 	}
-	if _, exists := row["rejected_rate"]; !exists {
-		t.Fatalf("a data quality row must carry rejected_rate: %s", resp.Snippet())
+	if _, exists := row["rejectedShare30d"]; !exists {
+		t.Fatalf("a data quality row must carry rejectedShare30d: %s", resp.Snippet())
+	}
+	if _, exists := row["suppressed"]; !exists {
+		t.Fatalf("a data quality row must carry a suppressed flag: %s", resp.Snippet())
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
@@ -19,22 +20,25 @@ func NewUserSQL(db *sql.DB) *UserSQL {
 
 func (r *UserSQL) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	return r.getOne(ctx, `
-		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, auth_version
+		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, updated_at, auth_version
 		FROM app_user WHERE id = $1`, id)
 }
 
 func (r *UserSQL) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	return r.getOne(ctx, `
-		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, auth_version
+		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, updated_at, auth_version
 		FROM app_user WHERE email = $1`, email)
 }
 
 func (r *UserSQL) Insert(ctx context.Context, u *domain.User) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO app_user (id, email, password_hash, display_name, role, tenant_id, is_active, last_login_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-		u.ID, u.Email, u.PasswordHash, u.DisplayName, string(u.Role), nullIfEmpty(u.TenantID), u.IsActive, u.LastLoginAt, u.CreatedAt,
+		INSERT INTO app_user (id, email, password_hash, display_name, role, tenant_id, is_active, last_login_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		u.ID, u.Email, u.PasswordHash, u.DisplayName, string(u.Role), nullIfEmpty(u.TenantID), u.IsActive, u.LastLoginAt, u.CreatedAt, u.UpdatedAt,
 	)
+	if err != nil && strings.Contains(err.Error(), "duplicate key") {
+		return domain.ErrConflict
+	}
 	return err
 }
 
@@ -43,7 +47,7 @@ func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, e
 		limit = 50
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, auth_version
+		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, updated_at, auth_version
 		FROM app_user ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
@@ -57,13 +61,15 @@ func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, e
 			active    bool
 			lastLogin sql.NullTime
 			created   time.Time
+			updated   time.Time
 		)
-		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created, &u.AuthVersion); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created, &updated, &u.AuthVersion); err != nil {
 			return nil, err
 		}
 		u.Role = domain.Role(role)
 		u.IsActive = active
 		u.CreatedAt = created
+		u.UpdatedAt = updated
 		if lastLogin.Valid {
 			t := lastLogin.Time
 			u.LastLoginAt = &t
@@ -75,9 +81,9 @@ func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, e
 
 func (r *UserSQL) Update(ctx context.Context, u *domain.User) error {
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE app_user SET display_name = $2, role = $3, tenant_id = $4, is_active = $5, password_hash = $6
+		UPDATE app_user SET display_name = $2, role = $3, tenant_id = $4, is_active = $5, password_hash = $6, updated_at = $7
 		WHERE id = $1`,
-		u.ID, u.DisplayName, string(u.Role), nullIfEmpty(u.TenantID), u.IsActive, u.PasswordHash,
+		u.ID, u.DisplayName, string(u.Role), nullIfEmpty(u.TenantID), u.IsActive, u.PasswordHash, u.UpdatedAt,
 	)
 	return err
 }
@@ -106,9 +112,10 @@ func (r *UserSQL) getOne(ctx context.Context, query string, arg any) (*domain.Us
 		active    bool
 		lastLogin sql.NullTime
 		created   time.Time
+		updated   time.Time
 	)
 	err := r.db.QueryRowContext(ctx, query, arg).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created, &u.AuthVersion,
+		&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created, &updated, &u.AuthVersion,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrNotFound
@@ -119,6 +126,7 @@ func (r *UserSQL) getOne(ctx context.Context, query string, arg any) (*domain.Us
 	u.Role = domain.Role(role)
 	u.IsActive = active
 	u.CreatedAt = created
+	u.UpdatedAt = updated
 	if lastLogin.Valid {
 		t := lastLogin.Time
 		u.LastLoginAt = &t

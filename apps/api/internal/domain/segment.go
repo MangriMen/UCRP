@@ -102,6 +102,8 @@ type SegmentRepo interface {
 	MarkComputing(ctx context.Context, versionID string) error
 	ReplaceMembers(ctx context.Context, versionID string, guestIDs []string, computedAt time.Time) error
 	ListMembers(ctx context.Context, versionID string, limit, offset int) ([]string, error)
+	CountMembers(ctx context.Context, versionID string) (int, error)
+	CurrentVersions(ctx context.Context, segmentIDs []string) (map[string]*SegmentVersion, error)
 	ListMemberContacts(ctx context.Context, versionID string) ([]GuestContact, error)
 }
 

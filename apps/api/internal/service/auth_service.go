@@ -14,11 +14,14 @@ type AuthService struct {
 	tokens *auth.Manager
 	clock  domain.Clock
 	idGen  domain.IDGen
+	access *AccessGrantService
 }
 
 func NewAuthService(users domain.UserRepo, tokens *auth.Manager, clock domain.Clock, idGen domain.IDGen) *AuthService {
 	return &AuthService{users: users, tokens: tokens, clock: clock, idGen: idGen}
 }
+
+func (s *AuthService) SetAccessService(access *AccessGrantService) { s.access = access }
 
 type LoginResult struct {
 	AccessToken  string
@@ -28,12 +31,13 @@ type LoginResult struct {
 }
 
 type MeResponse struct {
-	UserID      string   `json:"userId"`
-	Email       string   `json:"email"`
-	DisplayName string   `json:"displayName"`
-	Role        string   `json:"role"`
-	TenantID    string   `json:"tenantId,omitempty"`
-	Permissions []string `json:"permissions"`
+	UserID        string   `json:"userId"`
+	Email         string   `json:"email"`
+	DisplayName   string   `json:"displayName"`
+	Role          string   `json:"role"`
+	TenantID      string   `json:"tenantId,omitempty"`
+	PolicyVersion int64    `json:"policyVersion"`
+	Permissions   []string `json:"permissions"`
 }
 
 func permissionsFor(role domain.Role) []string {
@@ -66,6 +70,24 @@ func toMe(u *domain.User) MeResponse {
 	return m
 }
 
+func (s *AuthService) meWithEffective(ctx context.Context, u *domain.User) (MeResponse, error) {
+	m := toMe(u)
+	if s.access == nil {
+		return m, nil
+	}
+	principal := domain.Principal{UserID: u.ID, Role: u.Role, TenantID: u.TenantID, AuthVersion: u.AuthVersion}
+	perms, version, err := s.access.Effective(ctx, principal)
+	if err != nil {
+		return MeResponse{}, err
+	}
+	if perms == nil {
+		perms = []string{}
+	}
+	m.Permissions = perms
+	m.PolicyVersion = version
+	return m, nil
+}
+
 func (s *AuthService) Login(ctx context.Context, email, password string) (LoginResult, error) {
 	u, err := s.users.GetByEmail(ctx, email)
 	if err != nil {
@@ -81,11 +103,15 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (LoginR
 	if err := s.users.TouchLastLogin(ctx, u.ID, s.clock.Now()); err != nil {
 		return LoginResult{}, err
 	}
+	me, err := s.meWithEffective(ctx, u)
+	if err != nil {
+		return LoginResult{}, err
+	}
 	return LoginResult{
 		AccessToken:  pair.AccessToken,
 		RefreshToken: pair.RefreshToken,
 		ExpiresIn:    pair.ExpiresIn,
-		User:         toMe(u),
+		User:         me,
 	}, nil
 }
 
@@ -97,7 +123,7 @@ func (s *AuthService) Me(ctx context.Context, userID string) (MeResponse, error)
 		}
 		return MeResponse{}, err
 	}
-	return toMe(u), nil
+	return s.meWithEffective(ctx, u)
 }
 
 func (s *AuthService) CreateUser(ctx context.Context, email, password, displayName string, role domain.Role, tenantID string) (MeResponse, error) {
@@ -114,6 +140,7 @@ func (s *AuthService) CreateUser(ctx context.Context, email, password, displayNa
 		TenantID:     tenantID,
 		IsActive:     true,
 		CreatedAt:    s.clock.Now().UTC().Truncate(time.Second),
+		UpdatedAt:    s.clock.Now().UTC().Truncate(time.Second),
 	}
 	if err := s.users.Insert(ctx, u); err != nil {
 		return MeResponse{}, err

@@ -65,12 +65,26 @@ type Event struct {
 	CreatedAt     time.Time
 }
 
+type GuestTenantSummary struct {
+	TenantID   string
+	TenantName string
+	EventCount int
+}
+
+type GuestSegmentSummary struct {
+	SegmentID string
+	Name      string
+	VersionNo int
+}
+
 type GuestRepo interface {
 	GetByID(ctx context.Context, id string) (*Guest, error)
 	Search(ctx context.Context, q string, limit, offset int) ([]Guest, error)
 	Insert(ctx context.Context, g *Guest) error
 	TenantCount(ctx context.Context, guestID string) (int, error)
 	TenantNames(ctx context.Context, guestID string) ([]string, error)
+	TenantSummaries(ctx context.Context, guestID string) ([]GuestTenantSummary, error)
+	SegmentSummaries(ctx context.Context, guestID string) ([]GuestSegmentSummary, error)
 	MarkMerged(ctx context.Context, loserID, winnerID string) error
 	MarkActive(ctx context.Context, guestID string) error
 	SoftDelete(ctx context.Context, id string, now time.Time) error

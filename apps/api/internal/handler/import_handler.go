@@ -91,16 +91,7 @@ func (h *ImportHandler) RejectedRows(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	page := 1
-	if limit > 0 {
-		page = offset/limit + 1
-	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{
-		"items":    items,
-		"page":     page,
-		"pageSize": limit,
-		"total":    offset + len(items),
-	})
+	writePage(w, items, limit, offset, offset+len(items))
 }
 
 func (h *ImportHandler) rejectedCSV(w http.ResponseWriter, r *http.Request, batchID string) {

@@ -15,8 +15,13 @@ type crossTenantPointView struct {
 	CrossTenantRate *float64 `json:"crossTenantRate"`
 }
 
+func inSmallGroup(v int) bool {
+	return v > 0 && v < 5
+}
+
 func visibleCrossTenant(bucket service.CrossTenantDistribution, rate float64, hide bool) (crossTenantDistributionView, *float64) {
-	if hide || bucket.One < 5 || bucket.Two < 5 || bucket.ThreePlus < 5 {
+	empty := bucket.One == 0 && bucket.Two == 0 && bucket.ThreePlus == 0
+	if !empty && (hide || inSmallGroup(bucket.One) || inSmallGroup(bucket.Two) || inSmallGroup(bucket.ThreePlus)) {
 		return crossTenantDistributionView{Suppressed: true}, nil
 	}
 	return crossTenantDistributionView{One: &bucket.One, Two: &bucket.Two, ThreePlus: &bucket.ThreePlus}, &rate
