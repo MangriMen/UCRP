@@ -13,7 +13,7 @@ import { useAuth } from '@/entities/user'
 import { CreateExportButton } from '@/features/create-export'
 import { formatDateTime, formatNumber } from '@/shared/lib/format'
 import { useListParams } from '@/shared/lib/list-params'
-import { ALL_OPTION } from '@/shared/lib/search-params'
+import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { OptionSelect, type Option } from '@/shared/ui/option-select'
@@ -73,8 +73,7 @@ export function ExportsPage() {
   })
 
   const selectValue = (key: string) => get(key) || ALL_OPTION
-  const changeSelect = (key: string) => (value: string) =>
-    update({ [key]: value === ALL_OPTION ? null : value })
+  const changeSelect = (key: string) => (value: string) => update({ [key]: optionParam(value) })
 
   return (
     <div className="flex flex-col gap-6">

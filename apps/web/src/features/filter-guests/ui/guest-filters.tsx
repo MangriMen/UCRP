@@ -1,17 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
 import { guestStatusLabels } from '@/entities/guest'
 import { useDataSourceOptions } from '@/entities/data-source'
 import { useSegments } from '@/entities/segment'
 import { useTenants } from '@/entities/tenant'
+import { useDebouncedSearchParam } from '@/shared/lib/hooks/use-debounced-search-param'
 import type { ListParams } from '@/shared/lib/list-params'
 import { daysAgo } from '@/shared/lib/period'
-import { ALL_OPTION } from '@/shared/lib/search-params'
+import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { OptionSelect, type Option } from '@/shared/ui/option-select'
 import { PeriodFilter } from '@/shared/ui/period-filter'
 
-const SEARCH_DEBOUNCE_MS = 300
 const OPTIONS_LIMIT = 200
 const NEW_GUESTS_DAYS = 7
 const INACTIVE_GUESTS_DAYS = 90
@@ -42,23 +41,13 @@ const withAll = (label: string, items: Option[]): Option[] => [
 
 export function GuestFiltersPanel({ params, isFiltered, onReset }: GuestFiltersPanelProps) {
   const { get, update } = params
-  const [input, setInput] = useState(get('q'))
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const search = useDebouncedSearchParam(params, 'q')
   const sources = useDataSourceOptions()
   const tenants = useTenants({ pageSize: OPTIONS_LIMIT })
   const segments = useSegments({ pageSize: OPTIONS_LIMIT })
 
-  useEffect(() => () => clearTimeout(timer.current), [])
-
-  const changeInput = (value: string) => {
-    setInput(value)
-    clearTimeout(timer.current)
-    timer.current = setTimeout(() => update({ q: value.trim() }), SEARCH_DEBOUNCE_MS)
-  }
-
   const reset = () => {
-    clearTimeout(timer.current)
-    setInput('')
+    search.clear()
     onReset()
   }
 
@@ -75,8 +64,7 @@ export function GuestFiltersPanel({ params, isFiltered, onReset }: GuestFiltersP
     (segments.data?.items ?? []).map((segment) => ({ value: segment.id, label: segment.name })),
   )
   const selectValue = (key: string) => get(key) || ALL_OPTION
-  const changeSelect = (key: string) => (value: string) =>
-    update({ [key]: value === ALL_OPTION ? null : value })
+  const changeSelect = (key: string) => (value: string) => update({ [key]: optionParam(value) })
 
   const periodFrom = get('period_from')
   const periodTo = get('period_to')
@@ -91,8 +79,8 @@ export function GuestFiltersPanel({ params, isFiltered, onReset }: GuestFiltersP
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <Input
-          value={input}
-          onChange={(event) => changeInput(event.target.value)}
+          value={search.value}
+          onChange={(event) => search.onChange(event.target.value)}
           placeholder="Телефон, email, номер карты или имя"
           aria-label="Поиск гостей"
           className="max-w-md"

@@ -1,13 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
 import { useDataSourceTypes } from '@/entities/data-source-type'
 import { importStatusLabels } from '@/entities/import-batch'
+import { useDebouncedSearchParam } from '@/shared/lib/hooks/use-debounced-search-param'
 import type { ListParams } from '@/shared/lib/list-params'
-import { ALL_OPTION } from '@/shared/lib/search-params'
+import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { OptionSelect, type Option } from '@/shared/ui/option-select'
-
-const SEARCH_DEBOUNCE_MS = 300
 
 const statusItems: Option[] = [
   { value: ALL_OPTION, label: 'Все статусы' },
@@ -29,21 +27,11 @@ interface SourceFiltersProps {
 
 export function SourceFilters({ params, isFiltered, onReset }: SourceFiltersProps) {
   const { get, update } = params
-  const [input, setInput] = useState(get('q'))
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const search = useDebouncedSearchParam(params, 'q')
   const types = useDataSourceTypes()
 
-  useEffect(() => () => clearTimeout(timer.current), [])
-
-  const changeInput = (value: string) => {
-    setInput(value)
-    clearTimeout(timer.current)
-    timer.current = setTimeout(() => update({ q: value.trim() }), SEARCH_DEBOUNCE_MS)
-  }
-
   const reset = () => {
-    clearTimeout(timer.current)
-    setInput('')
+    search.clear()
     onReset()
   }
 
@@ -52,8 +40,7 @@ export function SourceFilters({ params, isFiltered, onReset }: SourceFiltersProp
     ...(types.data ?? []).map((type) => ({ value: type.id, label: type.name })),
   ]
   const selectValue = (key: string) => get(key) || ALL_OPTION
-  const changeSelect = (key: string) => (value: string) =>
-    update({ [key]: value === ALL_OPTION ? null : value })
+  const changeSelect = (key: string) => (value: string) => update({ [key]: optionParam(value) })
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -61,8 +48,8 @@ export function SourceFilters({ params, isFiltered, onReset }: SourceFiltersProp
         className="w-64"
         aria-label="Поиск по источнику или арендатору"
         placeholder="Источник или арендатор"
-        value={input}
-        onChange={(event) => changeInput(event.target.value)}
+        value={search.value}
+        onChange={(event) => search.onChange(event.target.value)}
       />
       <OptionSelect
         className="w-56"

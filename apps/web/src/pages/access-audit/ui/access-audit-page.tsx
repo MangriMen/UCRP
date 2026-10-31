@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
 import { AccessAuditTable } from '@/entities/access'
 import { useAuth } from '@/entities/user'
 import { AuditActor, useSubjectDirectory } from '@/features/manage-access-grants'
+import { useDebouncedSearchParam } from '@/shared/lib/hooks/use-debounced-search-param'
 import { useListParams } from '@/shared/lib/list-params'
 import { endOfDay, startOfDay } from '@/shared/lib/period'
-import { ALL_OPTION } from '@/shared/lib/search-params'
+import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { OptionSelect } from '@/shared/ui/option-select'
@@ -12,31 +12,21 @@ import { PageHeader } from '@/shared/ui/page-header'
 import { PeriodFilter } from '@/shared/ui/period-filter'
 
 const FILTER_KEYS = ['actor', 'grant_id', 'from', 'to'] as const
-const INPUT_DEBOUNCE_MS = 300
 
 export function AccessAuditPage() {
   const { can } = useAuth()
   const directory = useSubjectDirectory()
-  const { get, update, page, pageSize, setPage, setPageSize, reset } = useListParams()
-  const [grantInput, setGrantInput] = useState(get('grant_id'))
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
-
-  useEffect(() => () => clearTimeout(timer.current), [])
+  const params = useListParams()
+  const { get, update, page, pageSize, setPage, setPageSize, reset } = params
+  const grant = useDebouncedSearchParam(params, 'grant_id')
 
   const from = get('from')
   const to = get('to')
   const invalidPeriod = from !== '' && to !== '' && from > to
   const isFiltered = FILTER_KEYS.some((key) => get(key) !== '')
 
-  const changeGrant = (value: string) => {
-    setGrantInput(value)
-    clearTimeout(timer.current)
-    timer.current = setTimeout(() => update({ grant_id: value.trim() }), INPUT_DEBOUNCE_MS)
-  }
-
   const resetFilters = () => {
-    clearTimeout(timer.current)
-    setGrantInput('')
+    grant.clear()
     reset()
   }
 
@@ -62,14 +52,14 @@ export function AccessAuditPage() {
             className="w-64"
             items={actorItems}
             value={get('actor') || ALL_OPTION}
-            onValueChange={(value) => update({ actor: value === ALL_OPTION ? null : value })}
+            onValueChange={(value) => update({ actor: optionParam(value) })}
           />
           <Input
             aria-label="ID гранта"
             placeholder="ID гранта"
             className="w-64"
-            value={grantInput}
-            onChange={(event) => changeGrant(event.target.value)}
+            value={grant.value}
+            onChange={(event) => grant.onChange(event.target.value)}
           />
         </div>
         <PeriodFilter

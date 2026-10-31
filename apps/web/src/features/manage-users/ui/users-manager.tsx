@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { roleLabels, useAuth, useUsers, type Role, type User } from '@/entities/user'
 import { formatDateTime } from '@/shared/lib/format'
+import { useDebouncedSearchParam } from '@/shared/lib/hooks/use-debounced-search-param'
 import { useListParams } from '@/shared/lib/list-params'
-import { ALL_OPTION } from '@/shared/lib/search-params'
+import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { ActiveBadge } from '@/shared/ui/active-badge'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
@@ -16,7 +17,6 @@ import { useDeleteUser, useRecoverUser } from '../api/use-user-mutations'
 import { RenameUserDialog } from './rename-user-dialog'
 
 const WRITE_PERMISSION = 'user.write'
-const SEARCH_DEBOUNCE_MS = 300
 
 const roleFilterItems = [
   { value: ALL_OPTION, label: 'Все роли' },
@@ -30,12 +30,9 @@ const canRecover = (user: User) => user.isActive && recoverableRoles.includes(us
 export function UsersManager() {
   const params = useListParams()
   const { get, update, page, pageSize, setPage, setPageSize, reset } = params
-  const [search, setSearch] = useState(get('q'))
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const search = useDebouncedSearchParam(params, 'q')
   const role = get('role')
   const isFiltered = get('q') !== '' || role !== ''
-
-  useEffect(() => () => clearTimeout(timer.current), [])
 
   const users = useUsers({
     q: get('q') || undefined,
@@ -52,15 +49,8 @@ export function UsersManager() {
   const [recovering, setRecovering] = useState<User | null>(null)
   const [recoveredEmail, setRecoveredEmail] = useState<string | null>(null)
 
-  const changeSearch = (value: string) => {
-    setSearch(value)
-    clearTimeout(timer.current)
-    timer.current = setTimeout(() => update({ q: value.trim() }), SEARCH_DEBOUNCE_MS)
-  }
-
   const resetFilters = () => {
-    clearTimeout(timer.current)
-    setSearch('')
+    search.clear()
     reset()
   }
 
@@ -117,8 +107,8 @@ export function UsersManager() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <Input
-          value={search}
-          onChange={(event) => changeSearch(event.target.value)}
+          value={search.value}
+          onChange={(event) => search.onChange(event.target.value)}
           placeholder="Email или имя"
           aria-label="Поиск пользователей"
           className="w-full sm:w-64"
@@ -126,7 +116,7 @@ export function UsersManager() {
         <OptionSelect
           items={roleFilterItems}
           value={role || ALL_OPTION}
-          onValueChange={(next) => update({ role: next === ALL_OPTION ? null : next })}
+          onValueChange={(next) => update({ role: optionParam(next) })}
           ariaLabel="Роль"
           className="w-full sm:w-48"
         />

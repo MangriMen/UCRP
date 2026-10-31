@@ -15,7 +15,7 @@ import { useAuth } from '@/entities/user'
 import { useSubjectDirectory, type SubjectDirectory } from '@/features/manage-access-grants'
 import { formatDateTime } from '@/shared/lib/format'
 import { useListParams } from '@/shared/lib/list-params'
-import { ALL_OPTION } from '@/shared/lib/search-params'
+import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { OptionSelect, type Option } from '@/shared/ui/option-select'
@@ -93,8 +93,7 @@ export function AccessGrantsPage() {
     { id: 'updatedAt', header: 'Изменён', cell: (grant) => formatDateTime(grant.updatedAt) },
   ]
 
-  const select = (key: string) => (value: string) =>
-    update({ [key]: value === ALL_OPTION ? null : value })
+  const select = (key: string) => (value: string) => update({ [key]: optionParam(value) })
 
   return (
     <div className="flex flex-col gap-6">
@@ -132,9 +131,7 @@ export function AccessGrantsPage() {
           className="w-48"
           items={subjectTypeItems}
           value={subjectType ?? ALL_OPTION}
-          onValueChange={(value) =>
-            update({ subject_type: value === ALL_OPTION ? null : value, subject_id: null })
-          }
+          onValueChange={(value) => update({ subject_type: optionParam(value), subject_id: null })}
         />
         {subjectType && (
           <OptionSelect
