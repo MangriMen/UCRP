@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
 import { RoleGuard } from '@/entities/user'
@@ -45,9 +45,8 @@ describe('ExportsPage', () => {
 
   it.each(['user-analyst', 'user-manager'])('keeps %s read-only', async (userId) => {
     renderAs(userId)
-    expect((await screen.findAllByRole('button', { name: 'Скачать CSV' })).length).toBeGreaterThan(
-      0,
-    )
+    await waitFor(() => expect(screen.getAllByRole('row').length).toBeGreaterThan(1))
+    expect(screen.queryByRole('button', { name: 'Скачать CSV' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Экспортировать' })).not.toBeInTheDocument()
   })
 })
