@@ -51,13 +51,14 @@ services:
       db:
         condition: service_healthy
       api:
-        condition: service_started
+        condition: service_healthy
 
   web:
     image: ghcr.io/mangrimen/ucrp/ucrp-web:${IMAGE_TAG}
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   ucrp_pg:
