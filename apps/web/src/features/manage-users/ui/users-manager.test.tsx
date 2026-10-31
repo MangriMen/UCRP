@@ -61,4 +61,15 @@ describe('UsersManager', () => {
     expect(within(ownRow).getByRole('button', { name: 'Деактивировать' })).toBeDisabled()
     expect(within(otherRow).getByRole('button', { name: 'Деактивировать' })).toBeEnabled()
   })
+
+  it('locks the active flag when editing the current user', async () => {
+    renderManager('user-manager')
+    const ownRow = (await screen.findByText('manager@ucrp.test')).closest('tr') as HTMLElement
+    await userEvent.click(within(ownRow).getByRole('button', { name: 'Изменить' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('checkbox', { name: 'Активен' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+  })
 })

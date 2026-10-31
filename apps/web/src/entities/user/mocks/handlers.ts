@@ -86,6 +86,9 @@ export const userHandlers = [
     const user = records.find((u) => u.id === params.id)
     if (!user) return apiError(404, 'not_found', 'Пользователь не найден')
     const body = (await request.json()) as UserUpdateRequest
+    if (user.id === SELF_USER_ID && body.isActive === false) {
+      return apiError(409, 'conflict', 'Нельзя деактивировать самого себя')
+    }
     Object.assign(user, {
       displayName: body.displayName ?? user.displayName,
       role: body.role ?? user.role,

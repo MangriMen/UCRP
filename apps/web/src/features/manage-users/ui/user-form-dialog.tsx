@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm, useWatch } from 'react-hook-form'
-import { roleLabels, type User } from '@/entities/user'
+import { roleLabels, useMe, type User } from '@/entities/user'
 import { useTenants } from '@/entities/tenant'
 import { hasErrorCode } from '@/shared/api/errors'
 import { CheckboxField } from '@/shared/ui/checkbox-field'
@@ -24,6 +24,7 @@ interface UserFormDialogProps {
 
 export function UserFormDialog({ open, user, onOpenChange }: UserFormDialogProps) {
   const tenants = useTenants({ pageSize: TENANT_OPTIONS_LIMIT })
+  const me = useMe()
   const create = useCreateUser()
   const update = useUpdateUser()
   const mutation = user ? update : create
@@ -124,7 +125,12 @@ export function UserFormDialog({ open, user, onOpenChange }: UserFormDialogProps
         control={control}
         name="isActive"
         render={({ field: { value, onChange } }) => (
-          <CheckboxField label="Активен" checked={value} onCheckedChange={onChange} />
+          <CheckboxField
+            label="Активен"
+            checked={value}
+            disabled={user !== null && user.id === me.data?.userId}
+            onCheckedChange={onChange}
+          />
         )}
       />
     </FormDialog>
