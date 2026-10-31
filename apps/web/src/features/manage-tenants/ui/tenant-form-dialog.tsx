@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { useMalls } from '@/entities/mall'
 import type { Tenant } from '@/entities/tenant'
 import { useTenantCategories } from '@/entities/tenant-category'
 import { hasErrorCode } from '@/shared/api/errors'
@@ -16,6 +17,7 @@ const schema = z.object({
   code: z.string().trim().min(1, 'Введите код').max(64, 'Не более 64 символов'),
   name: z.string().trim().min(1, 'Введите название').max(200, 'Не более 200 символов'),
   categoryId: z.string().min(1, 'Выберите категорию'),
+  mallId: z.string().min(1, 'Выберите ТЦ'),
   floor: z.string().regex(/^-?\d+$/, 'Введите целый номер этажа'),
   areaSqm: z
     .string()
@@ -38,6 +40,7 @@ interface TenantFormDialogProps {
 
 export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialogProps) {
   const categories = useTenantCategories()
+  const malls = useMalls()
   const create = useCreateTenant()
   const update = useUpdateTenant()
   const mutation = tenant ? update : create
@@ -53,6 +56,7 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
       code: tenant?.code ?? '',
       name: tenant?.name ?? '',
       categoryId: tenant?.categoryId ?? '',
+      mallId: tenant?.mallId ?? '',
       floor: tenant ? String(tenant.floor) : '',
       areaSqm: tenant?.areaSqm ? String(tenant.areaSqm) : '',
       priority: String(tenant?.priority ?? 50),
@@ -65,6 +69,7 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
       code: values.code,
       name: values.name,
       categoryId: values.categoryId,
+      mallId: values.mallId,
       floor: Number(values.floor),
       areaSqm: values.areaSqm ? Number(values.areaSqm) : null,
       priority: Number(values.priority),
@@ -83,6 +88,7 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
   })
 
   const categoryItems = (categories.data ?? []).map((c) => ({ value: c.id, label: c.name }))
+  const mallItems = (malls.data ?? []).map((m) => ({ value: m.id, label: m.name }))
 
   return (
     <FormDialog
@@ -112,6 +118,23 @@ export function TenantFormDialog({ open, tenant, onOpenChange }: TenantFormDialo
                 id={field.id}
                 invalid={field['aria-invalid']}
                 items={categoryItems}
+                value={value}
+                onValueChange={onChange}
+              />
+            )}
+          />
+        )}
+      </FormField>
+      <FormField label="ТЦ" error={errors.mallId?.message}>
+        {(field) => (
+          <Controller
+            control={control}
+            name="mallId"
+            render={({ field: { value, onChange } }) => (
+              <OptionSelect
+                id={field.id}
+                invalid={field['aria-invalid']}
+                items={mallItems}
                 value={value}
                 onValueChange={onChange}
               />

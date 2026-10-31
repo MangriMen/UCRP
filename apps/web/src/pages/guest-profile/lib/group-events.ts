@@ -1,13 +1,9 @@
 import type { GuestEvent } from '@/entities/guest'
+import { dayKey } from './day-key'
 
 export interface EventDayGroup {
   day: string
   events: GuestEvent[]
-}
-
-const dayKey = (iso: string) => {
-  const date = new Date(iso)
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
 }
 
 export function groupEventsByDay(events: GuestEvent[]): EventDayGroup[] {

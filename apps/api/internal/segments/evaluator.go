@@ -4,11 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
+)
+
+const (
+	purchaseEventCode = "purchase"
+	operatorAnd       = "and"
+	operatorOr        = "or"
+	maxRuleDepth      = 4
 )
 
 type SqlEvaluator struct {
@@ -32,60 +40,69 @@ func (e *SqlEvaluator) Preview(ctx context.Context, rule domain.SegmentRule) (in
 }
 
 func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([]string, error) {
-	if err := validateRule(rule); err != nil {
+	if err := validateRule(rule, 0); err != nil {
 		return nil, err
 	}
+	return e.evaluateNode(ctx, rule)
+}
+
+func (e *SqlEvaluator) evaluateNode(ctx context.Context, rule domain.SegmentRule) ([]string, error) {
+	if !rule.IsGroup() {
+		return e.evaluateLeaf(ctx, rule)
+	}
+	var result []string
+	for i, condition := range rule.Conditions {
+		guestIDs, err := e.evaluateNode(ctx, condition)
+		if err != nil {
+			return nil, err
+		}
+		if i == 0 {
+			result = guestIDs
+			continue
+		}
+		result = combineGuestIDs(rule.Operator, result, guestIDs)
+		if rule.Operator == operatorAnd && len(result) == 0 {
+			break
+		}
+	}
+	sort.Strings(result)
+	return result, nil
+}
+
+func combineGuestIDs(operator string, left, right []string) []string {
+	inRight := make(map[string]struct{}, len(right))
+	for _, id := range right {
+		inRight[id] = struct{}{}
+	}
+	if operator == operatorOr {
+		inLeft := make(map[string]struct{}, len(left))
+		out := append([]string(nil), left...)
+		for _, id := range left {
+			inLeft[id] = struct{}{}
+		}
+		for _, id := range right {
+			if _, seen := inLeft[id]; !seen {
+				out = append(out, id)
+			}
+		}
+		return out
+	}
+	out := make([]string, 0)
+	for _, id := range left {
+		if _, ok := inRight[id]; ok {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+func (e *SqlEvaluator) evaluateLeaf(ctx context.Context, rule domain.SegmentRule) ([]string, error) {
 	if rule.PeriodDays <= 0 {
 		rule.PeriodDays = 90
 	}
 	since := time.Now().UTC().AddDate(0, 0, -rule.PeriodDays)
 
-	args := make([]any, 0, len(rule.VisitedTenantIDs)+len(rule.ExcludedTenantIDs)+2)
-	for _, id := range rule.VisitedTenantIDs {
-		args = append(args, id)
-	}
-	args = append(args, since)
-
-	query := `
-		SELECT guest_id FROM (
-			SELECT DISTINCT e.guest_id
-			FROM event e
-			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
-			WHERE e.guest_id IS NOT NULL
-				AND e.tenant_id IN (` + inPlaceholders(1, len(rule.VisitedTenantIDs)) + `)
-				AND e.occurred_at >= $` + strconv.Itoa(len(rule.VisitedTenantIDs)+1) + `
-		) base`
-
-	if len(rule.ExcludedTenantIDs) > 0 {
-		notStart := len(args) + 1
-		for _, id := range rule.ExcludedTenantIDs {
-			args = append(args, id)
-		}
-		args = append(args, since)
-		query += `
-		WHERE NOT EXISTS (
-			SELECT 1 FROM event e2
-			JOIN event_type et2 ON et2.id = e2.event_type_id AND et2.counts_as_presence
-			WHERE e2.guest_id = base.guest_id
-				AND e2.tenant_id IN (` + inPlaceholders(notStart, len(rule.ExcludedTenantIDs)) + `)
-				AND e2.occurred_at >= $` + strconv.Itoa(notStart+len(rule.ExcludedTenantIDs)) + `
-		)`
-	} else if rule.RequireContact != "" {
-		query += `
-		WHERE true`
-	}
-
-	if rule.RequireContact != "" {
-		args = append(args, rule.RequireContact)
-		query += `
-		AND EXISTS (
-			SELECT 1 FROM guest_identifier i
-			WHERE i.guest_id = base.guest_id AND i.id_type = $` + strconv.Itoa(len(args)) + `
-		)`
-	}
-
-	query += ` ORDER BY guest_id`
-
+	query, args := buildQuery(rule, since)
 	rows, err := e.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate segment: %w", err)
@@ -102,8 +119,99 @@ func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([
 	return out, rows.Err()
 }
 
-func validateRule(rule domain.SegmentRule) error {
-	if len(rule.VisitedTenantIDs) == 0 {
+type queryArgs struct {
+	values []any
+}
+
+func (a *queryArgs) add(value any) string {
+	a.values = append(a.values, value)
+	return "$" + strconv.Itoa(len(a.values))
+}
+
+func (a *queryArgs) addAll(values []string) string {
+	placeholders := make([]string, len(values))
+	for i, value := range values {
+		placeholders[i] = a.add(value)
+	}
+	return strings.Join(placeholders, ",")
+}
+
+func buildQuery(rule domain.SegmentRule, since time.Time) (string, []any) {
+	args := &queryArgs{}
+	sinceArg := args.add(since)
+
+	var base string
+	var conditions []string
+	if len(rule.VisitedTenantIDs) > 0 {
+		base = `
+			SELECT DISTINCT e.guest_id
+			FROM event e
+			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+			WHERE e.guest_id IS NOT NULL
+				AND e.tenant_id IN (` + args.addAll(rule.VisitedTenantIDs) + `)
+				AND e.occurred_at >= ` + sinceArg
+		if len(rule.PurchasedZones) > 0 {
+			conditions = append(conditions, `EXISTS (SELECT 1 `+purchasesInZones(args, rule.PurchasedZones, sinceArg)+` AND ep.guest_id = base.guest_id)`)
+		}
+	} else {
+		base = `SELECT DISTINCT ep.guest_id ` + purchasesInZones(args, rule.PurchasedZones, sinceArg) + ` AND ep.guest_id IS NOT NULL`
+	}
+
+	if len(rule.ExcludedTenantIDs) > 0 {
+		conditions = append(conditions, `NOT EXISTS (
+				SELECT 1 FROM event e2
+				JOIN event_type et2 ON et2.id = e2.event_type_id AND et2.counts_as_presence
+				WHERE e2.guest_id = base.guest_id
+					AND e2.tenant_id IN (`+args.addAll(rule.ExcludedTenantIDs)+`)
+					AND e2.occurred_at >= `+sinceArg+`
+			)`)
+	}
+	if rule.RequireContact != "" {
+		conditions = append(conditions, `EXISTS (
+				SELECT 1 FROM guest_identifier i
+				WHERE i.guest_id = base.guest_id AND i.id_type = `+args.add(rule.RequireContact)+`
+			)`)
+	}
+
+	query := `SELECT guest_id FROM (` + base + `) base`
+	if len(conditions) > 0 {
+		query += ` WHERE ` + strings.Join(conditions, ` AND `)
+	}
+	return query + ` ORDER BY guest_id`, args.values
+}
+
+func purchasesInZones(args *queryArgs, zones []domain.ZoneRef, sinceArg string) string {
+	pairs := make([]string, len(zones))
+	for i, zone := range zones {
+		pairs[i] = "(tz.mall_id = " + args.add(zone.MallID) + " AND tz.floor = " + args.add(zone.Floor) + ")"
+	}
+	return `FROM event ep
+				JOIN event_type ept ON ept.id = ep.event_type_id AND ept.code = '` + purchaseEventCode + `'
+				JOIN tenant tz ON tz.id = ep.tenant_id
+				WHERE ep.occurred_at >= ` + sinceArg + `
+					AND (` + strings.Join(pairs, " OR ") + `)`
+}
+
+func validateRule(rule domain.SegmentRule, depth int) error {
+	if !rule.IsGroup() {
+		return validateLeaf(rule)
+	}
+	if depth >= maxRuleDepth || len(rule.Conditions) == 0 {
+		return domain.ErrValidation
+	}
+	if rule.Operator != operatorAnd && rule.Operator != operatorOr {
+		return domain.ErrValidation
+	}
+	for _, condition := range rule.Conditions {
+		if err := validateRule(condition, depth+1); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateLeaf(rule domain.SegmentRule) error {
+	if len(rule.VisitedTenantIDs) == 0 && len(rule.PurchasedZones) == 0 {
 		return domain.ErrValidation
 	}
 	for _, t := range rule.ExcludedTenantIDs {
@@ -112,6 +220,9 @@ func validateRule(rule domain.SegmentRule) error {
 				return domain.ErrValidation
 			}
 		}
+	}
+	if !validZones(rule.PurchasedZones) {
+		return domain.ErrValidation
 	}
 	switch rule.RequireContact {
 	case "":
@@ -122,10 +233,16 @@ func validateRule(rule domain.SegmentRule) error {
 	return nil
 }
 
-func inPlaceholders(start, n int) string {
-	parts := make([]string, n)
-	for i := range parts {
-		parts[i] = "$" + strconv.Itoa(start+i)
+func validZones(zones []domain.ZoneRef) bool {
+	seen := make(map[domain.ZoneRef]struct{}, len(zones))
+	for _, zone := range zones {
+		if zone.MallID == "" || zone.Floor == 0 {
+			return false
+		}
+		if _, duplicate := seen[zone]; duplicate {
+			return false
+		}
+		seen[zone] = struct{}{}
 	}
-	return strings.Join(parts, ",")
+	return true
 }

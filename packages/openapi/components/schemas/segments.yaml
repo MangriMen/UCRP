@@ -6,12 +6,29 @@ SegmentStatus:
     - ready
     - failed
     - archived
+ZoneRef:
+  type: object
+  description: A zone is one floor of one mall.
+  required:
+    - mallId
+    - floor
+  properties:
+    mallId:
+      type: string
+    floor:
+      type: integer
+      description: Mall floor; 0 (no floor) is not a valid zone
 SegmentRule:
   type: object
   description: Segment rule (JSON DSL). Compiled into parameterized SQL, so arbitrary queries are impossible.
   required:
     - periodDays
   properties:
+    purchasedZones:
+      type: array
+      description: Guest made at least one purchase (event type `purchase`) at a tenant of any of these zones within the period. Combined with `visitedTenantIds` by AND. A rule needs `visitedTenantIds` or `purchasedZones`.
+      items:
+        $ref: ./segments.yaml#/ZoneRef
     visitedTenantIds:
       type: array
       description: Guest had an event at any of these tenants

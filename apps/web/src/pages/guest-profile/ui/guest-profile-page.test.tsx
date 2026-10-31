@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router'
@@ -44,6 +44,23 @@ describe('GuestProfilePage', () => {
     expect(await screen.findByText('Лента', { selector: 'div' })).toBeInTheDocument()
     expect(await screen.findByText('Email', { selector: 'td' })).toBeInTheDocument()
     expect(await screen.findByText('Следующий шаг')).toBeInTheDocument()
+  })
+
+  it('shows the movement map as a chronological chain of floors', async () => {
+    renderPage('guest-0001')
+    const route = await screen.findByRole('list', { name: 'Маршрут по этажам' })
+    const legs = within(route).getAllByRole('listitem')
+    expect(legs).toHaveLength(4)
+    expect(within(legs[0]).getByText('2 этаж')).toBeInTheDocument()
+    expect(within(legs[1]).getByText('4 этаж')).toBeInTheDocument()
+    expect(within(legs[1]).getByText('Киномир')).toBeInTheDocument()
+    expect(within(legs[2]).getByText('1 этаж')).toBeInTheDocument()
+    expect(within(legs[3]).getByText('Северный ТЦ')).toBeInTheDocument()
+  })
+
+  it('shows an empty movement map for a guest without movement', async () => {
+    renderPage('guest-0002')
+    expect(await screen.findByText('Передвижений пока нет')).toBeInTheDocument()
   })
 
   it('shows recommendations with an explanation popover', async () => {

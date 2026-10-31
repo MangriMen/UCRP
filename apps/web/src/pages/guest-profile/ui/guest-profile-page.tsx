@@ -12,6 +12,7 @@ import { PageHeader } from '@/shared/ui/page-header'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { ContactHistory } from './contact-history'
 import { EventFeed } from './event-feed'
+import { MovementMap } from './movement-map'
 import { ProfileCard } from './profile-card'
 
 export function GuestProfilePage() {
@@ -25,6 +26,7 @@ export function GuestProfilePage() {
   if (!profile) return <EmptyState title="Гость не найден" />
 
   const canSeeRecommendations = role === 'marketer' || role === 'analyst'
+  const canSeeMovement = role === 'marketer' || role === 'manager' || role === 'analyst'
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,6 +58,7 @@ export function GuestProfilePage() {
           </CardContent>
         </Card>
       )}
+      {canSeeMovement && <MovementMap guestId={profile.id} />}
       <EventFeed guestId={profile.id} />
       <ContactHistory guestId={profile.id} />
     </div>

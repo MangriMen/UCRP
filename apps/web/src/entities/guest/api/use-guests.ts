@@ -54,6 +54,13 @@ export function useGuestEvents(id: string, filters: GuestEventFilters = {}) {
   })
 }
 
+export function useGuestMovement(id: string) {
+  return useQuery({
+    queryKey: guestKeys.movement(id),
+    queryFn: () => api.get('/guests/{id}/movement', { params: { id } }),
+  })
+}
+
 export function useGuestContacts(id: string, filters: GuestContactFilters = {}) {
   return useQuery({
     queryKey: guestKeys.contacts(id, filters),

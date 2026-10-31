@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 type ReferenceService struct {
 	tenants    domain.TenantRepo
+	malls      domain.MallRepo
 	categories domain.TenantCategoryRepo
 	projects   domain.ProjectRepo
 	eventTypes domain.EventTypeRepo
@@ -20,12 +22,14 @@ type ReferenceService struct {
 
 func NewReferenceService(
 	tenants domain.TenantRepo,
+	malls domain.MallRepo,
 	categories domain.TenantCategoryRepo,
 	projects domain.ProjectRepo,
 	eventTypes domain.EventTypeRepo,
 ) *ReferenceService {
 	return &ReferenceService{
 		tenants:    tenants,
+		malls:      malls,
 		categories: categories,
 		projects:   projects,
 		eventTypes: eventTypes,
@@ -38,6 +42,7 @@ type TenantDTO struct {
 	ID         string    `json:"id"`
 	Code       string    `json:"code"`
 	Name       string    `json:"name"`
+	MallID     string    `json:"mallId"`
 	CategoryID string    `json:"categoryId"`
 	Kind       string    `json:"kind"`
 	Floor      int       `json:"floor"`
@@ -50,6 +55,7 @@ type TenantDTO struct {
 type TenantCreateRequest struct {
 	Code       string `json:"code"`
 	Name       string `json:"name"`
+	MallID     string `json:"mallId"`
 	CategoryID string `json:"categoryId"`
 	Kind       string `json:"kind"`
 	Floor      int    `json:"floor"`
@@ -58,6 +64,7 @@ type TenantCreateRequest struct {
 
 type TenantUpdateRequest struct {
 	Name       string `json:"name"`
+	MallID     string `json:"mallId"`
 	CategoryID string `json:"categoryId"`
 	Kind       string `json:"kind"`
 	Floor      int    `json:"floor"`
@@ -89,8 +96,14 @@ func (s *ReferenceService) GetTenant(ctx context.Context, id string) (*TenantDTO
 func (s *ReferenceService) CreateTenant(ctx context.Context, req TenantCreateRequest) (*TenantDTO, error) {
 	code := strings.TrimSpace(req.Code)
 	name := strings.TrimSpace(req.Name)
-	if code == "" || name == "" || req.CategoryID == "" {
+	if code == "" || name == "" || req.CategoryID == "" || req.MallID == "" {
 		return nil, domain.ErrValidation
+	}
+	if _, err := s.malls.GetByID(ctx, req.MallID); err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.ErrValidation
+		}
+		return nil, err
 	}
 	kind := req.Kind
 	if kind == "" {
@@ -105,6 +118,7 @@ func (s *ReferenceService) CreateTenant(ctx context.Context, req TenantCreateReq
 		ID:         s.idGen.NewID(ctx),
 		Code:       code,
 		Name:       name,
+		MallID:     req.MallID,
 		CategoryID: req.CategoryID,
 		Kind:       kind,
 		Floor:      req.Floor,
@@ -130,6 +144,15 @@ func (s *ReferenceService) UpdateTenant(ctx context.Context, id string, req Tena
 	}
 	if req.CategoryID != "" {
 		t.CategoryID = req.CategoryID
+	}
+	if req.MallID != "" {
+		if _, err := s.malls.GetByID(ctx, req.MallID); err != nil {
+			if errors.Is(err, domain.ErrNotFound) {
+				return nil, domain.ErrValidation
+			}
+			return nil, err
+		}
+		t.MallID = req.MallID
 	}
 	if req.Kind != "" {
 		t.Kind = req.Kind
@@ -417,7 +440,7 @@ func (s *ReferenceService) DeleteEventType(ctx context.Context, id string) error
 
 func toTenantDTO(t domain.Tenant) TenantDTO {
 	return TenantDTO{
-		ID: t.ID, Code: t.Code, Name: t.Name, CategoryID: t.CategoryID,
+		ID: t.ID, Code: t.Code, Name: t.Name, MallID: t.MallID, CategoryID: t.CategoryID,
 		Kind: t.Kind, Floor: t.Floor, Priority: t.Priority, IsActive: t.IsActive,
 		CreatedAt: t.CreatedAt, UpdatedAt: t.UpdatedAt,
 	}

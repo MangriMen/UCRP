@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/identity/normalize"
@@ -89,6 +90,52 @@ type EventDTO struct {
 	OccurredAt  string `json:"occurredAt"`
 	AmountMinor *int64 `json:"amountMinor,omitempty"`
 	Currency    string `json:"currency"`
+}
+
+type MovementStepDTO struct {
+	EventID       string `json:"eventId"`
+	EventTypeCode string `json:"eventTypeCode"`
+	TenantID      string `json:"tenantId"`
+	TenantName    string `json:"tenantName"`
+	MallID        string `json:"mallId"`
+	MallName      string `json:"mallName"`
+	Floor         int    `json:"floor"`
+	OccurredAt    string `json:"occurredAt"`
+}
+
+const (
+	defaultMovementLimit = 200
+	maxMovementLimit     = 500
+)
+
+func (s *ProfileService) Movement(ctx context.Context, guestID string, from, to *time.Time, limit int) ([]MovementStepDTO, error) {
+	if _, err := s.guests.GetByID(ctx, guestID); err != nil {
+		return nil, err
+	}
+	if limit <= 0 {
+		limit = defaultMovementLimit
+	}
+	if limit > maxMovementLimit {
+		limit = maxMovementLimit
+	}
+	steps, err := s.events.ListMovement(ctx, guestID, from, to, limit)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]MovementStepDTO, 0, len(steps))
+	for _, step := range steps {
+		out = append(out, MovementStepDTO{
+			EventID:       step.EventID,
+			EventTypeCode: step.EventTypeCode,
+			TenantID:      step.TenantID,
+			TenantName:    step.TenantName,
+			MallID:        step.MallID,
+			MallName:      step.MallName,
+			Floor:         step.Floor,
+			OccurredAt:    step.OccurredAt.UTC().Format(time.RFC3339),
+		})
+	}
+	return out, nil
 }
 
 func (s *ProfileService) Search(ctx context.Context, q string, limit, offset int) (*GuestPage, error) {

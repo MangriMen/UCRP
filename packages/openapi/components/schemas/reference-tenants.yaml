@@ -4,6 +4,7 @@ Tenant:
     - id
     - code
     - name
+    - mallId
     - categoryId
     - floor
     - priority
@@ -19,6 +20,9 @@ Tenant:
     name:
       type: string
       maxLength: 200
+    mallId:
+      type: string
+      description: Mall the tenant belongs to
     categoryId:
       type: string
     categoryName:
@@ -26,7 +30,7 @@ Tenant:
       readOnly: true
     floor:
       type: integer
-      description: Complex floor
+      description: Mall floor; 0 means the tenant has no floor and cannot be used as a zone
     areaSqm:
       type: number
       format: double
@@ -100,6 +104,7 @@ TenantCreateRequest:
   required:
     - code
     - name
+    - mallId
     - categoryId
     - floor
   properties:
@@ -111,6 +116,8 @@ TenantCreateRequest:
       type: string
       minLength: 1
       maxLength: 200
+    mallId:
+      type: string
     categoryId:
       type: string
     floor:
@@ -146,6 +153,8 @@ TenantUpdateRequest:
       type: string
       minLength: 1
       maxLength: 200
+    mallId:
+      type: string
     categoryId:
       type: string
     floor:

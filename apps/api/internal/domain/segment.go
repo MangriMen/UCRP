@@ -47,22 +47,56 @@ type SegmentVersion struct {
 	CreatedAt   time.Time
 }
 
+type ZoneRef struct {
+	MallID string `json:"mallId"`
+	Floor  int    `json:"floor"`
+}
+
 type SegmentRule struct {
-	VisitedTenantIDs  []string `json:"visitedTenantIds"`
-	ExcludedTenantIDs []string `json:"excludedTenantIds"`
-	PeriodDays        int      `json:"periodDays"`
-	RequireContact    string   `json:"requireContact,omitempty"`
+	VisitedTenantIDs  []string      `json:"visitedTenantIds"`
+	ExcludedTenantIDs []string      `json:"excludedTenantIds"`
+	PurchasedZones    []ZoneRef     `json:"purchasedZones,omitempty"`
+	PeriodDays        int           `json:"periodDays"`
+	RequireContact    string        `json:"requireContact,omitempty"`
+	Operator          string        `json:"-"`
+	Conditions        []SegmentRule `json:"-"`
+}
+
+type segmentRuleGroup struct {
+	Operator   string        `json:"operator"`
+	Conditions []SegmentRule `json:"conditions"`
+}
+
+func (r SegmentRule) IsGroup() bool {
+	return r.Operator != ""
+}
+
+func (r SegmentRule) MarshalJSON() ([]byte, error) {
+	if r.IsGroup() {
+		return json.Marshal(segmentRuleGroup{Operator: r.Operator, Conditions: r.Conditions})
+	}
+	type leaf SegmentRule
+	return json.Marshal(leaf(r))
 }
 
 func (r *SegmentRule) UnmarshalJSON(data []byte) error {
+	var group segmentRuleGroup
+	if err := json.Unmarshal(data, &group); err != nil {
+		return err
+	}
+	if group.Operator != "" {
+		*r = SegmentRule{Operator: group.Operator, Conditions: group.Conditions}
+		return nil
+	}
 	var raw struct {
-		VisitedTenantIDs       []string `json:"visitedTenantIds"`
-		ExcludedTenantIDs      []string `json:"excludedTenantIds"`
-		ExcludedTenantIDsSnake []string `json:"excluded_tenant_ids"`
-		PeriodDays             int      `json:"periodDays"`
-		PeriodDaysSNAK         int      `json:"period_days"`
-		RequireContact         string   `json:"requireContact"`
-		RequireSnake           string   `json:"require_contact"`
+		VisitedTenantIDs       []string  `json:"visitedTenantIds"`
+		ExcludedTenantIDs      []string  `json:"excludedTenantIds"`
+		ExcludedTenantIDsSnake []string  `json:"excluded_tenant_ids"`
+		PurchasedZones         []ZoneRef `json:"purchasedZones"`
+		PeriodDays             int       `json:"periodDays"`
+		PeriodDaysSNAK         int       `json:"period_days"`
+		RequireContact         string    `json:"requireContact"`
+		RequireSnake           string    `json:"require_contact"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
@@ -72,6 +106,7 @@ func (r *SegmentRule) UnmarshalJSON(data []byte) error {
 	if len(r.ExcludedTenantIDs) == 0 {
 		r.ExcludedTenantIDs = raw.ExcludedTenantIDsSnake
 	}
+	r.PurchasedZones = raw.PurchasedZones
 	r.PeriodDays = raw.PeriodDays
 	if r.PeriodDays == 0 {
 		r.PeriodDays = raw.PeriodDaysSNAK

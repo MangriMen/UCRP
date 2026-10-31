@@ -5,10 +5,20 @@ import (
 	"time"
 )
 
+type Mall struct {
+	ID        string
+	Code      string
+	Name      string
+	IsActive  bool
+	Floors    []int
+	CreatedAt time.Time
+}
+
 type Tenant struct {
 	ID         string
 	Code       string
 	Name       string
+	MallID     string
 	CategoryID string
 	Kind       string
 	Floor      int
@@ -57,6 +67,14 @@ type TenantRepo interface {
 	Insert(ctx context.Context, t *Tenant) error
 	Update(ctx context.Context, t *Tenant) error
 	SoftDelete(ctx context.Context, id string, now time.Time) error
+}
+
+type MallRepo interface {
+	List(ctx context.Context) ([]Mall, error)
+	GetByID(ctx context.Context, id string) (*Mall, error)
+	Insert(ctx context.Context, m *Mall) error
+	Update(ctx context.Context, m *Mall) error
+	Delete(ctx context.Context, id string) error
 }
 
 type TenantCategoryRepo interface {

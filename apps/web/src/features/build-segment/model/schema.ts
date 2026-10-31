@@ -1,5 +1,10 @@
 import { z } from 'zod'
-import { isRuleGroup, type SegmentRule, type SegmentRuleNode } from '@/entities/segment'
+import {
+  isRuleGroup,
+  type SegmentRule,
+  type SegmentRuleNode,
+  type ZoneRef,
+} from '@/entities/segment'
 
 export const MAX_PERIOD_DAYS = 730
 
@@ -24,6 +29,7 @@ const leafFields = z.object({
   excludedTenantIds: z.array(z.string()),
   visitedCategoryIds: z.array(z.string()),
   excludedCategoryIds: z.array(z.string()),
+  purchasedZones: z.array(z.string()),
   requireContact: z.enum(contactOptions),
   minVisits: z
     .string()
@@ -93,6 +99,7 @@ export const emptyLeafValues: LeafFormValues = {
   excludedTenantIds: [],
   visitedCategoryIds: [],
   excludedCategoryIds: [],
+  purchasedZones: [],
   requireContact: 'none',
   minVisits: '',
   minAmount: '',
@@ -104,7 +111,19 @@ export const emptyGroupValues = (): GroupValues => ({
   groups: [],
 })
 
-const nonEmpty = (ids: string[]) => (ids.length > 0 ? ids : undefined)
+const nonEmpty = <T>(items: T[]) => (items.length > 0 ? items : undefined)
+
+const ZONE_KEY_SEPARATOR = '|'
+
+export const zoneKey = (zone: ZoneRef) => `${zone.mallId}${ZONE_KEY_SEPARATOR}${zone.floor}`
+
+const parseZoneKey = (key: string): ZoneRef => {
+  const separatorIndex = key.lastIndexOf(ZONE_KEY_SEPARATOR)
+  return {
+    mallId: key.slice(0, separatorIndex),
+    floor: Number(key.slice(separatorIndex + 1)),
+  }
+}
 
 function toLeaf(values: LeafFormValues): SegmentRule {
   return {
@@ -113,6 +132,7 @@ function toLeaf(values: LeafFormValues): SegmentRule {
     excludedTenantIds: nonEmpty(values.excludedTenantIds),
     visitedCategoryIds: nonEmpty(values.visitedCategoryIds),
     excludedCategoryIds: nonEmpty(values.excludedCategoryIds),
+    purchasedZones: nonEmpty(values.purchasedZones.map(parseZoneKey)),
     requireContact: values.requireContact === 'none' ? undefined : values.requireContact,
     minVisits: values.minVisits === '' ? undefined : Number(values.minVisits),
     minAmountMinor:
@@ -136,6 +156,7 @@ function toLeafValues(rule: SegmentRule): LeafFormValues {
     excludedTenantIds: rule.excludedTenantIds ?? [],
     visitedCategoryIds: rule.visitedCategoryIds ?? [],
     excludedCategoryIds: rule.excludedCategoryIds ?? [],
+    purchasedZones: (rule.purchasedZones ?? []).map(zoneKey),
     requireContact: rule.requireContact ?? 'none',
     minVisits: rule.minVisits == null ? '' : String(rule.minVisits),
     minAmount: rule.minAmountMinor == null ? '' : String(rule.minAmountMinor / MINOR_PER_MAJOR),

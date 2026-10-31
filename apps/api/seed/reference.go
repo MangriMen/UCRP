@@ -32,6 +32,27 @@ type tenantSpec struct {
 	Deleted  bool
 }
 
+type mallSpec struct {
+	Code string
+	Name string
+}
+
+func demoMalls() []mallSpec {
+	return []mallSpec{
+		{"central", "Центральный ТЦ"},
+		{"north", "Северный ТЦ"},
+	}
+}
+
+func demoMallCode(tenantCode string) string {
+	switch tenantCode {
+	case "fit-zone", "kids-cube", "books-line", "pets-tail", "sport-protein":
+		return "north"
+	default:
+		return "central"
+	}
+}
+
 type projectSpec struct {
 	Tenant string
 	Code   string
@@ -136,6 +157,14 @@ func (s *Seeder) seedReference(ctx context.Context) error {
 			return err
 		}
 	}
+	for _, m := range demoMalls() {
+		if err := s.exec(ctx, `
+			INSERT INTO mall (id, code, name, is_active, created_at)
+			VALUES ($1, $2, $3, TRUE, $4)
+			ON CONFLICT (id) DO NOTHING`, demoID("mall", m.Code), m.Code, m.Name, s.now); err != nil {
+			return err
+		}
+	}
 	for _, t := range demoTenants() {
 		id := demoID("tenant", t.Code)
 		s.tenants[t.Code] = id
@@ -144,10 +173,10 @@ func (s *Seeder) seedReference(ctx context.Context) error {
 			deletedAt = s.now.AddDate(0, -2, 0)
 		}
 		if err := s.exec(ctx, `
-			INSERT INTO tenant (id, code, name, category_id, kind, floor, x_m, y_m, priority, is_active, created_at, updated_at, deleted_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12)
+			INSERT INTO tenant (id, code, name, mall_id, category_id, kind, floor, x_m, y_m, priority, is_active, created_at, updated_at, deleted_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $13)
 			ON CONFLICT (id) DO NOTHING`,
-			id, t.Code, t.Name, s.categories[t.Category], t.Kind, t.Floor, t.X, t.Y, t.Priority, t.Active, s.now, deletedAt); err != nil {
+			id, t.Code, t.Name, demoID("mall", demoMallCode(t.Code)), s.categories[t.Category], t.Kind, t.Floor, t.X, t.Y, t.Priority, t.Active, s.now, deletedAt); err != nil {
 			return err
 		}
 	}

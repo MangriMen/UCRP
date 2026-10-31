@@ -135,6 +135,7 @@ func routePermissions(method string, parts []string) ([]string, bool) {
 var protectedRoutes = []protectedRoute{
 	{http.MethodGet, "/guests", []string{"guest.profile.search", "guest.identifier.read", "field.guest.display_name.read", "field.guest.tenants_visited.read", "field.guest.phone.read", "field.guest.email.read", "field.guest.card.read"}},
 	{http.MethodGet, "/guests/{id}/events", []string{"guest.event.read", "field.event.amount.read", "field.event.external_id.read"}},
+	{http.MethodGet, "/guests/{id}/movement", []string{"guest.event.read"}},
 	{http.MethodGet, "/guests/{id}/contacts", []string{"guest.contact_history.read"}},
 	{http.MethodPost, "/guests/{id}/merge", []string{"identity.decide"}},
 	{http.MethodDelete, "/guests/{id}", []string{"guest.profile.delete"}},
@@ -175,6 +176,10 @@ var protectedRoutes = []protectedRoute{
 	{http.MethodPost, "/tenants", []string{"reference.write"}},
 	{http.MethodPatch, "/tenants/{id}", []string{"reference.write"}},
 	{http.MethodDelete, "/tenants/{id}", []string{"reference.write"}},
+	{http.MethodGet, "/malls", []string{"reference.read"}},
+	{http.MethodPost, "/malls", []string{"reference.write"}},
+	{http.MethodPatch, "/malls/{id}", []string{"reference.write"}},
+	{http.MethodDelete, "/malls/{id}", []string{"reference.write"}},
 	{http.MethodGet, "/tenant-categories", []string{"reference.read"}},
 	{http.MethodPost, "/tenant-categories", []string{"reference.write"}},
 	{http.MethodPatch, "/tenant-categories/{id}", []string{"reference.write"}},

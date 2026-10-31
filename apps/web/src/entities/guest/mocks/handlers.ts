@@ -5,6 +5,7 @@ import {
   emptyProfile,
   mockGuestContacts,
   mockGuestEvents,
+  mockGuestMovement,
   mockGuestProfileExtras,
   mockGuests,
 } from './fixtures'
@@ -73,6 +74,10 @@ export const guestHandlers = [
     )
     return HttpResponse.json(paged(request, events))
   }),
+
+  http.get(`${API}/guests/:id/movement`, ({ params }) =>
+    HttpResponse.json({ items: mockGuestMovement[String(params.id)] ?? [] }),
+  ),
 
   http.get(`${API}/guests/:id/contacts`, ({ params, request }) =>
     HttpResponse.json(

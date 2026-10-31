@@ -1,6 +1,7 @@
 import { useAuth } from '@/entities/user'
 import { DataSourceTypesManager } from '@/features/manage-data-source-types'
 import { EventTypesManager } from '@/features/manage-event-types'
+import { MallsManager } from '@/features/manage-malls'
 import { ProjectsManager } from '@/features/manage-projects'
 import { TenantCategoriesManager } from '@/features/manage-tenant-categories'
 import { TenantsManager } from '@/features/manage-tenants'
@@ -15,12 +16,13 @@ export function AdminDictionariesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Справочники"
-        description="Категории, арендаторы, проекты и типы событий и источников"
+        description="Категории, арендаторы, торговые центры, проекты и типы событий и источников"
       />
       <Tabs defaultValue="categories">
         <TabsList>
           <TabsTrigger value="categories">Категории</TabsTrigger>
           <TabsTrigger value="tenants">Арендаторы</TabsTrigger>
+          <TabsTrigger value="malls">Торговые центры</TabsTrigger>
           <TabsTrigger value="projects">Проекты</TabsTrigger>
           <TabsTrigger value="event-types">Типы событий</TabsTrigger>
           <TabsTrigger value="data-source-types">Типы источников</TabsTrigger>
@@ -30,6 +32,9 @@ export function AdminDictionariesPage() {
         </TabsContent>
         <TabsContent value="tenants">
           <TenantsManager canEdit={canEdit} />
+        </TabsContent>
+        <TabsContent value="malls">
+          <MallsManager canEdit={canEdit} />
         </TabsContent>
         <TabsContent value="projects">
           <ProjectsManager canEdit={canEdit} />
