@@ -24,4 +24,10 @@ describe('navigationFor', () => {
     expect(titles('marketer')).toContain('Склейка профилей')
     expect(titles('marketer')).not.toContain('Запреты склейки')
   })
+
+  it('hides segment and export write entries from the tenant', () => {
+    expect(titles('tenant')).not.toContain('Выгрузки')
+    expect(titles('tenant')).not.toContain('Лимиты контактов')
+    expect(titles('tenant')).not.toContain('Сегменты')
+  })
 })

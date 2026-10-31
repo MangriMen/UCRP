@@ -29,7 +29,7 @@ export const mockExports: Export[] = [
     segmentVersionId: 'segment-0002-v1',
     segmentVersionNo: 1,
     channel: 'email',
-    format: 'api',
+    format: 'csv',
     status: 'building',
     controlPercent: 0,
     totalInSegment: 37,

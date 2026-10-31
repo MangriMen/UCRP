@@ -2,10 +2,8 @@ import { useState } from 'react'
 import {
   DownloadExportButton,
   exportChannelLabels,
-  exportFormatLabels,
   type Export,
   type ExportChannel,
-  type ExportFormat,
 } from '@/entities/export'
 import { useSegments } from '@/entities/segment'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
@@ -26,10 +24,6 @@ const channelItems = Object.entries(exportChannelLabels).map(([value, label]) =>
   value: value as ExportChannel,
   label,
 }))
-const formatItems = Object.entries(exportFormatLabels).map(([value, label]) => ({
-  value: value as ExportFormat,
-  label,
-}))
 
 type Step = 'params' | 'audience' | 'confirm' | 'result'
 
@@ -44,7 +38,6 @@ export function ExportWizard({ segmentId: fixedSegmentId, onClose }: ExportWizar
   const [step, setStep] = useState<Step>('params')
   const [pickedSegmentId, setPickedSegmentId] = useState<string | null>(null)
   const [channel, setChannel] = useState<ExportChannel>('sms')
-  const [format, setFormat] = useState<ExportFormat>('csv')
   const [controlPercent, setControlPercent] = useState(0)
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID())
   const [created, setCreated] = useState<Export | null>(null)
@@ -66,7 +59,7 @@ export function ExportWizard({ segmentId: fixedSegmentId, onClose }: ExportWizar
   const submit = () => {
     if (!segmentId) return
     create.mutate(
-      { request: { segmentId, channel, format, controlPercent }, idempotencyKey },
+      { request: { segmentId, channel, format: 'csv', controlPercent }, idempotencyKey },
       {
         onSuccess: (item) => {
           setCreated(item)
@@ -148,28 +141,6 @@ export function ExportWizard({ segmentId: fixedSegmentId, onClose }: ExportWizar
               </Select>
             )}
           </FormField>
-          <FormField label="Формат">
-            {(field) => (
-              <Select
-                items={formatItems}
-                value={format}
-                onValueChange={(value) =>
-                  changeParams(() => value && setFormat(value as ExportFormat))
-                }
-              >
-                <SelectTrigger {...field} className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {formatItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </FormField>
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>
               Отмена
@@ -220,9 +191,8 @@ export function ExportWizard({ segmentId: fixedSegmentId, onClose }: ExportWizar
       {step === 'confirm' && (
         <>
           <p className="text-sm">
-            Будет создана выгрузка в канал «{exportChannelLabels[channel]}», формат{' '}
-            {exportFormatLabels[format]}, контрольная группа {controlPercent}%. Отправлено будет{' '}
-            {preview.data?.toSend ?? 0} получателей.
+            Будет создана выгрузка в канал «{exportChannelLabels[channel]}», формат CSV, контрольная
+            группа {controlPercent}%. Отправлено будет {preview.data?.toSend ?? 0} получателей.
           </p>
           {limitMessage ? (
             <Alert variant="destructive">

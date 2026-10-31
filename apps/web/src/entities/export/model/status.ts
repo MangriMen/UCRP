@@ -1,4 +1,4 @@
-import type { ExportChannel, ExportFormat, ExportStatus } from './types'
+import type { ExportChannel, ExportStatus } from './types'
 
 export const exportStatusLabels: Record<ExportStatus, string> = {
   queued: 'В очереди',
@@ -11,11 +11,6 @@ export const exportChannelLabels: Record<ExportChannel, string> = {
   sms: 'SMS',
   push: 'Push',
   email: 'Email',
-}
-
-export const exportFormatLabels: Record<ExportFormat, string> = {
-  csv: 'CSV',
-  api: 'API',
 }
 
 export const isExportActive = (status: ExportStatus) => status === 'queued' || status === 'building'

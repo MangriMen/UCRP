@@ -3,7 +3,6 @@ import {
   DownloadExportButton,
   ExportStatusBadge,
   exportChannelLabels,
-  exportFormatLabels,
   useExports,
   type Export,
 } from '@/entities/export'
@@ -17,15 +16,13 @@ const columns: Column<Export>[] = [
   { id: 'createdAt', header: 'Создана', cell: (e) => formatDateTime(e.createdAt) },
   { id: 'segment', header: 'Сегмент', cell: (e) => e.segmentName ?? e.segmentId },
   { id: 'channel', header: 'Канал', cell: (e) => exportChannelLabels[e.channel] },
-  { id: 'format', header: 'Формат', cell: (e) => exportFormatLabels[e.format] },
   { id: 'status', header: 'Статус', cell: (e) => <ExportStatusBadge status={e.status} /> },
   { id: 'size', header: 'Получателей', cell: (e) => e.exportedCount, className: 'text-right' },
   {
     id: 'download',
     header: '',
     className: 'text-right',
-    cell: (e) =>
-      e.status === 'ready' && e.format === 'csv' ? <DownloadExportButton exportId={e.id} /> : null,
+    cell: (e) => (e.status === 'ready' ? <DownloadExportButton exportId={e.id} /> : null),
   },
 ]
 
