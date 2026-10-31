@@ -728,7 +728,7 @@ func TestMergeCandidateRevertRestoresOrigin(t *testing.T) {
 
 func TestSegmentPreviewRejectsEmptyWas(t *testing.T) {
 	s := harness.New(t).WithAdmin().WithDB()
-	w := buildWorld(t, s, "preview-empty-was")
+	w := buildWorld(t, s, "preview-empty-visited")
 	ctx, cancel := s.Ctx()
 	defer cancel()
 
@@ -745,9 +745,9 @@ func TestSegmentPreviewRejectsEmptyWas(t *testing.T) {
 	s.RequireSchema("POST", "/api/v1/segments/preview", resp)
 }
 
-func TestSegmentPreviewAcceptsEmptyWasNot(t *testing.T) {
+func TestSegmentPreviewAcceptsEmptyExcludedTenantIds(t *testing.T) {
 	s := harness.New(t).WithAdmin().WithDB()
-	w := buildWorld(t, s, "preview-empty-wasnot")
+	w := buildWorld(t, s, "preview-empty-excluded")
 	ctx, cancel := s.Ctx()
 	defer cancel()
 

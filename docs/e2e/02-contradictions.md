@@ -453,7 +453,7 @@ GET /api/v1/data-quality/sources/{id}   (UC-9,  x-roles R-4,R-2)
 `/tenants/{id}/aggregates` (с изоляцией R-3 и порогом k = 5) и
 `/data-quality/sources`. Отсутствуют `/campaigns/{id}/results` и
 `/data-quality/sources/{id}`. Период дашборда не валидируется (BR-25), агрегаты
-отдают `{new_guests, hidden}` вместо `TenantAggregates`.
+отдают `{newGuests, suppressed}` вместо `TenantAggregates`.
 
 ### G9. Нет rate limiting
 

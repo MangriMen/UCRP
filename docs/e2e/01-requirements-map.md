@@ -67,7 +67,7 @@ UC-19 аудит, UC-20 кампании.
 | BR-20 | Пара под запретом → 409 `merge_blocked`                                                          | US-11 AC5/AC6       | частично (`conflict`)                                                           |
 | BR-21 | Повторное решение по паре → 409 `already_resolved`                                               | US-11 AC6           | частично (`conflict`)                                                           |
 | BR-22 | R-3: чужой `tenant_id` → 403 `forbidden_tenant`                                                  | US-8 AC2, D-13      | частично (`forbidden_role`)                                                     |
-| BR-23 | R-3: значения < k = 5 скрываются (`suppressed=true`, `value=null`)                               | US-8 AC4, Q-18      | частично (`hidden=true`, `new_guests=0`)                                        |
+| BR-23 | R-3: значения < k = 5 скрываются (`suppressed=true`, `value=null`)                               | US-8 AC4, Q-18      | частично (`suppressed=true`, `newGuests=0`)                                     |
 | BR-24 | R-3: любой другой эндпоинт → 403                                                                 | US-8 AC3            | готово                                                                          |
 | BR-25 | Период дашборда: `from > to` или > 24 мес → 400                                                  | US-7 AC4            | нет                                                                             |
 | BR-26 | `max_contacts < 1` или `period_days < 1` → 400                                                   | US-10 AC5           | готово                                                                          |
