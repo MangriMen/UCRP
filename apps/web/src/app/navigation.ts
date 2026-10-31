@@ -59,7 +59,7 @@ const navigation: NavGroup[] = [
         icon: GitMerge,
         roles: ['analyst', 'marketer'],
       },
-      { title: 'Запреты склейки', to: '/identity/blocks', icon: Ban, roles: ['analyst'] },
+      { title: 'Запреты склейки', to: '/identity/merge-blocks', icon: Ban, roles: ['analyst'] },
       {
         title: 'Сегменты',
         to: '/segments',
