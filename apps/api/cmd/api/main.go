@@ -84,7 +84,9 @@ func run(log *slog.Logger, cfg config.Config) error {
 	contacts := repository.NewContactLogSQL(store.DB)
 	profileSvc := service.NewProfileService(guests, identifiers, events, contacts)
 	guestHandler := handler.NewGuestHandler(profileSvc)
-	identitySvc := service.NewIdentityService(repository.NewMergeSQL(store.DB))
+	mergeSQL := repository.NewMergeSQL(store.DB)
+	blocks := repository.NewUnmergeBlockSQL(store.DB)
+	identitySvc := service.NewIdentityService(mergeSQL, blocks, mergeSQL)
 	identityHandler := handler.NewIdentityHandler(identitySvc)
 	segmentRepo := repository.NewSegmentSQL(store.DB)
 	if err := segmentRepo.EnsureTemplates(ctx, clock, idg); err != nil {
@@ -140,6 +142,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}", guestHandler.Get)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/events", guestHandler.Events)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/contacts", guestHandler.Contacts)
+				g.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/merge", identityHandler.Merge)
 				g.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", guestHandler.Delete)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/{id}/recommendations", recoHandler.List)
 				g.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/{id}/recommendations/refresh", recoHandler.Refresh)
@@ -150,6 +153,10 @@ func run(log *slog.Logger, cfg config.Config) error {
 				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/confirm", identityHandler.Confirm)
 				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/reject", identityHandler.Reject)
 				m.With(auth.RequireRole(domain.RoleAnalyst)).Post("/{id}/revert", identityHandler.Revert)
+			})
+			priv.Route("/unmerge-blocks", func(u chi.Router) {
+				u.With(auth.RequireRole(domain.RoleAnalyst)).Get("/", identityHandler.ListBlocks)
+				u.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", identityHandler.DeleteBlock)
 			})
 			priv.Route("/segments", func(s chi.Router) {
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", segmentHandler.List)

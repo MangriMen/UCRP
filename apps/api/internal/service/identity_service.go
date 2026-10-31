@@ -8,11 +8,18 @@ import (
 
 type IdentityService struct {
 	candidates domain.MergeCandidateRepo
+	blocks     domain.UnmergeBlockRepo
+	manual     domain.MergeManualRepo
 	clock      domain.Clock
 }
 
-func NewIdentityService(candidates domain.MergeCandidateRepo) *IdentityService {
-	return &IdentityService{candidates: candidates, clock: domain.SystemClock{}}
+func NewIdentityService(candidates domain.MergeCandidateRepo, blocks domain.UnmergeBlockRepo, manual domain.MergeManualRepo) *IdentityService {
+	return &IdentityService{
+		candidates: candidates,
+		blocks:     blocks,
+		manual:     manual,
+		clock:      domain.SystemClock{},
+	}
 }
 
 type MergeCandidateDTO struct {
@@ -74,6 +81,48 @@ func (s *IdentityService) Revert(ctx context.Context, id, actorUserID string) (*
 	}
 	dto := toMergeDTO(*c)
 	return &dto, nil
+}
+
+func (s *IdentityService) Merge(ctx context.Context, sourceGuestID, targetGuestID, actorUserID string) (*MergeCandidateDTO, error) {
+	c, err := s.manual.ManualMerge(ctx, sourceGuestID, targetGuestID, actorUserID, s.clock.Now())
+	if err != nil {
+		return nil, err
+	}
+	d := toMergeDTO(*c)
+	return &d, nil
+}
+
+type UnmergeBlockDTO struct {
+	ID        string `json:"id"`
+	GuestAID  string `json:"guest_a_id"`
+	GuestBID  string `json:"guest_b_id"`
+	Reason    string `json:"reason"`
+	CreatedAt string `json:"created_at"`
+}
+
+func (s *IdentityService) ListBlocks(ctx context.Context, limit, offset int) ([]UnmergeBlockDTO, error) {
+	items, err := s.blocks.List(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]UnmergeBlockDTO, 0, len(items))
+	for _, b := range items {
+		out = append(out, UnmergeBlockDTO{
+			ID:        b.ID,
+			GuestAID:  b.GuestAID,
+			GuestBID:  b.GuestBID,
+			Reason:    b.Reason,
+			CreatedAt: b.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+		})
+	}
+	return out, nil
+}
+
+func (s *IdentityService) DeleteBlock(ctx context.Context, id string) error {
+	if _, err := s.blocks.GetByID(ctx, id); err != nil {
+		return err
+	}
+	return s.blocks.Delete(ctx, id)
 }
 
 func toMergeDTO(c domain.MergeCandidate) MergeCandidateDTO {
