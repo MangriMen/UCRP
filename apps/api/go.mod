@@ -2,9 +2,6 @@ module github.com/MangriMen/UCRP
 
 go 1.26.0
 
-// Базовые зависимости фиксируются в DEPENDENCIES.md apps/api.
-// В go.mod добавляются только после первого реального импорта в коде (go get / go mod tidy).
-
 require (
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -23,5 +20,4 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	modernc.org/sqlite v1.61.0 // indirect
 )
