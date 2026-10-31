@@ -22,7 +22,7 @@ func IsXLSX(data []byte) bool {
 	return bytes.HasPrefix(data, zipSignature)
 }
 
-func XLSXToCSV(data []byte, maxRows int) ([]byte, error) {
+func XLSXToCSV(data []byte, maxRows int, dateColumn string) ([]byte, error) {
 	book, err := excelize.OpenReader(bytes.NewReader(data), excelize.Options{
 		UnzipSizeLimit:    xlsxUnzipLimit,
 		UnzipXMLSizeLimit: xlsxUnzipXMLLimit,
@@ -36,18 +36,18 @@ func XLSXToCSV(data []byte, maxRows int) ([]byte, error) {
 	if len(sheets) == 0 {
 		return nil, ErrCSVEmpty
 	}
-	sheet := sheets[0]
-	rows, err := book.Rows(sheet)
+	rows, err := book.Rows(sheets[0])
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrCSVBadFormat, err)
 	}
 	defer func() { _ = rows.Close() }()
 
-	dates := dateStyles{book: book, cache: map[int]bool{}, date1904: usesDate1904(book)}
+	date1904 := book.WorkBook != nil && book.WorkBook.WorkbookPr != nil && book.WorkBook.WorkbookPr.Date1904
+	dateIndex := -1
 	var out bytes.Buffer
 	writer := csv.NewWriter(&out)
 	written := 0
-	for rowNumber := 1; rows.Next(); rowNumber++ {
+	for rows.Next() {
 		cells, err := rows.Columns(excelize.Options{RawCellValue: true})
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrCSVBadFormat, err)
@@ -58,10 +58,10 @@ func XLSXToCSV(data []byte, maxRows int) ([]byte, error) {
 		if written > maxRows {
 			return nil, ErrCSVFileTooLarge
 		}
-		if rowNumber > 1 {
-			for i, cell := range cells {
-				cells[i] = dates.normalize(sheet, i+1, rowNumber, cell)
-			}
+		if written == 0 {
+			dateIndex = columnIndex(cells, dateColumn)
+		} else if dateIndex >= 0 && dateIndex < len(cells) {
+			cells[dateIndex] = serialToTimestamp(cells[dateIndex], date1904)
 		}
 		if err := writer.Write(cells); err != nil {
 			return nil, ErrCSVBadFormat
@@ -87,73 +87,24 @@ func isBlankRow(cells []string) bool {
 	return true
 }
 
-type dateStyles struct {
-	book     *excelize.File
-	cache    map[int]bool
-	date1904 bool
+func columnIndex(header []string, name string) int {
+	want := normalizeHeader(name)
+	for i, title := range header {
+		if normalizeHeader(title) == want {
+			return i
+		}
+	}
+	return -1
 }
 
-func usesDate1904(book *excelize.File) bool {
-	properties := book.WorkBook.WorkbookPr
-	return properties != nil && properties.Date1904
-}
-
-func (d dateStyles) normalize(sheet string, column, row int, raw string) string {
-	serial, err := strconv.ParseFloat(raw, 64)
+func serialToTimestamp(raw string, date1904 bool) string {
+	serial, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
 	if err != nil {
 		return raw
 	}
-	cell, err := excelize.CoordinatesToCellName(column, row)
-	if err != nil {
-		return raw
-	}
-	styleID, err := d.book.GetCellStyle(sheet, cell)
-	if err != nil || !d.isDate(styleID) {
-		return raw
-	}
-	moment, err := excelize.ExcelDateToTime(serial, d.date1904)
+	moment, err := excelize.ExcelDateToTime(serial, date1904)
 	if err != nil {
 		return raw
 	}
 	return moment.UTC().Format(time.RFC3339)
-}
-
-func (d dateStyles) isDate(styleID int) bool {
-	if known, ok := d.cache[styleID]; ok {
-		return known
-	}
-	style, err := d.book.GetStyle(styleID)
-	result := err == nil && style != nil && isDateFormat(style)
-	d.cache[styleID] = result
-	return result
-}
-
-func isDateFormat(style *excelize.Style) bool {
-	if style.CustomNumFmt != nil {
-		return looksLikeDateFormat(*style.CustomNumFmt)
-	}
-	id := style.NumFmt
-	return (id >= 14 && id <= 22) || (id >= 27 && id <= 36) || (id >= 45 && id <= 47) || (id >= 50 && id <= 58)
-}
-
-func looksLikeDateFormat(format string) bool {
-	var plain strings.Builder
-	quoted, bracketed, skipNext := false, false, false
-	for _, r := range strings.ToLower(format) {
-		switch {
-		case skipNext:
-			skipNext = false
-		case !quoted && !bracketed && (r == '\\' || r == '_' || r == '*'):
-			skipNext = true
-		case r == '"':
-			quoted = !quoted
-		case r == '[':
-			bracketed = true
-		case r == ']':
-			bracketed = false
-		case !quoted && !bracketed:
-			plain.WriteRune(r)
-		}
-	}
-	return strings.ContainsAny(plain.String(), "ymdh")
 }

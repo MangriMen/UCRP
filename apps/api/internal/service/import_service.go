@@ -130,15 +130,15 @@ func (s *ImportService) Create(ctx context.Context, in CreateImportInput) (*Crea
 	if len(bytes.TrimSpace(data)) == 0 {
 		return nil, &ImportError{http.StatusUnprocessableEntity, "bad_format", "Пустой файл"}
 	}
-	if ingestion.IsXLSX(data) {
-		data, err = ingestion.XLSXToCSV(data, importMaxRows)
-		if err != nil {
-			return nil, importReadError(err)
-		}
-	}
 	mapping, err := ingestion.ParseFieldMapping(ds.FieldMapping)
 	if err != nil {
 		return nil, &ImportError{http.StatusUnprocessableEntity, "bad_format", "Некорректный маппинг полей источника"}
+	}
+	if ingestion.IsXLSX(data) {
+		data, err = ingestion.XLSXToCSV(data, importMaxRows, mapping.OccurredAt)
+		if err != nil {
+			return nil, importReadError(err)
+		}
 	}
 	if err := ingestion.ValidateHeader(bytes.NewReader(data), mapping); err != nil {
 		return nil, importReadError(err)

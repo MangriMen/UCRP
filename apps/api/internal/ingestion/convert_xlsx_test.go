@@ -39,7 +39,7 @@ func TestXLSXToCSV_ConvertsFirstSheetToRows_WhenFileIsValid(t *testing.T) {
 	if !IsXLSX(data) {
 		t.Fatal("expected zip signature")
 	}
-	csvData, err := XLSXToCSV(data, 100)
+	csvData, err := XLSXToCSV(data, 100, "occurred_at")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestXLSXToCSV_WritesRFC3339_WhenCellIsDate(t *testing.T) {
 	moment := time.Date(2026, 10, 1, 10, 30, 0, 0, time.UTC)
 	data := buildXLSX(t, [][]any{{"occurred_at"}, {moment}})
 
-	csvData, err := XLSXToCSV(data, 100)
+	csvData, err := XLSXToCSV(data, 100, "occurred_at")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,22 +61,27 @@ func TestXLSXToCSV_WritesRFC3339_WhenCellIsDate(t *testing.T) {
 	}
 }
 
-func TestXLSXToCSV_KeepsRawNumber_WhenCellHasCurrencyFormat(t *testing.T) {
-	book := excelize.NewFile()
-	format := "#,##0.00 \"RUB\""
-	style, err := book.NewStyle(&excelize.Style{CustomNumFmt: &format})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = book.SetCellValue("Sheet1", "A1", "amount")
-	_ = book.SetCellValue("Sheet1", "A2", 1234.5)
-	_ = book.SetCellStyle("Sheet1", "A2", "A2", style)
+func TestXLSXToCSV_KeepsNumbers_WhenColumnIsNotDate(t *testing.T) {
+	data := buildXLSX(t, [][]any{{"amount", "occurred_at"}, {2, "2026-10-01T10:00:00Z"}})
 
-	csvData, err := XLSXToCSV(writeBook(t, book), 100)
+	csvData, err := XLSXToCSV(data, 100, "occurred_at")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := string(csvData), "amount\n1234.5\n"; got != want {
+	if got, want := string(csvData), "amount,occurred_at\n2,2026-10-01T10:00:00Z\n"; got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+}
+
+func TestXLSXToCSV_MatchesDateColumn_WhenHeaderCaseDiffers(t *testing.T) {
+	moment := time.Date(2026, 10, 1, 10, 30, 0, 0, time.UTC)
+	data := buildXLSX(t, [][]any{{"Occurred_At"}, {moment}})
+
+	csvData, err := XLSXToCSV(data, 100, "occurred_at")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(csvData), "Occurred_At\n2026-10-01T10:30:00Z\n"; got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
 }
@@ -84,7 +89,7 @@ func TestXLSXToCSV_KeepsRawNumber_WhenCellHasCurrencyFormat(t *testing.T) {
 func TestXLSXToCSV_RejectsFile_WhenRowsExceedLimit(t *testing.T) {
 	data := buildXLSX(t, [][]any{{"a"}, {"1"}, {"2"}, {"3"}})
 
-	_, err := XLSXToCSV(data, 2)
+	_, err := XLSXToCSV(data, 2, "occurred_at")
 	if !errors.Is(err, ErrCSVFileTooLarge) {
 		t.Fatalf("expected file too large, got %v", err)
 	}
@@ -93,7 +98,7 @@ func TestXLSXToCSV_RejectsFile_WhenRowsExceedLimit(t *testing.T) {
 func TestXLSXToCSV_AcceptsFile_WhenRowsEqualLimit(t *testing.T) {
 	data := buildXLSX(t, [][]any{{"a"}, {"1"}, {"2"}})
 
-	if _, err := XLSXToCSV(data, 2); err != nil {
+	if _, err := XLSXToCSV(data, 2, "occurred_at"); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -101,14 +106,14 @@ func TestXLSXToCSV_AcceptsFile_WhenRowsEqualLimit(t *testing.T) {
 func TestXLSXToCSV_RejectsFile_WhenSheetIsEmpty(t *testing.T) {
 	data := writeBook(t, excelize.NewFile())
 
-	_, err := XLSXToCSV(data, 100)
+	_, err := XLSXToCSV(data, 100, "occurred_at")
 	if !errors.Is(err, ErrCSVEmpty) {
 		t.Fatalf("expected empty file, got %v", err)
 	}
 }
 
 func TestXLSXToCSV_RejectsBadFormat_WhenFileIsNotXLSX(t *testing.T) {
-	_, err := XLSXToCSV([]byte("PK\x03\x04garbage"), 100)
+	_, err := XLSXToCSV([]byte("PK\x03\x04garbage"), 100, "occurred_at")
 	if !errors.Is(err, ErrCSVBadFormat) {
 		t.Fatalf("expected bad format, got %v", err)
 	}
@@ -117,25 +122,5 @@ func TestXLSXToCSV_RejectsBadFormat_WhenFileIsNotXLSX(t *testing.T) {
 func TestIsXLSX_ReturnsFalse_WhenFileIsCSV(t *testing.T) {
 	if IsXLSX([]byte("phone,name\n")) {
 		t.Fatal("csv must not be detected as xlsx")
-	}
-}
-
-func TestXLSXToCSV_KeepsRawNumber_WhenFormatHasEscapedLiteral(t *testing.T) {
-	book := excelize.NewFile()
-	format := `0.0\ \h`
-	style, err := book.NewStyle(&excelize.Style{CustomNumFmt: &format})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = book.SetCellValue("Sheet1", "A1", "hours")
-	_ = book.SetCellValue("Sheet1", "A2", 2)
-	_ = book.SetCellStyle("Sheet1", "A2", "A2", style)
-
-	csvData, err := XLSXToCSV(writeBook(t, book), 100)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, want := string(csvData), "hours\n2\n"; got != want {
-		t.Fatalf("got %q, want %q", got, want)
 	}
 }
