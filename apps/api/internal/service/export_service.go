@@ -118,11 +118,15 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 		return nil, err
 	}
 
-	all, withContact, err := s.memberLists(ctx, req.SegmentID, req.Channel)
+	_, ver, err := s.segments.GetByID(ctx, req.SegmentID)
 	if err != nil {
 		return nil, err
 	}
-	_, ver, err := s.segments.GetByID(ctx, req.SegmentID)
+	if ver.Status == domain.VersionPending || ver.Status == domain.VersionComputing {
+		return nil, &ExportConflictError{Code: "segment_not_ready", Message: "Сегмент ещё считается"}
+	}
+
+	all, withContact, err := s.memberLists(ctx, req.SegmentID, req.Channel)
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +136,9 @@ func (s *ExportService) Create(ctx context.Context, req ExportCreateRequest, act
 		return nil, err
 	}
 	allowed := withoutIDs(withContact, blocked)
+	if len(withContact) > 0 && len(allowed) == 0 {
+		return nil, &ExportConflictError{Code: "contact_limit_exceeded", Message: "Все гости превысили лимит контактов"}
+	}
 	controlIDs := pickControl(allowed, req.ControlPercent, hashSeed(req.IdempotencyKey))
 	controlSet := map[string]bool{}
 	for _, c := range controlIDs {
@@ -260,37 +267,48 @@ func (s *ExportService) blockedForChannel(ctx context.Context, candidates []memb
 			applicable = append(applicable, l)
 		}
 	}
-	limits = applicable
-	if len(limits) == 0 || len(candidates) == 0 {
+	if len(applicable) == 0 || len(candidates) == 0 {
 		return nil, nil
 	}
 	ids := make([]string, len(candidates))
 	for i, c := range candidates {
 		ids[i] = c.guestID
 	}
-	period := limits[0].PeriodDays
-	maxN := limits[0].MaxContacts
-	for _, l := range limits {
-		if l.PeriodDays < period {
-			period = l.PeriodDays
+
+	blockedSet := map[string]bool{}
+	for _, rule := range applicable {
+		since := s.clock.Now().UTC().AddDate(0, 0, -rule.PeriodDays)
+		var counts map[string]int
+		var err error
+		if rule.Channel == "" {
+			counts, err = s.contacts.CountSince(ctx, ids, since)
+		} else {
+			counts, err = s.contacts.CountSinceChannel(ctx, ids, since, rule.Channel)
 		}
-		if l.MaxContacts < maxN {
-			maxN = l.MaxContacts
+		if err != nil {
+			return nil, err
 		}
-	}
-	since := s.clock.Now().UTC().AddDate(0, 0, -period)
-	counts, err := s.contacts.CountSinceChannel(ctx, ids, since, channel)
-	if err != nil {
-		return nil, err
+		for _, id := range ids {
+			if counts[id] >= rule.MaxContacts {
+				blockedSet[id] = true
+			}
+		}
 	}
 	var blocked []string
-	for _, c := range candidates {
-		if counts[c.guestID] >= maxN {
-			blocked = append(blocked, c.guestID)
+	for _, id := range ids {
+		if blockedSet[id] {
+			blocked = append(blocked, id)
 		}
 	}
 	return blocked, nil
 }
+
+type ExportConflictError struct {
+	Code    string
+	Message string
+}
+
+func (e *ExportConflictError) Error() string { return e.Code }
 
 func toCandidates(in []domain.GuestContact) []memberCandidate {
 	out := make([]memberCandidate, 0, len(in))
