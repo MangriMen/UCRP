@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
-import { RoleGuard } from '@/entities/user'
+import { AccessGuard } from '@/entities/user'
 import { setAccessToken } from '@/shared/api/client'
 import { SegmentDetailsPage } from './segment-details-page'
 
@@ -17,9 +17,9 @@ function renderAs(userId: string) {
           <Route
             path="/segments/:id"
             element={
-              <RoleGuard>
+              <AccessGuard>
                 <SegmentDetailsPage />
-              </RoleGuard>
+              </AccessGuard>
             }
           />
         </Routes>
@@ -50,7 +50,7 @@ describe('SegmentDetailsPage', () => {
 
   it('keeps the manager read-only', async () => {
     renderAs('user-manager')
-    expect(await screen.findByRole('link', { name: 'К списку' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Сегменты' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Изменить правило' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Пересчитать' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Выгрузить' })).not.toBeInTheDocument()

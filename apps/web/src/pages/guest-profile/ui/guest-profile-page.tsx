@@ -18,15 +18,15 @@ import { ProfileCard } from './profile-card'
 export function GuestProfilePage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
-  const { role } = useAuth()
+  const { can } = useAuth()
   const { data: profile, error, isLoading } = useGuest(id)
 
   if (isLoading) return <Skeleton className="h-40 w-full" />
   if (error) return <ErrorBanner error={error} />
   if (!profile) return <EmptyState title="Гость не найден" />
 
-  const canSeeRecommendations = role === 'marketer' || role === 'analyst'
-  const canSeeMovement = role === 'marketer' || role === 'manager' || role === 'analyst'
+  const canSeeRecommendations = can('recommendation.read')
+  const canSeeMovement = can('guest.event.read')
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,7 +34,7 @@ export function GuestProfilePage() {
         title="Профиль гостя"
         actions={
           <>
-            {role === 'analyst' && profile.status === 'active' && (
+            {can('identity.decide') && profile.status === 'active' && (
               <MergeGuestsDialog
                 guestId={profile.id}
                 onMerged={(result) => navigate(`/guests/${result.winnerGuestId}`)}

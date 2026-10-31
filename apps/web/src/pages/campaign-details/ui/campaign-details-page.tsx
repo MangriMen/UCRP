@@ -1,8 +1,7 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { CampaignResults, CampaignStatusBadge, useCampaign } from '@/entities/campaign'
 import { useAuth } from '@/entities/user'
 import { formatDate } from '@/shared/lib/format'
-import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
@@ -22,27 +21,21 @@ function Fact({ title, value }: { title: string; value: string }) {
 
 export function CampaignDetailsPage() {
   const { id = '' } = useParams()
-  const { role } = useAuth()
+  const { can } = useAuth()
   const { data: campaign, error, isLoading } = useCampaign(id)
 
   if (isLoading) return <Skeleton className="h-40 w-full" />
   if (error) return <ErrorBanner error={error} />
   if (!campaign) return <EmptyState title="Кампания не найдена" />
 
-  const canSeeResults = role === 'marketer' || role === 'manager'
+  const canSeeResults = can('campaign.results.read')
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={campaign.name}
-        actions={
-          <>
-            <CampaignStatusBadge status={campaign.status} />
-            <Button variant="outline" render={<Link to="/campaigns" />}>
-              К списку
-            </Button>
-          </>
-        }
+        breadcrumbs={[{ label: 'Кампании', to: '/campaigns' }, { label: campaign.name }]}
+        actions={<CampaignStatusBadge status={campaign.status} />}
       />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Fact title="Арендатор" value={campaign.targetTenantName ?? '—'} />

@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { MergeBlocksPage } from './merge-blocks-page'
 
@@ -9,7 +10,9 @@ describe('MergeBlocksPage', () => {
       <QueryClientProvider
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
       >
-        <MergeBlocksPage />
+        <MemoryRouter>
+          <MergeBlocksPage />
+        </MemoryRouter>
       </QueryClientProvider>,
     )
     expect(await screen.findByText('Отклонённое объединение')).toBeInTheDocument()

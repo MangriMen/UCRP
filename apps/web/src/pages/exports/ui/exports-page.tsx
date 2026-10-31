@@ -30,9 +30,9 @@ const baseColumns: Column<Export>[] = [
 ]
 
 export function ExportsPage() {
-  const { role } = useAuth()
+  const { can } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const columns = role === 'marketer' ? [...baseColumns, downloadColumn] : baseColumns
+  const columns = can('export.download') ? [...baseColumns, downloadColumn] : baseColumns
   const exports = useExports({ page: parsePage(searchParams.get('page')) })
 
   return (
@@ -40,7 +40,7 @@ export function ExportsPage() {
       <PageHeader
         title="Выгрузки"
         description="История выгрузок сегментов в каналы коммуникаций"
-        actions={role === 'marketer' ? <CreateExportButton /> : undefined}
+        actions={can('export.create') ? <CreateExportButton /> : undefined}
       />
       <DataTable
         columns={columns}

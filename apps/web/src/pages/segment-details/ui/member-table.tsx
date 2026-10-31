@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import { useSegmentMembers, type SegmentMember } from '@/entities/segment'
 import { formatDateTime } from '@/shared/lib/format'
+import { useListParams } from '@/shared/lib/list-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
 const columns: Column<SegmentMember>[] = [
@@ -19,7 +19,7 @@ const columns: Column<SegmentMember>[] = [
 ]
 
 export function MemberTable({ segmentId }: { segmentId: string }) {
-  const [page, setPage] = useState(1)
+  const { page, setPage } = useListParams()
   const members = useSegmentMembers(segmentId, { page })
 
   return (

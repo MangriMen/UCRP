@@ -16,13 +16,14 @@ import {
   UserSearch,
   type LucideIcon,
 } from 'lucide-react'
-import type { Role } from '@/entities/user'
+import type { Me, PermissionCode } from '@/entities/user'
 
 export interface NavItem {
   title: string
   to: string
   icon: LucideIcon
-  roles: Role[]
+  permission: PermissionCode
+  tenantArea?: boolean
 }
 
 export interface NavGroup {
@@ -32,39 +33,56 @@ export interface NavGroup {
 
 const navigation: NavGroup[] = [
   {
-    label: 'Аналитика',
+    label: 'Обзор',
     items: [
       {
         title: 'Дашборд',
         to: '/dashboard',
         icon: BarChart3,
-        roles: ['manager', 'marketer', 'analyst'],
+        permission: 'dashboard.read',
       },
-      { title: 'Мой арендатор', to: '/tenant', icon: Store, roles: ['tenant'] },
+      {
+        title: 'Мой арендатор',
+        to: '/tenant',
+        icon: Store,
+        permission: 'tenant.aggregates.own',
+        tenantArea: true,
+      },
       {
         title: 'Качество данных',
         to: '/data-quality',
         icon: ShieldCheck,
-        roles: ['analyst', 'manager'],
+        permission: 'data_quality.read',
       },
+    ],
+  },
+  {
+    label: 'Данные',
+    items: [
+      {
+        title: 'Источники данных',
+        to: '/data-sources',
+        icon: Plug,
+        permission: 'data_source.read',
+      },
+      { title: 'Импорт', to: '/import', icon: Upload, permission: 'import.read' },
     ],
   },
   {
     label: 'Гости',
     items: [
-      { title: 'Гости', to: '/guests', icon: UserSearch, roles: ['marketer', 'analyst'] },
-      {
-        title: 'Объединение профилей',
-        to: '/identity/merge-candidates',
-        icon: GitMerge,
-        roles: ['analyst', 'marketer'],
-      },
-      { title: 'Запреты объединения', to: '/identity/merge-blocks', icon: Ban, roles: ['analyst'] },
+      { title: 'Гости', to: '/guests', icon: UserSearch, permission: 'guest.profile.search' },
       {
         title: 'Сегменты',
         to: '/segments',
         icon: Layers,
-        roles: ['marketer', 'analyst', 'manager'],
+        permission: 'segment.read',
+      },
+      {
+        title: 'Объединение профилей',
+        to: '/identity/merge-candidates',
+        icon: GitMerge,
+        permission: 'identity.queue.read',
       },
     ],
   },
@@ -75,51 +93,48 @@ const navigation: NavGroup[] = [
         title: 'Выгрузки',
         to: '/exports',
         icon: FileDown,
-        roles: ['marketer', 'manager', 'analyst'],
+        permission: 'export.read',
       },
       {
         title: 'Кампании',
         to: '/campaigns',
         icon: Megaphone,
-        roles: ['marketer', 'manager', 'analyst'],
+        permission: 'campaign.read',
       },
       {
         title: 'Лимиты контактов',
         to: '/settings/contact-limits',
         icon: Settings,
-        roles: ['marketer', 'manager', 'analyst'],
+        permission: 'contact_limit.read',
       },
-    ],
-  },
-  {
-    label: 'Данные',
-    items: [
-      {
-        title: 'Арендаторы и источники',
-        to: '/data-sources',
-        icon: Plug,
-        roles: ['marketer', 'manager', 'analyst'],
-      },
-      { title: 'Импорт', to: '/import', icon: Upload, roles: ['analyst', 'manager'] },
     ],
   },
   {
     label: 'Администрирование',
     items: [
-      { title: 'Пользователи', to: '/admin/users', icon: Users, roles: ['manager'] },
+      { title: 'Пользователи', to: '/admin/users', icon: Users, permission: 'user.read' },
       {
         title: 'Справочники',
         to: '/admin/dictionaries',
         icon: Database,
-        roles: ['analyst', 'marketer', 'manager'],
+        permission: 'reference.read',
       },
-      { title: 'Журнал аудита', to: '/admin/audit', icon: History, roles: ['manager', 'analyst'] },
+      {
+        title: 'Запреты объединения',
+        to: '/identity/merge-blocks',
+        icon: Ban,
+        permission: 'identity.queue.read',
+      },
+      { title: 'Журнал аудита', to: '/admin/audit', icon: History, permission: 'audit.read' },
     ],
   },
 ]
 
-export function navigationFor(role: Role): NavGroup[] {
+export function navigationFor(user: Me): NavGroup[] {
+  const isTenant = user.role === 'tenant'
+  const visible = (item: NavItem) =>
+    user.permissions.includes(item.permission) && (item.tenantArea ?? false) === isTenant
   return navigation
-    .map((group) => ({ ...group, items: group.items.filter((item) => item.roles.includes(role)) }))
+    .map((group) => ({ ...group, items: group.items.filter(visible) }))
     .filter((group) => group.items.length > 0)
 }

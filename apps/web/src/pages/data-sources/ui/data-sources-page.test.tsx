@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { DataSourcesPage } from './data-sources-page'
 
-vi.mock('@/entities/user', () => ({ useAuth: () => ({ role: 'analyst' }) }))
+vi.mock('@/entities/user', () => ({ useAuth: () => ({ can: () => true }) }))
 
 function renderPage() {
   render(

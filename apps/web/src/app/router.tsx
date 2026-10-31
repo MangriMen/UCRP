@@ -1,5 +1,5 @@
 import { createBrowserRouter } from 'react-router'
-import { RoleGuard } from '@/entities/user'
+import { AccessGuard } from '@/entities/user'
 import { AdminDictionariesPage } from '@/pages/admin-dictionaries'
 import { AdminUsersPage } from '@/pages/admin-users'
 import { AuditLogPage } from '@/pages/audit-log'
@@ -33,72 +33,84 @@ export const router = createBrowserRouter([
       { path: '/login', element: <LoginPage /> },
       {
         element: (
-          <RoleGuard>
+          <AccessGuard>
             <AppLayout />
-          </RoleGuard>
+          </AccessGuard>
         ),
         children: [
           { index: true, element: <HomeRedirect /> },
           {
-            element: <RoleGuard roles={['manager', 'marketer', 'analyst']} />,
+            element: <AccessGuard permission="dashboard.read" />,
             children: [{ path: 'dashboard', element: <DashboardPage /> }],
           },
           {
-            element: <RoleGuard roles={['analyst', 'manager']} />,
+            element: <AccessGuard permission="import.read" />,
             children: [
               { path: 'import', element: <ImportsPage /> },
               { path: 'import/:id', element: <ImportDetailsPage /> },
             ],
           },
           {
-            element: <RoleGuard roles={['marketer', 'analyst']} />,
-            children: [
-              { path: 'guests', element: <GuestsPage /> },
-              { path: 'guests/:id', element: <GuestProfilePage /> },
-            ],
+            element: <AccessGuard permission="guest.profile.search" />,
+            children: [{ path: 'guests', element: <GuestsPage /> }],
           },
           {
-            element: <RoleGuard roles={['analyst', 'marketer']} />,
+            element: <AccessGuard permission="guest.profile.read" />,
+            children: [{ path: 'guests/:id', element: <GuestProfilePage /> }],
+          },
+          {
+            element: <AccessGuard permission="identity.queue.read" />,
             children: [
               { path: 'identity/merge-candidates', element: <MergeCandidatesPage /> },
               { path: 'identity/merge-candidates/:id', element: <MergeCandidatePage /> },
+              { path: 'identity/merge-blocks', element: <MergeBlocksPage /> },
             ],
           },
           {
-            element: <RoleGuard roles={['marketer', 'analyst', 'manager']} />,
+            element: <AccessGuard permission="segment.read" />,
             children: [
               { path: 'segments', element: <SegmentsPage /> },
               { path: 'segments/:id', element: <SegmentDetailsPage /> },
-              { path: 'exports', element: <ExportsPage /> },
-              { path: 'campaigns', element: <CampaignsPage /> },
-              { path: 'campaigns/:id', element: <CampaignDetailsPage /> },
-              { path: 'settings/contact-limits', element: <ContactLimitsPage /> },
-              { path: 'data-sources', element: <DataSourcesPage /> },
             ],
           },
           {
-            element: <RoleGuard roles={['marketer', 'analyst', 'manager']} />,
+            element: <AccessGuard permission="export.read" />,
+            children: [{ path: 'exports', element: <ExportsPage /> }],
+          },
+          {
+            element: <AccessGuard permission="campaign.read" />,
+            children: [
+              { path: 'campaigns', element: <CampaignsPage /> },
+              { path: 'campaigns/:id', element: <CampaignDetailsPage /> },
+            ],
+          },
+          {
+            element: <AccessGuard permission="contact_limit.read" />,
+            children: [{ path: 'settings/contact-limits', element: <ContactLimitsPage /> }],
+          },
+          {
+            element: <AccessGuard permission="data_source.read" />,
+            children: [{ path: 'data-sources', element: <DataSourcesPage /> }],
+          },
+          {
+            element: <AccessGuard permission="reference.read" />,
             children: [{ path: 'admin/dictionaries', element: <AdminDictionariesPage /> }],
           },
           {
-            element: <RoleGuard roles={['manager']} />,
+            element: <AccessGuard permission="user.read" />,
             children: [{ path: 'admin/users', element: <AdminUsersPage /> }],
           },
           {
-            element: <RoleGuard roles={['manager', 'analyst']} />,
+            element: <AccessGuard permission="audit.read" />,
             children: [{ path: 'admin/audit', element: <AuditLogPage /> }],
           },
           {
-            element: <RoleGuard roles={['analyst', 'manager']} />,
+            element: <AccessGuard permission="data_quality.read" />,
             children: [{ path: 'data-quality', element: <DataQualityPage /> }],
           },
           {
-            element: <RoleGuard roles={['tenant']} />,
+            element: <AccessGuard permission="tenant.aggregates.own" tenantArea />,
             children: [{ path: 'tenant', element: <TenantAggregatesPage /> }],
-          },
-          {
-            element: <RoleGuard roles={['analyst']} />,
-            children: [{ path: 'identity/merge-blocks', element: <MergeBlocksPage /> }],
           },
           { path: '*', element: <NotFoundPage /> },
         ],

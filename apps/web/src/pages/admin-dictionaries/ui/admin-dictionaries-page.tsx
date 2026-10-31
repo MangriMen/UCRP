@@ -9,8 +9,9 @@ import { PageHeader } from '@/shared/ui/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
 export function AdminDictionariesPage() {
-  const { role } = useAuth()
-  const canEdit = role === 'analyst'
+  const { can } = useAuth()
+  const canEditReference = can('reference.write')
+  const canEditSourceTypes = can('data_source.write')
 
   return (
     <div className="flex flex-col gap-6">
@@ -28,22 +29,22 @@ export function AdminDictionariesPage() {
           <TabsTrigger value="data-source-types">Типы источников</TabsTrigger>
         </TabsList>
         <TabsContent value="categories">
-          <TenantCategoriesManager canEdit={canEdit} />
+          <TenantCategoriesManager canEdit={canEditReference} />
         </TabsContent>
         <TabsContent value="tenants">
-          <TenantsManager canEdit={canEdit} />
+          <TenantsManager canEdit={canEditReference} />
         </TabsContent>
         <TabsContent value="malls">
           <MallsManager canEdit={canEdit} />
         </TabsContent>
         <TabsContent value="projects">
-          <ProjectsManager canEdit={canEdit} />
+          <ProjectsManager canEdit={canEditReference} />
         </TabsContent>
         <TabsContent value="event-types">
-          <EventTypesManager canEdit={canEdit} />
+          <EventTypesManager canEdit={canEditReference} />
         </TabsContent>
         <TabsContent value="data-source-types">
-          <DataSourceTypesManager canEdit={canEdit} />
+          <DataSourceTypesManager canEdit={canEditSourceTypes} />
         </TabsContent>
       </Tabs>
     </div>
