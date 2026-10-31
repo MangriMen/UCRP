@@ -71,15 +71,21 @@ type GuestRepo interface {
 	Insert(ctx context.Context, g *Guest) error
 	TenantCount(ctx context.Context, guestID string) (int, error)
 	TenantNames(ctx context.Context, guestID string) ([]string, error)
+	MarkMerged(ctx context.Context, loserID, winnerID string) error
+	MarkActive(ctx context.Context, guestID string) error
 }
 
 type GuestIdentifierRepo interface {
 	ListByGuest(ctx context.Context, guestID string) ([]GuestIdentifier, error)
 	FindByValue(ctx context.Context, idType, value string) ([]GuestIdentifier, error)
 	Insert(ctx context.Context, gi *GuestIdentifier) error
+	MoveToGuest(ctx context.Context, fromGuestID, toGuestID string) error
+	RestoreOrigin(ctx context.Context, originGuestID string) error
 }
 
 type EventRepo interface {
 	ListByGuest(ctx context.Context, guestID string, limit, offset int) ([]Event, error)
 	Insert(ctx context.Context, e *Event) error
+	MoveToGuest(ctx context.Context, fromGuestID, toGuestID string) error
+	RestoreOrigin(ctx context.Context, originGuestID string) error
 }

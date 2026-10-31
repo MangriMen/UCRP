@@ -68,3 +68,17 @@ func (r *EventSQL) Insert(ctx context.Context, e *domain.Event) error {
 	)
 	return err
 }
+
+func (r *EventSQL) MoveToGuest(ctx context.Context, fromGuestID, toGuestID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE event SET guest_id = $2
+		WHERE guest_id = $1 AND origin_guest_id = $1`, fromGuestID, toGuestID)
+	return err
+}
+
+func (r *EventSQL) RestoreOrigin(ctx context.Context, originGuestID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE event SET guest_id = origin_guest_id
+		WHERE origin_guest_id = $1 AND guest_id <> origin_guest_id`, originGuestID)
+	return err
+}

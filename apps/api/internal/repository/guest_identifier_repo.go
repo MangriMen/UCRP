@@ -64,3 +64,17 @@ func (r *GuestIdentifierSQL) Insert(ctx context.Context, gi *domain.GuestIdentif
 	)
 	return err
 }
+
+func (r *GuestIdentifierSQL) MoveToGuest(ctx context.Context, fromGuestID, toGuestID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE guest_identifier SET guest_id = $2
+		WHERE guest_id = $1 AND origin_guest_id = $1`, fromGuestID, toGuestID)
+	return err
+}
+
+func (r *GuestIdentifierSQL) RestoreOrigin(ctx context.Context, originGuestID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE guest_identifier SET guest_id = origin_guest_id
+		WHERE origin_guest_id = $1 AND guest_id <> origin_guest_id`, originGuestID)
+	return err
+}

@@ -122,3 +122,17 @@ func (r *GuestSQL) TenantNames(ctx context.Context, guestID string) ([]string, e
 	}
 	return out, rows.Err()
 }
+
+func (r *GuestSQL) MarkMerged(ctx context.Context, loserID, winnerID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE guest SET status = 'merged', merged_into_id = $2, updated_at = now()
+		WHERE id = $1`, loserID, winnerID)
+	return err
+}
+
+func (r *GuestSQL) MarkActive(ctx context.Context, guestID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE guest SET status = 'active', merged_into_id = NULL, updated_at = now()
+		WHERE id = $1`, guestID)
+	return err
+}

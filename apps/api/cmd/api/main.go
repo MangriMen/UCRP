@@ -66,6 +66,14 @@ func run(log *slog.Logger, cfg config.Config) error {
 	events := repository.NewEventSQL(store.DB)
 	profileSvc := service.NewProfileService(guests, identifiers, events)
 	guestHandler := handler.NewGuestHandler(profileSvc)
+	identitySvc := service.NewIdentityService(
+		repository.NewMergeCandidateSQL(store.DB),
+		repository.NewUnmergeBlockSQL(store.DB),
+		guests,
+		identifiers,
+		events,
+	)
+	identityHandler := handler.NewIdentityHandler(identitySvc)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -82,6 +90,13 @@ func run(log *slog.Logger, cfg config.Config) error {
 				g.Get("/", guestHandler.Search)
 				g.Get("/{id}", guestHandler.Get)
 				g.Get("/{id}/events", guestHandler.Events)
+			})
+			priv.Route("/merge-candidates", func(m chi.Router) {
+				m.Get("/", identityHandler.List)
+				m.Get("/{id}", identityHandler.Get)
+				m.Post("/{id}/confirm", identityHandler.Confirm)
+				m.Post("/{id}/reject", identityHandler.Reject)
+				m.Post("/{id}/revert", identityHandler.Revert)
 			})
 		})
 	})
