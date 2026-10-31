@@ -1,238 +1,206 @@
 {
-    "paths":  {
-                  "/api/v1/merge-candidates":  {
-                                                   "get":  {
-                                                               "tags":  [
-                                                                            "Identity"
-                                                                        ],
-                                                               "operationId":  "listMergeCandidates",
-                                                               "summary":  "Очередь спорных склеек",
-                                                               "description":  "Сортировка по `createdAt` по возрастанию. R-1 имеет доступ только на чтение; операции решения доступны R-4.",
-                                                               "x-roles":  [
-                                                                               "R-4",
-                                                                               "R-1 (чтение)"
-                                                                           ],
-                                                               "x-uc":  [
-                                                                            "UC-11"
-                                                                        ],
-                                                               "parameters":  [
-                                                                                  {
-                                                                                      "name":  "resolution",
-                                                                                      "in":  "query",
-                                                                                      "schema":  {
-                                                                                                     "$ref": "../components/schemas/identity.json#/MergeResolution"
-                                                                                                 }
-                                                                                  },
-                                                                                  {
-                                                                                      "name":  "reason_code",
-                                                                                      "in":  "query",
-                                                                                      "schema":  {
-                                                                                                     "type":  "string"
-                                                                                                 }
-                                                                                  },
-                                                                                  {
-                                                                                      "$ref": "../components/parameters.json#/Page"
-                                                                                  },
-                                                                                  {
-                                                                                      "$ref": "../components/parameters.json#/PageSize"
-                                                                                  }
-                                                                              ],
-                                                               "responses":  {
-                                                                                 "200":  {
-                                                                                             "description":  "Страница кандидатов",
-                                                                                             "content":  {
-                                                                                                             "application/json":  {
-                                                                                                                                      "schema":  {
-                                                                                                                                                     "$ref": "../components/schemas/identity.json#/MergeCandidatePage"
-                                                                                                                                                 }
-                                                                                                                                  }
-                                                                                                         }
-                                                                                         },
-                                                                                 "401":  {
-                                                                                             "$ref": "../components/responses.json#/Unauthorized"
-                                                                                         },
-                                                                                 "403":  {
-                                                                                             "$ref": "../components/responses.json#/Forbidden"
-                                                                                         }
-                                                                             }
-                                                           }
-                                               },
-                  "/api/v1/merge-candidates/{id}":  {
-                                                        "parameters":  [
-                                                                           {
-                                                                               "$ref": "../components/parameters.json#/IdPath"
-                                                                           }
-                                                                       ],
-                                                        "get":  {
-                                                                    "tags":  [
-                                                                                 "Identity"
-                                                                             ],
-                                                                    "operationId":  "getMergeCandidate",
-                                                                    "summary":  "Пара профилей рядом с причиной совпадения",
-                                                                    "x-roles":  [
-                                                                                    "R-4",
-                                                                                    "R-1"
-                                                                                ],
-                                                                    "x-uc":  [
-                                                                                 "UC-11"
-                                                                             ],
-                                                                    "responses":  {
-                                                                                      "200":  {
-                                                                                                  "description":  "Кандидат с профилями сторон",
-                                                                                                  "content":  {
-                                                                                                                  "application/json":  {
-                                                                                                                                           "schema":  {
-                                                                                                                                                          "$ref": "../components/schemas/identity.json#/MergeCandidateDetail"
-                                                                                                                                                      }
-                                                                                                                                       }
-                                                                                                              }
-                                                                                              },
-                                                                                      "401":  {
-                                                                                                  "$ref": "../components/responses.json#/Unauthorized"
-                                                                                              },
-                                                                                      "403":  {
-                                                                                                  "$ref": "../components/responses.json#/Forbidden"
-                                                                                              },
-                                                                                      "404":  {
-                                                                                                  "$ref": "../components/responses.json#/NotFound"
-                                                                                              }
-                                                                                  }
-                                                                }
-                                                    },
-                  "/api/v1/merge-candidates/{id}/confirm":  {
-                                                                "parameters":  [
-                                                                                   {
-                                                                                       "$ref": "../components/parameters.json#/IdPath"
-                                                                                   }
-                                                                               ],
-                                                                "post":  {
-                                                                             "tags":  [
-                                                                                          "Identity"
-                                                                                      ],
-                                                                             "operationId":  "confirmMergeCandidate",
-                                                                             "summary":  "Подтвердить склейку",
-                                                                             "description":  "Выполняется одной транзакцией: события и идентификаторы переходят победителю с сохранением `originGuestId`, проигравший получает `status=merged` и `mergedIntoId`, пишутся `merge_candidate.resolution=confirmed` и запись аудита. После успеха ставятся пересчёты сегментов и рекомендаций обоих гостей.",
-                                                                             "x-roles":  [
-                                                                                             "R-4"
-                                                                                         ],
-                                                                             "x-uc":  [
-                                                                                          "UC-11"
-                                                                                      ],
-                                                                             "responses":  {
-                                                                                               "200":  {
-                                                                                                           "description":  "Кандидат решён",
-                                                                                                           "content":  {
-                                                                                                                           "application/json":  {
-                                                                                                                                                    "schema":  {
-                                                                                                                                                                   "$ref": "../components/schemas/identity.json#/MergeCandidate"
-                                                                                                                                                               }
-                                                                                                                                                }
-                                                                                                                       }
-                                                                                                       },
-                                                                                               "401":  {
-                                                                                                           "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                       },
-                                                                                               "403":  {
-                                                                                                           "$ref": "../components/responses.json#/Forbidden"
-                                                                                                       },
-                                                                                               "404":  {
-                                                                                                           "$ref": "../components/responses.json#/NotFound"
-                                                                                                       },
-                                                                                               "409":  {
-                                                                                                           "$ref": "../components/responses.json#/Conflict"
-                                                                                                       }
-                                                                                           }
-                                                                         }
-                                                            },
-                  "/api/v1/merge-candidates/{id}/reject":  {
-                                                               "parameters":  [
-                                                                                  {
-                                                                                      "$ref": "../components/parameters.json#/IdPath"
-                                                                                  }
-                                                                              ],
-                                                               "post":  {
-                                                                            "tags":  [
-                                                                                         "Identity"
-                                                                                     ],
-                                                                            "operationId":  "rejectMergeCandidate",
-                                                                            "summary":  "Отклонить склейку",
-                                                                            "description":  "Ставит `resolution=rejected` и создаёт запрет склейки (`unmerge_block`), после чего автосклейка эту пару не повторит.",
-                                                                            "x-roles":  [
-                                                                                            "R-4"
-                                                                                        ],
-                                                                            "x-uc":  [
-                                                                                         "UC-11"
-                                                                                     ],
-                                                                            "responses":  {
-                                                                                              "200":  {
-                                                                                                          "description":  "Кандидат отклонён",
-                                                                                                          "content":  {
-                                                                                                                          "application/json":  {
-                                                                                                                                                   "schema":  {
-                                                                                                                                                                  "$ref": "../components/schemas/identity.json#/MergeCandidate"
-                                                                                                                                                              }
-                                                                                                                                               }
-                                                                                                                      }
-                                                                                                      },
-                                                                                              "401":  {
-                                                                                                          "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                      },
-                                                                                              "403":  {
-                                                                                                          "$ref": "../components/responses.json#/Forbidden"
-                                                                                                      },
-                                                                                              "404":  {
-                                                                                                          "$ref": "../components/responses.json#/NotFound"
-                                                                                                      },
-                                                                                              "409":  {
-                                                                                                          "$ref": "../components/responses.json#/Conflict"
-                                                                                                      }
-                                                                                          }
-                                                                        }
-                                                           },
-                  "/api/v1/merge-candidates/{id}/revert":  {
-                                                               "parameters":  [
-                                                                                  {
-                                                                                      "$ref": "../components/parameters.json#/IdPath"
-                                                                                  }
-                                                                              ],
-                                                               "post":  {
-                                                                            "tags":  [
-                                                                                         "Identity"
-                                                                                     ],
-                                                                            "operationId":  "revertMergeCandidate",
-                                                                            "summary":  "Разъединить ранее объединённых",
-                                                                            "description":  "Работает и для автосклеек (`auto_merged`). Строки с `originGuestId = проигравший` возвращаются проигравшему, профиль снова `active`, `resolution=reverted`, создаётся `unmerge_block` и запись аудита — всё в одной транзакции. Если решение не `confirmed` и не `auto_merged` — 409.",
-                                                                            "x-roles":  [
-                                                                                            "R-4"
-                                                                                        ],
-                                                                            "x-uc":  [
-                                                                                         "UC-11"
-                                                                                     ],
-                                                                            "responses":  {
-                                                                                              "200":  {
-                                                                                                          "description":  "Разъединение выполнено",
-                                                                                                          "content":  {
-                                                                                                                          "application/json":  {
-                                                                                                                                                   "schema":  {
-                                                                                                                                                                  "$ref": "../components/schemas/identity.json#/MergeCandidate"
-                                                                                                                                                              }
-                                                                                                                                               }
-                                                                                                                      }
-                                                                                                      },
-                                                                                              "401":  {
-                                                                                                          "$ref": "../components/responses.json#/Unauthorized"
-                                                                                                      },
-                                                                                              "403":  {
-                                                                                                          "$ref": "../components/responses.json#/Forbidden"
-                                                                                                      },
-                                                                                              "404":  {
-                                                                                                          "$ref": "../components/responses.json#/NotFound"
-                                                                                                      },
-                                                                                              "409":  {
-                                                                                                          "$ref": "../components/responses.json#/Conflict"
-                                                                                                      }
-                                                                                          }
-                                                                        }
-                                                           }
+  "paths": {
+    "/api/v1/merge-candidates": {
+      "get": {
+        "tags": ["Identity"],
+        "operationId": "listMergeCandidates",
+        "summary": "Disputed merge queue",
+        "description": "Sorted by `createdAt` ascending. R-1 has read-only access; resolution operations are available to R-4.",
+        "x-roles": ["R-4", "R-1 (read-only)"],
+        "x-uc": ["UC-11"],
+        "parameters": [
+          {
+            "name": "resolution",
+            "in": "query",
+            "schema": {
+              "$ref": "../components/schemas/identity.json#/MergeResolution"
+            }
+          },
+          {
+            "name": "reason_code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "../components/parameters.json#/Page"
+          },
+          {
+            "$ref": "../components/parameters.json#/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidate page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/identity.json#/MergeCandidatePage"
+                }
               }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/merge-candidates/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "get": {
+        "tags": ["Identity"],
+        "operationId": "getMergeCandidate",
+        "summary": "Two profiles side by side with the match reason",
+        "x-roles": ["R-4", "R-1"],
+        "x-uc": ["UC-11"],
+        "responses": {
+          "200": {
+            "description": "Candidate with both side profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/identity.json#/MergeCandidateDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/merge-candidates/{id}/confirm": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "post": {
+        "tags": ["Identity"],
+        "operationId": "confirmMergeCandidate",
+        "summary": "Confirm a merge",
+        "description": "Executed in a single transaction: events and identifiers move to the winner while `originGuestId` is preserved, the loser gets `status=merged` and `mergedIntoId`, and `merge_candidate.resolution=confirmed` plus an audit record are written. On success, segment and recommendation recomputes are enqueued for both guests.",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-11"],
+        "responses": {
+          "200": {
+            "description": "Candidate resolved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/identity.json#/MergeCandidate"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/merge-candidates/{id}/reject": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "post": {
+        "tags": ["Identity"],
+        "operationId": "rejectMergeCandidate",
+        "summary": "Reject a merge",
+        "description": "Sets `resolution=rejected` and creates a merge block (`unmerge_block`), so automatic merging will not repeat this pair.",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-11"],
+        "responses": {
+          "200": {
+            "description": "Candidate rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/identity.json#/MergeCandidate"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    },
+    "/api/v1/merge-candidates/{id}/revert": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "post": {
+        "tags": ["Identity"],
+        "operationId": "revertMergeCandidate",
+        "summary": "Split previously merged profiles",
+        "description": "Also works for automatic merges (`auto_merged`). Rows with `originGuestId = loser` are returned to the loser, the profile becomes `active` again, `resolution=reverted`, and an `unmerge_block` plus an audit record are created — all in one transaction. If the resolution is neither `confirmed` nor `auto_merged` — 409.",
+        "x-roles": ["R-4"],
+        "x-uc": ["UC-11"],
+        "responses": {
+          "200": {
+            "description": "Split completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/identity.json#/MergeCandidate"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          },
+          "409": {
+            "$ref": "../components/responses.json#/Conflict"
+          }
+        }
+      }
+    }
+  }
 }

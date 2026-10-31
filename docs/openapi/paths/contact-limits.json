@@ -1,169 +1,143 @@
 {
-    "paths":  {
-                  "/api/v1/contact-limits":  {
-                                                 "get":  {
-                                                             "tags":  [
-                                                                          "Exports"
-                                                                      ],
-                                                             "operationId":  "listContactLimits",
-                                                             "summary":  "Правила лимита контактов",
-                                                             "description":  "`channel = null` — общее правило для всех каналов. При нескольких применимых правилах действует самое строгое.",
-                                                             "x-roles":  [
-                                                                             "R-1",
-                                                                             "R-2",
-                                                                             "R-4"
-                                                                         ],
-                                                             "x-uc":  [
-                                                                          "UC-10"
-                                                                      ],
-                                                             "responses":  {
-                                                                               "200":  {
-                                                                                           "description":  "Правила",
-                                                                                           "content":  {
-                                                                                                           "application/json":  {
-                                                                                                                                    "schema":  {
-                                                                                                                                                   "type":  "array",
-                                                                                                                                                   "items":  {
-                                                                                                                                                                 "$ref": "../components/schemas/export-members.json#/ContactLimit"
-                                                                                                                                                             }
-                                                                                                                                               }
-                                                                                                                                }
-                                                                                                       }
-                                                                                       },
-                                                                               "401":  {
-                                                                                           "$ref": "../components/responses.json#/Unauthorized"
-                                                                                       },
-                                                                               "403":  {
-                                                                                           "$ref": "../components/responses.json#/Forbidden"
-                                                                                       }
-                                                                           }
-                                                         },
-                                                 "post":  {
-                                                              "tags":  [
-                                                                           "Exports"
-                                                                       ],
-                                                              "operationId":  "createContactLimit",
-                                                              "summary":  "Создать правило лимита",
-                                                              "description":  "`maxContacts \u003e= 1`, `periodDays \u003e= 1`, иначе 400.",
-                                                              "x-roles":  [
-                                                                              "R-1"
-                                                                          ],
-                                                              "x-uc":  [
-                                                                           "UC-10"
-                                                                       ],
-                                                              "requestBody":  {
-                                                                                  "required":  true,
-                                                                                  "content":  {
-                                                                                                  "application/json":  {
-                                                                                                                           "schema":  {
-                                                                                                                                          "$ref": "../components/schemas/export-members.json#/ContactLimitCreateRequest"
-                                                                                                                                      }
-                                                                                                                       }
-                                                                                              }
-                                                                              },
-                                                              "responses":  {
-                                                                                "201":  {
-                                                                                            "description":  "Правило создано",
-                                                                                            "content":  {
-                                                                                                            "application/json":  {
-                                                                                                                                     "schema":  {
-                                                                                                                                                    "$ref": "../components/schemas/export-members.json#/ContactLimit"
-                                                                                                                                                }
-                                                                                                                                 }
-                                                                                                        }
-                                                                                        },
-                                                                                "400":  {
-                                                                                            "$ref": "../components/responses.json#/BadRequest"
-                                                                                        },
-                                                                                "401":  {
-                                                                                            "$ref": "../components/responses.json#/Unauthorized"
-                                                                                        },
-                                                                                "403":  {
-                                                                                            "$ref": "../components/responses.json#/Forbidden"
-                                                                                        }
-                                                                            }
-                                                          }
-                                             },
-                  "/api/v1/contact-limits/{id}":  {
-                                                      "parameters":  [
-                                                                         {
-                                                                             "$ref": "../components/parameters.json#/IdPath"
-                                                                         }
-                                                                     ],
-                                                      "patch":  {
-                                                                    "tags":  [
-                                                                                 "Exports"
-                                                                             ],
-                                                                    "operationId":  "updateContactLimit",
-                                                                    "summary":  "Изменить правило лимита",
-                                                                    "x-roles":  [
-                                                                                    "R-1"
-                                                                                ],
-                                                                    "x-uc":  [
-                                                                                 "UC-10"
-                                                                             ],
-                                                                    "requestBody":  {
-                                                                                        "required":  true,
-                                                                                        "content":  {
-                                                                                                        "application/json":  {
-                                                                                                                                 "schema":  {
-                                                                                                                                                "$ref": "../components/schemas/export-members.json#/ContactLimitUpdateRequest"
-                                                                                                                                            }
-                                                                                                                             }
-                                                                                                    }
-                                                                                    },
-                                                                    "responses":  {
-                                                                                      "200":  {
-                                                                                                  "description":  "Обновлённое правило",
-                                                                                                  "content":  {
-                                                                                                                  "application/json":  {
-                                                                                                                                           "schema":  {
-                                                                                                                                                          "$ref": "../components/schemas/export-members.json#/ContactLimit"
-                                                                                                                                                      }
-                                                                                                                                       }
-                                                                                                              }
-                                                                                              },
-                                                                                      "400":  {
-                                                                                                  "$ref": "../components/responses.json#/BadRequest"
-                                                                                              },
-                                                                                      "401":  {
-                                                                                                  "$ref": "../components/responses.json#/Unauthorized"
-                                                                                              },
-                                                                                      "403":  {
-                                                                                                  "$ref": "../components/responses.json#/Forbidden"
-                                                                                              },
-                                                                                      "404":  {
-                                                                                                  "$ref": "../components/responses.json#/NotFound"
-                                                                                              }
-                                                                                  }
-                                                                },
-                                                      "delete":  {
-                                                                     "tags":  [
-                                                                                  "Exports"
-                                                                              ],
-                                                                     "operationId":  "deleteContactLimit",
-                                                                     "summary":  "Удалить правило лимита",
-                                                                     "x-roles":  [
-                                                                                     "R-1"
-                                                                                 ],
-                                                                     "x-uc":  [
-                                                                                  "UC-10"
-                                                                              ],
-                                                                     "responses":  {
-                                                                                       "204":  {
-                                                                                                   "$ref": "../components/responses.json#/NoContent"
-                                                                                               },
-                                                                                       "401":  {
-                                                                                                   "$ref": "../components/responses.json#/Unauthorized"
-                                                                                               },
-                                                                                       "403":  {
-                                                                                                   "$ref": "../components/responses.json#/Forbidden"
-                                                                                               },
-                                                                                       "404":  {
-                                                                                                   "$ref": "../components/responses.json#/NotFound"
-                                                                                               }
-                                                                                   }
-                                                                 }
-                                                  }
+  "paths": {
+    "/api/v1/contact-limits": {
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "listContactLimits",
+        "summary": "Contact limit rules",
+        "description": "`channel = null` — a general rule for all channels. When several rules apply, the strictest one wins.",
+        "x-roles": ["R-1", "R-2", "R-4"],
+        "x-uc": ["UC-10"],
+        "responses": {
+          "200": {
+            "description": "Rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "../components/schemas/export-members.json#/ContactLimit"
+                  }
+                }
               }
+            }
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Exports"],
+        "operationId": "createContactLimit",
+        "summary": "Create a contact limit rule",
+        "description": "`maxContacts >= 1`, `periodDays >= 1`, otherwise 400.",
+        "x-roles": ["R-1"],
+        "x-uc": ["UC-10"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/export-members.json#/ContactLimitCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rule created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/export-members.json#/ContactLimit"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/contact-limits/{id}": {
+      "parameters": [
+        {
+          "$ref": "../components/parameters.json#/IdPath"
+        }
+      ],
+      "patch": {
+        "tags": ["Exports"],
+        "operationId": "updateContactLimit",
+        "summary": "Update a contact limit rule",
+        "x-roles": ["R-1"],
+        "x-uc": ["UC-10"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../components/schemas/export-members.json#/ContactLimitUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../components/schemas/export-members.json#/ContactLimit"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "../components/responses.json#/BadRequest"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Exports"],
+        "operationId": "deleteContactLimit",
+        "summary": "Delete a contact limit rule",
+        "x-roles": ["R-1"],
+        "x-uc": ["UC-10"],
+        "responses": {
+          "204": {
+            "$ref": "../components/responses.json#/NoContent"
+          },
+          "401": {
+            "$ref": "../components/responses.json#/Unauthorized"
+          },
+          "403": {
+            "$ref": "../components/responses.json#/Forbidden"
+          },
+          "404": {
+            "$ref": "../components/responses.json#/NotFound"
+          }
+        }
+      }
+    }
+  }
 }

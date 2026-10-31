@@ -1,22 +1,42 @@
 {
   "Tenant": {
     "type": "object",
-    "required": ["id", "code", "name", "categoryId", "floor", "priority", "isActive", "createdAt", "updatedAt"],
+    "required": [
+      "id",
+      "code",
+      "name",
+      "categoryId",
+      "floor",
+      "priority",
+      "isActive",
+      "createdAt",
+      "updatedAt"
+    ],
     "properties": {
       "id": { "type": "string" },
       "code": { "type": "string", "maxLength": 64 },
       "name": { "type": "string", "maxLength": 200 },
       "categoryId": { "type": "string" },
       "categoryName": { "type": "string", "readOnly": true },
-      "floor": { "type": "integer", "description": "Этаж комплекса" },
+      "floor": { "type": "integer", "description": "Complex floor" },
       "areaSqm": { "type": "number", "format": "double", "nullable": true },
-      "xM": { "type": "number", "format": "double", "nullable": true, "description": "Координата X на плане, метры" },
-      "yM": { "type": "number", "format": "double", "nullable": true, "description": "Координата Y на плане, метры" },
+      "xM": {
+        "type": "number",
+        "format": "double",
+        "nullable": true,
+        "description": "X coordinate on the floor plan, meters"
+      },
+      "yM": {
+        "type": "number",
+        "format": "double",
+        "nullable": true,
+        "description": "Y coordinate on the floor plan, meters"
+      },
       "priority": {
         "type": "integer",
         "minimum": 0,
         "maximum": 100,
-        "description": "Приоритет арендатора в скоринге рекомендаций"
+        "description": "Tenant priority in recommendation scoring"
       },
       "isActive": { "type": "boolean" },
       "deletedAt": { "type": "string", "format": "date-time", "nullable": true },

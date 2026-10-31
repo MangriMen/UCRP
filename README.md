@@ -41,12 +41,12 @@
 
 ### Стек
 
-| Слой | Технологии |
-|---|---|
-| Backend | Go, слои `handler → service → repository`, REST, воркеры + очередь заданий |
-| Frontend | React, Vite, TypeScript, TanStack Query/Table, React Hook Form, React Router |
-| БД | SQLite на старте, переход на PostgreSQL без смены модели; миграции goose |
-| Инструменты | Bun workspaces, Turborepo, lefthook, golangci-lint |
+| Слой        | Технологии                                                                   |
+| ----------- | ---------------------------------------------------------------------------- |
+| Backend     | Go, слои `handler → service → repository`, REST, воркеры + очередь заданий   |
+| Frontend    | React, Vite, TypeScript, TanStack Query/Table, React Hook Form, React Router |
+| БД          | SQLite на старте, переход на PostgreSQL без смены модели; миграции goose     |
+| Инструменты | Bun workspaces, Turborepo, lefthook, golangci-lint                           |
 
 ### Требования
 
