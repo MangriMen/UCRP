@@ -6,6 +6,8 @@ x-environment: &environment
   UCRP_JWT_SECRET: '${UCRP_JWT_SECRET}'
   UCRP_UPLOAD_DIR: /data/uploads
   UCRP_LOG_LEVEL: '${UCRP_LOG_LEVEL:-info}'
+  UCRP_ADMIN_EMAIL: '${UCRP_ADMIN_EMAIL:-}'
+  UCRP_ADMIN_PASSWORD: '${UCRP_ADMIN_PASSWORD:-}'
 
 services:
   db:
