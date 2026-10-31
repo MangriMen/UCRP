@@ -160,7 +160,7 @@ R-1 Маркетолог УК (основной пользователь) · R-2
 
 ## Статус и раскладка файлов
 
-- Результат лежит в `docs/01-…md … 15-consistency.md` и `docs/appendix/` (DDL, план миграций, реестр эндпоинтов, фрагменты OpenAPI, деревья пакетов Go и модулей React). Машиночитаемый контракт: `docs/openapi.json` + `docs/openapi/`, офлайн Swagger UI: `docs/swagger/`. Индекс: `docs/README.md`.
+- Результат лежит в `docs/01-…md … 15-consistency.md` и `docs/appendix/` (DDL, план миграций, реестр эндпоинтов, фрагменты OpenAPI, деревья пакетов Go и модулей React). Машиночитаемый контракт: `docs/openapi.json` + `docs/openapi/`, Swagger UI: `packages/api-docs/`. Индекс: `docs/README.md`.
 - Mermaid проверять рендером (mermaid.live или плагин IDE): частые ошибки — swimlanes и object diagram.
 - Открытые вопросы заказчику (В-1…В-11 из `analysis.md` §9) частично закрыты FAQ; статус каждого в `docs/00-open-questions.md`. Незакрытые остаются допущениями; при ответе обновить допущения и перепроверить ER и скоринг.
 - Повторный прогон промпта: запускать фазами A → E, между фазами сохранять список ID; не перезаписывать готовые файлы `docs/` без сверки с `docs/14-traceability.md` и `docs/15-consistency.md`.

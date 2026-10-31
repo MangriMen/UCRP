@@ -1,0 +1,18 @@
+{
+  "name": "@ucrp/api-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "redocly bundle ../../docs/openapi.json --output dist/openapi.yaml --ext yaml && node scripts/copy-ui.mjs",
+    "docs": "bun run build && serve dist -l 8080",
+    "lint": "redocly lint ../../docs/openapi.json"
+  },
+  "dependencies": {
+    "swagger-ui-dist": "^5.34.1"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^2.0.0",
+    "serve": "^14.2.4"
+  }
+}

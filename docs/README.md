@@ -41,16 +41,16 @@
 
 ## 5. Приложения
 
-| Файл                            | Содержание                                                                                                     |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `appendix/ddl.sql`              | Переносимый DDL (27 таблиц)                                                                                    |
-| `appendix/migrations-plan.md`   | План миграций goose (13 файлов)                                                                                |
-| `appendix/endpoint-registry.md` | Реестр 90 REST-эндпоинтов, роли, 7 типов заданий очереди (источник истины)                                     |
-| `appendix/openapi-fragments.md` | Запросы и ответы ключевых эндпоинтов, единый формат ошибок, 202 и 200 импорта                                  |
-| `appendix/go-package-tree.md`   | Дерево Go-пакетов                                                                                              |
-| `appendix/react-module-tree.md` | Дерево React-модулей                                                                                           |
-| `openapi.json` + `openapi/`     | OpenAPI 3.0.3: index plus 46 files ≤ 300 lines (22 path files, 20 schema files, shared components)             |
-| `swagger/index.html`            | Ready-to-use offline Swagger UI: 90 operations, 113 schemas. Open in a browser or run `npx serve docs/swagger` |
+| Файл                            | Содержание                                                                                         |
+| ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `appendix/ddl.sql`              | Переносимый DDL (27 таблиц)                                                                        |
+| `appendix/migrations-plan.md`   | План миграций goose (13 файлов)                                                                    |
+| `appendix/endpoint-registry.md` | Реестр 90 REST-эндпоинтов, роли, 7 типов заданий очереди (источник истины)                         |
+| `appendix/openapi-fragments.md` | Запросы и ответы ключевых эндпоинтов, единый формат ошибок, 202 и 200 импорта                      |
+| `appendix/go-package-tree.md`   | Дерево Go-пакетов                                                                                  |
+| `appendix/react-module-tree.md` | Дерево React-модулей                                                                               |
+| `openapi.json` + `openapi/`     | OpenAPI 3.0.3: index plus 46 files ≤ 300 lines (22 path files, 20 schema files, shared components) |
+| `../packages/api-docs/`         | Swagger UI generated from the spec; run `bun run docs`, served at `/docs/` in production           |
 
 ## 6. Открытые вопросы и решения
 

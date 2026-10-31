@@ -8,7 +8,6 @@
     "**/node_modules",
     ".turbo",
     "bun.lock",
-    "docs/swagger",
     "docs/openapi.json",
     "docs/appendix/ddl.sql",
     "apps/web/public/mockServiceWorker.js",
