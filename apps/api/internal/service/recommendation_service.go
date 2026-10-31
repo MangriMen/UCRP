@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 )
@@ -20,14 +21,25 @@ func NewRecommendationService(guests domain.GuestRepo, repo domain.Recommendatio
 }
 
 type RecommendationDTO struct {
-	ID               string  `json:"id"`
-	GuestID          string  `json:"guestId"`
-	Rank             int     `json:"rank"`
-	TenantID         string  `json:"tenantId"`
-	Score            float64 `json:"score"`
-	Explanation      string  `json:"explanation"`
-	AlgorithmVersion string  `json:"algorithmVersion"`
-	ComputedAt       string  `json:"computedAt"`
+	ID               string                    `json:"id"`
+	GuestID          string                    `json:"guestId"`
+	Rank             int                       `json:"rank"`
+	TenantID         string                    `json:"tenantId"`
+	TenantName       string                    `json:"tenantName,omitempty"`
+	CategoryName     *string                   `json:"categoryName"`
+	Floor            *int                      `json:"floor"`
+	Score            float64                   `json:"score"`
+	Explanation      string                    `json:"explanation"`
+	AlgorithmVersion string                    `json:"algorithmVersion"`
+	Factors          []RecommendationFactorDTO `json:"factors"`
+	ComputedAt       string                    `json:"computedAt"`
+}
+
+type RecommendationFactorDTO struct {
+	FactorCode   string  `json:"factorCode"`
+	RawValue     float64 `json:"rawValue"`
+	Weight       float64 `json:"weight"`
+	Contribution float64 `json:"contribution"`
 }
 
 type SegmentRecommendationDTO struct {
@@ -87,11 +99,14 @@ func (s *RecommendationService) Refresh(ctx context.Context, guestID string) ([]
 	if _, err := s.guests.GetByID(ctx, guestID); err != nil {
 		return nil, err
 	}
-	items, err := s.rec.Refresh(ctx, guestID)
-	if err != nil {
+	if _, err := s.rec.Refresh(ctx, guestID); err != nil {
 		return nil, fmt.Errorf("refresh: %w", err)
 	}
 	if err := enqueueRecommendEvaluate(ctx, s.q, guestID); err != nil {
+		return nil, err
+	}
+	items, err := s.repo.ListByGuest(ctx, guestID)
+	if err != nil {
 		return nil, err
 	}
 	return toRecoDTOs(items), nil
@@ -112,15 +127,32 @@ func enqueueRecommendEvaluate(ctx context.Context, q domain.Queue, guestID strin
 func toRecoDTOs(items []domain.Recommendation) []RecommendationDTO {
 	out := make([]RecommendationDTO, 0, len(items))
 	for _, it := range items {
+		factors := make([]RecommendationFactorDTO, 0, len(it.Factors))
+		for _, f := range it.Factors {
+			factors = append(factors, RecommendationFactorDTO{
+				FactorCode:   f.FactorCode,
+				RawValue:     f.RawValue,
+				Weight:       f.Weight,
+				Contribution: f.Contribution,
+			})
+		}
+		var categoryName *string
+		if it.CategoryName != "" {
+			categoryName = &it.CategoryName
+		}
 		out = append(out, RecommendationDTO{
 			ID:               it.ID,
 			GuestID:          it.GuestID,
 			Rank:             it.Rank,
 			TenantID:         it.TenantID,
+			TenantName:       it.TenantName,
+			CategoryName:     categoryName,
+			Floor:            it.Floor,
 			Score:            it.Score,
 			Explanation:      it.Explanation,
 			AlgorithmVersion: it.AlgorithmVersion,
-			ComputedAt:       it.ComputedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+			Factors:          factors,
+			ComputedAt:       it.ComputedAt.UTC().Format(time.RFC3339),
 		})
 	}
 	return out

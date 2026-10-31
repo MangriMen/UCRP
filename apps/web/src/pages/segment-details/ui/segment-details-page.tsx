@@ -1,5 +1,4 @@
 import { useParams } from 'react-router'
-import { SegmentTopTenants } from '@/entities/recommendation'
 import { isSegmentComputing, RuleSummary, SegmentStatusBadge, useSegment } from '@/entities/segment'
 import { useAuth } from '@/entities/user'
 import { BuildSegmentButton } from '@/features/build-segment'
@@ -13,6 +12,7 @@ import { ErrorBanner } from '@/shared/ui/error-banner'
 import { PageHeader } from '@/shared/ui/page-header'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { MemberTable } from './member-table'
+import { SegmentRecommendations } from './segment-recommendations'
 import { VersionHistory } from './version-history'
 
 export function SegmentDetailsPage() {
@@ -82,12 +82,14 @@ export function SegmentDetailsPage() {
           </CardContent>
         </Card>
       )}
+      {can('recommendation.read') && (
+        <SegmentRecommendations
+          segmentId={segment.id}
+          isSegmentComputing={isSegmentComputing(segment.status)}
+        />
+      )}
       {canManage && (
         <>
-          <SegmentTopTenants
-            segmentId={segment.id}
-            isSegmentComputing={isSegmentComputing(segment.status)}
-          />
           <section className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Участники</h2>
             <MemberTable key={segment.id} segmentId={segment.id} />
