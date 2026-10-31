@@ -295,3 +295,30 @@ func (h *AnalyticsHandler) DataQuality(w http.ResponseWriter, r *http.Request) {
 	}
 	writePage(w, dataQualityResponse(items), 0, 0, len(items))
 }
+
+func (h *AnalyticsHandler) DataQualitySource(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	var from, to time.Time
+	if v := q.Get("from"); v != "" {
+		parsed, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректная дата from")
+			return
+		}
+		from = parsed
+	}
+	if v := q.Get("to"); v != "" {
+		parsed, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректная дата to")
+			return
+		}
+		to = parsed
+	}
+	detail, err := h.analytics.DataQualitySource(r.Context(), chi.URLParam(r, "id"), from, to)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, detail)
+}

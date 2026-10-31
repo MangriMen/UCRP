@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/api/api'
-import { ApiError } from '@/shared/api/client'
+import { ApiError, ensureAccessToken } from '@/shared/api/client'
 import { userKeys } from '../model/keys'
 import type { Me } from '../model/types'
 
 async function fetchMe(): Promise<Me | null> {
+  if (!(await ensureAccessToken())) return null
   try {
     return await api.get('/auth/me')
   } catch (e) {

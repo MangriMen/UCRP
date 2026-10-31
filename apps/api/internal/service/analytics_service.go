@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
@@ -73,7 +74,7 @@ func (s *AnalyticsService) CrossTenantReport(ctx context.Context, from, to time.
 			COALESCE(SUM(CASE WHEN tn = 1 THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN tn = 2 THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN tn >= 3 THEN 1 ELSE 0 END), 0),
-			COALESCE(SUM(CASE WHEN tn >= 2 THEN 1 ELSE 0 END), 0)::float8 / NULLIF(COUNT(*), 0)
+			COALESCE(SUM(CASE WHEN tn >= 2 THEN 1 ELSE 0 END)::float8 / NULLIF(COUNT(*), 0), 0)
 		FROM guest_tenants`, from, to).Scan(&dist.One, &dist.Two, &dist.ThreePlus, &rate)
 	if err != nil {
 		return nil, err
@@ -119,7 +120,7 @@ func (s *AnalyticsService) crossTenantSeries(ctx context.Context, from, to time.
 			COALESCE(SUM(CASE WHEN tn = 1 THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN tn = 2 THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN tn >= 3 THEN 1 ELSE 0 END), 0),
-			COALESCE(SUM(CASE WHEN tn >= 2 THEN 1 ELSE 0 END), 0)::float8 / NULLIF(COUNT(*), 0)
+			COALESCE(SUM(CASE WHEN tn >= 2 THEN 1 ELSE 0 END)::float8 / NULLIF(COUNT(*), 0), 0)
 		FROM per_guest
 		GROUP BY period
 		ORDER BY period`, from, to)
@@ -278,4 +279,155 @@ func (s *AnalyticsService) DataQuality(ctx context.Context) ([]DataQualityItem, 
 		out = append(out, it)
 	}
 	return out, rows.Err()
+}
+
+type DataQualityPoint struct {
+	Date          string  `json:"date"`
+	TotalRows     int     `json:"totalRows"`
+	RejectedRows  int     `json:"rejectedRows"`
+	RejectedShare float64 `json:"rejectedShare"`
+}
+
+type DataQualitySourceDetail struct {
+	DataSourceID           string             `json:"dataSourceId"`
+	DataSourceName         string             `json:"dataSourceName"`
+	TenantID               string             `json:"tenantId,omitempty"`
+	TenantName             string             `json:"tenantName,omitempty"`
+	LastSuccessfulImportAt string             `json:"lastSuccessfulImportAt,omitempty"`
+	RejectedShare30d       float64            `json:"rejectedShare30d"`
+	PendingMergeCandidates int                `json:"pendingMergeCandidates"`
+	HasWarning             bool               `json:"hasWarning"`
+	WarningReasons         []string           `json:"warningReasons"`
+	Series                 []DataQualityPoint `json:"series"`
+	RecentBatches          []ImportDTO        `json:"recentBatches"`
+}
+
+func (s *AnalyticsService) DataQualitySource(ctx context.Context, id string, from, to time.Time) (*DataQualitySourceDetail, error) {
+	if to.IsZero() {
+		to = time.Now().UTC()
+	}
+	if from.IsZero() {
+		from = to.AddDate(0, -3, 0)
+	}
+	if from.After(to) {
+		return nil, domain.ErrValidation
+	}
+	detail := DataQualitySourceDetail{
+		DataSourceID:   id,
+		WarningReasons: make([]string, 0),
+		Series:         make([]DataQualityPoint, 0),
+		RecentBatches:  make([]ImportDTO, 0),
+	}
+	var tenantID, tenantName sql.NullString
+	var last sql.NullTime
+	err := s.db.QueryRowContext(ctx, `
+		SELECT d.name, d.tenant_id, t.name, d.last_import_at
+		FROM data_source d
+		LEFT JOIN tenant t ON t.id = d.tenant_id
+		WHERE d.id = $1`, id).Scan(&detail.DataSourceName, &tenantID, &tenantName, &last)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if tenantID.Valid {
+		detail.TenantID = tenantID.String
+	}
+	if tenantName.Valid {
+		detail.TenantName = tenantName.String
+	}
+	if last.Valid {
+		detail.LastSuccessfulImportAt = last.Time.UTC().Format(time.RFC3339)
+	}
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(b.rejected_rows)::float8 / NULLIF(SUM(b.total_rows), 0), 0)
+		FROM import_batch b
+		WHERE b.data_source_id = $1 AND b.created_at >= now() - interval '30 days'`, id).
+		Scan(&detail.RejectedShare30d); err != nil {
+		return nil, err
+	}
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM merge_candidate m
+		WHERE m.resolution = 'pending'
+		  AND (
+		    m.guest_a_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = $1)
+		    OR m.guest_b_id IN (SELECT guest_id FROM guest_identifier WHERE data_source_id = $1)
+		  )`, id).Scan(&detail.PendingMergeCandidates); err != nil {
+		return nil, err
+	}
+	detail.HasWarning = !last.Valid || time.Since(last.Time) > 7*24*time.Hour || detail.RejectedShare30d > 0.10
+	if !last.Valid {
+		detail.WarningReasons = append(detail.WarningReasons, "data_older_than_7_days")
+	} else if time.Since(last.Time) > 7*24*time.Hour {
+		detail.WarningReasons = append(detail.WarningReasons, "data_older_than_7_days")
+	}
+	if detail.RejectedShare30d > 0.10 {
+		detail.WarningReasons = append(detail.WarningReasons, "rejected_share_above_10pct")
+	}
+
+	seriesRows, err := s.db.QueryContext(ctx, `
+		SELECT to_char(date_trunc('day', b.created_at), 'YYYY-MM-DD'),
+			COALESCE(SUM(b.total_rows), 0),
+			COALESCE(SUM(b.rejected_rows), 0)
+		FROM import_batch b
+		WHERE b.data_source_id = $1 AND b.created_at >= $2 AND b.created_at <= $3
+		GROUP BY 1
+		ORDER BY 1`, id, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = seriesRows.Close() }()
+	for seriesRows.Next() {
+		var point DataQualityPoint
+		if err := seriesRows.Scan(&point.Date, &point.TotalRows, &point.RejectedRows); err != nil {
+			return nil, err
+		}
+		if point.TotalRows > 0 {
+			point.RejectedShare = float64(point.RejectedRows) / float64(point.TotalRows)
+		}
+		detail.Series = append(detail.Series, point)
+	}
+	if err := seriesRows.Err(); err != nil {
+		return nil, err
+	}
+
+	batchRows, err := s.db.QueryContext(ctx, `
+		SELECT id, data_source_id, mode, status, file_name, total_rows, accepted_rows,
+			rejected_rows, duplicate_rows, error_message, created_by, created_at, started_at, finished_at
+		FROM import_batch
+		WHERE data_source_id = $1
+		ORDER BY created_at DESC
+		LIMIT 20`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = batchRows.Close() }()
+	for batchRows.Next() {
+		var item ImportDTO
+		var mode, status string
+		var fileName, errorMessage, createdBy sql.NullString
+		var startedAt, finishedAt sql.NullTime
+		if err := batchRows.Scan(&item.ID, &item.DataSourceID, &mode, &status, &fileName,
+			&item.Total, &item.Accepted, &item.Rejected, &item.Duplicate, &errorMessage,
+			&createdBy, &item.CreatedAt, &startedAt, &finishedAt); err != nil {
+			return nil, err
+		}
+		item.Mode = mode
+		item.Status = status
+		item.FileName = fileName.String
+		item.ErrorMessage = errorMessage.String
+		item.CreatedBy = createdBy.String
+		if startedAt.Valid {
+			item.StartedAt = &startedAt.Time
+		}
+		if finishedAt.Valid {
+			item.FinishedAt = &finishedAt.Time
+		}
+		detail.RecentBatches = append(detail.RecentBatches, item)
+	}
+	if err := batchRows.Err(); err != nil {
+		return nil, err
+	}
+	return &detail, nil
 }

@@ -51,6 +51,11 @@ function refreshAccessToken(): Promise<boolean> {
   return refreshing
 }
 
+export function ensureAccessToken(): Promise<boolean> {
+  if (accessToken) return Promise.resolve(true)
+  return refreshAccessToken()
+}
+
 async function toApiError(res: Response): Promise<ApiError> {
   const data = (await res.json().catch(() => null)) as { error?: ApiErrorBody } | null
   if (data?.error) return new ApiError(res.status, data.error)
