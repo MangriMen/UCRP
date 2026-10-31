@@ -7,6 +7,7 @@ import {
   type ImportBatch,
   type ImportStatus,
 } from '@/entities/import-batch'
+import { useAuth } from '@/entities/user'
 import { UploadImportForm } from '@/features/upload-import'
 import { formatDateTime } from '@/shared/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -30,17 +31,25 @@ const statusItems = [
   ...Object.entries(importStatusLabels).map(([value, label]) => ({ value, label })),
 ]
 
+const isImportStatus = (value: string): value is ImportStatus => value in importStatusLabels
+
+const parsePage = (value: string | null) => {
+  const page = Number(value)
+  return Number.isInteger(page) && page > 0 ? page : 1
+}
+
 export function ImportsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const dataSourceId = searchParams.get('source') ?? ALL
   const status = searchParams.get('status') ?? ALL
-  const page = Number(searchParams.get('page') ?? 1)
+  const page = parsePage(searchParams.get('page'))
 
+  const { role } = useAuth()
   const sources = useDataSources()
   const imports = useImports({
     dataSourceId: dataSourceId === ALL ? undefined : dataSourceId,
-    status: status === ALL ? undefined : (status as ImportStatus),
+    status: isImportStatus(status) ? status : undefined,
     page,
   })
 
@@ -63,18 +72,20 @@ export function ImportsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Импорт данных" description="Загрузка файлов и история импортов" />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Загрузить файл</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <UploadImportForm
-            onUploaded={(batchId, isDuplicate) =>
-              navigate(`/import/${batchId}`, { state: { isDuplicate } })
-            }
-          />
-        </CardContent>
-      </Card>
+      {role === 'analyst' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Загрузить файл</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UploadImportForm
+              onUploaded={(batchId, isDuplicate) =>
+                navigate(`/import/${batchId}`, { state: { isDuplicate } })
+              }
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">

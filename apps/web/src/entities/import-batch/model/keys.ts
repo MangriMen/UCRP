@@ -1,6 +1,8 @@
+import type { ImportStatus } from './types'
+
 export interface ImportListFilters {
   dataSourceId?: string
-  status?: string
+  status?: ImportStatus
   page?: number
   pageSize?: number
 }

@@ -5,7 +5,7 @@ import type { ImportBatch } from '../model/types'
 import { mockBatches, mockDataSources, mockRejectedRows } from './fixtures'
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
-const ACCEPTED_EXTENSIONS = ['.csv', '.xlsx', '.xls']
+const ACCEPTED_EXTENSIONS = ['.csv', '.xlsx']
 const TOTAL_ROWS = 300
 
 const batches: ImportBatch[] = structuredClone(mockBatches)

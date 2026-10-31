@@ -95,19 +95,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     })
   }
 
-  let res: Response
-  try {
-    res = await send()
-  } catch (e) {
-    throw toTransportError(e)
-  }
+  const sendChecked = () =>
+    send().catch((e) => {
+      throw toTransportError(e)
+    })
+
+  let res = await sendChecked()
   if (res.status === 401 && !NO_REFRESH_PATHS.has(path)) {
     if (await refreshAccessToken()) {
-      try {
-        res = await send()
-      } catch (e) {
-        throw toTransportError(e)
-      }
+      res = await sendChecked()
     } else {
       onUnauthorized?.()
     }

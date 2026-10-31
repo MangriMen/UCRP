@@ -1,5 +1,6 @@
 import { Link, useLocation, useParams } from 'react-router'
-import { ImportStatusBadge, useImport } from '@/entities/import-batch'
+import { ImportStatusBadge, isImportActive, useImport } from '@/entities/import-batch'
+import { useAuth } from '@/entities/user'
 import { formatDateTime } from '@/shared/lib/format'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
@@ -13,6 +14,7 @@ import { RejectedTable } from './rejected-table'
 export function ImportDetailsPage() {
   const { id = '' } = useParams()
   const location = useLocation()
+  const { role } = useAuth()
   const { data: batch, error, isLoading } = useImport(id)
 
   if (isLoading) return <Skeleton className="h-40 w-full" />
@@ -46,10 +48,10 @@ export function ImportDetailsPage() {
         </Alert>
       )}
       <BatchCounters batch={batch} />
-      {batch.rejectedRows > 0 && (
+      {role === 'analyst' && batch.rejectedRows > 0 && !isImportActive(batch.status) && (
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold">Отклонённые строки</h2>
-          <RejectedTable batchId={batch.id} />
+          <RejectedTable key={batch.id} batchId={batch.id} />
         </section>
       )}
     </div>
