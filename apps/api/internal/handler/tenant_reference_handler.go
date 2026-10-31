@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -17,10 +19,16 @@ type tenantReferenceReader interface {
 	GetTenant(context.Context, string) (*service.TenantDTO, error)
 }
 
+type tenantSearcher interface {
+	SearchTenants(context.Context, domain.TenantFilter, service.TenantStatsAccess, int, int) ([]service.TenantListItemDTO, int, error)
+}
+
 type TenantReferenceHandler struct {
 	authorizer policyAuthorizer
 	reference  tenantReferenceReader
+	search     tenantSearcher
 	legacy     *ReferenceHandler
+	guests     *GuestHandler
 }
 
 type tenantOwnReference struct {
@@ -33,8 +41,8 @@ type tenantOwnReference struct {
 	IsActive   bool   `json:"isActive"`
 }
 
-func NewTenantReferenceHandler(authorizer policyAuthorizer, reference tenantReferenceReader, legacy *ReferenceHandler) *TenantReferenceHandler {
-	return &TenantReferenceHandler{authorizer: authorizer, reference: reference, legacy: legacy}
+func NewTenantReferenceHandler(authorizer policyAuthorizer, reference tenantReferenceReader, search tenantSearcher, legacy *ReferenceHandler, guests *GuestHandler) *TenantReferenceHandler {
+	return &TenantReferenceHandler{authorizer: authorizer, reference: reference, search: search, legacy: legacy, guests: guests}
 }
 
 func (h *TenantReferenceHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +52,7 @@ func (h *TenantReferenceHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if principal.Role != domain.RoleTenant {
-		h.legacy.ListTenants(w, r)
+		h.listForManagement(w, r, principal)
 		return
 	}
 	item, ok := h.ownTenant(w, r, principal, principal.TenantID)
@@ -117,4 +125,56 @@ func (h *TenantReferenceHandler) ownTenant(w http.ResponseWriter, r *http.Reques
 		ID: tenant.ID, Code: tenant.Code, Name: tenant.Name, CategoryID: tenant.CategoryID,
 		Kind: tenant.Kind, Floor: tenant.Floor, IsActive: tenant.IsActive,
 	}, true
+}
+
+func (h *TenantReferenceHandler) listForManagement(w http.ResponseWriter, r *http.Request, principal domain.Principal) {
+	filter, problem := parseTenantFilter(r)
+	if problem != "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", problem)
+		return
+	}
+	visits, err := authorizeMetric(r.Context(), h.authorizer, principal, visitsMetric, "")
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	newGuests, err := authorizeMetric(r.Context(), h.authorizer, principal, newGuestsMetric, "")
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	switch strings.TrimPrefix(filter.Sort, "-") {
+	case "guestsCount", "visitsCount":
+		if !visits.Allowed {
+			httpx.WriteError(w, r, http.StatusForbidden, "forbidden_permission", "Нет доступа к статистике визитов")
+			return
+		}
+	case "newGuestsCount":
+		if !newGuests.Allowed {
+			httpx.WriteError(w, r, http.StatusForbidden, "forbidden_permission", "Нет доступа к статистике новых гостей")
+			return
+		}
+	}
+	periodDays, threshold := combineMetricScopes(visits, newGuests)
+	filter.PeriodFrom = clampPeriodStart(filter.PeriodFrom, periodDays, time.Now().UTC())
+	filter.KThreshold = threshold
+	limit, offset := pageParams(r)
+	if limit <= 0 {
+		limit = defaultTenantPageSize
+	}
+	items, total, err := h.search.SearchTenants(r.Context(), filter, service.TenantStatsAccess{Visits: visits.Allowed, NewGuests: newGuests.Allowed}, limit, offset)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	writePage(w, items, limit, offset, total)
+}
+
+func (h *TenantReferenceHandler) Guests(w http.ResponseWriter, r *http.Request) {
+	tenantID := chi.URLParam(r, "id")
+	if _, err := h.reference.GetTenant(r.Context(), tenantID); err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	h.guests.search(w, r, tenantID)
 }

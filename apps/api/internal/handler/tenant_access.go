@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -53,6 +54,11 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 		httpx.WriteError(w, r, http.StatusForbidden, "forbidden", "Нет доступа")
 		return
 	}
+	query, problem := parseAggregateQuery(r, tenantID)
+	if problem != "" {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", problem)
+		return
+	}
 	requestedMetrics := r.URL.Query()["metrics"]
 	for _, requested := range requestedMetrics {
 		for _, name := range strings.Split(requested, ",") {
@@ -76,15 +82,27 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 		httpx.WriteJSON(w, http.StatusOK, map[string]any{})
 		return
 	}
+	newGuests, err := authorizeMetric(r.Context(), h.authorizer, principal, newGuestsMetric, tenantID)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
 	period := action.PeriodDays
 	if period == 0 || (metric.PeriodDays > 0 && metric.PeriodDays < period) {
 		period = metric.PeriodDays
 	}
-	k := action.KThreshold
-	if metric.KThreshold > k {
-		k = metric.KThreshold
+	k := max(action.KThreshold, metric.KThreshold)
+	if newGuests.Allowed {
+		scopeDays, scopeK := combineMetricScopes(newGuests)
+		k = max(k, scopeK)
+		if scopeDays > 0 && (period == 0 || scopeDays < period) {
+			period = scopeDays
+		}
 	}
-	result, err := h.analytics.TenantVisitAggregate(r.Context(), tenantID, period, k)
+	query.Threshold = k
+	query.ShowNewGuests = newGuests.Allowed
+	query.From = clampPeriodStart(query.From, period, time.Now().UTC())
+	result, err := h.analytics.TenantAggregate(r.Context(), query)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
@@ -99,4 +117,32 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, result)
+}
+
+const maxAggregatePeriodDays = 366
+
+func parseAggregateQuery(r *http.Request, tenantID string) (service.TenantAggregateQuery, string) {
+	query := service.TenantAggregateQuery{TenantID: tenantID}
+	values := r.URL.Query()
+	from, problem := parseDateParam(values, "from", false)
+	if problem != "" {
+		return query, problem
+	}
+	to, problem := parseDateParam(values, "to", true)
+	if problem != "" {
+		return query, problem
+	}
+	if (from == nil) != (to == nil) {
+		return query, "from и to задаются вместе"
+	}
+	if from != nil {
+		if !from.Before(*to) {
+			return query, "from не может быть позже to"
+		}
+		if to.Sub(*from) > maxAggregatePeriodDays*24*time.Hour {
+			return query, "период не может быть длиннее 366 дней"
+		}
+	}
+	query.From, query.To = from, to
+	return query, ""
 }

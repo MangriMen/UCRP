@@ -35,6 +35,28 @@ export function useGuestSearch(filters: GuestSearchFilters) {
   })
 }
 
+export function useTenantGuests(tenantId: string, filters: GuestSearchFilters) {
+  return useQuery({
+    queryKey: guestKeys.tenantList(tenantId, filters),
+    queryFn: () =>
+      api.get('/tenants/{id}/guests', {
+        params: { id: tenantId },
+        query: {
+          q: filters.query && filters.query.length >= MIN_SEARCH_LENGTH ? filters.query : undefined,
+          source_id: filters.sourceId,
+          period_from: filters.periodFrom,
+          period_to: filters.periodTo,
+          status: filters.status,
+          has_purchases: filters.hasPurchases,
+          sort: filters.sort as GuestListSort | undefined,
+          page: filters.page,
+          page_size: filters.pageSize,
+        },
+      }),
+    placeholderData: keepPreviousData,
+  })
+}
+
 export function useGuest(id: string) {
   return useQuery({
     queryKey: guestKeys.detail(id),

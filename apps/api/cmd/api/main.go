@@ -148,7 +148,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		repository.NewEventTypeSQL(store.DB),
 	)
 	refHandler := handler.NewReferenceHandler(refSvc)
-	tenantReferenceHandler := handler.NewTenantReferenceHandler(accessSvc, refSvc, refHandler)
+	tenantReferenceHandler := handler.NewTenantReferenceHandler(accessSvc, refSvc, refSvc, refHandler, guestHandler)
 
 	r := chi.NewRouter()
 	r.Use(httpx.RequestIDMiddleware)
@@ -234,6 +234,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/", tenantReferenceHandler.List)
 				t.With(auth.RequireRole(domain.RoleAnalyst)).Post("/", refHandler.CreateTenant)
 				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst, domain.RoleTenant)).Get("/{id}", tenantReferenceHandler.Get)
+				t.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}/guests", tenantReferenceHandler.Guests)
 				t.With(auth.RequireRole(domain.RoleAnalyst)).Patch("/{id}", refHandler.UpdateTenant)
 				t.With(auth.RequireRole(domain.RoleAnalyst)).Delete("/{id}", refHandler.DeleteTenant)
 			})

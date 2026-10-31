@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/auth"
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/service"
@@ -270,16 +271,6 @@ func decode[T any](w http.ResponseWriter, r *http.Request) (T, bool) {
 	return req, true
 }
 
-func (h *ReferenceHandler) ListTenants(w http.ResponseWriter, r *http.Request) {
-	limit, offset := pageParams(r)
-	items, err := h.ref.ListTenants(r.Context(), limit, offset)
-	if err != nil {
-		httpx.WriteDomainError(w, r, err)
-		return
-	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
-}
-
 func (h *ReferenceHandler) GetTenant(w http.ResponseWriter, r *http.Request) {
 	item, err := h.ref.GetTenant(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
@@ -317,6 +308,10 @@ func (h *ReferenceHandler) UpdateTenant(w http.ResponseWriter, r *http.Request) 
 
 func (h *ReferenceHandler) DeleteTenant(w http.ResponseWriter, r *http.Request) {
 	if err := h.ref.DeleteTenant(r.Context(), chi.URLParam(r, "id")); err != nil {
+		if errors.Is(err, domain.ErrConflict) {
+			httpx.WriteError(w, r, http.StatusConflict, "tenant_has_events", "У арендатора есть события, удаление невозможно")
+			return
+		}
 		httpx.WriteDomainError(w, r, err)
 		return
 	}

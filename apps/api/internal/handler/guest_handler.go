@@ -119,10 +119,17 @@ func canReadGuestAmount(r *http.Request, authorizer accessAuthorizer) (bool, err
 }
 
 func (h *GuestHandler) Search(w http.ResponseWriter, r *http.Request) {
+	h.search(w, r, "")
+}
+
+func (h *GuestHandler) search(w http.ResponseWriter, r *http.Request, tenantID string) {
 	filter, problem := parseGuestFilter(r)
 	if problem != "" {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", problem)
 		return
+	}
+	if tenantID != "" {
+		filter.TenantID = tenantID
 	}
 	showAmount, err := canReadGuestAmount(r, h.authorizer)
 	if err != nil {

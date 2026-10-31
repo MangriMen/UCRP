@@ -32,6 +32,8 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'contact_limit.write',
     'dashboard.read',
     'tenant.aggregates.read',
+    'metric.visits_count.read',
+    'metric.new_guests_via_mall.read',
   ],
   manager: [
     'guest.profile.read',
@@ -58,6 +60,8 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'data_quality.read',
     'dashboard.read',
     'tenant.aggregates.read',
+    'metric.visits_count.read',
+    'metric.new_guests_via_mall.read',
   ],
   analyst: [
     'guest.profile.read',
@@ -91,10 +95,14 @@ export const rolePermissions: Record<Me['role'], string[]> = {
     'data_quality.read',
     'dashboard.read',
     'tenant.aggregates.read',
+    'metric.visits_count.read',
+    'metric.new_guests_via_mall.read',
   ],
   tenant: [
     'reference.read',
     'tenant.aggregates.own',
+    'metric.visits_count.read',
+    'metric.new_guests_via_mall.read',
     'guest.profile.read',
     'guest.event.read',
     'guest.identifier.read',

@@ -59,6 +59,7 @@ const navigation: NavGroup[] = [
   {
     label: 'Данные',
     items: [
+      { title: 'Арендаторы', to: '/tenants', icon: Store, permission: 'reference.read' },
       {
         title: 'Источники данных',
         to: '/data-sources',

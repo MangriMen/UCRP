@@ -63,7 +63,7 @@ func TestTenantReferenceIsolation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			policy := &tenantReferenceTestPolicy{allowed: tc.allowed, changeVersion: tc.changeVersion}
 			reader := &tenantReferenceTestReader{}
-			handler := NewTenantReferenceHandler(policy, reader, nil)
+			handler := NewTenantReferenceHandler(policy, reader, nil, nil, nil)
 			tokens := auth.NewManager("secret", time.Hour)
 			token, err := tokens.Issue(domain.Principal{UserID: "u", Role: domain.RoleTenant, TenantID: "own"})
 			if err != nil {

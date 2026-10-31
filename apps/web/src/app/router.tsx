@@ -21,6 +21,8 @@ import { NotFoundPage } from '@/pages/not-found'
 import { SegmentDetailsPage } from '@/pages/segment-details'
 import { SegmentsPage } from '@/pages/segments'
 import { TenantAggregatesPage } from '@/pages/tenant-aggregates'
+import { TenantDetailsPage } from '@/pages/tenant-details'
+import { TenantsPage } from '@/pages/tenants'
 import { MergeBlocksPage } from '@/pages/merge-blocks'
 import { AppLayout } from './layout/app-layout'
 import { HomeRedirect } from './layout/home-redirect'
@@ -94,7 +96,11 @@ export const router = createBrowserRouter([
           },
           {
             element: <AccessGuard permission="reference.read" />,
-            children: [{ path: 'admin/dictionaries', element: <AdminDictionariesPage /> }],
+            children: [
+              { path: 'tenants', element: <TenantsPage /> },
+              { path: 'tenants/:id', element: <TenantDetailsPage /> },
+              { path: 'admin/dictionaries', element: <AdminDictionariesPage /> },
+            ],
           },
           {
             element: <AccessGuard permission="user.read" />,

@@ -74,30 +74,36 @@ const matchesStatistics = (guest: Guest, params: URLSearchParams) => {
   )
 }
 
+const listGuests = (request: Request, tenantId: string | null) => {
+  const params = new URL(request.url).searchParams
+  const query = params.get('q')?.trim().toLowerCase() ?? ''
+  if (params.has('q') && query.length < MIN_SEARCH_LENGTH) {
+    return apiError(400, 'validation_error', 'Запрос слишком короткий')
+  }
+  const status = params.get('status') ?? 'active'
+  const matched = mockGuests
+    .filter(
+      (guest) =>
+        guest.status === status &&
+        matchesQuery(guest, query) &&
+        matchesStatistics(guest, params) &&
+        hasMatchingEvent(guest.id, {
+          sourceId: params.get('source_id'),
+          tenantId: tenantId ?? params.get('tenant_id'),
+          periodFrom: params.get('period_from'),
+          periodTo: params.get('period_to'),
+        }),
+    )
+    .sort(compareBySort(params.get('sort') ?? '-createdAt'))
+  return HttpResponse.json(paged(request, matched))
+}
+
 export const guestHandlers = [
-  http.get(`${API}/guests`, ({ request }) => {
-    const params = new URL(request.url).searchParams
-    const query = params.get('q')?.trim().toLowerCase() ?? ''
-    if (params.has('q') && query.length < MIN_SEARCH_LENGTH) {
-      return apiError(400, 'validation_error', 'Запрос слишком короткий')
-    }
-    const status = params.get('status') ?? 'active'
-    const matched = mockGuests
-      .filter(
-        (guest) =>
-          guest.status === status &&
-          matchesQuery(guest, query) &&
-          matchesStatistics(guest, params) &&
-          hasMatchingEvent(guest.id, {
-            sourceId: params.get('source_id'),
-            tenantId: params.get('tenant_id'),
-            periodFrom: params.get('period_from'),
-            periodTo: params.get('period_to'),
-          }),
-      )
-      .sort(compareBySort(params.get('sort') ?? '-createdAt'))
-    return HttpResponse.json(paged(request, matched))
-  }),
+  http.get(`${API}/guests`, ({ request }) => listGuests(request, null)),
+
+  http.get(`${API}/tenants/:id/guests`, ({ params, request }) =>
+    listGuests(request, String(params.id)),
+  ),
 
   http.get(`${API}/guests/:id`, ({ params }) => {
     const guest = mockGuests.find((g) => g.id === params.id)
