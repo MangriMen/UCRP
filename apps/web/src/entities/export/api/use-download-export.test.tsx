@@ -35,9 +35,11 @@ describe('DownloadExportButton', () => {
     const save = vi.spyOn(saveBlobModule, 'saveBlob').mockImplementation(() => {})
     renderButton()
     await userEvent.click(screen.getByRole('button', { name: 'Скачать CSV' }))
-    await waitFor(() =>
-      expect(save).toHaveBeenCalledWith(expect.any(Blob), 'export-export-0001.csv'),
-    )
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1))
+    const [blob, filename] = save.mock.calls[0]
+    expect(filename).toBe('export-export-0001.csv')
+    expect(blob.type).toBe('text/csv')
+    expect(blob.size).toBe(4)
     expect(auth).toBe('Bearer secret')
   })
 
