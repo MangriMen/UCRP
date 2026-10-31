@@ -15,7 +15,10 @@ export function defaultPeriod(months = 6, now = new Date()): Period {
 
 export const isPeriodValid = ({ from, to }: Period) => from !== '' && to !== '' && from <= to
 
+export const startOfDay = (day: string) => `${day}T00:00:00Z`
+export const endOfDay = (day: string) => `${day}T23:59:59Z`
+
 export const periodQuery = ({ from, to }: Period) => ({
-  from: `${from}T00:00:00Z`,
-  to: `${to}T23:59:59Z`,
+  from: startOfDay(from),
+  to: endOfDay(to),
 })

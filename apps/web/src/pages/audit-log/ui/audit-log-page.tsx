@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router'
 import { useAuditLogs, type AuditLog } from '@/entities/audit-log'
 import { roleLabels } from '@/entities/user'
 import { formatDateTime } from '@/shared/lib/format'
+import { endOfDay, startOfDay } from '@/shared/lib/period'
+import { parsePage } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { FormField } from '@/shared/ui/form-field'
@@ -10,14 +12,6 @@ import { Input } from '@/shared/ui/input'
 import { PageHeader } from '@/shared/ui/page-header'
 
 const FILTER_KEYS = ['entity_type', 'entity_id', 'actor', 'action', 'from', 'to'] as const
-
-const startOfDay = (day: string) => `${day}T00:00:00Z`
-const endOfDay = (day: string) => `${day}T23:59:59Z`
-
-const parsePage = (value: string | null) => {
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
 
 const columns: Column<AuditLog>[] = [
   { id: 'createdAt', header: 'Время', cell: (l) => formatDateTime(l.createdAt) },

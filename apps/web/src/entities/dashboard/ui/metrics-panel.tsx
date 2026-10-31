@@ -1,9 +1,7 @@
-import { formatPercent } from '@/shared/lib/format'
+import { formatNumber, formatPercent } from '@/shared/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Skeleton } from '@/shared/ui/skeleton'
 import type { DashboardMetrics } from '../model/types'
-
-const numberFormat = new Intl.NumberFormat('ru-RU')
 
 const formatSeconds = (seconds: number) => {
   const minutes = Math.floor(seconds / 60)
@@ -20,7 +18,7 @@ interface Metric {
 }
 
 function sampleText(label: string, value: number | undefined) {
-  return value === undefined ? undefined : `${label}: ${numberFormat.format(value)}`
+  return value === undefined ? undefined : `${label}: ${formatNumber(value)}`
 }
 
 function buildMetrics({

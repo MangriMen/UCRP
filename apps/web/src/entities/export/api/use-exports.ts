@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/api/api'
-import { pollWhile, SEGMENT_POLL_MS } from '@/shared/api/polling'
+import { pollWhile, DEFAULT_POLL_MS } from '@/shared/api/polling'
 import { exportKeys, type ExportListFilters } from '../model/keys'
 import { isExportActive } from '../model/status'
 
@@ -20,7 +20,7 @@ export function useExports(filters: ExportListFilters = {}) {
     placeholderData: keepPreviousData,
     refetchInterval: pollWhile(
       (data) => data.items.some((item) => isExportActive(item.status)),
-      SEGMENT_POLL_MS,
+      DEFAULT_POLL_MS,
     ),
   })
 }

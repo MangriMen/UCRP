@@ -7,11 +7,11 @@ import {
   type MergeResolution,
 } from '@/entities/merge-candidate'
 import { formatDateTime } from '@/shared/lib/format'
+import { ALL_OPTION, parsePage } from '@/shared/lib/search-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
+import { OptionSelect } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 
-const ALL = 'all'
 const DEFAULT_RESOLUTION: MergeResolution = 'pending'
 
 const columns: Column<MergeCandidate>[] = [
@@ -28,16 +28,11 @@ const columns: Column<MergeCandidate>[] = [
 ]
 
 const resolutionItems = [
-  { value: ALL, label: 'Все статусы' },
+  { value: ALL_OPTION, label: 'Все статусы' },
   ...Object.entries(mergeResolutionLabels).map(([value, label]) => ({ value, label })),
 ]
 
 const isResolution = (value: string): value is MergeResolution => value in mergeResolutionLabels
-
-const parsePage = (value: string | null) => {
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
 
 export function MergeQueuePage() {
   const navigate = useNavigate()
@@ -66,22 +61,13 @@ export function MergeQueuePage() {
         title="Склейка профилей"
         description="Спорные пары профилей и история решений"
         actions={
-          <Select
+          <OptionSelect
             items={resolutionItems}
             value={resolution}
             onValueChange={(value) => updateParams({ resolution: value, page: null })}
-          >
-            <SelectTrigger className="w-56" aria-label="Статус">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {resolutionItems.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            ariaLabel="Статус"
+            className="w-56"
+          />
         }
       />
       <DataTable

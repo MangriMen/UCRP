@@ -11,12 +11,12 @@ import { useAuth } from '@/entities/user'
 import { BuildSegmentButton } from '@/features/build-segment'
 import { formatDateTime } from '@/shared/lib/format'
 import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
+import { ALL_OPTION, parsePage } from '@/shared/lib/search-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { Input } from '@/shared/ui/input'
+import { OptionSelect } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 
-const ALL = 'all'
 const SEARCH_DEBOUNCE_MS = 300
 
 const columns: Column<Segment>[] = [
@@ -31,23 +31,18 @@ const columns: Column<Segment>[] = [
 ]
 
 const statusItems = [
-  { value: ALL, label: 'Все статусы' },
+  { value: ALL_OPTION, label: 'Все статусы' },
   ...Object.entries(segmentStatusLabels).map(([value, label]) => ({ value, label })),
 ]
 
 const isSegmentStatus = (value: string): value is SegmentStatus => value in segmentStatusLabels
-
-const parsePage = (value: string | null) => {
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
 
 export function SegmentsPage() {
   const navigate = useNavigate()
   const { role } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const urlQuery = searchParams.get('q') ?? ''
-  const status = searchParams.get('status') ?? ALL
+  const status = searchParams.get('status') ?? ALL_OPTION
   const page = parsePage(searchParams.get('page'))
 
   const [input, setInput] = useState(urlQuery)
@@ -58,7 +53,7 @@ export function SegmentsPage() {
       setSearchParams((current) => {
         const next = new URLSearchParams(current)
         for (const [key, value] of Object.entries(changes)) {
-          if (value === null || value === ALL || value === '') next.delete(key)
+          if (value === null || value === ALL_OPTION || value === '') next.delete(key)
           else next.set(key, value)
         }
         return next
@@ -91,22 +86,13 @@ export function SegmentsPage() {
           aria-label="Поиск сегментов"
           className="w-56"
         />
-        <Select
+        <OptionSelect
           items={statusItems}
           value={status}
           onValueChange={(value) => updateParams({ status: value, page: null })}
-        >
-          <SelectTrigger className="w-56" aria-label="Статус">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {statusItems.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          ariaLabel="Статус"
+          className="w-56"
+        />
       </div>
       <DataTable
         columns={columns}

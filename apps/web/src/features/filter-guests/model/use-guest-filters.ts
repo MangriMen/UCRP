@@ -1,3 +1,4 @@
+import { parsePage } from '@/shared/lib/search-params'
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -23,11 +24,6 @@ type FilterKey = keyof typeof PARAM_NAMES
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 const parseDate = (value: string | null) => (value && DATE_PATTERN.test(value) ? value : '')
-
-const parsePage = (value: string | null) => {
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
 
 export function parseGuestFilters(params: URLSearchParams): GuestFilters {
   return {

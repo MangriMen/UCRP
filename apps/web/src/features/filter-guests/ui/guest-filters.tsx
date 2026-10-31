@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDataSources } from '@/entities/data-source'
 import { useTenants } from '@/entities/tenant'
+import { ALL_OPTION } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { OptionSelect, type Option } from '@/shared/ui/option-select'
@@ -9,7 +10,6 @@ import type { GuestFilters } from '../model/use-guest-filters'
 
 const SEARCH_DEBOUNCE_MS = 300
 const TENANT_OPTIONS_LIMIT = 200
-const ALL = 'all'
 
 interface GuestFiltersPanelProps {
   filters: GuestFilters
@@ -20,7 +20,10 @@ interface GuestFiltersPanelProps {
   onReset: () => void
 }
 
-const withAll = (label: string, items: Option[]): Option[] => [{ value: ALL, label }, ...items]
+const withAll = (label: string, items: Option[]): Option[] => [
+  { value: ALL_OPTION, label },
+  ...items,
+]
 
 export function GuestFiltersPanel({
   filters,
@@ -55,8 +58,8 @@ export function GuestFiltersPanel({
     'Все арендаторы',
     (tenants.data?.items ?? []).map((tenant) => ({ value: tenant.id, label: tenant.name })),
   )
-  const selectValue = (value: string) => value || ALL
-  const fromSelect = (value: string) => (value === ALL ? '' : value)
+  const selectValue = (value: string) => value || ALL_OPTION
+  const fromSelect = (value: string) => (value === ALL_OPTION ? '' : value)
 
   const invalidPeriod =
     filters.periodFrom !== '' && filters.periodTo !== '' && filters.periodFrom > filters.periodTo

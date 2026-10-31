@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/api/api'
-import { pollWhile, SEGMENT_POLL_MS } from '@/shared/api/polling'
+import { pollWhile, DEFAULT_POLL_MS } from '@/shared/api/polling'
 import { segmentKeys, type SegmentListFilters, type SegmentMemberFilters } from '../model/keys'
 import { isSegmentComputing } from '../model/status'
 import type { Segment } from '../model/types'
@@ -20,7 +20,7 @@ export function useSegments(filters: SegmentListFilters = {}) {
     placeholderData: keepPreviousData,
     refetchInterval: pollWhile(
       (data) => data.items.some((segment) => isSegmentComputing(segment.status)),
-      SEGMENT_POLL_MS,
+      DEFAULT_POLL_MS,
     ),
   })
 }
@@ -29,7 +29,7 @@ export function useSegment(id: string) {
   return useQuery<Segment>({
     queryKey: segmentKeys.detail(id),
     queryFn: () => api.get('/segments/{id}', { params: { id } }),
-    refetchInterval: pollWhile((segment) => isSegmentComputing(segment.status), SEGMENT_POLL_MS),
+    refetchInterval: pollWhile((segment) => isSegmentComputing(segment.status), DEFAULT_POLL_MS),
   })
 }
 

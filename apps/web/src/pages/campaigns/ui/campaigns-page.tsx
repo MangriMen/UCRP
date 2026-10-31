@@ -7,11 +7,10 @@ import {
   type CampaignStatus,
 } from '@/entities/campaign'
 import { formatDate } from '@/shared/lib/format'
+import { ALL_OPTION, parsePage } from '@/shared/lib/search-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
+import { OptionSelect } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
-
-const ALL = 'all'
 
 const columns: Column<Campaign>[] = [
   { id: 'name', header: 'Кампания', cell: (c) => c.name },
@@ -27,28 +26,23 @@ const columns: Column<Campaign>[] = [
 ]
 
 const statusItems = [
-  { value: ALL, label: 'Все статусы' },
+  { value: ALL_OPTION, label: 'Все статусы' },
   ...Object.entries(campaignStatusLabels).map(([value, label]) => ({ value, label })),
 ]
 
 const isCampaignStatus = (value: string): value is CampaignStatus => value in campaignStatusLabels
 
-const parsePage = (value: string | null) => {
-  const page = Number(value)
-  return Number.isInteger(page) && page > 0 ? page : 1
-}
-
 export function CampaignsPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const status = searchParams.get('status') ?? ALL
+  const status = searchParams.get('status') ?? ALL_OPTION
   const page = parsePage(searchParams.get('page'))
 
   const updateParams = (changes: Record<string, string | null>) =>
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
       for (const [key, value] of Object.entries(changes)) {
-        if (value === null || value === ALL) next.delete(key)
+        if (value === null || value === ALL_OPTION) next.delete(key)
         else next.set(key, value)
       }
       return next
@@ -62,22 +56,13 @@ export function CampaignsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Кампании" description="Рассылки по сегментам и их эффективность" />
-      <Select
+      <OptionSelect
         items={statusItems}
         value={status}
         onValueChange={(value) => updateParams({ status: value, page: null })}
-      >
-        <SelectTrigger className="w-56" aria-label="Статус">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {statusItems.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        ariaLabel="Статус"
+        className="w-56"
+      />
       <DataTable
         columns={columns}
         rows={campaigns.data?.items}
