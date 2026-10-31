@@ -35,13 +35,19 @@ type PageMeta struct {
 }
 
 type GuestListItem struct {
-	ID           string `json:"id"`
-	DisplayName  string `json:"displayName"`
-	Status       string `json:"status"`
-	MergedIntoID string `json:"mergedIntoId,omitempty"`
-	TenantCount  int    `json:"tenantCount"`
-	CreatedAt    string `json:"createdAt"`
-	UpdatedAt    string `json:"updatedAt"`
+	ID               string  `json:"id"`
+	DisplayName      string  `json:"displayName"`
+	Status           string  `json:"status"`
+	MergedIntoID     string  `json:"mergedIntoId,omitempty"`
+	TenantCount      int     `json:"tenantCount"`
+	EventCount       int     `json:"eventCount"`
+	FirstSeenAt      *string `json:"firstSeenAt"`
+	LastSeenAt       *string `json:"lastSeenAt"`
+	PurchaseCount    int     `json:"purchaseCount"`
+	TotalAmountMinor *int64  `json:"totalAmountMinor,omitempty"`
+	Currency         string  `json:"currency,omitempty"`
+	CreatedAt        string  `json:"createdAt"`
+	UpdatedAt        string  `json:"updatedAt"`
 }
 
 type GuestPage struct {
@@ -50,22 +56,34 @@ type GuestPage struct {
 }
 
 type GuestProfile struct {
-	ID           string               `json:"id"`
-	DisplayName  string               `json:"displayName"`
-	Status       string               `json:"status"`
-	MergedIntoID string               `json:"mergedIntoId,omitempty"`
-	TenantCount  int                  `json:"tenantCount"`
-	Tenants      []GuestTenantEntry   `json:"tenants"`
-	Segments     []GuestSegmentEntry  `json:"segments"`
-	Identifiers  []GuestIdentifierDTO `json:"identifiers"`
-	CreatedAt    string               `json:"createdAt"`
-	UpdatedAt    string               `json:"updatedAt"`
+	ID               string               `json:"id"`
+	DisplayName      string               `json:"displayName"`
+	Status           string               `json:"status"`
+	MergedIntoID     string               `json:"mergedIntoId,omitempty"`
+	TenantCount      int                  `json:"tenantCount"`
+	Tenants          []GuestTenantEntry   `json:"tenants"`
+	Segments         []GuestSegmentEntry  `json:"segments"`
+	Identifiers      []GuestIdentifierDTO `json:"identifiers"`
+	EventCount       int                  `json:"eventCount"`
+	FirstSeenAt      *string              `json:"firstSeenAt"`
+	LastSeenAt       *string              `json:"lastSeenAt"`
+	PurchaseCount    int                  `json:"purchaseCount"`
+	TotalAmountMinor *int64               `json:"totalAmountMinor,omitempty"`
+	Currency         string               `json:"currency,omitempty"`
+	CreatedAt        string               `json:"createdAt"`
+	UpdatedAt        string               `json:"updatedAt"`
 }
 
 type GuestTenantEntry struct {
-	TenantID   string `json:"tenantId"`
-	TenantName string `json:"tenantName"`
-	EventCount int    `json:"eventCount"`
+	TenantID         string  `json:"tenantId"`
+	TenantName       string  `json:"tenantName"`
+	CategoryName     string  `json:"categoryName"`
+	Floor            int     `json:"floor"`
+	EventCount       int     `json:"eventCount"`
+	PurchaseCount    int     `json:"purchaseCount"`
+	TotalAmountMinor *int64  `json:"totalAmountMinor,omitempty"`
+	Currency         string  `json:"currency,omitempty"`
+	LastVisitAt      *string `json:"lastVisitAt"`
 }
 
 type GuestSegmentEntry struct {
@@ -83,9 +101,13 @@ type GuestIdentifierDTO struct {
 
 type EventDTO struct {
 	ID          string `json:"id"`
+	GuestID     string `json:"guestId"`
 	TypeID      string `json:"eventTypeId"`
+	TypeCode    string `json:"eventTypeCode"`
 	TenantID    string `json:"tenantId"`
+	TenantName  string `json:"tenantName"`
 	ProjectID   string `json:"projectId"`
+	ProjectName string `json:"projectName"`
 	ExternalID  string `json:"externalId"`
 	OccurredAt  string `json:"occurredAt"`
 	AmountMinor *int64 `json:"amountMinor,omitempty"`
@@ -138,43 +160,48 @@ func (s *ProfileService) Movement(ctx context.Context, guestID string, from, to 
 	return out, nil
 }
 
-func (s *ProfileService) Search(ctx context.Context, q string, limit, offset int) (*GuestPage, error) {
-	guests, err := s.guests.Search(ctx, normalizeQuery(q), limit, offset)
-	if err != nil {
-		return nil, err
-	}
+func (s *ProfileService) Search(ctx context.Context, filter domain.GuestFilter, limit, offset int, showAmount bool) (*GuestPage, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
 	if offset < 0 {
 		offset = 0
 	}
-	out := make([]GuestListItem, 0, len(guests))
-	for _, g := range guests {
-		tenantCount, err := s.guests.TenantCount(ctx, g.ID)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, GuestListItem{
-			ID:           g.ID,
-			DisplayName:  g.DisplayName,
-			Status:       string(g.Status),
-			MergedIntoID: g.MergedIntoID,
-			TenantCount:  tenantCount,
-			CreatedAt:    g.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-			UpdatedAt:    g.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-		})
+	filter.Query = normalizeQuery(filter.Query)
+	entries, total, err := s.guests.Search(ctx, filter, limit, offset)
+	if err != nil {
+		return nil, err
 	}
-	total := offset + len(out)
+	out := make([]GuestListItem, 0, len(entries))
+	for _, e := range entries {
+		item := GuestListItem{
+			ID:            e.ID,
+			DisplayName:   e.DisplayName,
+			Status:        string(e.Status),
+			MergedIntoID:  e.MergedIntoID,
+			TenantCount:   e.TenantCount,
+			EventCount:    e.Stats.EventCount,
+			FirstSeenAt:   formatTimePtr(e.Stats.FirstSeenAt),
+			LastSeenAt:    formatTimePtr(e.Stats.LastSeenAt),
+			PurchaseCount: e.Stats.PurchaseCount,
+			CreatedAt:     e.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:     e.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+		}
+		if showAmount {
+			amount := e.Stats.PurchaseTotal
+			item.TotalAmountMinor = &amount
+			item.Currency = e.Stats.Currency
+		}
+		out = append(out, item)
+	}
 	totalPages := (total + limit - 1) / limit
 	if totalPages < 1 {
 		totalPages = 1
 	}
-	page := offset/limit + 1
 	return &GuestPage{
 		Items: out,
 		Meta: PageMeta{
-			Page:       page,
+			Page:       offset/limit + 1,
 			PageSize:   limit,
 			Total:      total,
 			TotalPages: totalPages,
@@ -204,7 +231,7 @@ func normalizeQuery(q string) string {
 	return q
 }
 
-func (s *ProfileService) Get(ctx context.Context, id string) (*GuestProfile, error) {
+func (s *ProfileService) Get(ctx context.Context, id string, showAmount bool) (*GuestProfile, error) {
 	g, err := s.guests.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -221,6 +248,10 @@ func (s *ProfileService) Get(ctx context.Context, id string) (*GuestProfile, err
 	if err != nil {
 		return nil, err
 	}
+	stats, err := s.guests.Stats(ctx, g.ID)
+	if err != nil {
+		return nil, err
+	}
 	ids, err := s.identifiers.ListByGuest(ctx, g.ID)
 	if err != nil {
 		return nil, err
@@ -231,46 +262,82 @@ func (s *ProfileService) Get(ctx context.Context, id string) (*GuestProfile, err
 	}
 	tenants := make([]GuestTenantEntry, 0, len(tenantRows))
 	for _, t := range tenantRows {
-		tenants = append(tenants, GuestTenantEntry{TenantID: t.TenantID, TenantName: t.TenantName, EventCount: t.EventCount})
+		entry := GuestTenantEntry{
+			TenantID:      t.TenantID,
+			TenantName:    t.TenantName,
+			CategoryName:  t.CategoryName,
+			Floor:         t.Floor,
+			EventCount:    t.EventCount,
+			PurchaseCount: t.PurchaseCount,
+			LastVisitAt:   formatTimePtr(t.LastVisitAt),
+		}
+		if showAmount {
+			total := t.PurchaseTotal
+			entry.TotalAmountMinor = &total
+			entry.Currency = t.Currency
+		}
+		tenants = append(tenants, entry)
 	}
 	segments := make([]GuestSegmentEntry, 0, len(segmentRows))
 	for _, sg := range segmentRows {
 		segments = append(segments, GuestSegmentEntry{SegmentID: sg.SegmentID, Name: sg.Name, VersionNo: sg.VersionNo})
 	}
-	return &GuestProfile{
-		ID:           g.ID,
-		DisplayName:  g.DisplayName,
-		Status:       string(g.Status),
-		MergedIntoID: g.MergedIntoID,
-		TenantCount:  tenantCount,
-		Tenants:      tenants,
-		Segments:     segments,
-		Identifiers:  identifiers,
-		CreatedAt:    g.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:    g.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-	}, nil
+	profile := &GuestProfile{
+		ID:            g.ID,
+		DisplayName:   g.DisplayName,
+		Status:        string(g.Status),
+		MergedIntoID:  g.MergedIntoID,
+		TenantCount:   tenantCount,
+		Tenants:       tenants,
+		Segments:      segments,
+		Identifiers:   identifiers,
+		EventCount:    stats.EventCount,
+		FirstSeenAt:   formatTimePtr(stats.FirstSeenAt),
+		LastSeenAt:    formatTimePtr(stats.LastSeenAt),
+		PurchaseCount: stats.PurchaseCount,
+		CreatedAt:     g.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:     g.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+	}
+	if showAmount {
+		total := stats.PurchaseTotal
+		profile.TotalAmountMinor = &total
+		profile.Currency = stats.Currency
+	}
+	return profile, nil
 }
 
-func (s *ProfileService) Events(ctx context.Context, guestID string, limit, offset int) ([]EventDTO, error) {
+func (s *ProfileService) Events(ctx context.Context, guestID string, filter domain.EventFilter, limit, offset int) ([]EventDTO, int, error) {
 	if _, err := s.guests.GetByID(ctx, guestID); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	events, err := s.events.ListByGuest(ctx, guestID, limit, offset)
+	events, total, err := s.events.ListByGuest(ctx, guestID, filter, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]EventDTO, 0, len(events))
 	for _, e := range events {
 		out = append(out, EventDTO{
 			ID:          e.ID,
+			GuestID:     e.GuestID,
 			TypeID:      e.EventTypeID,
+			TypeCode:    e.EventTypeCode,
 			TenantID:    e.TenantID,
+			TenantName:  e.TenantName,
 			ProjectID:   e.ProjectID,
+			ProjectName: e.ProjectName,
 			ExternalID:  e.ExternalID,
 			OccurredAt:  e.OccurredAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 			AmountMinor: e.AmountMinor,
 			Currency:    e.Currency,
 		})
 	}
-	return out, nil
+	return out, total, nil
+}
+
+func formatTimePtr(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	formatted := t.UTC().Format("2006-01-02T15:04:05Z07:00")
+	return &formatted
 }

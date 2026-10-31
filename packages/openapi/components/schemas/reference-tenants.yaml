@@ -181,6 +181,37 @@ TenantUpdateRequest:
       maximum: 100
     isActive:
       type: boolean
+TenantListItem:
+  description: Tenant with period statistics and source counts. `guestsCount`, `visitsCount` and `newGuestsCount` are null without the matching metric permission, and null with `suppressed` true when fewer than k distinct guests stand behind them.
+  allOf:
+    - $ref: ./reference-tenants.yaml#/Tenant
+    - type: object
+      required:
+        - sourcesCount
+        - problemSourcesCount
+        - suppressed
+      properties:
+        guestsCount:
+          type: integer
+          nullable: true
+          description: Distinct guests with a presence event in the period; requires metric.visits_count.read
+        visitsCount:
+          type: integer
+          nullable: true
+          description: Presence events in the period; requires metric.visits_count.read
+        newGuestsCount:
+          type: integer
+          nullable: true
+          description: Guests whose first presence event at this tenant falls in the period; requires metric.new_guests_via_mall.read
+        suppressed:
+          type: boolean
+        sourcesCount:
+          type: integer
+          minimum: 0
+        problemSourcesCount:
+          type: integer
+          minimum: 0
+          description: Sources whose latest import failed or finished with errors
 TenantPage:
   type: object
   required:
@@ -190,6 +221,6 @@ TenantPage:
     items:
       type: array
       items:
-        $ref: ./reference-tenants.yaml#/Tenant
+        $ref: ./reference-tenants.yaml#/TenantListItem
     meta:
       $ref: ./common.yaml#/PageMeta

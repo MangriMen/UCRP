@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { rejectedCodeLabels, useRejectedRows, type RejectedRow } from '@/entities/import-batch'
+import { useListParams } from '@/shared/lib/list-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
 const columns: Column<RejectedRow>[] = [
@@ -14,7 +14,7 @@ const columns: Column<RejectedRow>[] = [
 ]
 
 export function RejectedTable({ batchId }: { batchId: string }) {
-  const [page, setPage] = useState(1)
+  const { page, setPage } = useListParams()
   const rows = useRejectedRows(batchId, page)
 
   return (

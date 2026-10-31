@@ -1,2 +1,2 @@
 export { tenantHandlers } from './handlers'
-export { mockTenants } from './fixtures'
+export { mockTenants, TENANT_WITH_DATA_ID } from './fixtures'

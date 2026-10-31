@@ -79,6 +79,17 @@ Guest:
       type: string
       format: date-time
       nullable: true
+    purchaseCount:
+      type: integer
+      minimum: 0
+      description: Number of `purchase` events
+    totalAmountMinor:
+      type: integer
+      format: int64
+      description: Sum of `purchase` events in minor units. Returned only to users with the `field.guest.total_amount.read` permission.
+    currency:
+      type: string
+      example: RUB
     createdAt:
       type: string
       format: date-time
@@ -109,6 +120,16 @@ GuestTenantSummary:
     eventCount:
       type: integer
       minimum: 0
+    purchaseCount:
+      type: integer
+      minimum: 0
+    totalAmountMinor:
+      type: integer
+      format: int64
+      description: Sum of `purchase` events at this tenant in minor units. Returned only to users with the `field.guest.total_amount.read` permission.
+    currency:
+      type: string
+      example: RUB
     lastVisitAt:
       type: string
       format: date-time
@@ -146,13 +167,6 @@ GuestProfile:
           type: array
           items:
             $ref: ./guests.yaml#/GuestSegmentSummary
-        totalAmountMinor:
-          type: integer
-          format: int64
-          description: Guest total revenue in minor units
-        currency:
-          type: string
-          example: RUB
 GuestPage:
   type: object
   required:

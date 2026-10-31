@@ -87,8 +87,33 @@ type EventType struct {
 	IsActive         bool
 }
 
+type TenantFilter struct {
+	Query      string
+	CategoryID string
+	Floor      *int
+	IsActive   *bool
+	PeriodFrom *time.Time
+	PeriodTo   *time.Time
+	Sort       string
+	KThreshold int
+}
+
+type TenantStats struct {
+	GuestsCount         *int
+	VisitsCount         *int
+	NewGuestsCount      *int
+	SourcesCount        int
+	ProblemSourcesCount int
+}
+
+type TenantListEntry struct {
+	Tenant
+	CategoryName string
+	Stats        TenantStats
+}
+
 type TenantRepo interface {
-	List(ctx context.Context, limit, offset int) ([]Tenant, error)
+	Search(ctx context.Context, filter TenantFilter, limit, offset int) ([]TenantListEntry, int, error)
 	GetByID(ctx context.Context, id string) (*Tenant, error)
 	Insert(ctx context.Context, t *Tenant) error
 	Update(ctx context.Context, t *Tenant) error

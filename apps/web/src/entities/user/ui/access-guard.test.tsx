@@ -4,12 +4,12 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
 import { setAccessToken } from '@/shared/api/client'
 import { mockUsers } from '../mocks'
-import type { Role } from '../model/types'
-import { RoleGuard } from './role-guard'
+import type { PermissionCode } from '../model/permissions'
+import { AccessGuard } from './access-guard'
 
 const SESSION_KEY = 'ucrp-mock-session'
 
-function renderGuard(roles?: Role[]) {
+function renderGuard(permission?: PermissionCode) {
   const queryClient = new QueryClient()
   const router = createMemoryRouter(
     [
@@ -17,9 +17,9 @@ function renderGuard(roles?: Role[]) {
       {
         path: '/',
         element: (
-          <RoleGuard roles={roles}>
+          <AccessGuard permission={permission}>
             <p>secret</p>
-          </RoleGuard>
+          </AccessGuard>
         ),
       },
     ],
@@ -37,7 +37,7 @@ afterEach(() => {
   setAccessToken(null)
 })
 
-describe('RoleGuard', () => {
+describe('AccessGuard', () => {
   it('redirects to /login without a session', async () => {
     renderGuard()
     expect(await screen.findByText('login page')).toBeInTheDocument()
@@ -45,13 +45,13 @@ describe('RoleGuard', () => {
 
   it('restores the session through refresh and renders children', async () => {
     localStorage.setItem(SESSION_KEY, mockUsers[0].userId)
-    renderGuard(['marketer'])
+    renderGuard('segment.write')
     expect(await screen.findByText('secret')).toBeInTheDocument()
   })
 
-  it('shows the forbidden state for a disallowed role', async () => {
+  it('shows the forbidden state without the permission', async () => {
     localStorage.setItem(SESSION_KEY, mockUsers[3].userId)
-    renderGuard(['marketer'])
+    renderGuard('user.write')
     expect(await screen.findByText('Недостаточно прав')).toBeInTheDocument()
     expect(screen.queryByText('secret')).not.toBeInTheDocument()
   })

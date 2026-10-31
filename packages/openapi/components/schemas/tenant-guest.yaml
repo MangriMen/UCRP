@@ -99,29 +99,58 @@ TenantGuestEvents:
       type: array
       items:
         $ref: ./tenant-guest.yaml#/TenantGuestEvent
-TenantVisitAggregate:
-  type: object
-  description: Only present when metric.visits_count.read is granted; suppressed if fewer than k distinct guests.
-  required:
-    - visitsCount
-    - suppressed
-  properties:
-    visitsCount:
-      type: integer
-      nullable: true
-    suppressed:
-      type: boolean
 EmptyTenantAggregate:
   type: object
   maxProperties: 0
   description: No metric permission granted.
-ManagementTenantAggregate:
+TenantAggregateDay:
   type: object
   required:
-    - newGuests
-    - suppressed
+    - date
+    - visitsCount
   properties:
-    newGuests:
+    date:
+      type: string
+      format: date
+    visitsCount:
       type: integer
+      nullable: true
+      description: null when fewer than k distinct guests visited on that day
+    newGuestsCount:
+      type: integer
+      nullable: true
+      description: Requires metric.new_guests_via_mall.read; null without it or when below k
+ManagementTenantAggregate:
+  type: object
+  description: Tenant aggregates. `visitsCount` requires metric.visits_count.read; `guestsCount` follows `visitsCount`; `newGuestsCount` and the per-day `newGuestsCount` require metric.new_guests_via_mall.read and are null without it. A value is null when fewer than k distinct guests stand behind it. `series` covers the requested period day by day and is empty when no period is requested.
+  required:
+    - visitsCount
+    - suppressed
+    - suppressionThreshold
+    - series
+  properties:
+    from:
+      type: string
+      format: date
+    to:
+      type: string
+      format: date
+    visitsCount:
+      type: integer
+      nullable: true
+    guestsCount:
+      type: integer
+      nullable: true
+      description: Distinct guests with a presence event in the period
+    newGuestsCount:
+      type: integer
+      nullable: true
+      description: Guests whose first presence event at this tenant falls in the period
     suppressed:
       type: boolean
+    suppressionThreshold:
+      type: integer
+    series:
+      type: array
+      items:
+        $ref: ./tenant-guest.yaml#/TenantAggregateDay

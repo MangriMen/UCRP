@@ -4,6 +4,7 @@ export {
   useGuestEvents,
   useGuestMovement,
   useGuestSearch,
+  useTenantGuests,
 } from './api/use-guests'
 export { GuestStatusBadge } from './ui/guest-status-badge'
 export { guestKeys, MIN_SEARCH_LENGTH } from './model/keys'
@@ -14,8 +15,10 @@ export type {
   Guest,
   GuestContact,
   GuestEvent,
+  GuestEventSort,
   GuestIdentifier,
   GuestMovementStep,
+  GuestListSort,
   GuestProfile,
   GuestSegmentSummary,
   GuestStatus,

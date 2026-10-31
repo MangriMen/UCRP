@@ -39,7 +39,7 @@ export function ImportsPage() {
   const status = searchParams.get('status') ?? ALL_OPTION
   const page = parsePage(searchParams.get('page'))
 
-  const { role } = useAuth()
+  const { can } = useAuth()
   const sources = useDataSources()
   const imports = useImports({
     dataSourceId: dataSourceId === ALL_OPTION ? undefined : dataSourceId,
@@ -66,7 +66,7 @@ export function ImportsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Импорт данных" description="Загрузка файлов и история импортов" />
 
-      {role === 'analyst' && (
+      {can('import.create') && (
         <Card>
           <CardHeader>
             <CardTitle>Загрузить файл</CardTitle>

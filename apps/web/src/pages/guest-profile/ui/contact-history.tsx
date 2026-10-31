@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import { contactChannelLabels, useGuestContacts, type GuestContact } from '@/entities/guest'
 import { hasErrorCode } from '@/shared/api/errors'
 import { formatDateTime } from '@/shared/lib/format'
+import { useListParams } from '@/shared/lib/list-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
 const columns: Column<GuestContact>[] = [
@@ -10,8 +10,8 @@ const columns: Column<GuestContact>[] = [
 ]
 
 export function ContactHistory({ guestId }: { guestId: string }) {
-  const [page, setPage] = useState(1)
-  const contacts = useGuestContacts(guestId, { page })
+  const { page, pageSize, setPage, setPageSize } = useListParams()
+  const contacts = useGuestContacts(guestId, { page, pageSize })
 
   if (hasErrorCode(contacts.error, 'forbidden_field')) return null
 
@@ -27,6 +27,7 @@ export function ContactHistory({ guestId }: { guestId: string }) {
         emptyTitle="Контактов пока не было"
         meta={contacts.data?.meta}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
       />
     </section>
   )

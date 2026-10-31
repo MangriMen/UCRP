@@ -39,7 +39,7 @@ const isSegmentStatus = (value: string): value is SegmentStatus => value in segm
 
 export function SegmentsPage() {
   const navigate = useNavigate()
-  const { role } = useAuth()
+  const { can } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const urlQuery = searchParams.get('q') ?? ''
   const status = searchParams.get('status') ?? ALL_OPTION
@@ -76,7 +76,7 @@ export function SegmentsPage() {
       <PageHeader
         title="Сегменты"
         description="Группы гостей и размер аудитории"
-        actions={(role === 'marketer' || role === 'analyst') && <BuildSegmentButton />}
+        actions={can('segment.write') && <BuildSegmentButton />}
       />
       <div className="flex flex-wrap gap-2">
         <Input

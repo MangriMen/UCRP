@@ -1,8 +1,9 @@
-import type { Tenant } from '../model/types'
+import type { TenantListItem } from '../model/types'
 
 export const TENANT_WITH_EVENTS_ID = 'tenant-0001'
+export const TENANT_WITH_DATA_ID = 'tenant-0002'
 
-export const mockTenants: Tenant[] = [
+export const mockTenants: TenantListItem[] = [
   {
     id: 'tenant-0001',
     code: 'zara',
@@ -16,6 +17,12 @@ export const mockTenants: Tenant[] = [
     isActive: true,
     createdAt: '2026-01-15T09:00:00Z',
     updatedAt: '2026-01-15T09:00:00Z',
+    guestsCount: null,
+    visitsCount: null,
+    newGuestsCount: null,
+    suppressed: true,
+    sourcesCount: 1,
+    problemSourcesCount: 1,
   },
   {
     id: 'tenant-0002',
@@ -30,6 +37,12 @@ export const mockTenants: Tenant[] = [
     isActive: true,
     createdAt: '2026-01-15T09:00:00Z',
     updatedAt: '2026-01-15T09:00:00Z',
+    guestsCount: 48,
+    visitsCount: 130,
+    newGuestsCount: 21,
+    suppressed: false,
+    sourcesCount: 2,
+    problemSourcesCount: 0,
   },
   {
     id: 'tenant-0003',
@@ -44,5 +57,11 @@ export const mockTenants: Tenant[] = [
     isActive: false,
     createdAt: '2026-01-20T09:00:00Z',
     updatedAt: '2026-03-01T09:00:00Z',
+    guestsCount: 90,
+    visitsCount: 210,
+    newGuestsCount: 9,
+    suppressed: false,
+    sourcesCount: 0,
+    problemSourcesCount: 0,
   },
 ]

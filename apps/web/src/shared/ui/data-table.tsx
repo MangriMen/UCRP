@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
 import type { Schema } from '@/shared/api/types'
+import { nextSort, type SortState } from '@/shared/lib/list-params'
 import { EmptyState } from './empty-state'
 import { ErrorBanner } from './error-banner'
 import { Skeleton } from './skeleton'
@@ -11,6 +13,7 @@ export interface Column<T> {
   header: string
   cell: (row: T) => ReactNode
   className?: string
+  sortable?: boolean
 }
 
 interface DataTableProps<T> {
@@ -20,12 +23,30 @@ interface DataTableProps<T> {
   isLoading?: boolean
   error?: unknown
   emptyTitle?: string
+  emptyAction?: ReactNode
   meta?: Schema<'PageMeta'>
   onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
+  sort?: SortState
+  onSortChange?: (sort: SortState | undefined) => void
   onRowClick?: (row: T) => void
 }
 
 const SKELETON_ROWS = 5
+
+const ariaSort = (sort: SortState | undefined, id: string) => {
+  if (sort?.field !== id) return 'none'
+  return sort.direction === 'asc' ? 'ascending' : 'descending'
+}
+
+function SortIcon({ sort, id }: { sort: SortState | undefined; id: string }) {
+  if (sort?.field !== id) return <ArrowUpDownIcon className="size-3.5 opacity-50" />
+  return sort.direction === 'asc' ? (
+    <ArrowUpIcon className="size-3.5" />
+  ) : (
+    <ArrowDownIcon className="size-3.5" />
+  )
+}
 
 export function DataTable<T>({
   columns,
@@ -34,21 +55,41 @@ export function DataTable<T>({
   isLoading,
   error,
   emptyTitle = 'Нет данных',
+  emptyAction,
   meta,
   onPageChange,
+  onPageSizeChange,
+  sort,
+  onSortChange,
   onRowClick,
 }: DataTableProps<T>) {
   if (error) return <ErrorBanner error={error} />
-  if (!isLoading && rows?.length === 0) return <EmptyState title={emptyTitle} />
+  if (!isLoading && rows?.length === 0)
+    return <EmptyState title={emptyTitle} action={emptyAction} />
 
   return (
     <div>
       <Table>
-        <TableHeader>
+        <TableHeader className="sticky top-0 z-10 bg-background">
           <TableRow>
             {columns.map((c) => (
-              <TableHead key={c.id} className={c.className}>
-                {c.header}
+              <TableHead
+                key={c.id}
+                className={c.className}
+                aria-sort={c.sortable && onSortChange ? ariaSort(sort, c.id) : undefined}
+              >
+                {c.sortable && onSortChange ? (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 font-medium hover:text-foreground"
+                    onClick={() => onSortChange(nextSort(sort, c.id))}
+                  >
+                    {c.header}
+                    <SortIcon sort={sort} id={c.id} />
+                  </button>
+                ) : (
+                  c.header
+                )}
               </TableHead>
             ))}
           </TableRow>
@@ -79,7 +120,13 @@ export function DataTable<T>({
               ))}
         </TableBody>
       </Table>
-      {meta && onPageChange && <TablePagination meta={meta} onPageChange={onPageChange} />}
+      {meta && onPageChange && (
+        <TablePagination
+          meta={meta}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      )}
     </div>
   )
 }

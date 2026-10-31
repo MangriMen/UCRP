@@ -1,1 +1,2 @@
-export { TenantsManager } from './ui/tenants-manager'
+export { TenantActions } from './ui/tenant-actions'
+export { TenantFormDialog } from './ui/tenant-form-dialog'

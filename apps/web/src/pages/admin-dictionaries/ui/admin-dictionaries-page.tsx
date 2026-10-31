@@ -1,16 +1,18 @@
+import { Link } from 'react-router'
 import { useAuth } from '@/entities/user'
 import { DataSourceTypesManager } from '@/features/manage-data-source-types'
 import { EventTypesManager } from '@/features/manage-event-types'
 import { MallsManager } from '@/features/manage-malls'
 import { ProjectsManager } from '@/features/manage-projects'
 import { TenantCategoriesManager } from '@/features/manage-tenant-categories'
-import { TenantsManager } from '@/features/manage-tenants'
+import { Button } from '@/shared/ui/button'
 import { PageHeader } from '@/shared/ui/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
 export function AdminDictionariesPage() {
-  const { role } = useAuth()
-  const canEdit = role === 'analyst'
+  const { can } = useAuth()
+  const canEditReference = can('reference.write')
+  const canEditSourceTypes = can('data_source.write')
 
   return (
     <div className="flex flex-col gap-6">
@@ -28,22 +30,25 @@ export function AdminDictionariesPage() {
           <TabsTrigger value="data-source-types">Типы источников</TabsTrigger>
         </TabsList>
         <TabsContent value="categories">
-          <TenantCategoriesManager canEdit={canEdit} />
+          <TenantCategoriesManager canEdit={canEditReference} />
         </TabsContent>
-        <TabsContent value="tenants">
-          <TenantsManager canEdit={canEdit} />
+        <TabsContent value="tenants" className="flex flex-col items-start gap-3 pt-4">
+          <p className="text-sm text-muted-foreground">
+            Арендаторы с показателями, источниками и настройками вынесены в отдельный раздел.
+          </p>
+          <Button render={<Link to="/tenants" />}>Открыть арендаторов</Button>
         </TabsContent>
         <TabsContent value="malls">
-          <MallsManager canEdit={canEdit} />
+          <MallsManager canEdit={canEditReference} />
         </TabsContent>
         <TabsContent value="projects">
-          <ProjectsManager canEdit={canEdit} />
+          <ProjectsManager canEdit={canEditReference} />
         </TabsContent>
         <TabsContent value="event-types">
-          <EventTypesManager canEdit={canEdit} />
+          <EventTypesManager canEdit={canEditReference} />
         </TabsContent>
         <TabsContent value="data-source-types">
-          <DataSourceTypesManager canEdit={canEdit} />
+          <DataSourceTypesManager canEdit={canEditSourceTypes} />
         </TabsContent>
       </Tabs>
     </div>

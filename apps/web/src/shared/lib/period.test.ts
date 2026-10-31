@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultPeriod, isPeriodValid, periodQuery } from './period'
+import { daysAgo, defaultPeriod, isPeriodValid, periodQuery } from './period'
 
 describe('period', () => {
   it('builds a default period ending today', () => {
@@ -7,6 +7,11 @@ describe('period', () => {
       from: '2026-04-30',
       to: '2026-10-31',
     })
+  })
+
+  it('counts days back from the given moment', () => {
+    expect(daysAgo(7, new Date('2026-10-31T12:00:00Z'))).toBe('2026-10-24')
+    expect(daysAgo(90, new Date('2026-10-31T12:00:00Z'))).toBe('2026-08-02')
   })
 
   it('rejects empty and inverted periods', () => {

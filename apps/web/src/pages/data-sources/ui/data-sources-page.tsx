@@ -6,6 +6,7 @@ import {
   ImportStatusBadge,
   importStatusLabels,
   isImportActive,
+  latestBatchBySource,
   useImports,
 } from '@/entities/import-batch'
 import { useAuth } from '@/entities/user'
@@ -19,7 +20,6 @@ import { DataTable, type Column } from '@/shared/ui/data-table'
 import { Input } from '@/shared/ui/input'
 import { OptionSelect } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
-import { latestBatchBySource } from '../lib/latest-batch'
 import { sourceKindLabel } from '../lib/source-kind'
 
 const NO_IMPORTS = 'none'
@@ -30,9 +30,9 @@ interface FormState {
 }
 
 export function DataSourcesPage() {
-  const { role } = useAuth()
-  const canEdit = role === 'analyst'
-  const canImport = role === 'analyst'
+  const { can } = useAuth()
+  const canEdit = can('data_source.write')
+  const canImport = can('import.create')
   const [searchParams, setSearchParams] = useSearchParams()
   const typeId = searchParams.get('type') ?? ALL_OPTION
   const status = searchParams.get('status') ?? ALL_OPTION
@@ -145,7 +145,7 @@ export function DataSourcesPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Арендаторы и источники"
+        title="Источники данных"
         description="Источники данных арендаторов и статус их последней синхронизации"
         actions={
           canEdit && <Button onClick={() => setForm({ source: null })}>Добавить источник</Button>

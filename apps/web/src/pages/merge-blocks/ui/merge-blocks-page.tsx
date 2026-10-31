@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import { mergeBlockReasonLabels, useMergeBlocks, type MergeBlock } from '@/entities/merge-block'
 import { DeleteMergeBlockButton } from '@/features/delete-merge-block'
 import { formatDateTime } from '@/shared/lib/format'
+import { useListParams } from '@/shared/lib/list-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { PageHeader } from '@/shared/ui/page-header'
 
@@ -19,7 +19,7 @@ const columns: Column<MergeBlock>[] = [
 ]
 
 export function MergeBlocksPage() {
-  const [page, setPage] = useState(1)
+  const { page, setPage } = useListParams()
   const blocks = useMergeBlocks({ page })
 
   return (

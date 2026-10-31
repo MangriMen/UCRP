@@ -47,21 +47,6 @@ func NewTenantSQL(db *sql.DB) *TenantSQL {
 	return &TenantSQL{db: db}
 }
 
-func (r *TenantSQL) List(ctx context.Context, limit, offset int) ([]domain.Tenant, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
-	}
-	rows, err := r.db.QueryContext(ctx, tenantSelect+` ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	return scanTenants(rows)
-}
-
 func (r *TenantSQL) GetByID(ctx context.Context, id string) (*domain.Tenant, error) {
 	row := r.db.QueryRowContext(ctx, tenantSelect+` WHERE id = $1 AND deleted_at IS NULL`, id)
 	t, err := scanTenant(row)
@@ -84,7 +69,12 @@ func (r *TenantSQL) Insert(ctx context.Context, t *domain.Tenant) error {
 }
 
 func (r *TenantSQL) Update(ctx context.Context, t *domain.Tenant) error {
-	res, err := r.db.ExecContext(ctx, `
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	res, err := tx.ExecContext(ctx, `
 		UPDATE tenant SET name = $2, mall_id = $3, category_id = $4, kind = $5, floor = $6, priority = $7, is_active = $8, updated_at = $9
 		WHERE id = $1 AND deleted_at IS NULL`,
 		t.ID, t.Name, t.MallID, t.CategoryID, t.Kind, t.Floor, t.Priority, t.IsActive, t.UpdatedAt,
@@ -95,7 +85,12 @@ func (r *TenantSQL) Update(ctx context.Context, t *domain.Tenant) error {
 	if n, _ := res.RowsAffected(); n == 0 {
 		return domain.ErrNotFound
 	}
-	return nil
+	if !t.IsActive {
+		if err := deactivateTenantSources(ctx, tx, t.ID, t.UpdatedAt); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (r *TenantSQL) SoftDelete(ctx context.Context, id string, now time.Time) error {
@@ -106,7 +101,12 @@ func (r *TenantSQL) SoftDelete(ctx context.Context, id string, now time.Time) er
 	if events > 0 {
 		return domain.ErrConflict
 	}
-	res, err := r.db.ExecContext(ctx, `
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	res, err := tx.ExecContext(ctx, `
 		UPDATE tenant SET is_active = FALSE, deleted_at = $2, updated_at = $2 WHERE id = $1 AND deleted_at IS NULL`, id, now)
 	if err != nil {
 		return err
@@ -114,24 +114,21 @@ func (r *TenantSQL) SoftDelete(ctx context.Context, id string, now time.Time) er
 	if n, _ := res.RowsAffected(); n == 0 {
 		return domain.ErrNotFound
 	}
-	return nil
+	if err := deactivateTenantSources(ctx, tx, id, now); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func deactivateTenantSources(ctx context.Context, tx *sql.Tx, tenantID string, now time.Time) error {
+	_, err := tx.ExecContext(ctx, `
+		UPDATE data_source SET is_active = FALSE, updated_at = $2 WHERE tenant_id = $1 AND is_active`, tenantID, now)
+	return err
 }
 
 const tenantSelect = `
 	SELECT id, code, name, mall_id, category_id, kind, floor, priority, is_active, created_at, updated_at, deleted_at
 	FROM tenant`
-
-func scanTenants(rows *sql.Rows) ([]domain.Tenant, error) {
-	out := make([]domain.Tenant, 0)
-	for rows.Next() {
-		t, err := scanTenant(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, *t)
-	}
-	return out, rows.Err()
-}
 
 func scanTenant(s scanner) (*domain.Tenant, error) {
 	var (
