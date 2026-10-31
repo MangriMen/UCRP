@@ -86,7 +86,7 @@ export function DataSourcesPage() {
             {canEdit && type?.supportsPull && s.isActive && (
               <SyncSourceButton
                 sourceId={s.id}
-                isRunning={s.lastImport !== undefined && isImportActive(s.lastImport.status)}
+                isRunning={s.lastImport != null && isImportActive(s.lastImport.status)}
               />
             )}
             {canImport && type?.supportsFile && (
