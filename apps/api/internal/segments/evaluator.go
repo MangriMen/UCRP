@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,7 +41,7 @@ func (e *SqlEvaluator) Preview(ctx context.Context, rule domain.SegmentRule) (in
 }
 
 func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([]string, error) {
-	if err := validateRule(rule, 0); err != nil {
+	if err := validateRule(rule, 0, "rule"); err != nil {
 		return nil, err
 	}
 	return e.evaluateNode(ctx, rule)
@@ -193,9 +194,9 @@ func purchasesInZones(args *queryArgs, zones []domain.ZoneRef, sinceArg string) 
 					AND (` + strings.Join(pairs, " OR ") + `)`
 }
 
-func validateRule(rule domain.SegmentRule, depth int) error {
+func validateRule(rule domain.SegmentRule, depth int, path string) error {
 	if !rule.IsGroup() {
-		return validateLeaf(rule)
+		return validateLeaf(rule, path)
 	}
 	if depth >= maxRuleDepth || len(rule.Conditions) == 0 {
 		return domain.ErrValidation
@@ -203,23 +204,21 @@ func validateRule(rule domain.SegmentRule, depth int) error {
 	if rule.Operator != operatorAnd && rule.Operator != operatorOr {
 		return domain.ErrValidation
 	}
-	for _, condition := range rule.Conditions {
-		if err := validateRule(condition, depth+1); err != nil {
+	for i, condition := range rule.Conditions {
+		if err := validateRule(condition, depth+1, fmt.Sprintf("%s.conditions[%d]", path, i)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func validateLeaf(rule domain.SegmentRule) error {
+func validateLeaf(rule domain.SegmentRule, path string) error {
 	if len(rule.VisitedTenantIDs) == 0 && len(rule.PurchasedZones) == 0 {
 		return domain.ErrValidation
 	}
-	for _, t := range rule.ExcludedTenantIDs {
-		for _, w := range rule.VisitedTenantIDs {
-			if t == w {
-				return domain.ErrValidation
-			}
+	for _, excluded := range rule.ExcludedTenantIDs {
+		if slices.Contains(rule.VisitedTenantIDs, excluded) {
+			return &domain.FieldError{Field: path + ".excludedTenantIds", Reason: "Арендатор указан и среди посещённых, и среди исключённых"}
 		}
 	}
 	if !validZones(rule.PurchasedZones) {

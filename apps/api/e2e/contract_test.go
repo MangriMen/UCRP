@@ -286,9 +286,7 @@ func TestSegmentPreviewRejectsConflictingTenant(t *testing.T) {
 		t.Fatalf("400 response carries no error object: %s", resp.Snippet())
 	}
 	if len(errorBody.Error.Details) == 0 {
-		report.Drifts.Record(t.Name(), "POST /api/v1/segments/preview",
-			"contract requires details[].field = rule.excludedTenantIds for a conflicting tenant; the response has no details")
-		t.Skipf("the contract requires details[].field = rule.excludedTenantIds for a conflicting tenant, got none: %s", resp.Snippet())
+		t.Fatalf("the contract requires details[].field = rule.excludedTenantIds for a conflicting tenant, got none: %s", resp.Snippet())
 	}
 	field := errorBody.Error.Details[0].Field
 	if field != "rule.excludedTenantIds" {

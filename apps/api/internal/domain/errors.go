@@ -10,3 +10,16 @@ var (
 	ErrTimeout      = errors.New("timeout")
 	ErrValidation   = errors.New("validation failed")
 )
+
+type FieldError struct {
+	Field  string
+	Reason string
+}
+
+func (e *FieldError) Error() string {
+	return ErrValidation.Error() + ": " + e.Field + ": " + e.Reason
+}
+
+func (e *FieldError) Unwrap() error {
+	return ErrValidation
+}

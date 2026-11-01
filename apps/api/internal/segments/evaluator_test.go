@@ -1,6 +1,7 @@
 package segments
 
 import (
+	"errors"
 	"reflect"
 	"sort"
 	"strings"
@@ -11,26 +12,26 @@ import (
 )
 
 func TestValidateRule(t *testing.T) {
-	if err := validateRule(domain.SegmentRule{VisitedTenantIDs: []string{"t1"}}, 0); err != nil {
+	if err := validateRule(domain.SegmentRule{VisitedTenantIDs: []string{"t1"}}, 0, "rule"); err != nil {
 		t.Fatalf("valid rule rejected: %v", err)
 	}
-	if err := validateRule(domain.SegmentRule{}, 0); err == nil {
+	if err := validateRule(domain.SegmentRule{}, 0, "rule"); err == nil {
 		t.Fatal("empty was accepted")
 	}
-	if err := validateRule(domain.SegmentRule{VisitedTenantIDs: []string{"a"}, ExcludedTenantIDs: []string{"a"}}, 0); err == nil {
+	if err := validateRule(domain.SegmentRule{VisitedTenantIDs: []string{"a"}, ExcludedTenantIDs: []string{"a"}}, 0, "rule"); err == nil {
 		t.Fatal("overlap was/excluded_tenant_ids accepted")
 	}
-	if err := validateRule(domain.SegmentRule{VisitedTenantIDs: []string{"a"}, RequireContact: "phone"}, 0); err != nil {
+	if err := validateRule(domain.SegmentRule{VisitedTenantIDs: []string{"a"}, RequireContact: "phone"}, 0, "rule"); err != nil {
 		t.Fatalf("require_contact phone rejected: %v", err)
 	}
-	if err := validateRule(domain.SegmentRule{VisitedTenantIDs: []string{"a"}, RequireContact: "carrier_pigeon"}, 0); err == nil {
+	if err := validateRule(domain.SegmentRule{VisitedTenantIDs: []string{"a"}, RequireContact: "carrier_pigeon"}, 0, "rule"); err == nil {
 		t.Fatal("bad require_contact accepted")
 	}
 }
 
 func TestValidateRule_AcceptsZonesWithoutTenants(t *testing.T) {
 	rule := domain.SegmentRule{PurchasedZones: []domain.ZoneRef{{MallID: "m1", Floor: 2}, {MallID: "m2", Floor: 2}}}
-	if err := validateRule(rule, 0); err != nil {
+	if err := validateRule(rule, 0, "rule"); err != nil {
 		t.Fatalf("zones-only rule rejected: %v", err)
 	}
 }
@@ -41,7 +42,7 @@ func TestValidateRule_RejectsInvalidZones(t *testing.T) {
 		"duplicate zone": {{MallID: "m1", Floor: 1}, {MallID: "m1", Floor: 1}},
 	}
 	for name, zones := range cases {
-		if err := validateRule(domain.SegmentRule{PurchasedZones: zones}, 0); err == nil {
+		if err := validateRule(domain.SegmentRule{PurchasedZones: zones}, 0, "rule"); err == nil {
 			t.Fatalf("%s was accepted", name)
 		}
 	}
@@ -49,7 +50,7 @@ func TestValidateRule_RejectsInvalidZones(t *testing.T) {
 
 func TestValidateRule_AcceptsGroundFloorZone(t *testing.T) {
 	rule := domain.SegmentRule{PurchasedZones: []domain.ZoneRef{{MallID: "m1", Floor: 0}}}
-	if err := validateRule(rule, 0); err != nil {
+	if err := validateRule(rule, 0, "rule"); err != nil {
 		t.Fatalf("floor 0 zone rejected: %v", err)
 	}
 }
@@ -135,7 +136,7 @@ func TestValidateRuleGroups(t *testing.T) {
 		"too deep":         deep,
 	}
 	for name, rule := range cases {
-		if err := validateRule(rule, 0); err == nil {
+		if err := validateRule(rule, 0, "rule"); err == nil {
 			t.Errorf("%s: expected validation error", name)
 		}
 	}
@@ -143,7 +144,7 @@ func TestValidateRuleGroups(t *testing.T) {
 		leaf,
 		{Operator: "or", Conditions: []domain.SegmentRule{leaf, {PurchasedZones: []domain.ZoneRef{{MallID: "m", Floor: 1}}}}},
 	}}
-	if err := validateRule(nested, 0); err != nil {
+	if err := validateRule(nested, 0, "rule"); err != nil {
 		t.Fatalf("nested group: %v", err)
 	}
 }
@@ -158,5 +159,19 @@ func TestCombineGuestIDs(t *testing.T) {
 	sort.Strings(got)
 	if !reflect.DeepEqual(got, []string{"a", "b", "c", "d"}) {
 		t.Errorf("or: %v", got)
+	}
+}
+
+func TestValidateRule_PointsAtExcludedTenantsOfTheConflictingCondition(t *testing.T) {
+	rule := domain.SegmentRule{Operator: operatorAnd, Conditions: []domain.SegmentRule{
+		{VisitedTenantIDs: []string{"a"}},
+		{VisitedTenantIDs: []string{"b"}, ExcludedTenantIDs: []string{"b"}},
+	}}
+	var fieldErr *domain.FieldError
+	if err := validateRule(rule, 0, "rule"); !errors.As(err, &fieldErr) || !errors.Is(err, domain.ErrValidation) {
+		t.Fatalf("expected a validation field error, got %v", err)
+	}
+	if fieldErr.Field != "rule.conditions[1].excludedTenantIds" {
+		t.Fatalf("field = %q", fieldErr.Field)
 	}
 }
