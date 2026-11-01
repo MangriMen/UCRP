@@ -84,6 +84,9 @@ func (s *Seeder) seedExports(ctx context.Context) error {
 			return fmt.Errorf("export %s: %w", e.Key, err)
 		}
 		s.exports[e.Key] = dto.ID
+		if err := s.alignExportToSegment(ctx, dto.ID, e.Key); err != nil {
+			return fmt.Errorf("export %s: %w", e.Key, err)
+		}
 	}
 	return s.seedPendingExports(ctx)
 }
@@ -192,8 +195,28 @@ func (s *Seeder) seedPendingExports(ctx context.Context) error {
 			p.IdempotencyKey, p.Status, s.users["marketer"], createdAt, finishedAt); err != nil {
 			return err
 		}
+		if err := s.alignExportToSegment(ctx, id, p.Key); err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+func (s *Seeder) alignExportToSegment(ctx context.Context, exportID, key string) error {
+	minutes := 5 + int(uint64(hashSeed(key))%86)
+	if err := s.exec(ctx, `
+		UPDATE export_job j
+		SET created_at = v.computed_at + make_interval(mins => $2),
+			finished_at = CASE WHEN j.finished_at IS NULL THEN NULL
+				ELSE v.computed_at + make_interval(mins => $2) + (j.finished_at - j.created_at) END
+		FROM segment_version v
+		WHERE j.id = $1 AND v.id = j.segment_version_id AND v.computed_at IS NOT NULL`,
+		exportID, minutes); err != nil {
+		return err
+	}
+	return s.exec(ctx, `
+		UPDATE contact_log c SET contacted_at = j.created_at
+		FROM export_job j WHERE j.id = c.export_id AND j.id = $1`, exportID)
 }
 
 func hashSeed(key string) int64 {
