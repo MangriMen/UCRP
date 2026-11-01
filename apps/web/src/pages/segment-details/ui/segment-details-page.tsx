@@ -78,7 +78,11 @@ export function SegmentDetailsPage() {
             <CardTitle>Правило</CardTitle>
           </CardHeader>
           <CardContent className="text-sm">
-            {segment.rule ? <RuleSummary rule={segment.rule} /> : segment.ruleText}
+            {segment.ruleText ? (
+              <p>{segment.ruleText}</p>
+            ) : segment.rule ? (
+              <RuleSummary rule={segment.rule} />
+            ) : null}
           </CardContent>
         </Card>
       )}

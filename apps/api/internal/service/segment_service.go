@@ -12,15 +12,17 @@ import (
 type SegmentService struct {
 	segments  domain.SegmentRepo
 	evaluator domain.SegmentEvaluator
+	tenants   domain.TenantRepo
 	queue     domain.Queue
 	idGen     domain.IDGen
 	clock     domain.Clock
 }
 
-func NewSegmentService(repo domain.SegmentRepo, evaluator domain.SegmentEvaluator, q domain.Queue) *SegmentService {
+func NewSegmentService(repo domain.SegmentRepo, evaluator domain.SegmentEvaluator, tenants domain.TenantRepo, q domain.Queue) *SegmentService {
 	return &SegmentService{
 		segments:  repo,
 		evaluator: evaluator,
+		tenants:   tenants,
 		queue:     q,
 		idGen:     idgen.UUID{},
 		clock:     domain.SystemClock{},
@@ -91,6 +93,7 @@ type SegmentDTO struct {
 	Suppressed       bool            `json:"suppressed"`
 	ComputedAt       string          `json:"computedAt,omitempty"`
 	Rule             json.RawMessage `json:"rule,omitempty"`
+	RuleText         string          `json:"ruleText,omitempty"`
 	CreatedBy        string          `json:"createdBy,omitempty"`
 	CreatedAt        string          `json:"createdAt"`
 	UpdatedAt        string          `json:"updatedAt"`
@@ -162,7 +165,13 @@ func (s *SegmentService) Get(ctx context.Context, id string) (*SegmentDTO, error
 	if err != nil {
 		return nil, err
 	}
-	return toSegmentDTO(seg, ver), nil
+	texts, err := s.ruleTexts(ctx, []string{ver.Rule})
+	if err != nil {
+		return nil, err
+	}
+	dto := toSegmentDTO(seg, ver)
+	dto.RuleText = texts[0]
+	return dto, nil
 }
 
 func toSegmentDTO(seg *domain.Segment, ver *domain.SegmentVersion) *SegmentDTO {
@@ -219,9 +228,23 @@ func (s *SegmentService) List(ctx context.Context, limit, offset int) (*SegmentP
 	if err != nil {
 		return nil, err
 	}
-	out := make([]SegmentDTO, 0, len(items))
+	rawRules := make([]string, 0, len(items))
 	for _, seg := range items {
-		out = append(out, *toSegmentDTO(&seg, versions[seg.ID]))
+		if v := versions[seg.ID]; v != nil {
+			rawRules = append(rawRules, v.Rule)
+		} else {
+			rawRules = append(rawRules, "")
+		}
+	}
+	texts, err := s.ruleTexts(ctx, rawRules)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]SegmentDTO, 0, len(items))
+	for i, seg := range items {
+		dto := toSegmentDTO(&seg, versions[seg.ID])
+		dto.RuleText = texts[i]
+		out = append(out, *dto)
 	}
 	total := offset + len(out)
 	totalPages := (total + limit - 1) / limit
@@ -346,12 +369,21 @@ func (s *SegmentService) Versions(ctx context.Context, id string) ([]SegmentVers
 		return nil, err
 	}
 	out := make([]SegmentVersionDTO, 0, len(items))
+	rawRules := make([]string, 0, len(items))
 	for _, v := range items {
+		rawRules = append(rawRules, v.Rule)
+	}
+	texts, err := s.ruleTexts(ctx, rawRules)
+	if err != nil {
+		return nil, err
+	}
+	for i, v := range items {
 		d := SegmentVersionDTO{
 			ID:          v.ID,
 			SegmentID:   id,
 			VersionNo:   v.VersionNo,
 			Rule:        json.RawMessage(v.Rule),
+			RuleText:    texts[i],
 			Status:      string(v.Status),
 			MemberCount: v.MemberCount,
 			CreatedAt:   v.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
@@ -373,6 +405,7 @@ type SegmentVersionDTO struct {
 	SegmentID   string          `json:"segmentId"`
 	VersionNo   int             `json:"versionNo"`
 	Rule        json.RawMessage `json:"rule"`
+	RuleText    string          `json:"ruleText,omitempty"`
 	Status      string          `json:"status"`
 	MemberCount *int            `json:"memberCount"`
 	Suppressed  bool            `json:"suppressed"`

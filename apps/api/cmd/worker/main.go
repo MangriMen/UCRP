@@ -78,7 +78,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		repository.NewMergeBlockSQL(store.DB),
 	)
 	segmentRepo := repository.NewSegmentSQL(store.DB)
-	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), q)
+	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), repository.NewTenantSQL(store.DB), q)
 	recommender := recommend.NewWeightedRecommender(store.DB, cfg.Recommend)
 	presence := repository.NewPresenceSQL(store.DB)
 	var evaluator *recommend.Evaluator

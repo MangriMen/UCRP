@@ -25,6 +25,10 @@ func (r *stubTenantRepo) GetByID(context.Context, string) (*domain.Tenant, error
 	return &t, nil
 }
 
+func (r *stubTenantRepo) Names(context.Context, []string) (map[string]string, error) {
+	return map[string]string{}, nil
+}
+
 func (r *stubTenantRepo) Insert(_ context.Context, t *domain.Tenant) error {
 	r.inserted = t
 	return nil

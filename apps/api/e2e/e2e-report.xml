@@ -1,4 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="ucrp-e2e" tests="1" failures="0" skipped="0" time="0.212">
-  <testcase name="TestCrossTenantDistributionsContract" classname="TestCrossTenantDistributionsContract" time="0.212"></testcase>
+<testsuite name="ucrp-e2e" tests="29" failures="1" skipped="1" time="3.968">
+  <testcase name="TestCampaignCreateRequiresTenantAndSegment" classname="TestCampaignCreateRequiresTenantAndSegment" time="0.165"></testcase>
+  <testcase name="TestE2ENewEventChangesSegmentAndRecommendations" classname="TestE2ENewEventChangesSegmentAndRecommendations" time="0.722"></testcase>
+  <testcase name="TestE2ESegmentToRecommendation" classname="TestE2ESegmentToRecommendation" time="0.150"></testcase>
+  <testcase name="TestExportListFiltersBySegment" classname="TestExportListFiltersBySegment" time="0.167"></testcase>
+  <testcase name="TestExportPreviewRejectsUnknownSegment" classname="TestExportPreviewRejectsUnknownSegment" time="0.114"></testcase>
+  <testcase name="TestRecommendationsSegmentRespectsLimit" classname="TestRecommendationsSegmentRespectsLimit" time="0.106"></testcase>
+  <testcase name="TestSegmentArchiveRemovesItFromActiveList" classname="TestSegmentArchiveRemovesItFromActiveList" time="0.108"></testcase>
+  <testcase name="TestSegmentCreateContract" classname="TestSegmentCreateContract" time="0.076"></testcase>
+  <testcase name="TestSegmentCreatePersistsMembership" classname="TestSegmentCreatePersistsMembership" time="0.104"></testcase>
+  <testcase name="TestSegmentCreateRequiresName" classname="TestSegmentCreateRequiresName" time="0.053"></testcase>
+  <testcase name="TestSegmentGetContract" classname="TestSegmentGetContract" time="0.068"></testcase>
+  <testcase name="TestSegmentGetReportsReadyVersion" classname="TestSegmentGetReportsReadyVersion" time="0.130"></testcase>
+  <testcase name="TestSegmentMembersPaged" classname="TestSegmentMembersPaged" time="0.117"></testcase>
+  <testcase name="TestSegmentPreviewAcceptsEmptyExcludedTenantIds" classname="TestSegmentPreviewAcceptsEmptyExcludedTenantIds" time="0.082"></testcase>
+  <testcase name="TestSegmentPreviewContract" classname="TestSegmentPreviewContract" time="0.071"></testcase>
+  <testcase name="TestSegmentPreviewCountsMatchingGuests" classname="TestSegmentPreviewCountsMatchingGuests" time="0.123"></testcase>
+  <testcase name="TestSegmentPreviewDoesNotPersist" classname="TestSegmentPreviewDoesNotPersist" time="0.086"></testcase>
+  <testcase name="TestSegmentPreviewRejectsConflictingTenant" classname="TestSegmentPreviewRejectsConflictingTenant" time="0.074">
+    <skipped message=""></skipped>
+  </testcase>
+  <testcase name="TestSegmentPreviewRejectsEmptyWas" classname="TestSegmentPreviewRejectsEmptyWas" time="0.088"></testcase>
+  <testcase name="TestSegmentPurchasedZones_CombinesWithExcludedTenants" classname="TestSegmentPurchasedZones_CombinesWithExcludedTenants" time="0.218"></testcase>
+  <testcase name="TestSegmentPurchasedZones_CountsOnlyPurchasesInTheZone" classname="TestSegmentPurchasedZones_CountsOnlyPurchasesInTheZone" time="0.221"></testcase>
+  <testcase name="TestSegmentPurchasedZones_MatchesAnyOfSeveralZones" classname="TestSegmentPurchasedZones_MatchesAnyOfSeveralZones" time="0.217"></testcase>
+  <testcase name="TestSegmentRecommendationsAggregate" classname="TestSegmentRecommendationsAggregate" time="0.112"></testcase>
+  <testcase name="TestSegmentRecomputeAcceptsAndQueues" classname="TestSegmentRecomputeAcceptsAndQueues" time="0.108"></testcase>
+  <testcase name="TestSegmentRuleGroups_CombineZonesWithAndOr" classname="TestSegmentRuleGroups_CombineZonesWithAndOr" time="0.215"></testcase>
+  <testcase name="TestSegmentRuleGroups_RejectsEmptyGroup" classname="TestSegmentRuleGroups_RejectsEmptyGroup" time="0.056"></testcase>
+  <testcase name="TestSegmentTemplatesFive" classname="TestSegmentTemplatesFive" time="0.056">
+    <failure message="test failed; see the go test output for the assertion message">test failed; see the go test output for the assertion message</failure>
+  </testcase>
+  <testcase name="TestSegmentUpdateCreatesVersion" classname="TestSegmentUpdateCreatesVersion" time="0.110"></testcase>
+  <testcase name="TestSegmentsListContract" classname="TestSegmentsListContract" time="0.052"></testcase>
 </testsuite>
