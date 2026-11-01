@@ -56,11 +56,13 @@ type Tenant struct {
 }
 
 type TenantCategory struct {
-	ID        string
-	Code      string
-	Name      string
-	IsActive  bool
-	CreatedAt time.Time
+	ID          string
+	Code        string
+	Name        string
+	Description *string
+	IsActive    bool
+	CreatedAt   time.Time
+	UpdatedAt   *time.Time
 }
 
 type CategoryRelation struct {
@@ -132,7 +134,7 @@ type MallRepo interface {
 }
 
 type TenantCategoryRepo interface {
-	List(ctx context.Context) ([]TenantCategory, error)
+	List(ctx context.Context, includeInactive bool) ([]TenantCategory, error)
 	GetByID(ctx context.Context, id string) (*TenantCategory, error)
 	Insert(ctx context.Context, c *TenantCategory) error
 	Update(ctx context.Context, c *TenantCategory) error

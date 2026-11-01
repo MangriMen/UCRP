@@ -11,6 +11,13 @@ paths:
         - R-4
       x-uc:
         - UC-17
+      parameters:
+        - name: include_inactive
+          in: query
+          description: Also return inactive categories (for the reference editor). By default only active ones are returned.
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: Categories

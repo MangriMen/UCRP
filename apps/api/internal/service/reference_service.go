@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
@@ -67,6 +68,32 @@ type OptionalFloor struct {
 func (o *OptionalFloor) UnmarshalJSON(data []byte) error {
 	o.Set = true
 	return json.Unmarshal(data, &o.Value)
+}
+
+type OptionalText struct {
+	Set   bool
+	Value *string
+}
+
+func (o *OptionalText) UnmarshalJSON(data []byte) error {
+	o.Set = true
+	return json.Unmarshal(data, &o.Value)
+}
+
+const maxCategoryDescriptionLength = 1000
+
+func categoryDescription(text OptionalText) (*string, error) {
+	if text.Value == nil {
+		return nil, nil
+	}
+	trimmed := strings.TrimSpace(*text.Value)
+	if trimmed == "" {
+		return nil, nil
+	}
+	if utf8.RuneCountInString(trimmed) > maxCategoryDescriptionLength {
+		return nil, domain.ErrValidation
+	}
+	return &trimmed, nil
 }
 
 type TenantCreateRequest struct {
@@ -285,26 +312,37 @@ func (s *ReferenceService) DeleteTenant(ctx context.Context, id string) error {
 }
 
 type CategoryDTO struct {
-	ID       string `json:"id"`
-	Code     string `json:"code"`
-	Name     string `json:"name"`
-	IsActive bool   `json:"isActive"`
+	ID          string     `json:"id"`
+	Code        string     `json:"code"`
+	Name        string     `json:"name"`
+	Description *string    `json:"description"`
+	IsActive    bool       `json:"isActive"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   *time.Time `json:"updatedAt,omitempty"`
 }
 
 type CategoryRequest struct {
-	Code     string `json:"code"`
-	Name     string `json:"name"`
-	IsActive *bool  `json:"isActive"`
+	Code        string       `json:"code"`
+	Name        string       `json:"name"`
+	Description OptionalText `json:"description"`
+	IsActive    *bool        `json:"isActive"`
 }
 
-func (s *ReferenceService) ListCategories(ctx context.Context) ([]CategoryDTO, error) {
-	items, err := s.categories.List(ctx)
+func categoryDTO(c domain.TenantCategory) CategoryDTO {
+	return CategoryDTO{
+		ID: c.ID, Code: c.Code, Name: c.Name, Description: c.Description,
+		IsActive: c.IsActive, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt,
+	}
+}
+
+func (s *ReferenceService) ListCategories(ctx context.Context, includeInactive bool) ([]CategoryDTO, error) {
+	items, err := s.categories.List(ctx, includeInactive)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]CategoryDTO, 0, len(items))
 	for _, c := range items {
-		out = append(out, CategoryDTO{ID: c.ID, Code: c.Code, Name: c.Name, IsActive: c.IsActive})
+		out = append(out, categoryDTO(c))
 	}
 	return out, nil
 }
@@ -315,17 +353,23 @@ func (s *ReferenceService) CreateCategory(ctx context.Context, req CategoryReque
 	if code == "" || name == "" {
 		return nil, domain.ErrValidation
 	}
+	description, err := categoryDescription(req.Description)
+	if err != nil {
+		return nil, err
+	}
 	c := &domain.TenantCategory{
-		ID:        s.idGen.NewID(ctx),
-		Code:      code,
-		Name:      name,
-		IsActive:  true,
-		CreatedAt: s.clock.Now(),
+		ID:          s.idGen.NewID(ctx),
+		Code:        code,
+		Name:        name,
+		Description: description,
+		IsActive:    true,
+		CreatedAt:   s.clock.Now(),
 	}
 	if err := s.categories.Insert(ctx, c); err != nil {
 		return nil, err
 	}
-	return &CategoryDTO{ID: c.ID, Code: c.Code, Name: c.Name, IsActive: c.IsActive}, nil
+	dto := categoryDTO(*c)
+	return &dto, nil
 }
 
 func (s *ReferenceService) UpdateCategory(ctx context.Context, id string, req CategoryRequest) (*CategoryDTO, error) {
@@ -336,13 +380,23 @@ func (s *ReferenceService) UpdateCategory(ctx context.Context, id string, req Ca
 	if req.Name != "" {
 		c.Name = req.Name
 	}
+	if req.Description.Set {
+		description, err := categoryDescription(req.Description)
+		if err != nil {
+			return nil, err
+		}
+		c.Description = description
+	}
 	if req.IsActive != nil {
 		c.IsActive = *req.IsActive
 	}
+	now := s.clock.Now()
+	c.UpdatedAt = &now
 	if err := s.categories.Update(ctx, c); err != nil {
 		return nil, err
 	}
-	return &CategoryDTO{ID: c.ID, Code: c.Code, Name: c.Name, IsActive: c.IsActive}, nil
+	dto := categoryDTO(*c)
+	return &dto, nil
 }
 
 func (s *ReferenceService) DeleteCategory(ctx context.Context, id string) error {

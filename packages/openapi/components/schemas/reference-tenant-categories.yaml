@@ -4,6 +4,7 @@ TenantCategory:
     - id
     - code
     - name
+    - isActive
   properties:
     id:
       type: string
@@ -16,6 +17,9 @@ TenantCategory:
     description:
       type: string
       nullable: true
+    isActive:
+      type: boolean
+      description: Inactive categories are hidden from the list unless `include_inactive=true` and cannot be assigned to tenants
     createdAt:
       type: string
       format: date-time
@@ -40,6 +44,10 @@ TenantCategoryRequest:
       type: string
       nullable: true
       maxLength: 1000
+      description: Omitted in an update keeps the current description; null or an empty string clears it
+    isActive:
+      type: boolean
+      description: Update only; omitted keeps the current state
 CategoryRelationType:
   type: string
   description: '`adjacent` — adjacent category (boosts the score), `competitor` — direct competitor (lowers the score by the competitor penalty, D-34)'

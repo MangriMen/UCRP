@@ -320,7 +320,16 @@ func (h *ReferenceHandler) DeleteTenant(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ReferenceHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
-	items, err := h.ref.ListCategories(r.Context())
+	includeInactive := false
+	if raw := r.URL.Query().Get("include_inactive"); raw != "" {
+		value, err := strconv.ParseBool(raw)
+		if err != nil {
+			httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "include_inactive должен быть true или false")
+			return
+		}
+		includeInactive = value
+	}
+	items, err := h.ref.ListCategories(r.Context(), includeInactive)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

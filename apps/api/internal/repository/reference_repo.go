@@ -172,17 +172,37 @@ func NewTenantCategorySQL(db *sql.DB) *TenantCategorySQL {
 	return &TenantCategorySQL{db: db}
 }
 
-func (r *TenantCategorySQL) List(ctx context.Context) ([]domain.TenantCategory, error) {
+const tenantCategoryColumns = `id, code, name, description, is_active, created_at, updated_at`
+
+func scanTenantCategory(s interface{ Scan(...any) error }) (domain.TenantCategory, error) {
+	var (
+		c           domain.TenantCategory
+		description sql.NullString
+		updated     sql.NullTime
+	)
+	if err := s.Scan(&c.ID, &c.Code, &c.Name, &description, &c.IsActive, &c.CreatedAt, &updated); err != nil {
+		return c, err
+	}
+	if description.Valid {
+		c.Description = &description.String
+	}
+	if updated.Valid {
+		c.UpdatedAt = &updated.Time
+	}
+	return c, nil
+}
+
+func (r *TenantCategorySQL) List(ctx context.Context, includeInactive bool) ([]domain.TenantCategory, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, code, name, is_active, created_at FROM tenant_category WHERE is_active ORDER BY code`)
+		SELECT `+tenantCategoryColumns+` FROM tenant_category WHERE is_active OR $1 ORDER BY code`, includeInactive)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.TenantCategory, 0)
 	for rows.Next() {
-		var c domain.TenantCategory
-		if err := rows.Scan(&c.ID, &c.Code, &c.Name, &c.IsActive, &c.CreatedAt); err != nil {
+		c, err := scanTenantCategory(rows)
+		if err != nil {
 			return nil, err
 		}
 		out = append(out, c)
@@ -191,10 +211,8 @@ func (r *TenantCategorySQL) List(ctx context.Context) ([]domain.TenantCategory, 
 }
 
 func (r *TenantCategorySQL) GetByID(ctx context.Context, id string) (*domain.TenantCategory, error) {
-	var c domain.TenantCategory
-	err := r.db.QueryRowContext(ctx, `
-		SELECT id, code, name, is_active, created_at FROM tenant_category WHERE id = $1`, id).
-		Scan(&c.ID, &c.Code, &c.Name, &c.IsActive, &c.CreatedAt)
+	c, err := scanTenantCategory(r.db.QueryRowContext(ctx, `
+		SELECT `+tenantCategoryColumns+` FROM tenant_category WHERE id = $1`, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
@@ -203,8 +221,8 @@ func (r *TenantCategorySQL) GetByID(ctx context.Context, id string) (*domain.Ten
 
 func (r *TenantCategorySQL) Insert(ctx context.Context, c *domain.TenantCategory) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO tenant_category (id, code, name, is_active, created_at) VALUES ($1,$2,$3,$4,$5)`,
-		c.ID, c.Code, c.Name, c.IsActive, c.CreatedAt,
+		INSERT INTO tenant_category (id, code, name, description, is_active, created_at) VALUES ($1,$2,$3,$4,$5,$6)`,
+		c.ID, c.Code, c.Name, c.Description, c.IsActive, c.CreatedAt,
 	)
 	if err != nil && strings.Contains(err.Error(), "duplicate key") {
 		return domain.ErrConflict
@@ -214,7 +232,8 @@ func (r *TenantCategorySQL) Insert(ctx context.Context, c *domain.TenantCategory
 
 func (r *TenantCategorySQL) Update(ctx context.Context, c *domain.TenantCategory) error {
 	res, err := r.db.ExecContext(ctx, `
-		UPDATE tenant_category SET name = $2, is_active = $3 WHERE id = $1`, c.ID, c.Name, c.IsActive)
+		UPDATE tenant_category SET name = $2, description = $3, is_active = $4, updated_at = $5 WHERE id = $1`,
+		c.ID, c.Name, c.Description, c.IsActive, c.UpdatedAt)
 	if err != nil {
 		return err
 	}
