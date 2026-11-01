@@ -3,9 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Skeleton } from '@/shared/ui/skeleton'
 import type { DashboardMetrics } from '../model/types'
 
+const MINUTE = 60
+const HOUR = 60 * MINUTE
+const DAY = 24 * HOUR
+
 const formatSeconds = (seconds: number) => {
-  const minutes = Math.floor(seconds / 60)
-  const rest = Math.round(seconds % 60)
+  if (seconds >= DAY) {
+    return `${Math.floor(seconds / DAY)} дн. ${Math.floor((seconds % DAY) / HOUR)} ч`
+  }
+  if (seconds >= HOUR) {
+    return `${Math.floor(seconds / HOUR)} ч ${Math.floor((seconds % HOUR) / MINUTE)} мин`
+  }
+  const minutes = Math.floor(seconds / MINUTE)
+  const rest = Math.round(seconds % MINUTE)
   return minutes > 0 ? `${minutes} мин ${rest} с` : `${rest} с`
 }
 
