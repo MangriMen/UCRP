@@ -10,11 +10,12 @@ import (
 )
 
 type AnalyticsService struct {
-	db *sql.DB
+	db        *sql.DB
+	campaigns domain.CampaignRepo
 }
 
-func NewAnalyticsService(db *sql.DB) *AnalyticsService {
-	return &AnalyticsService{db: db}
+func NewAnalyticsService(db *sql.DB, campaigns domain.CampaignRepo) *AnalyticsService {
+	return &AnalyticsService{db: db, campaigns: campaigns}
 }
 
 type CrossTenantDistribution struct {
@@ -143,15 +144,25 @@ func (s *AnalyticsService) crossTenantSeries(ctx context.Context, from, to time.
 	return out, rows.Err()
 }
 
+type MetricsSampleSizes struct {
+	Events          int `json:"events"`
+	Guests          int `json:"guests"`
+	MergeCandidates int `json:"mergeCandidates"`
+	Exports         int `json:"exports"`
+	Contacts        int `json:"contacts"`
+}
+
 type MetricsResponse struct {
-	From                         string  `json:"from"`
-	To                           string  `json:"to"`
-	MatchRate                    float64 `json:"matchRate"`
-	DisputedMergeRate            float64 `json:"disputedMergeRate"`
-	SegmentToExportMedianSeconds float64 `json:"segmentToExportMedianSeconds"`
-	SegmentToExportP95Seconds    float64 `json:"segmentToExportP95Seconds"`
-	DisputedRateReliable         bool
-	ExportLatencyReliable        bool
+	From                         string             `json:"from"`
+	To                           string             `json:"to"`
+	MatchRate                    *float64           `json:"matchRate"`
+	DisputedMergeRate            *float64           `json:"disputedMergeRate"`
+	SegmentToExportMedianSeconds *float64           `json:"segmentToExportMedianSeconds"`
+	SegmentToExportP95Seconds    *float64           `json:"segmentToExportP95Seconds"`
+	ConversionRate               float64            `json:"conversionRate"`
+	ConversionLift               float64            `json:"conversionLift"`
+	Suppressed                   bool               `json:"suppressed"`
+	SampleSizes                  MetricsSampleSizes `json:"sampleSizes"`
 }
 
 func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*MetricsResponse, error) {
@@ -168,40 +179,55 @@ func (s *AnalyticsService) Metrics(ctx context.Context, from, to time.Time) (*Me
 		From: from.UTC().Format(time.RFC3339),
 		To:   to.UTC().Format(time.RFC3339),
 	}
+	var matched int
 	err := s.db.QueryRowContext(ctx, `
-		SELECT
-			COALESCE(SUM(CASE WHEN guest_id IS NOT NULL THEN 1 ELSE 0 END)::float8 / NULLIF(COUNT(*), 0), 0)
-		FROM event`).Scan(&out.MatchRate)
+		SELECT COUNT(*), COUNT(guest_id)
+		FROM event WHERE occurred_at >= $1 AND occurred_at <= $2`, from, to).Scan(&out.SampleSizes.Events, &matched)
 	if err != nil {
 		return nil, err
 	}
-	var mergeTotal, mergeRejected int
+	if out.SampleSizes.Events > 0 {
+		rate := float64(matched) / float64(out.SampleSizes.Events)
+		out.MatchRate = &rate
+	}
+	var reverted int
 	err = s.db.QueryRowContext(ctx, `
 		SELECT COUNT(*), COUNT(*) FILTER (WHERE resolution = 'reverted')
-		FROM merge_candidate`).Scan(&mergeTotal, &mergeRejected)
+		FROM merge_candidate
+		WHERE resolution IN ('auto_merged', 'confirmed', 'reverted') AND created_at >= $1 AND created_at <= $2`,
+		from, to).Scan(&out.SampleSizes.MergeCandidates, &reverted)
 	if err != nil {
 		return nil, err
 	}
-	if mergeTotal > 0 {
-		out.DisputedMergeRate = float64(mergeRejected) / float64(mergeTotal)
-		out.DisputedRateReliable = mergeTotal >= 100
+	if out.SampleSizes.MergeCandidates > 0 {
+		rate := float64(reverted) / float64(out.SampleSizes.MergeCandidates)
+		out.DisputedMergeRate = &rate
 	}
+	var median, p95 float64
 	err = s.db.QueryRowContext(ctx, `
 		SELECT
-			COALESCE(percentile_cont(0.5) WITHIN GROUP (
-				ORDER BY EXTRACT(EPOCH FROM (j.created_at - s.computed_at))
-			), 0),
-			COALESCE(percentile_cont(0.95) WITHIN GROUP (
-				ORDER BY EXTRACT(EPOCH FROM (j.created_at - s.computed_at))
-			), 0),
+			COALESCE(percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (j.created_at - s.computed_at))), 0),
+			COALESCE(percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (j.created_at - s.computed_at))), 0),
 			COUNT(*)
 		FROM export_job j
 		JOIN segment_version s ON s.id = j.segment_version_id
-		WHERE s.computed_at IS NOT NULL AND j.created_at >= s.computed_at`).Scan(&out.SegmentToExportMedianSeconds, &out.SegmentToExportP95Seconds, &mergeTotal)
+		WHERE s.computed_at IS NOT NULL AND j.created_at >= s.computed_at
+			AND j.created_at >= $1 AND j.created_at <= $2`, from, to).Scan(&median, &p95, &out.SampleSizes.Exports)
 	if err != nil {
 		return nil, err
 	}
-	out.ExportLatencyReliable = mergeTotal >= 30
+	if out.SampleSizes.Exports > 0 {
+		out.SegmentToExportMedianSeconds = &median
+		out.SegmentToExportP95Seconds = &p95
+	}
+	conversion, err := s.campaigns.Conversion(ctx, domain.ConversionFilter{From: &from, To: &to})
+	if err != nil {
+		return nil, err
+	}
+	out.ConversionRate = conversion.Rate()
+	out.ConversionLift = conversion.Lift()
+	out.SampleSizes.Contacts = conversion.Recipients
+	out.SampleSizes.Guests = conversion.Recipients + conversion.ControlGroup
 	return out, nil
 }
 

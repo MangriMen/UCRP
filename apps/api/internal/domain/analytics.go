@@ -26,9 +26,13 @@ type Campaign struct {
 	ID              string
 	Name            string
 	TenantID        string
+	TenantName      string
 	SegmentID       string
+	SegmentName     string
 	AttributionDays int
 	Status          string
+	StartsAt        *time.Time
+	EndsAt          *time.Time
 	CreatedBy       string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
@@ -41,4 +45,18 @@ type CampaignRepo interface {
 	Update(ctx context.Context, c *Campaign) error
 	Delete(ctx context.Context, id string) error
 	HasExports(ctx context.Context, campaignID string) (bool, error)
+	Conversion(ctx context.Context, filter ConversionFilter) (Conversion, error)
+}
+
+type ConversionFilter struct {
+	CampaignID string
+	From       *time.Time
+	To         *time.Time
+}
+
+type Conversion struct {
+	Recipients         int
+	ControlGroup       int
+	Conversions        int
+	ControlConversions int
 }

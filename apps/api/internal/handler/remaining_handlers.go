@@ -170,6 +170,15 @@ func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, item)
 }
 
+func (h *CampaignHandler) Results(w http.ResponseWriter, r *http.Request) {
+	results, err := h.campaigns.Results(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, results)
+}
+
 func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	p, ok := auth.PrincipalFrom(r.Context())
 	if !ok {
@@ -270,7 +279,7 @@ func (h *AnalyticsHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, dashboardMetricsResponse(res))
+	httpx.WriteJSON(w, http.StatusOK, res)
 }
 
 func (h *AnalyticsHandler) DataQuality(w http.ResponseWriter, r *http.Request) {
