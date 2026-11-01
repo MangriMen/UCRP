@@ -108,6 +108,9 @@ func (s *Seeder) insertEvent(ctx context.Context, ev eventSpec, byExternal map[s
 	occurredAt := s.now.AddDate(0, 0, -ev.DaysAgo).
 		Truncate(24 * time.Hour).
 		Add(time.Duration(ev.Hour)*time.Hour + time.Duration(ev.Minute)*time.Minute)
+	if occurredAt.After(s.now) {
+		occurredAt = occurredAt.AddDate(0, 0, -1)
+	}
 
 	var guestID, originGuestID any
 	if ev.GuestKey != "" {
