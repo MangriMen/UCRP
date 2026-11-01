@@ -330,25 +330,16 @@ func (s *AccessGrantService) Permissions(ctx context.Context, actor domain.Princ
 		}
 		grantableTo := make([]string, 0, 2)
 		if canGrant && policy.delegates(actor, p.Code) {
-			if ceilingAllows(tenantCeiling, p.Code) {
+			if access.InCeiling(p.Code, tenantCeiling) {
 				grantableTo = append(grantableTo, string(domain.RoleTenant))
 			}
-			if managerPersonalPermission(p.Code) && ceilingAllows(policy.ceiling, p.Code) {
+			if managerPersonalPermission(p.Code) && access.InCeiling(p.Code, policy.ceiling) {
 				grantableTo = append(grantableTo, string(domain.RoleManager))
 			}
 		}
 		result = append(result, PermissionResponse{p.Code, p.Domain, p.Kind, p.Title, p.Description, p.IsSensitive, p.MinK, grantableTo})
 	}
 	return result, nil
-}
-
-func ceilingAllows(ceiling []domain.AccessRolePermission, code string) bool {
-	for _, permission := range ceiling {
-		if permission.PermissionCode == code {
-			return permission.Effect == "allow"
-		}
-	}
-	return false
 }
 
 func (s *AccessGrantService) List(ctx context.Context, actor domain.Principal, filter domain.AccessGrantFilter) ([]GrantResponse, int, error) {
