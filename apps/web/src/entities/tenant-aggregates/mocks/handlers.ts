@@ -47,7 +47,7 @@ function buildAggregate(from: string | null, to: string | null): TenantVisitAggr
     newGuestsCount: 21,
     repeatVisitsCount: 82,
     revenueTotalMinor: 4_512_000,
-    avgCheckMinor: null,
+    avgCheckMinor: 96_000,
     firstPurchasesCount: 17,
     suppressed: true,
     suppressionThreshold: SUPPRESSION_THRESHOLD,
