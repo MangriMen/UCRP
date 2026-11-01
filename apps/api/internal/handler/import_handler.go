@@ -57,12 +57,12 @@ func (h *ImportHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *ImportHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	items, err := h.imports.List(r.Context(), r.URL.Query().Get("data_source_id"), r.URL.Query().Get("status"), limit, offset)
+	items, total, err := h.imports.List(r.Context(), r.URL.Query().Get("data_source_id"), r.URL.Query().Get("status"), limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *ImportHandler) Get(w http.ResponseWriter, r *http.Request) {

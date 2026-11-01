@@ -146,7 +146,8 @@ func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	page, err := h.segments.List(r.Context(), limit, offset)
+	query := r.URL.Query()
+	page, err := h.segments.List(r.Context(), domain.SegmentFilter{Query: query.Get("q"), Status: query.Get("status")}, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

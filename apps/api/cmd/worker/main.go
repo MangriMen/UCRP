@@ -248,7 +248,7 @@ func enqueueRecommendRefreshForBatch(ctx context.Context, presence *repository.P
 }
 
 func enqueueActiveSegmentRecompute(ctx context.Context, segmentsRepo domain.SegmentRepo, q domain.Queue) error {
-	items, err := segmentsRepo.List(ctx, 100, 0)
+	items, _, err := segmentsRepo.List(ctx, domain.SegmentFilter{}, 100, 0)
 	if err != nil {
 		return err
 	}

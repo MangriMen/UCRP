@@ -187,8 +187,8 @@ func (f *fakeSegments) Insert(context.Context, *domain.Segment, *domain.SegmentV
 func (f *fakeSegments) GetByID(context.Context, string) (*domain.Segment, *domain.SegmentVersion, error) {
 	return &domain.Segment{ID: "seg"}, &domain.SegmentVersion{ID: "v1", Status: f.status}, nil
 }
-func (f *fakeSegments) List(context.Context, int, int) ([]domain.Segment, error) {
-	return nil, nil
+func (f *fakeSegments) List(context.Context, domain.SegmentFilter, int, int) ([]domain.Segment, int, error) {
+	return nil, 0, nil
 }
 func (f *fakeSegments) ListTemplates(context.Context) ([]domain.Segment, error) {
 	return nil, nil

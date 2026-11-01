@@ -238,16 +238,16 @@ func (s *ImportService) Sync(ctx context.Context, dataSourceID, actorUserID stri
 	}, nil
 }
 
-func (s *ImportService) List(ctx context.Context, dataSourceID, status string, limit, offset int) ([]ImportDTO, error) {
-	items, err := s.batches.List(ctx, dataSourceID, status, limit, offset)
+func (s *ImportService) List(ctx context.Context, dataSourceID, status string, limit, offset int) ([]ImportDTO, int, error) {
+	items, total, err := s.batches.List(ctx, dataSourceID, status, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]ImportDTO, 0, len(items))
 	for _, b := range items {
 		out = append(out, toImportDTO(b))
 	}
-	return out, nil
+	return out, total, nil
 }
 
 func (s *ImportService) Get(ctx context.Context, id string) (*ImportDTO, error) {

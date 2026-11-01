@@ -17,8 +17,22 @@ type AuditLog struct {
 	CreatedAt   time.Time
 }
 
+type AuditFilter struct {
+	EntityType string
+	EntityID   string
+	Actor      string
+	Action     string
+	From       *time.Time
+	To         *time.Time
+}
+
+type CampaignFilter struct {
+	Status    string
+	SegmentID string
+}
+
 type AuditRepo interface {
-	List(ctx context.Context, entityType, entityID, actor string, limit, offset int) ([]AuditLog, error)
+	List(ctx context.Context, filter AuditFilter, limit, offset int) ([]AuditLog, int, error)
 	Insert(ctx context.Context, a *AuditLog) error
 }
 
@@ -39,7 +53,7 @@ type Campaign struct {
 }
 
 type CampaignRepo interface {
-	List(ctx context.Context, limit, offset int) ([]Campaign, error)
+	List(ctx context.Context, filter CampaignFilter, limit, offset int) ([]Campaign, int, error)
 	GetByID(ctx context.Context, id string) (*Campaign, error)
 	Insert(ctx context.Context, c *Campaign) error
 	Update(ctx context.Context, c *Campaign) error

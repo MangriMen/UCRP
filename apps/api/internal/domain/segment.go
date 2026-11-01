@@ -133,10 +133,15 @@ type SegmentMemberEntry struct {
 	AddedAt     time.Time
 }
 
+type SegmentFilter struct {
+	Query  string
+	Status string
+}
+
 type SegmentRepo interface {
 	Insert(ctx context.Context, s *Segment, v *SegmentVersion) error
 	GetByID(ctx context.Context, id string) (*Segment, *SegmentVersion, error)
-	List(ctx context.Context, limit, offset int) ([]Segment, error)
+	List(ctx context.Context, filter SegmentFilter, limit, offset int) ([]Segment, int, error)
 	ListTemplates(ctx context.Context) ([]Segment, error)
 	ListVersions(ctx context.Context, segmentID string) ([]SegmentVersion, error)
 	GetVersion(ctx context.Context, segmentID string, versionNo int) (*Segment, *SegmentVersion, error)

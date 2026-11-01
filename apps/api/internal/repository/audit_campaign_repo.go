@@ -16,44 +16,56 @@ func NewAuditSQL(db *sql.DB) *AuditSQL {
 	return &AuditSQL{db: db}
 }
 
-func (r *AuditSQL) List(ctx context.Context, entityType, entityID, actor string, limit, offset int) ([]domain.AuditLog, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
+func (r *AuditSQL) List(ctx context.Context, filter domain.AuditFilter, limit, offset int) ([]domain.AuditLog, int, error) {
+	limit, offset = clampPage(limit, offset)
+	where := ` WHERE TRUE`
+	args := make([]any, 0, 8)
+	add := func(condition string, value any) {
+		args = append(args, value)
+		where += ` AND ` + condition + itoa(len(args))
 	}
+	if filter.EntityType != "" {
+		add("entity_type = $", filter.EntityType)
+	}
+	if filter.EntityID != "" {
+		add("entity_id = $", filter.EntityID)
+	}
+	if filter.Actor != "" {
+		add("actor_user_id = $", filter.Actor)
+	}
+	if filter.Action != "" {
+		add("action = $", filter.Action)
+	}
+	if filter.From != nil {
+		add("created_at >= $", *filter.From)
+	}
+	if filter.To != nil {
+		add("created_at <= $", *filter.To)
+	}
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_log`+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	args = append(args, limit, offset)
 	query := `
 		SELECT id, COALESCE(actor_user_id, ''), actor_role, action, entity_type, entity_id,
 			COALESCE(details, ''), COALESCE(request_id, ''), created_at
-		FROM audit_log WHERE 1=1`
-	args := make([]any, 0, 5)
-	if entityType != "" {
-		args = append(args, entityType)
-		query += ` AND entity_type = $` + itoa(len(args))
-	}
-	if entityID != "" {
-		args = append(args, entityID)
-		query += ` AND entity_id = $` + itoa(len(args))
-	}
-	if actor != "" {
-		args = append(args, actor)
-		query += ` AND actor_user_id = $` + itoa(len(args))
-	}
-	args = append(args, limit, offset)
-	query += ` ORDER BY created_at DESC LIMIT $` + itoa(len(args)-1) + ` OFFSET $` + itoa(len(args))
+		FROM audit_log` + where + ` ORDER BY created_at DESC LIMIT $` + itoa(len(args)-1) + ` OFFSET $` + itoa(len(args))
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.AuditLog, 0)
 	for rows.Next() {
 		var a domain.AuditLog
 		if err := rows.Scan(&a.ID, &a.ActorUserID, &a.ActorRole, &a.Action, &a.EntityType, &a.EntityID, &a.Details, &a.RequestID, &a.CreatedAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		out = append(out, a)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 func (r *AuditSQL) Insert(ctx context.Context, a *domain.AuditLog) error {
@@ -82,26 +94,39 @@ func NewCampaignSQL(db *sql.DB) *CampaignSQL {
 	return &CampaignSQL{db: db}
 }
 
-func (r *CampaignSQL) List(ctx context.Context, limit, offset int) ([]domain.Campaign, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
+func (r *CampaignSQL) List(ctx context.Context, filter domain.CampaignFilter, limit, offset int) ([]domain.Campaign, int, error) {
+	limit, offset = clampPage(limit, offset)
+	where := ` WHERE TRUE`
+	args := make([]any, 0, 4)
+	if filter.Status != "" {
+		args = append(args, filter.Status)
+		where += ` AND c.status = $` + itoa(len(args))
 	}
+	if filter.SegmentID != "" {
+		args = append(args, filter.SegmentID)
+		where += ` AND c.segment_id = $` + itoa(len(args))
+	}
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+campaignFrom+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	args = append(args, limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT `+campaignColumns+`
-		FROM `+campaignFrom+` ORDER BY c.created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+		FROM `+campaignFrom+where+` ORDER BY c.created_at DESC LIMIT $`+itoa(len(args)-1)+` OFFSET $`+itoa(len(args)), args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.Campaign, 0)
 	for rows.Next() {
 		c, err := scanCampaign(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		out = append(out, *c)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 func (r *CampaignSQL) GetByID(ctx context.Context, id string) (*domain.Campaign, error) {

@@ -146,13 +146,29 @@ func NewAuditHandler(audit *service.AuditService) *AuditHandler {
 
 func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
+	from, ok := optionalTime(w, r, "from")
+	if !ok {
+		return
+	}
+	to, ok := optionalTime(w, r, "to")
+	if !ok {
+		return
+	}
 	limit, offset := pageParams(r)
-	items, err := h.audit.List(r.Context(), q.Get("entity_type"), q.Get("entity_id"), q.Get("actor"), limit, offset)
+	filter := domain.AuditFilter{
+		EntityType: q.Get("entity_type"),
+		EntityID:   q.Get("entity_id"),
+		Actor:      q.Get("actor"),
+		Action:     q.Get("action"),
+		From:       from,
+		To:         to,
+	}
+	items, total, err := h.audit.List(r.Context(), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, total)
 }
 
 type CampaignHandler struct {
@@ -165,12 +181,13 @@ func NewCampaignHandler(campaigns *service.CampaignService) *CampaignHandler {
 
 func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	items, err := h.campaigns.List(r.Context(), limit, offset)
+	q := r.URL.Query()
+	items, total, err := h.campaigns.List(r.Context(), domain.CampaignFilter{Status: q.Get("status"), SegmentID: q.Get("segment_id")}, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {

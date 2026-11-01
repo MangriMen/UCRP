@@ -214,8 +214,8 @@ func toSegmentDTO(seg *domain.Segment, ver *domain.SegmentVersion) *SegmentDTO {
 	return dto
 }
 
-func (s *SegmentService) List(ctx context.Context, limit, offset int) (*SegmentPage, error) {
-	items, err := s.segments.List(ctx, limit, offset)
+func (s *SegmentService) List(ctx context.Context, filter domain.SegmentFilter, limit, offset int) (*SegmentPage, error) {
+	items, total, err := s.segments.List(ctx, filter, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,6 @@ func (s *SegmentService) List(ctx context.Context, limit, offset int) (*SegmentP
 		dto.RuleText = texts[i]
 		out = append(out, *dto)
 	}
-	total := offset + len(out)
 	totalPages := (total + limit - 1) / limit
 	if totalPages < 1 {
 		totalPages = 1

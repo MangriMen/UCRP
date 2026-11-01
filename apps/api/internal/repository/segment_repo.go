@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
@@ -119,16 +121,39 @@ func (r *SegmentSQL) GetByID(ctx context.Context, id string) (*domain.Segment, *
 	return &s, &v, nil
 }
 
-func (r *SegmentSQL) List(ctx context.Context, limit, offset int) ([]domain.Segment, error) {
+func (r *SegmentSQL) List(ctx context.Context, filter domain.SegmentFilter, limit, offset int) ([]domain.Segment, int, error) {
 	limit, offset = clampPage(limit, offset)
+	const from = `
+		FROM segment s
+		LEFT JOIN segment_version v ON v.segment_id = s.id AND v.version_no = s.current_version_no`
+	where := []string{"TRUE"}
+	var args []any
+	if q := strings.TrimSpace(filter.Query); q != "" {
+		args = append(args, escapeLike(q))
+		where = append(where, fmt.Sprintf("s.name ILIKE '%%' || $%d || '%%'", len(args)))
+	}
+	switch filter.Status {
+	case "":
+		where = append(where, "s.status <> 'archived'")
+	case string(domain.SegmentArchived):
+		where = append(where, "s.status = 'archived'")
+	default:
+		args = append(args, filter.Status)
+		where = append(where, fmt.Sprintf("s.status <> 'archived' AND COALESCE(v.status, 'pending') = $%d", len(args)))
+	}
+	condition := " WHERE " + strings.Join(where, " AND ")
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*)`+from+condition, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	args = append(args, limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, name, COALESCE(description, ''), COALESCE(template_code, ''), is_template, current_version_no, status, COALESCE(created_by, ''), created_at, updated_at
-		FROM segment
-		WHERE status <> 'archived'
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2`, limit, offset)
+		SELECT s.id, s.name, COALESCE(s.description, ''), COALESCE(s.template_code, ''), s.is_template, s.current_version_no, s.status, COALESCE(s.created_by, ''), s.created_at, s.updated_at`+
+		from+condition+fmt.Sprintf(`
+		ORDER BY s.created_at DESC
+		LIMIT $%d OFFSET $%d`, len(args)-1, len(args)), args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.Segment, 0)
@@ -140,14 +165,14 @@ func (r *SegmentSQL) List(ctx context.Context, limit, offset int) ([]domain.Segm
 			status string
 		)
 		if err := rows.Scan(&s.ID, &s.Name, &desc, &tmpl, &s.IsTemplate, &s.CurrentVersionNo, &status, &s.CreatedBy, &s.CreatedAt, &s.UpdatedAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		s.Description = desc
 		s.TemplateCode = tmpl
 		s.Status = domain.SegmentStatus(status)
 		out = append(out, s)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 func (r *SegmentSQL) ReplaceMembers(ctx context.Context, versionID string, guestIDs []string, computedAt time.Time) error {
