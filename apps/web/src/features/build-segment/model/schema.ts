@@ -57,7 +57,24 @@ const rejectTenantOverlap = (values: LeafValues, context: z.RefinementCtx) => {
   }
 }
 
-export const leafSchema = leafFields.superRefine(rejectTenantOverlap)
+const requireTarget = (values: LeafValues, context: z.RefinementCtx) => {
+  const hasTarget =
+    values.visitedTenantIds.length > 0 ||
+    values.visitedCategoryIds.length > 0 ||
+    values.purchasedZones.length > 0
+  if (!hasTarget) {
+    context.addIssue({
+      code: 'custom',
+      path: ['visitedTenantIds'],
+      message: 'Выберите арендатора, категорию или этаж покупки',
+    })
+  }
+}
+
+export const leafSchema = leafFields.superRefine((values, context) => {
+  rejectTenantOverlap(values, context)
+  requireTarget(values, context)
+})
 
 export const MAX_GROUP_DEPTH = 1
 

@@ -30,6 +30,33 @@ describe('BuildSegmentButton', () => {
     expect(within(dialog).getByText('Целое число от 1 до 730')).toBeInTheDocument()
   })
 
+  it('sends no preview request while the condition has no target', async () => {
+    let previewCalls = 0
+    server.use(
+      http.post(`${API}/segments/preview`, () => {
+        previewCalls += 1
+        return HttpResponse.json({ size: 0, examples: [], cached: false, suppressed: false })
+      }),
+    )
+    renderButton()
+    await userEvent.click(screen.getByRole('button', { name: 'Новый сегмент' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('Заполните условия корректно')).toBeInTheDocument()
+    await new Promise((resolve) => setTimeout(resolve, 900))
+    expect(previewCalls).toBe(0)
+  })
+
+  it('shows the target message on submit of an empty condition', async () => {
+    renderButton()
+    await userEvent.click(screen.getByRole('button', { name: 'Новый сегмент' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.type(within(dialog).getByLabelText('Название'), 'Пустой')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Создать сегмент' }))
+    expect(
+      await within(dialog).findByText('Выберите арендатора, категорию или этаж покупки'),
+    ).toBeInTheDocument()
+  })
+
   it('closes the dialog after a new version is saved', async () => {
     renderButton(mockSegments[0])
     await userEvent.click(screen.getByRole('button', { name: 'Изменить правило' }))
@@ -103,6 +130,11 @@ describe('BuildSegmentButton', () => {
     const dialog = await screen.findByRole('dialog')
     await userEvent.type(within(dialog).getByLabelText('Название'), 'Группы')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Добавить группу' }))
+    const zoneCheckboxes = await within(dialog).findAllByRole('checkbox', {
+      name: 'Центральный ТЦ · 2 этаж',
+    })
+    expect(zoneCheckboxes).toHaveLength(2)
+    for (const checkbox of zoneCheckboxes) await userEvent.click(checkbox)
     expect(
       within(dialog.querySelector('form') as HTMLElement).getAllByText('Удалить группу'),
     ).toHaveLength(1)
@@ -117,7 +149,13 @@ describe('BuildSegmentButton', () => {
         name: 'Группы',
         rule: {
           operator: 'and',
-          conditions: [{ periodDays: 90 }, { operator: 'or', conditions: [{ periodDays: 90 }] }],
+          conditions: [
+            { periodDays: 90, purchasedZones: [{ mallId: 'mall-0001', floor: 2 }] },
+            {
+              operator: 'or',
+              conditions: [{ periodDays: 90, purchasedZones: [{ mallId: 'mall-0001', floor: 2 }] }],
+            },
+          ],
         },
       }),
     )
