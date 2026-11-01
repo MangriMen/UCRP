@@ -8,7 +8,7 @@ import {
   type Export,
 } from '@/entities/export'
 import { useAuth } from '@/entities/user'
-import { formatDateTime, formatNumber } from '@/shared/lib/format'
+import { formatDateTime, formatNumber, formatSuppressed } from '@/shared/lib/format'
 import { useUrlTab } from '@/shared/lib/hooks/use-url-tab'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Card, CardContent } from '@/shared/ui/card'
@@ -23,7 +23,7 @@ import { MembersTable } from './members-table'
 
 const TABS = ['recipients', 'control'] as const
 
-const count = (value: number | null | undefined) => (value == null ? 'скрыто' : formatNumber(value))
+const count = (value: number | null | undefined) => formatSuppressed(value, formatNumber)
 
 function ExportCounters({ item }: { item: Export }) {
   return (

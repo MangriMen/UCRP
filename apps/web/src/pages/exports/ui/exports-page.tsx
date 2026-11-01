@@ -11,7 +11,7 @@ import {
 } from '@/entities/export'
 import { useAuth } from '@/entities/user'
 import { CreateExportButton } from '@/features/create-export'
-import { formatDateTime, formatNumber } from '@/shared/lib/format'
+import { formatDateTime, formatNumber, formatSuppressed } from '@/shared/lib/format'
 import { useListParams } from '@/shared/lib/list-params'
 import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
@@ -52,7 +52,7 @@ const baseColumns: Column<Export>[] = [
   {
     id: 'size',
     header: 'Получателей',
-    cell: (e) => (e.exportedCount == null ? 'скрыто' : formatNumber(e.exportedCount)),
+    cell: (e) => formatSuppressed(e.exportedCount, formatNumber),
     className: 'text-right',
   },
 ]
