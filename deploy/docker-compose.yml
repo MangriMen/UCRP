@@ -56,6 +56,18 @@ services:
       api:
         condition: service_healthy
 
+  seed:
+    image: ghcr.io/mangrimen/ucrp/ucrp-seed:${IMAGE_TAG:-latest}
+    profiles: [tools]
+    restart: 'no'
+    environment:
+      <<: *environment
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+
   web:
     image: ghcr.io/mangrimen/ucrp/ucrp-web:${IMAGE_TAG:-latest}
     restart: unless-stopped

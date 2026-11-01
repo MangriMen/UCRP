@@ -66,6 +66,7 @@ jobs:
             api:
               - 'apps/api/**'
               - 'deploy/api/**'
+              - '.github/workflows/deploy.yml'
             web:
               - 'apps/web/**'
               - 'packages/api-docs/**'
@@ -92,6 +93,8 @@ jobs:
             image: mangrimen/ucrp/ucrp-api
           - app: worker
             image: mangrimen/ucrp/ucrp-worker
+          - app: seed
+            image: mangrimen/ucrp/ucrp-seed
     steps:
       - uses: actions/checkout@v7
 
