@@ -235,11 +235,7 @@ sequenceDiagram
           S->>DB: BEGIN IMMEDIATE, повторная проверка лимита
           S->>DB: export_job, export_member (control по seed, 0 = без группы), contact_log, audit
           S->>DB: COMMIT
-          alt больше 20000 членов
-            H-->>SPA: 202 queued, далее export.build
-          else
-            H-->>SPA: 201 ready
-          end
+          H-->>SPA: 201 ready
         end
       end
     end

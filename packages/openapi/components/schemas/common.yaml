@@ -136,7 +136,6 @@ JobAccepted:
         - identity.rematch
         - segment.recompute
         - recommend.refresh
-        - export.build
     status:
       type: string
       enum:
