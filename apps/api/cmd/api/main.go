@@ -113,7 +113,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 	if err := segmentRepo.EnsureTemplates(ctx, clock, idg); err != nil {
 		return err
 	}
-	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), q)
+	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), repository.NewTenantSQL(store.DB), q)
 	segmentHandler := handler.NewSegmentHandler(segmentSvc)
 	recommender := recommend.NewWeightedRecommender(store.DB, cfg.Recommend)
 	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), recommender, q)

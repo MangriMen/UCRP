@@ -117,6 +117,7 @@ type TenantListEntry struct {
 type TenantRepo interface {
 	Search(ctx context.Context, filter TenantFilter, limit, offset int) ([]TenantListEntry, int, error)
 	GetByID(ctx context.Context, id string) (*Tenant, error)
+	Names(ctx context.Context, ids []string) (map[string]string, error)
 	Insert(ctx context.Context, t *Tenant) error
 	Update(ctx context.Context, t *Tenant) error
 	SoftDelete(ctx context.Context, id string, now time.Time) error

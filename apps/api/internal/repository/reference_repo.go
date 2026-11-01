@@ -56,6 +56,26 @@ func (r *TenantSQL) GetByID(ctx context.Context, id string) (*domain.Tenant, err
 	return t, err
 }
 
+func (r *TenantSQL) Names(ctx context.Context, ids []string) (map[string]string, error) {
+	out := map[string]string{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.QueryContext(ctx, `SELECT id, name FROM tenant WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, err
+		}
+		out[id] = name
+	}
+	return out, rows.Err()
+}
+
 func (r *TenantSQL) Insert(ctx context.Context, t *domain.Tenant) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO tenant (id, code, name, mall_id, category_id, kind, floor, priority, is_active, created_at, updated_at)
