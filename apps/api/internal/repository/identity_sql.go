@@ -27,6 +27,12 @@ func (r *MergeBlockSQL) HasBlock(ctx context.Context, guestA, guestB string) (bo
 	return n > 0, err
 }
 
+func (r *MergeBlockSQL) Count(ctx context.Context) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM merge_block`).Scan(&total)
+	return total, err
+}
+
 func (r *MergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain.MergeBlock, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50

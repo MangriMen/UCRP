@@ -197,6 +197,12 @@ func (r *MergeSQL) List(ctx context.Context, resolution domain.MergeResolution, 
 	return out, rows.Err()
 }
 
+func (r *MergeSQL) Count(ctx context.Context, resolution domain.MergeResolution) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM merge_candidate WHERE ($1 = '' OR resolution = $1)`, string(resolution)).Scan(&total)
+	return total, err
+}
+
 func (r *MergeSQL) candidate(ctx context.Context, id string) (*domain.MergeCandidate, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT id, guest_a_id, guest_b_id, match_type, reason_code, reason_text, score, resolution,

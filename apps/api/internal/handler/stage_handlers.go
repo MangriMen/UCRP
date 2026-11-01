@@ -256,7 +256,12 @@ func (h *GuestHandler) Contacts(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	total, err := h.profiles.CountContacts(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *GuestHandler) Delete(w http.ResponseWriter, r *http.Request) {

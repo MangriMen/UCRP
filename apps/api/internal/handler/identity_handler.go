@@ -24,12 +24,18 @@ func NewIdentityHandler(identity *service.IdentityService, profiles *service.Pro
 
 func (h *IdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	items, err := h.identity.List(r.Context(), r.URL.Query().Get("resolution"), limit, offset)
+	resolution := r.URL.Query().Get("resolution")
+	items, err := h.identity.List(r.Context(), resolution, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	total, err := h.identity.Count(r.Context(), resolution)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	writePage(w, items, limit, offset, total)
 }
 
 type mergeCandidateDetail struct {
@@ -143,7 +149,12 @@ func (h *IdentityHandler) ListBlocks(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	total, err := h.identity.CountBlocks(r.Context())
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *IdentityHandler) DeleteBlock(w http.ResponseWriter, r *http.Request) {

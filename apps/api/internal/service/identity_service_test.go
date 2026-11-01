@@ -37,6 +37,10 @@ func (f *fakeMergeRepo) List(ctx context.Context, resolution domain.MergeResolut
 	return nil, nil
 }
 
+func (f *fakeMergeRepo) Count(ctx context.Context, resolution domain.MergeResolution) (int, error) {
+	return 0, nil
+}
+
 func (f *fakeMergeRepo) GetByID(ctx context.Context, id string) (*domain.MergeCandidate, error) {
 	return nil, domain.ErrNotFound
 }
@@ -80,6 +84,8 @@ func (f *fakeBlocks) Insert(ctx context.Context, b *domain.MergeBlock) error { r
 func (f *fakeBlocks) List(ctx context.Context, limit, offset int) ([]domain.MergeBlock, error) {
 	return nil, nil
 }
+
+func (f *fakeBlocks) Count(ctx context.Context) (int, error) { return 0, nil }
 
 func (f *fakeBlocks) GetByID(ctx context.Context, id string) (*domain.MergeBlock, error) {
 	return nil, domain.ErrNotFound

@@ -109,6 +109,7 @@ type ContactLimitRepo interface {
 
 type ContactLogRepo interface {
 	ListByGuest(ctx context.Context, guestID string, limit, offset int) ([]ContactLog, error)
+	CountByGuest(ctx context.Context, guestID string) (int, error)
 	CountSince(ctx context.Context, guestIDs []string, since time.Time) (map[string]int, error)
 	CountSinceChannel(ctx context.Context, guestIDs []string, since time.Time, channel string) (map[string]int, error)
 	InsertBatch(ctx context.Context, logs []ContactLog) error

@@ -34,6 +34,9 @@ type fakeContacts struct {
 func (f *fakeContacts) ListByGuest(context.Context, string, int, int) ([]domain.ContactLog, error) {
 	return nil, nil
 }
+func (f *fakeContacts) CountByGuest(context.Context, string) (int, error) {
+	return 0, nil
+}
 func (f *fakeContacts) CountSince(_ context.Context, ids []string, _ time.Time) (map[string]int, error) {
 	out := map[string]int{}
 	for _, id := range ids {

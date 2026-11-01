@@ -172,6 +172,10 @@ func (s *ProfileService) Contacts(ctx context.Context, guestID string, limit, of
 	return out, nil
 }
 
+func (s *ProfileService) CountContacts(ctx context.Context, guestID string) (int, error) {
+	return s.contacts.CountByGuest(ctx, guestID)
+}
+
 type ContactDTO struct {
 	ID          string `json:"id"`
 	GuestID     string `json:"guestId"`

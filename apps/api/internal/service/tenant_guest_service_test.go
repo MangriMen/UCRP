@@ -39,6 +39,10 @@ func (r *changingTenantGuestRepo) Events(context.Context, string, string, time.T
 	return []domain.TenantGuestEvent{}, nil
 }
 
+func (r *changingTenantGuestRepo) CountEvents(context.Context, string, string, time.Time) (int, error) {
+	return 0, nil
+}
+
 func TestTenantGuestRejectsPolicyChangesDuringRead(t *testing.T) {
 	principal := domain.Principal{Role: domain.RoleTenant, TenantID: "tenant"}
 	for _, name := range []string{"profile", "events"} {
@@ -54,7 +58,7 @@ func TestTenantGuestRejectsPolicyChangesDuringRead(t *testing.T) {
 				}
 			} else {
 				var result []TenantGuestEvent
-				result, err = svc.Events(context.Background(), principal, "guest", 10, 0)
+				result, _, err = svc.Events(context.Background(), principal, "guest", 10, 0)
 				if result != nil {
 					t.Fatal("returned events after the policy changed")
 				}

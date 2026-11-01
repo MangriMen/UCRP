@@ -11,6 +11,15 @@ import (
 	"github.com/MangriMen/UCRP/internal/domain"
 )
 
+func (r *ContactLogSQL) CountByGuest(ctx context.Context, guestID string) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM contact_log cl
+		JOIN export_job ej ON ej.id = cl.export_id
+		WHERE cl.guest_id = $1`, guestID).Scan(&total)
+	return total, err
+}
+
 func (r *ContactLogSQL) ListByGuest(ctx context.Context, guestID string, limit, offset int) ([]domain.ContactLog, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50

@@ -51,6 +51,10 @@ func (s *IdentityService) List(ctx context.Context, resolution string, limit, of
 	return out, nil
 }
 
+func (s *IdentityService) Count(ctx context.Context, resolution string) (int, error) {
+	return s.candidates.Count(ctx, domain.MergeResolution(resolution))
+}
+
 func (s *IdentityService) Get(ctx context.Context, id string) (*MergeCandidateDTO, error) {
 	c, err := s.candidates.GetByID(ctx, id)
 	if err != nil {
@@ -152,6 +156,10 @@ func (s *IdentityService) ListBlocks(ctx context.Context, limit, offset int) ([]
 		})
 	}
 	return out, nil
+}
+
+func (s *IdentityService) CountBlocks(ctx context.Context) (int, error) {
+	return s.blocks.Count(ctx)
 }
 
 func (s *IdentityService) DeleteBlock(ctx context.Context, id string) error {

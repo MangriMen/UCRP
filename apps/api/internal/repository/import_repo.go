@@ -220,6 +220,12 @@ func (r *RejectedRowSQL) ListByBatch(ctx context.Context, batchID string, limit,
 	return out, rows.Err()
 }
 
+func (r *RejectedRowSQL) CountByBatch(ctx context.Context, batchID string) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM rejected_row WHERE import_batch_id = $1`, batchID).Scan(&total)
+	return total, err
+}
+
 func (r *RejectedRowSQL) InsertBatch(ctx context.Context, rows []domain.RejectedRow) error {
 	if len(rows) == 0 {
 		return nil

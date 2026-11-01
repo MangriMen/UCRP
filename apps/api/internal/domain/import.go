@@ -117,6 +117,7 @@ type ImportBatchRepo interface {
 
 type RejectedRowRepo interface {
 	ListByBatch(ctx context.Context, batchID string, limit, offset int) ([]RejectedRow, error)
+	CountByBatch(ctx context.Context, batchID string) (int, error)
 	InsertBatch(ctx context.Context, rows []RejectedRow) error
 }
 

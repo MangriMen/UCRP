@@ -49,10 +49,10 @@ func (h *TenantGuestHandler) Events(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	limit, offset := pageParams(r)
-	events, err := h.service.Events(r.Context(), principal, chi.URLParam(r, "id"), limit, offset)
+	events, total, err := h.service.Events(r.Context(), principal, chi.URLParam(r, "id"), limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, events, limit, offset, offset+len(events))
+	writePage(w, events, limit, offset, total)
 }

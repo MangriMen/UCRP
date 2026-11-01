@@ -281,6 +281,10 @@ func (s *ImportService) RejectedRows(ctx context.Context, batchID string, limit,
 	return out, nil
 }
 
+func (s *ImportService) CountRejectedRows(ctx context.Context, batchID string) (int, error) {
+	return s.rejected.CountByBatch(ctx, batchID)
+}
+
 func (s *ImportService) ProcessBatch(ctx context.Context, batchID string) error {
 	batch, err := s.batches.GetByID(ctx, batchID)
 	if err != nil {
