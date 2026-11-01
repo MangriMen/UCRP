@@ -17,4 +17,4 @@ export type {
   UserInvitationRequest,
   UserUpdateRequest,
 } from './model/types'
-export { AccessGuard } from './ui/access-guard'
+export { AccessGuard, TenantAccessPending } from './ui/access-guard'

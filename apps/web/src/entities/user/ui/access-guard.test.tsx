@@ -9,7 +9,7 @@ import { AccessGuard } from './access-guard'
 
 const SESSION_KEY = 'ucrp-mock-session'
 
-function renderGuard(permission?: PermissionCode) {
+function renderGuard(permission?: PermissionCode, tenantArea = false) {
   const queryClient = new QueryClient()
   const router = createMemoryRouter(
     [
@@ -17,7 +17,7 @@ function renderGuard(permission?: PermissionCode) {
       {
         path: '/',
         element: (
-          <AccessGuard permission={permission}>
+          <AccessGuard permission={permission} tenantArea={tenantArea}>
             <p>secret</p>
           </AccessGuard>
         ),
@@ -53,6 +53,15 @@ describe('AccessGuard', () => {
     localStorage.setItem(SESSION_KEY, mockUsers[3].userId)
     renderGuard('user.write')
     expect(await screen.findByText('Недостаточно прав')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'На стартовую страницу' })).toHaveAttribute('href', '/')
+    expect(screen.queryByText('secret')).not.toBeInTheDocument()
+  })
+
+  it('tells a tenant without a grant to ask the manager', async () => {
+    const tenant = mockUsers.find((user) => user.role === 'tenant')
+    localStorage.setItem(SESSION_KEY, tenant?.userId ?? '')
+    renderGuard('user.write', true)
+    expect(await screen.findByText('Доступ ещё не выдан')).toBeInTheDocument()
     expect(screen.queryByText('secret')).not.toBeInTheDocument()
   })
 })

@@ -1,11 +1,12 @@
 import { Navigate } from 'react-router'
-import { useAuth } from '@/entities/user'
+import { TenantAccessPending, useAuth } from '@/entities/user'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { navigationFor } from '../navigation'
 
 export function HomeRedirect() {
   const { user } = useAuth()
   const first = user ? navigationFor(user)[0]?.items[0] : undefined
+  if (!first && user?.role === 'tenant') return <TenantAccessPending />
   if (!first) {
     return (
       <EmptyState
