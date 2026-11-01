@@ -124,7 +124,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		contacts,
 		segmentRepo,
 	)
-	exportHandler := handler.NewExportHandler(exportSvc)
+	exportHandler := handler.NewExportHandler(exportSvc, accessSvc)
 	limitSvc := service.NewContactLimitService(repository.NewContactLimitSQL(store.DB))
 	limitHandler := handler.NewContactLimitHandler(limitSvc)
 	dataSources := repository.NewDataSourceSQL(store.DB)

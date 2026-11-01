@@ -169,7 +169,7 @@ Export:
       minimum: 0
     suppressed:
       type: boolean
-      description: True when the entire group of related counts is hidden because at least one underlying count is below five.
+      description: True when the entire group of related counts is hidden because at least one underlying count is between 1 and 4. Applies to viewers without `export.members.read`; a viewer who can read the recipients gets the counts (Q-41).
     idempotencyKey:
       type: string
     createdBy:

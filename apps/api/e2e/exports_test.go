@@ -3,6 +3,7 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -578,4 +579,58 @@ func trackExport(s *harness.Suite, exportID string) {
 		_ = s.DB.Exec(cleanupCtx, `DELETE FROM export_member WHERE export_id = $1`, exportID)
 		_ = s.DB.Exec(cleanupCtx, `DELETE FROM export_job WHERE id = $1`, exportID)
 	})
+}
+
+func TestExportCountsSuppressedForViewersWithoutMemberAccess(t *testing.T) {
+	s := harness.New(t).WithDB().WithMarketer()
+	ew := buildExportWorld(t, s, "export-suppress", 2)
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	resp, err := exportCreate(ctx, s.API, ew.segment.ID, s.Reg.Name("key-suppress"))
+	if err != nil {
+		t.Fatalf("POST /api/v1/exports: %v", err)
+	}
+	s.RequireStatus(resp, 201, "POST /api/v1/exports")
+	exportID := harness.StringField(jsonObject(t, resp, "create export"), "id")
+	trackExport(s, exportID)
+	path := "/api/v1/exports/" + exportID
+
+	marketerView, err := s.API.Get(ctx, path, nil)
+	if err != nil {
+		t.Fatalf("GET export as marketer: %v", err)
+	}
+	s.RequireStatus(marketerView, 200, "GET export as marketer")
+	marketerObj := jsonObject(t, marketerView, "export as marketer")
+	if exported, ok := harness.IntField(marketerObj, "exportedCount"); !ok || exported != 2 || marketerObj["suppressed"] != false {
+		t.Fatalf("marketer sees members and must see counts: %s", marketerView.Snippet())
+	}
+
+	for _, role := range []string{"manager", "analyst"} {
+		viewer := actor(t, s, role)
+		detail, err := viewer.Get(ctx, path, nil)
+		if err != nil {
+			t.Fatalf("GET export as %s: %v", role, err)
+		}
+		s.RequireStatus(detail, 200, "GET export as "+role)
+		s.RequireSchema("GET", path, detail)
+		obj := jsonObject(t, detail, "export as "+role)
+		if obj["suppressed"] != true || obj["exportedCount"] != nil || obj["totalInSegment"] != nil {
+			t.Fatalf("%s must get suppressed counts: %s", role, detail.Snippet())
+		}
+
+		list, err := viewer.Get(ctx, "/api/v1/exports", url.Values{"segment_id": {ew.segment.ID}})
+		if err != nil {
+			t.Fatalf("GET exports as %s: %v", role, err)
+		}
+		s.RequireStatus(list, 200, "GET exports as "+role)
+		s.RequireSchema("GET", "/api/v1/exports", list)
+		items, _ := jsonObject(t, list, "exports as "+role)["items"].([]any)
+		if len(items) != 1 {
+			t.Fatalf("%s list: expected 1 export, got %s", role, list.Snippet())
+		}
+		if item, _ := items[0].(map[string]any); item["suppressed"] != true || item["exportedCount"] != nil {
+			t.Fatalf("%s list must suppress counts: %s", role, list.Snippet())
+		}
+	}
 }
