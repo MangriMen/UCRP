@@ -209,7 +209,7 @@
 6. Негатив: Given пара уже решена другим пользователем, When повторно подтверждают, Then 409; Given ручное объединение пары под запретом, Then 409 (запрет снимается отдельным `DELETE /merge-blocks/{id}`); Given роль R-3, Then 403.
 
 **Экран React:** `/identity/merge-candidates` (очередь с фильтрами), `/identity/merge-candidates/:id` (сравнение двух профилей, кнопки «Объединить / Отклонить / Разъединить»), `/identity/merge-blocks` (запреты объединения), кнопка «Разъединить» в профиле.
-**Эндпоинты Go:** `GET /merge-candidates`, `GET /merge-candidates/{id}`, `POST /merge-candidates/{id}/confirm`, `/reject`, `/revert`, `POST /guests/{id}/merge`, `GET /merge-blocks`, `DELETE /merge-blocks/{id}`; `handler.IdentityHandler` → `service.IdentityService` → `internal/identity` (`IdentityResolver`, `MergeExecutor`) → `repository.MergeCandidateRepo`, `MergeBlockRepo`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `AuditRepo`.
+**Эндпоинты Go:** `GET /merge-candidates`, `GET /merge-candidates/{id}`, `POST /merge-candidates/{id}/confirm`, `/reject`, `/revert`, `POST /guests/{id}/merge`, `GET /merge-blocks`, `DELETE /merge-blocks/{id}`; `handler.IdentityHandler` → `service.IdentityService` → `internal/identity` (`Resolver`) → `repository.MergeSQL` и репозитории `MergeCandidateRepo`, `MergeBlockRepo`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `AuditRepo`.
 
 ---
 
