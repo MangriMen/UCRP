@@ -149,7 +149,7 @@ func TestAuditLogListFiltersAndReportsTotal(t *testing.T) {
 	} {
 		if err := s.DB.Exec(ctx, `
 			INSERT INTO audit_log (id, actor_role, action, entity_type, entity_id, details, created_at)
-			VALUES ($1,'admin',$2,'e2e_list',$3,'{}',$4)`, s.Reg.NewID(), row.action, entityID, row.when); err != nil {
+			VALUES ($1,'analyst',$2,'e2e_list',$3,'{}',$4)`, s.Reg.NewID(), row.action, entityID, row.when); err != nil {
 			t.Fatalf("insert audit fixture: %v", err)
 		}
 	}
