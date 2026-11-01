@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router'
+import { AUDIT_LOG_PERMISSIONS } from '@/entities/audit-log'
 import { AccessGuard } from '@/entities/user'
 import { AcceptInvitationPage } from '@/pages/accept-invitation'
 import { AccessAuditPage } from '@/pages/access-audit'
@@ -73,8 +74,11 @@ export const router = createBrowserRouter([
             children: [
               { path: 'identity/merge-candidates', element: <MergeCandidatesPage /> },
               { path: 'identity/merge-candidates/:id', element: <MergeCandidatePage /> },
-              { path: 'identity/merge-blocks', element: <MergeBlocksPage /> },
             ],
+          },
+          {
+            element: <AccessGuard permission="identity.decide" />,
+            children: [{ path: 'identity/merge-blocks', element: <MergeBlocksPage /> }],
           },
           {
             element: <AccessGuard permission="segment.read" />,
@@ -118,7 +122,7 @@ export const router = createBrowserRouter([
             children: [{ path: 'admin/users', element: <AdminUsersPage /> }],
           },
           {
-            element: <AccessGuard permission="audit.read" />,
+            element: <AccessGuard permission={AUDIT_LOG_PERMISSIONS} />,
             children: [{ path: 'admin/audit', element: <AuditLogPage /> }],
           },
           {
