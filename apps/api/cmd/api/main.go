@@ -114,7 +114,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		return err
 	}
 	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), repository.NewTenantSQL(store.DB), q)
-	segmentHandler := handler.NewSegmentHandler(segmentSvc)
+	segmentHandler := handler.NewSegmentHandler(segmentSvc, accessSvc)
 	recommender := recommend.NewWeightedRecommender(store.DB, cfg.Recommend)
 	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), repository.NewRecommendationEvalSQL(store.DB), recommender, q)
 	recoHandler := handler.NewRecommendationHandler(recoSvc)

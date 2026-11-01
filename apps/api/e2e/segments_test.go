@@ -124,6 +124,15 @@ func TestSegmentMembersPaged(t *testing.T) {
 		if !containsString(guests, harness.StringField(entry, "guestId")) {
 			t.Fatalf("member %v is not one of the fixture guests", entry)
 		}
+		if tenants, _ := harness.IntField(entry, "tenantCount"); tenants != 1 {
+			t.Fatalf("member %v must count the one visited tenant", entry)
+		}
+		if harness.StringField(entry, "lastSeenAt") == "" || harness.StringField(entry, "addedAt") == "" {
+			t.Fatalf("member %v must carry lastSeenAt and addedAt", entry)
+		}
+		if harness.StringField(entry, "displayName") == "" {
+			t.Fatalf("an analyst with field.guest.display_name.read must get the guest name: %v", entry)
+		}
 	}
 }
 

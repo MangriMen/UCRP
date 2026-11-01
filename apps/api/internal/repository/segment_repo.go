@@ -301,27 +301,34 @@ func (r *SegmentSQL) MarkComputing(ctx context.Context, versionID string) error 
 	return err
 }
 
-func (r *SegmentSQL) ListMembers(ctx context.Context, versionID string, limit, offset int) ([]string, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
-	}
+func (r *SegmentSQL) ListMembers(ctx context.Context, versionID string, limit, offset int) ([]domain.SegmentMemberEntry, error) {
+	limit, offset = clampPage(limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT guest_id FROM segment_member WHERE segment_version_id = $1
-		ORDER BY guest_id LIMIT $2 OFFSET $3`, versionID, limit, offset)
+		SELECT m.guest_id, COALESCE(g.display_name, ''), m.added_at,
+			(SELECT COUNT(DISTINCT e.tenant_id) FROM event e JOIN event_type et ON et.id = e.event_type_id
+				WHERE e.guest_id = m.guest_id AND et.counts_as_presence),
+			(SELECT MAX(e.occurred_at) FROM event e WHERE e.guest_id = m.guest_id)
+		FROM segment_member m
+		LEFT JOIN guest g ON g.id = m.guest_id
+		WHERE m.segment_version_id = $1
+		ORDER BY m.guest_id LIMIT $2 OFFSET $3`, versionID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
-	out := make([]string, 0)
+	out := make([]domain.SegmentMemberEntry, 0)
 	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
+		var (
+			member   domain.SegmentMemberEntry
+			lastSeen sql.NullTime
+		)
+		if err := rows.Scan(&member.GuestID, &member.DisplayName, &member.AddedAt, &member.TenantCount, &lastSeen); err != nil {
 			return nil, err
 		}
-		out = append(out, id)
+		if lastSeen.Valid {
+			member.LastSeenAt = &lastSeen.Time
+		}
+		out = append(out, member)
 	}
 	return out, rows.Err()
 }

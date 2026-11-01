@@ -76,11 +76,12 @@ func (h *ContactLimitHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 type SegmentHandler struct {
-	segments *service.SegmentService
+	segments   *service.SegmentService
+	authorizer accessAuthorizer
 }
 
-func NewSegmentHandler(segments *service.SegmentService) *SegmentHandler {
-	return &SegmentHandler{segments: segments}
+func NewSegmentHandler(segments *service.SegmentService, authorizer accessAuthorizer) *SegmentHandler {
+	return &SegmentHandler{segments: segments, authorizer: authorizer}
 }
 
 func (h *SegmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +188,12 @@ func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *SegmentHandler) Members(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
 	versionNo, _ := strconv.Atoi(r.URL.Query().Get("version"))
-	page, err := h.segments.Members(r.Context(), chi.URLParam(r, "id"), versionNo, limit, offset)
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	page, err := h.segments.Members(r.Context(), chi.URLParam(r, "id"), versionNo, showNames, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

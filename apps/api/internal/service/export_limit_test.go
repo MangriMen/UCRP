@@ -205,7 +205,7 @@ func (f *fakeSegments) MarkComputing(context.Context, string) error             
 func (f *fakeSegments) ReplaceMembers(context.Context, string, []string, time.Time) error {
 	return nil
 }
-func (f *fakeSegments) ListMembers(context.Context, string, int, int) ([]string, error) {
+func (f *fakeSegments) ListMembers(context.Context, string, int, int) ([]domain.SegmentMemberEntry, error) {
 	return nil, nil
 }
 func (f *fakeSegments) CountMembers(context.Context, string) (int, error) {

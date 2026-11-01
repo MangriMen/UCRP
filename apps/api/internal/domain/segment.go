@@ -125,6 +125,14 @@ type GuestContact struct {
 	IDType       string
 }
 
+type SegmentMemberEntry struct {
+	GuestID     string
+	DisplayName string
+	TenantCount int
+	LastSeenAt  *time.Time
+	AddedAt     time.Time
+}
+
 type SegmentRepo interface {
 	Insert(ctx context.Context, s *Segment, v *SegmentVersion) error
 	GetByID(ctx context.Context, id string) (*Segment, *SegmentVersion, error)
@@ -136,7 +144,7 @@ type SegmentRepo interface {
 	Archive(ctx context.Context, id string, now time.Time) error
 	MarkComputing(ctx context.Context, versionID string) error
 	ReplaceMembers(ctx context.Context, versionID string, guestIDs []string, computedAt time.Time) error
-	ListMembers(ctx context.Context, versionID string, limit, offset int) ([]string, error)
+	ListMembers(ctx context.Context, versionID string, limit, offset int) ([]SegmentMemberEntry, error)
 	CountMembers(ctx context.Context, versionID string) (int, error)
 	CurrentVersions(ctx context.Context, segmentIDs []string) (map[string]*SegmentVersion, error)
 	ListMemberContacts(ctx context.Context, versionID string) ([]GuestContact, error)

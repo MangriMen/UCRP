@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
@@ -304,7 +305,11 @@ func (s *SegmentService) Delete(ctx context.Context, id string) error {
 }
 
 type SegmentMemberView struct {
-	GuestID string `json:"guestId"`
+	GuestID     string     `json:"guestId"`
+	DisplayName *string    `json:"displayName,omitempty"`
+	TenantCount int        `json:"tenantCount"`
+	LastSeenAt  *time.Time `json:"lastSeenAt"`
+	AddedAt     time.Time  `json:"addedAt"`
 }
 
 type SegmentMemberPage struct {
@@ -312,7 +317,7 @@ type SegmentMemberPage struct {
 	Meta  PageMeta            `json:"meta"`
 }
 
-func (s *SegmentService) Members(ctx context.Context, id string, versionNo, limit, offset int) (*SegmentMemberPage, error) {
+func (s *SegmentService) Members(ctx context.Context, id string, versionNo int, showNames bool, limit, offset int) (*SegmentMemberPage, error) {
 	var (
 		seg *domain.Segment
 		ver *domain.SegmentVersion
@@ -330,7 +335,7 @@ func (s *SegmentService) Members(ctx context.Context, id string, versionNo, limi
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	guestIDs, err := s.segments.ListMembers(ctx, ver.ID, limit, offset)
+	members, err := s.segments.ListMembers(ctx, ver.ID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -338,9 +343,13 @@ func (s *SegmentService) Members(ctx context.Context, id string, versionNo, limi
 	if err != nil {
 		return nil, err
 	}
-	items := make([]SegmentMemberView, 0, len(guestIDs))
-	for _, guestID := range guestIDs {
-		items = append(items, SegmentMemberView{GuestID: guestID})
+	items := make([]SegmentMemberView, 0, len(members))
+	for _, member := range members {
+		view := SegmentMemberView{GuestID: member.GuestID, TenantCount: member.TenantCount, LastSeenAt: member.LastSeenAt, AddedAt: member.AddedAt.UTC()}
+		if showNames && member.DisplayName != "" {
+			view.DisplayName = &member.DisplayName
+		}
+		items = append(items, view)
 	}
 	if offset < 0 {
 		offset = 0
