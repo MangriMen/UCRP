@@ -57,3 +57,51 @@ func (s *Seeder) seedUsers(ctx context.Context) error {
 	}
 	return nil
 }
+
+type tenantGrantSpec struct {
+	UserKey string
+	Tenant  string
+}
+
+var tenantGrantPermissions = []string{
+	"reference.read",
+	"tenant.aggregates.own",
+	"metric.visits_count.read",
+	"metric.new_guests_via_mall.read",
+	"metric.repeat_visits.read",
+}
+
+func demoTenantGrants() []tenantGrantSpec {
+	return []tenantGrantSpec{
+		{"tenant-cafe", "cafe-bean"},
+		{"tenant-cinema", "cinema-sinema"},
+	}
+}
+
+func (s *Seeder) seedTenantGrants(ctx context.Context) error {
+	for _, g := range demoTenantGrants() {
+		id := demoID("access_grant", g.UserKey)
+		tenantID := s.tenants[g.Tenant]
+		if err := s.exec(ctx, `
+			INSERT INTO access_grant (id, subject_type, subject_id, status, valid_from, created_by, reason, policy_version, created_at, updated_at)
+			SELECT $1, 'tenant', $2, 'active', $3, $4, 'Демо: кабинет арендатора', version, $3, $3 FROM access_policy_state WHERE id = 1
+			ON CONFLICT (id) DO NOTHING`,
+			id, tenantID, s.now.AddDate(0, 0, -30), s.users["manager"]); err != nil {
+			return err
+		}
+		for _, permission := range tenantGrantPermissions {
+			if err := s.exec(ctx, `
+				INSERT INTO access_grant_item (grant_id, permission_code, effect) VALUES ($1, $2, 'allow')
+				ON CONFLICT DO NOTHING`, id, permission); err != nil {
+				return err
+			}
+		}
+		if err := s.exec(ctx, `
+			INSERT INTO access_grant_scope (grant_id, scope_type, scope_value)
+			VALUES ($1, 'tenant', $2), ($1, 'principal_role', 'tenant')
+			ON CONFLICT DO NOTHING`, id, tenantID); err != nil {
+			return err
+		}
+	}
+	return s.exec(ctx, `UPDATE access_policy_state SET version = version + 1, updated_at = $1 WHERE id = 1`, s.now)
+}

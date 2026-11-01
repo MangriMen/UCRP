@@ -94,6 +94,7 @@ func Run(ctx context.Context, db *sql.DB, opts Options) error {
 	}{
 		{"reference", s.seedReference},
 		{"users", s.seedUsers},
+		{"tenant grants", s.seedTenantGrants},
 		{"data sources", s.seedSources},
 		{"import batches", s.seedBatches},
 		{"guests", s.seedGuests},
@@ -191,6 +192,10 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 	for _, u := range demoUsers() {
 		userIDs = append(userIDs, demoID("app_user", u.Key))
 	}
+	grantIDs := make([]string, 0, len(demoTenantGrants()))
+	for _, g := range demoTenantGrants() {
+		grantIDs = append(grantIDs, demoID("access_grant", g.UserKey))
+	}
 	sourceIDs := make([]string, 0, len(demoSources()))
 	for _, d := range demoSources() {
 		sourceIDs = append(sourceIDs, demoID("data_source", d.Key))
@@ -273,6 +278,9 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 		{`DELETE FROM project WHERE id = ANY($1)`, []any{projectIDs}},
 		{`DELETE FROM audit_log WHERE id = ANY($1)`, []any{auditIDs}},
 		{`DELETE FROM job_queue WHERE id = ANY($1)`, []any{jobIDs}},
+		{`DELETE FROM access_grant_scope WHERE grant_id = ANY($1)`, []any{grantIDs}},
+		{`DELETE FROM access_grant_item WHERE grant_id = ANY($1)`, []any{grantIDs}},
+		{`DELETE FROM access_grant WHERE id = ANY($1)`, []any{grantIDs}},
 		{`DELETE FROM app_user WHERE id = ANY($1)`, []any{userIDs}},
 		{`DELETE FROM tenant WHERE id = ANY($1)`, []any{tenantIDs}},
 		{`DELETE FROM mall WHERE id = ANY($1)`, []any{mallIDs}},
