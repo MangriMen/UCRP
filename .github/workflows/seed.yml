@@ -11,11 +11,18 @@ on:
         description: Remove demo data instead of seeding
         type: boolean
         default: false
+      image_tag:
+        description: Seed image tag (commit SHA or latest); empty uses the dispatched commit SHA
+        type: string
+        default: ''
 
 jobs:
   seed:
     runs-on: ubuntu-latest
     environment: ucrp-prod
+    permissions:
+      contents: read
+      packages: read
     concurrency:
       group: ucrp-deploy
       cancel-in-progress: false
@@ -30,13 +37,14 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SEED_GUESTS: ${{ inputs.guests }}
           SEED_RESET: ${{ inputs.reset }}
+          SEED_IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
           UCRP_JWT_SECRET: ${{ secrets.UCRP_JWT_SECRET }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: COMPOSE_FILE_NAME,SERVER_DIR,GHCR_USER,GHCR_TOKEN,SEED_GUESTS,SEED_RESET,UCRP_JWT_SECRET,POSTGRES_PASSWORD
+          envs: COMPOSE_FILE_NAME,SERVER_DIR,GHCR_USER,GHCR_TOKEN,SEED_GUESTS,SEED_RESET,SEED_IMAGE_TAG,UCRP_JWT_SECRET,POSTGRES_PASSWORD
           script: |
             set -e
 
@@ -52,8 +60,23 @@ jobs:
               COMPOSE="docker compose -f $COMPOSE_FILE_NAME --profile tools"
             fi
 
-            export IMAGE_TAG=latest
+            export IMAGE_TAG="$SEED_IMAGE_TAG"
+            SEED_IMAGE="ghcr.io/mangrimen/ucrp/ucrp-seed:$IMAGE_TAG"
 
+            for attempt in $(seq 1 30); do
+              if docker manifest inspect "$SEED_IMAGE" > /dev/null 2>&1; then
+                break
+              fi
+              if [ "$attempt" = "30" ]; then
+                echo "::warning::seed image $SEED_IMAGE was not published within 5 minutes, falling back to :latest which may be stale"
+                export IMAGE_TAG=latest
+                break
+              fi
+              echo "waiting for $SEED_IMAGE ($attempt/30)"
+              sleep 10
+            done
+
+            echo "using seed image ghcr.io/mangrimen/ucrp/ucrp-seed:$IMAGE_TAG"
             $COMPOSE pull seed
 
             if [ "$SEED_RESET" = "true" ]; then
