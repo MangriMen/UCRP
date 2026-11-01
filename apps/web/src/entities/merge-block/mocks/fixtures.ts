@@ -6,7 +6,7 @@ export const mockMergeBlocks: MergeBlock[] = [
     guestAId: 'guest-0001',
     guestBId: 'guest-0003',
     guestADisplayName: 'Иван Петров',
-    reason: 'manual_reject',
+    reason: 'rejected',
     candidateId: 'candidate-0003',
     createdBy: 'user-0001',
     createdAt: '2026-10-01T10:00:00Z',
