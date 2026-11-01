@@ -1,10 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router'
 import { useAuditLogs, type AuditLog } from '@/entities/audit-log'
 import { roleLabels } from '@/entities/user'
 import { formatDateTime } from '@/shared/lib/format'
 import { endOfDay, startOfDay } from '@/shared/lib/period'
-import { parsePage } from '@/shared/lib/search-params'
+import { useListParams } from '@/shared/lib/list-params'
 import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { FormField } from '@/shared/ui/form-field'
@@ -38,44 +37,33 @@ const columns: Column<AuditLog>[] = [
 ]
 
 export function AuditLogPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const { get, update, page, pageSize, setPage, setPageSize, reset: resetParams } = useListParams()
   const [draft, setDraft] = useState(() =>
-    Object.fromEntries(FILTER_KEYS.map((key) => [key, searchParams.get(key) ?? ''])),
+    Object.fromEntries(FILTER_KEYS.map((key) => [key, get(key)])),
   )
 
-  const from = searchParams.get('from')
-  const to = searchParams.get('to')
+  const from = get('from')
+  const to = get('to')
   const logs = useAuditLogs({
-    entityType: searchParams.get('entity_type') ?? undefined,
-    entityId: searchParams.get('entity_id') ?? undefined,
-    actor: searchParams.get('actor') ?? undefined,
-    action: searchParams.get('action') ?? undefined,
+    entityType: get('entity_type') || undefined,
+    entityId: get('entity_id') || undefined,
+    actor: get('actor') || undefined,
+    action: get('action') || undefined,
     from: from ? startOfDay(from) : undefined,
     to: to ? endOfDay(to) : undefined,
-    page: parsePage(searchParams.get('page')),
+    page,
+    pageSize,
   })
 
   const apply = (event: FormEvent) => {
     event.preventDefault()
-    const next = new URLSearchParams()
-    for (const key of FILTER_KEYS) {
-      const value = draft[key].trim()
-      if (value) next.set(key, value)
-    }
-    setSearchParams(next)
+    update(Object.fromEntries(FILTER_KEYS.map((key) => [key, draft[key].trim()])))
   }
 
   const reset = () => {
     setDraft(Object.fromEntries(FILTER_KEYS.map((key) => [key, ''])))
-    setSearchParams(new URLSearchParams())
+    resetParams()
   }
-
-  const changePage = (page: number) =>
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current)
-      next.set('page', String(page))
-      return next
-    })
 
   const textField = (key: (typeof FILTER_KEYS)[number], label: string, type = 'text') => (
     <FormField label={label}>
@@ -114,7 +102,8 @@ export function AuditLogPage() {
         error={logs.error}
         emptyTitle="Записей не найдено"
         meta={logs.data?.meta}
-        onPageChange={changePage}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
       />
     </div>
   )
