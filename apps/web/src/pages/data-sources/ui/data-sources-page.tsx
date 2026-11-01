@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 import { useDataSources, type DataSource } from '@/entities/data-source'
 import { useDataSourceTypes } from '@/entities/data-source-type'
 import { ImportStatusBadge, isImportActive } from '@/entities/import-batch'
@@ -9,7 +8,7 @@ import { SyncSourceButton } from '@/features/sync-source'
 import { formatDateTime } from '@/shared/lib/format'
 import { formatSort, useListParams } from '@/shared/lib/list-params'
 import { ActiveBadge } from '@/shared/ui/active-badge'
-import { Button } from '@/shared/ui/button'
+import { Button, ButtonLink } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { PageHeader } from '@/shared/ui/page-header'
 import { sourceKindLabel } from '../lib/source-kind'
@@ -90,9 +89,9 @@ export function DataSourcesPage() {
               />
             )}
             {canImport && type?.supportsFile && (
-              <Button variant="outline" size="sm" render={<Link to={`/import?source=${s.id}`} />}>
+              <ButtonLink to={`/import?source=${s.id}`} variant="outline" size="sm">
                 Загрузить файл
-              </Button>
+              </ButtonLink>
             )}
             {canEdit && (
               <>

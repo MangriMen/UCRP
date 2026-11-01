@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 import {
   availableTransitions,
   grantTransitionLabels,
@@ -8,7 +7,7 @@ import {
   type GrantTransition,
 } from '@/entities/access'
 import { useAuth } from '@/entities/user'
-import { Button } from '@/shared/ui/button'
+import { Button, ButtonLink } from '@/shared/ui/button'
 import { GrantTransitionDialog } from './grant-transition-dialog'
 
 export function GrantActions({ grant }: { grant: AccessGrant }) {
@@ -19,13 +18,9 @@ export function GrantActions({ grant }: { grant: AccessGrant }) {
   return (
     <div className="flex flex-wrap gap-2">
       {isGrantEditable(grant) && (
-        <Button
-          variant="outline"
-          nativeButton={false}
-          render={<Link to={`/access/grants/${grant.id}/edit`} />}
-        >
+        <ButtonLink to={`/access/grants/${grant.id}/edit`} variant="outline">
           Изменить
-        </Button>
+        </ButtonLink>
       )}
       {availableTransitions(grant).map((next) => (
         <Button

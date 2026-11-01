@@ -1,8 +1,7 @@
-import { Link } from 'react-router'
 import { useDataQualitySource, type DataQualityPoint } from '@/entities/data-quality'
 import { ImportStatusBadge, type ImportBatch } from '@/entities/import-batch'
 import { formatDate, formatDateTime, formatPercent } from '@/shared/lib/format'
-import { Button } from '@/shared/ui/button'
+import { Button, ButtonLink } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { EmptyState } from '@/shared/ui/empty-state'
@@ -29,9 +28,9 @@ const batchColumns: Column<ImportBatch>[] = [
     header: '',
     className: 'text-right',
     cell: (b) => (
-      <Button variant="outline" size="sm" render={<Link to={`/import/${b.id}`} />}>
+      <ButtonLink to={`/import/${b.id}`} variant="outline" size="sm">
         Открыть загрузку
-      </Button>
+      </ButtonLink>
     ),
   },
 ]

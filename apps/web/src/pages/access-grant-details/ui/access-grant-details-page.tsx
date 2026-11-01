@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import {
   AccessAuditTable,
   GrantStatusBadge,
@@ -18,7 +18,7 @@ import { AuditActor, GrantActions, useSubjectDirectory } from '@/features/manage
 import { formatDateTime } from '@/shared/lib/format'
 import { useUrlTab } from '@/shared/lib/hooks/use-url-tab'
 import { useListParams } from '@/shared/lib/list-params'
-import { Button } from '@/shared/ui/button'
+import { ButtonLink } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { EmptyState } from '@/shared/ui/empty-state'
@@ -158,13 +158,9 @@ export function AccessGrantDetailsPage() {
           </section>
           {!isStaffRoleGrant(grant) && (
             <div>
-              <Button
-                variant="outline"
-                nativeButton={false}
-                render={<Link to={`/access/effective?${subjectQuery}`} />}
-              >
+              <ButtonLink to={`/access/effective?${subjectQuery}`} variant="outline">
                 Эффективный доступ субъекта
-              </Button>
+              </ButtonLink>
             </div>
           )}
         </TabsContent>
