@@ -26,6 +26,7 @@ function membersOf(item: Export): ExportMember[] {
     const number = String(index + 1).padStart(4, '0')
     return {
       guestId: `guest-${number}`,
+      displayName: `Гость ${number}`,
       isControl: index >= recipients,
       identifierId: `identifier-${item.id}-${number}`,
       contact:

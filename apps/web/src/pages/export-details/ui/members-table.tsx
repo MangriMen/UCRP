@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router'
-import { identifierTypeLabels } from '@/entities/guest'
+import { guestDisplayName, identifierTypeLabels } from '@/entities/guest'
 import { useExportMembers, type ExportMember } from '@/entities/export'
 import { useAuth } from '@/entities/user'
 import { useListParams } from '@/shared/lib/list-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
 const columns: Column<ExportMember>[] = [
-  { id: 'guest', header: 'Гость', cell: (m) => m.displayName ?? m.guestId },
+  { id: 'guest', header: 'Гость', cell: (m) => guestDisplayName(m.displayName) },
   {
     id: 'contactType',
     header: 'Тип контакта',

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { guestDisplayName } from '@/entities/guest'
 import type { SegmentRuleNode } from '@/entities/segment'
 import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
 import { formatDateTime } from '@/shared/lib/format'
@@ -38,7 +39,7 @@ export function PreviewPanel({ rule }: PreviewPanelProps) {
             <ul className="mt-3 flex flex-col gap-1 text-sm">
               {preview.data.examples.map((guest) => (
                 <li key={guest.guestId} className="flex justify-between gap-2">
-                  <span>{guest.displayName ?? guest.guestId}</span>
+                  <span>{guestDisplayName(guest.displayName)}</span>
                   <span className="text-muted-foreground">
                     {guest.lastSeenAt ? formatDateTime(guest.lastSeenAt) : '—'}
                   </span>
