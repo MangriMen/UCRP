@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"context"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/MangriMen/UCRP/e2e/harness"
@@ -174,6 +176,102 @@ func TestUsersForbiddenForOtherRoles(t *testing.T) {
 		}
 		s.RequireStatus(create, 403, "POST /api/v1/users as "+role)
 	}
+}
+
+func TestUserListFilters(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	token := s.Reg.NewID()[:8]
+	analyst, err := s.Reg.User(ctx, token+"-analyst", "analyst", "")
+	if err != nil {
+		t.Fatalf("fixture analyst: %v", err)
+	}
+	dormant, err := s.Reg.User(ctx, token+"-dormant", "analyst", "")
+	if err != nil {
+		t.Fatalf("fixture dormant analyst: %v", err)
+	}
+	marketer, err := s.Reg.User(ctx, token+"-marketer", "marketer", "")
+	if err != nil {
+		t.Fatalf("fixture marketer: %v", err)
+	}
+	if err := s.DB.Exec(ctx, `UPDATE app_user SET is_active = FALSE WHERE id = $1`, dormant.ID); err != nil {
+		t.Fatalf("deactivate fixture user: %v", err)
+	}
+	s.As(analyst.Email, analyst.Password)
+
+	manager := actor(t, s, "manager")
+	list := func(what string, query url.Values) (map[string]any, []any) {
+		t.Helper()
+		resp, err := manager.Get(ctx, "/api/v1/users", query)
+		if err != nil {
+			t.Fatalf("GET /api/v1/users (%s): %v", what, err)
+		}
+		s.RequireStatus(resp, 200, "GET /api/v1/users "+what)
+		s.RequireSchema("GET", "/api/v1/users", resp)
+		body := jsonObject(t, resp, what)
+		items, ok := harness.Items(body)
+		if !ok {
+			t.Fatalf("%s: response has no items", what)
+		}
+		return body, items
+	}
+	total := func(body map[string]any) int {
+		t.Helper()
+		meta, _ := body["meta"].(map[string]any)
+		value, ok := harness.IntField(meta, "total")
+		if !ok {
+			t.Fatalf("meta.total is missing: %v", body["meta"])
+		}
+		return value
+	}
+
+	body, items := list("by q", url.Values{"q": {strings.ToUpper(token)}})
+	if len(items) != 3 || total(body) != 3 {
+		t.Fatalf("q: expected 3 items and total 3, got %d items and total %d", len(items), total(body))
+	}
+
+	body, items = list("q and page_size", url.Values{"q": {token}, "page_size": {"1"}})
+	if len(items) != 1 || total(body) != 3 {
+		t.Fatalf("q with page_size=1: expected 1 item and total 3, got %d items and total %d", len(items), total(body))
+	}
+
+	body, items = list("q and role", url.Values{"q": {token}, "role": {"analyst"}})
+	if len(items) != 2 || total(body) != 2 {
+		t.Fatalf("role: expected 2 items and total 2, got %d items and total %d", len(items), total(body))
+	}
+
+	body, items = list("q and is_active=false", url.Values{"q": {token}, "is_active": {"false"}})
+	if len(items) != 1 || total(body) != 1 || harness.StringField(items[0].(map[string]any), "id") != dormant.ID {
+		t.Fatalf("is_active=false: expected only the deactivated user, got %v", items)
+	}
+
+	body, items = list("q and is_active=true", url.Values{"q": {token}, "is_active": {"true"}})
+	if len(items) != 2 || total(body) != 2 {
+		t.Fatalf("is_active=true: expected 2 items and total 2, got %d items and total %d", len(items), total(body))
+	}
+
+	_, items = list("by exact email", url.Values{"q": {analyst.Email}})
+	if len(items) != 1 {
+		t.Fatalf("q=email: expected 1 item, got %d", len(items))
+	}
+	if value, ok := items[0].(map[string]any)["lastLoginAt"].(string); !ok || value == "" {
+		t.Fatalf("lastLoginAt must be set after a login, got %v", items[0].(map[string]any)["lastLoginAt"])
+	}
+
+	_, items = list("never logged in", url.Values{"q": {marketer.Email}})
+	if len(items) != 1 || items[0].(map[string]any)["lastLoginAt"] != nil {
+		t.Fatalf("lastLoginAt must be null for a user who never logged in, got %v", items)
+	}
+
+	resp, err := manager.Get(ctx, "/api/v1/users", url.Values{"is_active": {"maybe"}})
+	if err != nil {
+		t.Fatalf("GET /api/v1/users with invalid is_active: %v", err)
+	}
+	s.RequireStatus(resp, 400, "GET /api/v1/users with is_active=maybe")
+	s.RequireDeclaredStatus("GET", "/api/v1/users", resp)
+	s.RequireSchema("GET", "/api/v1/users", resp)
 }
 
 func trackUser(s *harness.Suite, userID string) {

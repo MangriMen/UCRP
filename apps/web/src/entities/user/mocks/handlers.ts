@@ -76,9 +76,14 @@ export const userHandlers = [
     const params = new URL(request.url).searchParams
     const q = params.get('q')?.toLowerCase()
     const role = params.get('role')
+    const isActive = params.get('is_active')
+    if (isActive && isActive !== 'true' && isActive !== 'false') {
+      return apiError(400, 'validation_error', 'is_active: ожидается true или false')
+    }
     const filtered = records.filter(
       (u) =>
         (!role || u.role === role) &&
+        (!isActive || u.isActive === (isActive === 'true')) &&
         (!q || `${u.email} ${u.displayName}`.toLowerCase().includes(q)),
     )
     return HttpResponse.json(paged(request, filtered))

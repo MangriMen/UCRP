@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/auth"
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/service"
@@ -66,12 +67,23 @@ func NewUserHandler(authSvc *service.AuthService) *UserHandler {
 
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	items, err := h.auth.ListUsers(r.Context(), limit, offset)
+	query := r.URL.Query()
+	filter := domain.UserFilter{Query: query.Get("q"), Role: query.Get("role")}
+	switch query.Get("is_active") {
+	case "":
+	case "true", "false":
+		active := query.Get("is_active") == "true"
+		filter.IsActive = &active
+	default:
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "is_active: ожидается true или false")
+		return
+	}
+	items, total, err := h.auth.ListUsers(r.Context(), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {

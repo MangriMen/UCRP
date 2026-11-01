@@ -35,20 +35,21 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 	}, nil
 }
 
-func (s *AuthService) ListUsers(ctx context.Context, limit, offset int) ([]UserDTO, error) {
-	items, err := s.users.List(ctx, limit, offset)
+func (s *AuthService) ListUsers(ctx context.Context, filter domain.UserFilter, limit, offset int) ([]UserDTO, int, error) {
+	items, total, err := s.users.List(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]UserDTO, 0, len(items))
 	for _, u := range items {
 		out = append(out, UserDTO{
 			ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
 			Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive,
-			CreatedAt: u.CreatedAt, UpdatedAt: u.UpdatedAt,
+			LastLoginAt: u.LastLoginAt,
+			CreatedAt:   u.CreatedAt, UpdatedAt: u.UpdatedAt,
 		})
 	}
-	return out, nil
+	return out, total, nil
 }
 
 func (s *AuthService) GetUser(ctx context.Context, id string) (*UserDTO, error) {
@@ -59,19 +60,21 @@ func (s *AuthService) GetUser(ctx context.Context, id string) (*UserDTO, error) 
 	return &UserDTO{
 		ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
 		Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive,
-		CreatedAt: u.CreatedAt, UpdatedAt: u.UpdatedAt,
+		LastLoginAt: u.LastLoginAt,
+		CreatedAt:   u.CreatedAt, UpdatedAt: u.UpdatedAt,
 	}, nil
 }
 
 type UserDTO struct {
-	ID          string    `json:"id"`
-	Email       string    `json:"email"`
-	DisplayName string    `json:"displayName"`
-	Role        string    `json:"role"`
-	TenantID    string    `json:"tenantId,omitempty"`
-	IsActive    bool      `json:"isActive"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID          string     `json:"id"`
+	Email       string     `json:"email"`
+	DisplayName string     `json:"displayName"`
+	Role        string     `json:"role"`
+	TenantID    string     `json:"tenantId,omitempty"`
+	IsActive    bool       `json:"isActive"`
+	LastLoginAt *time.Time `json:"lastLoginAt"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
 type UserCreateRequest struct {

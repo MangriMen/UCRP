@@ -19,10 +19,16 @@ type User struct {
 	UpdatedAt    time.Time
 }
 
+type UserFilter struct {
+	Query    string
+	Role     string
+	IsActive *bool
+}
+
 type UserRepo interface {
 	GetByID(ctx context.Context, id string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
-	List(ctx context.Context, limit, offset int) ([]User, error)
+	List(ctx context.Context, filter UserFilter, limit, offset int) ([]User, int, error)
 	Insert(ctx context.Context, u *User) error
 	Update(ctx context.Context, u *User) error
 	Deactivate(ctx context.Context, id string, now time.Time) error
