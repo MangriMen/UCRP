@@ -18,13 +18,14 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { AUDIT_LOG_PERMISSIONS } from '@/entities/audit-log'
-import { hasAllPermissions, type Me, type PermissionCode } from '@/entities/user'
+import { hasAllPermissions, hasPermission, type Me, type PermissionCode } from '@/entities/user'
 
 export interface NavItem {
   title: string
   to: string
   icon: LucideIcon
   permission: PermissionCode | PermissionCode[]
+  hiddenWith?: PermissionCode
   tenantArea?: boolean
 }
 
@@ -130,6 +131,13 @@ const navigation: NavGroup[] = [
       },
       { title: 'Доступы', to: '/access', icon: KeyRound, permission: 'access.grant.read' },
       {
+        title: 'Аудит доступа',
+        to: '/access/audit',
+        icon: KeyRound,
+        permission: 'audit.read',
+        hiddenWith: 'access.grant.read',
+      },
+      {
         title: 'Журнал аудита',
         to: '/admin/audit',
         icon: History,
@@ -142,7 +150,9 @@ const navigation: NavGroup[] = [
 export function navigationFor(user: Me): NavGroup[] {
   const isTenant = user.role === 'tenant'
   const visible = (item: NavItem) =>
-    hasAllPermissions(user, [item.permission].flat()) && (item.tenantArea ?? false) === isTenant
+    hasAllPermissions(user, [item.permission].flat()) &&
+    !(item.hiddenWith && hasPermission(user, item.hiddenWith)) &&
+    (item.tenantArea ?? false) === isTenant
   return navigation
     .map((group) => ({ ...group, items: group.items.filter(visible) }))
     .filter((group) => group.items.length > 0)
