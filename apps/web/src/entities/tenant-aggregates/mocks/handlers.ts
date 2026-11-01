@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { API, apiError } from '@/shared/api/mocks/helpers'
+import { DAY_MS } from '@/shared/lib/period'
 import type { TenantAggregateDay, TenantVisitAggregate } from '../model/types'
 
 export const OWN_TENANT_ID = 'tenant-0001'
@@ -19,8 +20,6 @@ export const mockAggregate: TenantVisitAggregate = {
   suppressionThreshold: SUPPRESSION_THRESHOLD,
   series: [],
 }
-
-const DAY_MS = 86_400_000
 
 function buildSeries(from: string, to: string): TenantAggregateDay[] {
   const days: TenantAggregateDay[] = []

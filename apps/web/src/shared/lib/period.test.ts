@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { daysAgo, defaultPeriod, isPeriodValid, periodQuery } from './period'
+import { daysAgo, defaultPeriod, isPeriodReversed, isPeriodValid, periodQuery } from './period'
 
 describe('period', () => {
   it('builds a default period ending today', () => {
@@ -25,5 +25,11 @@ describe('period', () => {
       from: '2026-01-01T00:00:00Z',
       to: '2026-01-31T23:59:59Z',
     })
+  })
+
+  it('flags a period only when both ends are set and start is after end', () => {
+    expect(isPeriodReversed({ from: '2026-02-01', to: '2026-01-01' })).toBe(true)
+    expect(isPeriodReversed({ from: '2026-01-01', to: '2026-01-01' })).toBe(false)
+    expect(isPeriodReversed({ from: '', to: '2026-01-01' })).toBe(false)
   })
 })

@@ -3,6 +3,7 @@ import { useTenantCategories } from '@/entities/tenant-category'
 import { useDebouncedSearchParam } from '@/shared/lib/hooks/use-debounced-search-param'
 import type { ListParams } from '@/shared/lib/list-params'
 import { useOptionParam } from '@/shared/lib/hooks/use-option-param'
+import { isPeriodReversed, PERIOD_REVERSED_MESSAGE } from '@/shared/lib/period'
 import { ALL_OPTION } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -58,7 +59,7 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
 
   const periodFrom = get('period_from')
   const periodTo = get('period_to')
-  const invalidPeriod = periodFrom !== '' && periodTo !== '' && periodFrom > periodTo
+  const invalidPeriod = isPeriodReversed({ from: periodFrom, to: periodTo })
 
   return (
     <div className="flex flex-col gap-3">
@@ -104,7 +105,7 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
       <PeriodFilter
         value={{ from: periodFrom, to: periodTo }}
         onChange={({ from, to }) => update({ period_from: from, period_to: to })}
-        error={invalidPeriod ? 'Начало периода позже конца' : undefined}
+        error={invalidPeriod ? PERIOD_REVERSED_MESSAGE : undefined}
       >
         <div className="mt-5">
           <Button type="button" variant="outline" disabled={!isFiltered} onClick={reset}>
