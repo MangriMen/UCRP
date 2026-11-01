@@ -1,5 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import { GuestStatusBadge, MIN_SEARCH_LENGTH, useGuestSearch, type Guest } from '@/entities/guest'
+import {
+  guestDisplayName,
+  GuestStatusBadge,
+  MIN_SEARCH_LENGTH,
+  useGuestSearch,
+  type Guest,
+} from '@/entities/guest'
 import { MergeErrorAlert, type MergeResult } from '@/entities/merge-candidate'
 import { formatDateTime } from '@/shared/lib/format'
 import { useDebouncedValue } from '@/shared/lib/hooks/use-debounced-value'
@@ -67,7 +73,7 @@ function GuestPicker({ excludedGuestId, selectedGuestId, onSelect }: GuestPicker
             )}
           >
             <span className="flex items-center gap-2 text-sm font-medium">
-              {guest.displayName ?? 'Без имени'}
+              {guestDisplayName(guest.displayName)}
               <GuestStatusBadge status={guest.status} />
             </span>
             <span className="text-xs text-muted-foreground">

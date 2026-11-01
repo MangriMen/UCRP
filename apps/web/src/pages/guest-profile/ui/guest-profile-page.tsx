@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router'
-import { GuestStatusBadge, useGuest } from '@/entities/guest'
+import { guestDisplayName, GuestStatusBadge, useGuest } from '@/entities/guest'
 import { useAuth } from '@/entities/user'
 import { DeleteGuestButton } from '@/features/delete-guest'
 import { MergeGuestsDialog } from '@/features/merge-guests'
@@ -29,7 +29,7 @@ export function GuestProfilePage() {
   if (error) return <ErrorBanner error={error} />
   if (!profile) return <EmptyState title="Гость не найден" />
 
-  const title = profile.displayName ?? 'Без имени'
+  const title = guestDisplayName(profile.displayName)
   const isActive = profile.status === 'active'
   const canSeeEvents = can('guest.event.read')
   const canSeeAmount = can('field.guest.total_amount.read')

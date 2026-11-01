@@ -1,4 +1,9 @@
-import { GuestStatusBadge, identifierTypeLabels, type GuestProfile } from '@/entities/guest'
+import {
+  guestDisplayName,
+  GuestStatusBadge,
+  identifierTypeLabels,
+  type GuestProfile,
+} from '@/entities/guest'
 import type { MergeCandidateDetail } from '@/entities/merge-candidate'
 import { formatDateTime } from '@/shared/lib/format'
 import { Badge } from '@/shared/ui/badge'
@@ -13,7 +18,7 @@ function ProfileColumn({ title, profile }: { title: string; profile: GuestProfil
     <Card>
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
-          {title}: {profile.displayName ?? 'Без имени'}
+          {title}: {guestDisplayName(profile.displayName)}
           <GuestStatusBadge status={profile.status} />
         </CardTitle>
       </CardHeader>

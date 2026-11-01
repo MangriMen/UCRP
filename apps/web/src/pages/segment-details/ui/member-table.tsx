@@ -1,14 +1,15 @@
+import { guestDisplayName } from '@/entities/guest'
 import { useSegmentMembers, type SegmentMember } from '@/entities/segment'
 import { formatDateTime } from '@/shared/lib/format'
 import { useListParams } from '@/shared/lib/list-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
 const columns: Column<SegmentMember>[] = [
-  { id: 'guest', header: 'Гость', cell: (m) => m.displayName ?? 'Без имени' },
+  { id: 'guest', header: 'Гость', cell: (m) => guestDisplayName(m.displayName) },
   {
     id: 'tenants',
     header: 'Арендаторов',
-    cell: (m) => m.tenantCount ?? 0,
+    cell: (m) => m.tenantCount ?? '—',
     className: 'text-right',
   },
   {
