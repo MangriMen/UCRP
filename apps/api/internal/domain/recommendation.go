@@ -55,6 +55,7 @@ type RecommendationRepo interface {
 
 type RecommendationEvalRepo interface {
 	Insert(ctx context.Context, ev *RecommendationEval) error
+	LatestForGuest(ctx context.Context, guestID string) (*RecommendationEval, error)
 }
 
 type Recommender interface {

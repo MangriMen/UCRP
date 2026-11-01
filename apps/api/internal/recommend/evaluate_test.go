@@ -52,6 +52,10 @@ func (s *stubEvalRepo) Insert(_ context.Context, ev *domain.RecommendationEval) 
 	return nil
 }
 
+func (s *stubEvalRepo) LatestForGuest(context.Context, string) (*domain.RecommendationEval, error) {
+	return nil, nil
+}
+
 type stubTenants struct {
 	list []repository.TenantCandidate
 }

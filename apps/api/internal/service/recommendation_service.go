@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
@@ -12,12 +13,13 @@ import (
 type RecommendationService struct {
 	guests domain.GuestRepo
 	repo   domain.RecommendationRepo
+	evals  domain.RecommendationEvalRepo
 	rec    domain.Recommender
 	q      domain.Queue
 }
 
-func NewRecommendationService(guests domain.GuestRepo, repo domain.RecommendationRepo, rec domain.Recommender, q domain.Queue) *RecommendationService {
-	return &RecommendationService{guests: guests, repo: repo, rec: rec, q: q}
+func NewRecommendationService(guests domain.GuestRepo, repo domain.RecommendationRepo, evals domain.RecommendationEvalRepo, rec domain.Recommender, q domain.Queue) *RecommendationService {
+	return &RecommendationService{guests: guests, repo: repo, evals: evals, rec: rec, q: q}
 }
 
 type RecommendationDTO struct {
@@ -92,7 +94,41 @@ func (s *RecommendationService) ForGuest(ctx context.Context, guestID string) ([
 	if err != nil {
 		return nil, err
 	}
+	ev, err := s.evals.LatestForGuest(ctx, guestID)
+	if err != nil {
+		return nil, err
+	}
+	if ev != nil && len(items) > 0 && ev.RecommendationComputedAt.Equal(items[0].ComputedAt) {
+		items = applyEvalOrder(items, ev.Ranking)
+	}
 	return toRecoDTOs(items), nil
+}
+
+func applyEvalOrder(items []domain.Recommendation, ranking []string) []domain.Recommendation {
+	position := map[string]int{}
+	for i, tenantID := range ranking {
+		position[tenantID] = i
+	}
+	if len(position) == 0 {
+		return items
+	}
+	ordered := make([]domain.Recommendation, 0, len(items))
+	var rest []domain.Recommendation
+	for _, item := range items {
+		if _, ok := position[item.TenantID]; ok {
+			ordered = append(ordered, item)
+		} else {
+			rest = append(rest, item)
+		}
+	}
+	sort.SliceStable(ordered, func(i, j int) bool {
+		return position[ordered[i].TenantID] > position[ordered[j].TenantID]
+	})
+	ordered = append(ordered, rest...)
+	for i := range ordered {
+		ordered[i].Rank = i + 1
+	}
+	return ordered
 }
 
 func (s *RecommendationService) Refresh(ctx context.Context, guestID string) ([]RecommendationDTO, error) {
