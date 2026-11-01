@@ -56,7 +56,7 @@ type exportSpec struct {
 func demoExports() []exportSpec {
 	return []exportSpec{
 		{"exp-cinema-sms", "seg-sleep-cinema", "camp-cinema", "sms", "csv", 33, "demo-export-1"},
-		{"exp-single-sms", "tpl-single", "", "sms", "csv", 0, "demo-export-2"},
+		{"exp-single-sms", "seg-single", "", "sms", "csv", 0, "demo-export-2"},
 		{"exp-cinema-email", "seg-sleep-cinema", "camp-cinema", "email", "api", 20, "demo-export-3"},
 	}
 }
@@ -167,7 +167,7 @@ func (s *Seeder) seedPendingExports(ctx context.Context) error {
 		DaysAgo        int
 	}{
 		{"exp-single-queued", "seg-single-archived", "sms", "csv", "queued", 0, "demo-export-5", 1},
-		{"exp-high-value-failed", "tpl-high-value", "push", "csv", "failed", 0, "demo-export-6", 2},
+		{"exp-high-value-failed", "seg-high-value", "push", "csv", "failed", 0, "demo-export-6", 2},
 	}
 	for _, p := range pending {
 		id := demoID("export_job", p.Key)

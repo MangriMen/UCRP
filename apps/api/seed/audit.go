@@ -34,7 +34,7 @@ func demoAuditEntries() []auditSpec {
 		{"a14", "import.create", "import_batch", "wifi-1010", "analyst", map[string]string{"mode": "file"}, 21},
 		{"a15", "import.create", "import_batch", "kids-pull-1025", "analyst", map[string]string{"mode": "pull"}, 6},
 		{"a16", "segment.create", "segment", "seg-sleep-cinema", "marketer", map[string]string{"template": "sleeping_neighbor"}, 25},
-		{"a17", "segment.create", "segment", "tpl-single", "marketer", map[string]string{"template": "single_store"}, 18},
+		{"a17", "segment.create", "segment", "seg-single", "marketer", map[string]string{"template": "single_store"}, 18},
 		{"a18", "segment.create", "segment", "seg-failed", "marketer", map[string]string{"template": ""}, 3},
 		{"a19", "data_source.create", "data_source", "pos-bean", "analyst", map[string]string{"type": "pos"}, 180},
 		{"a20", "data_source.create", "data_source", "wifi-mall", "analyst", map[string]string{"type": "csv_excel"}, 175},

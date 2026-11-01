@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/MangriMen/UCRP/internal/domain"
+	"github.com/MangriMen/UCRP/internal/platform/idgen"
+	"github.com/MangriMen/UCRP/internal/repository"
 	"github.com/MangriMen/UCRP/internal/segments"
 )
 
@@ -14,7 +16,6 @@ type segmentSpec struct {
 	Name              string
 	Description       string
 	TemplateCode      string
-	IsTemplate        bool
 	Status            string
 	VisitedTenantIDs  []string
 	ExcludedTenantIDs []string
@@ -35,32 +36,32 @@ type versionSpec struct {
 func demoSegments() []segmentSpec {
 	return []segmentSpec{
 		{
-			Key: "tpl-sleeping", Name: "Спящий сосед", Description: "Гости, которые были в одном арендаторе, но не заходили в соседний",
-			TemplateCode: "sleeping_neighbor", IsTemplate: true, Status: "active",
+			Key: "seg-sleeping", Name: "Спящий сосед", Description: "Гости, которые были в одном арендаторе, но не заходили в соседний",
+			TemplateCode: "sleeping_neighbor", Status: "active",
 			VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 90,
 			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"cafe-bean"}, PeriodDays: 90, Members: true, DaysAgo: 20}},
 		},
 		{
-			Key: "tpl-single", Name: "Один магазин", Description: "Гости только одного арендатора за период",
-			TemplateCode: "single_store", IsTemplate: true, Status: "active",
+			Key: "seg-single", Name: "Один магазин", Description: "Гости только одного арендатора за период",
+			TemplateCode: "single_store", Status: "active",
 			VisitedTenantIDs: []string{"cafe-bean"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 60,
 			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"cafe-bean"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 60, Members: true, DaysAgo: 18}},
 		},
 		{
-			Key: "tpl-churn", Name: "Риск оттока", Description: "Гости без визитов дольше 45 дней",
-			TemplateCode: "churn_risk", IsTemplate: true, Status: "active",
+			Key: "seg-churn", Name: "Риск оттока", Description: "Гости без визитов дольше 45 дней",
+			TemplateCode: "churn_risk", Status: "active",
 			VisitedTenantIDs: []string{"fit-zone"}, ExcludedTenantIDs: []string{"food-plate"}, PeriodDays: 180,
 			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"fit-zone"}, ExcludedTenantIDs: []string{"food-plate"}, PeriodDays: 180, Members: true, DaysAgo: 15}},
 		},
 		{
-			Key: "tpl-newcomer", Name: "Новичок", Description: "Гости с первым визитом в детский центр",
-			TemplateCode: "newcomer", IsTemplate: true, Status: "active",
+			Key: "seg-newcomer", Name: "Новичок", Description: "Гости с первым визитом в детский центр",
+			TemplateCode: "newcomer", Status: "active",
 			VisitedTenantIDs: []string{"kids-cube"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 30,
 			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"kids-cube"}, ExcludedTenantIDs: []string{"cinema-sinema"}, PeriodDays: 30, Members: true, DaysAgo: 12}},
 		},
 		{
-			Key: "tpl-high-value", Name: "Высокая ценность", Description: "Гости с покупками в нескольких арендаторах",
-			TemplateCode: "high_value", IsTemplate: true, Status: "active",
+			Key: "seg-high-value", Name: "Высокая ценность", Description: "Гости с покупками в нескольких арендаторах",
+			TemplateCode: "high_value", Status: "active",
 			VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"pets-tail"}, PeriodDays: 120,
 			Versions: []versionSpec{{No: 1, Status: "ready", VisitedTenantIDs: []string{"cinema-sinema"}, ExcludedTenantIDs: []string{"pets-tail"}, PeriodDays: 120, Members: true, DaysAgo: 10}},
 		},
@@ -94,15 +95,15 @@ func demoSegments() []segmentSpec {
 }
 
 func (s *Seeder) seedSegments(ctx context.Context) error {
+	if err := repository.NewSegmentSQL(s.db).EnsureTemplates(ctx, domain.SystemClock{}, idgen.UUID{}); err != nil {
+		return fmt.Errorf("ensure segment templates: %w", err)
+	}
 	evaluator := segments.NewSqlEvaluator(s.db)
 	for _, sg := range demoSegments() {
 		segID := demoID("segment", sg.Key)
 		s.segments[sg.Key] = segID
 		createdAt := s.now.AddDate(0, 0, -30)
-		var createdBy any
-		if !sg.IsTemplate {
-			createdBy = s.users["marketer"]
-		}
+		createdBy := s.users["marketer"]
 		currentVersion := 1
 		if len(sg.Versions) > 0 {
 			currentVersion = sg.Versions[len(sg.Versions)-1].No
@@ -111,7 +112,7 @@ func (s *Seeder) seedSegments(ctx context.Context) error {
 			INSERT INTO segment (id, name, description, template_code, is_template, current_version_no, status, created_by, created_at, updated_at)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9)
 			ON CONFLICT (id) DO NOTHING`,
-			segID, sg.Name, sg.Description, nullIfEmpty(sg.TemplateCode), sg.IsTemplate, currentVersion,
+			segID, sg.Name, sg.Description, nullIfEmpty(sg.TemplateCode), false, currentVersion,
 			sg.Status, createdBy, createdAt); err != nil {
 			return err
 		}
