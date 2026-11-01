@@ -24,8 +24,13 @@ func NewIdentityHandler(identity *service.IdentityService, profiles *service.Pro
 
 func (h *IdentityHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
 	resolution := r.URL.Query().Get("resolution")
-	items, err := h.identity.List(r.Context(), resolution, limit, offset)
+	items, err := h.identity.List(r.Context(), resolution, showNames, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
@@ -63,7 +68,12 @@ func sharedIdentifierKeys(a, b *service.GuestProfile) []service.GuestIdentifierD
 }
 
 func (h *IdentityHandler) Get(w http.ResponseWriter, r *http.Request) {
-	item, err := h.identity.Get(r.Context(), chi.URLParam(r, "id"))
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	item, err := h.identity.Get(r.Context(), chi.URLParam(r, "id"), showNames)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
@@ -144,7 +154,12 @@ func (h *IdentityHandler) Merge(w http.ResponseWriter, r *http.Request) {
 
 func (h *IdentityHandler) ListBlocks(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	items, err := h.identity.ListBlocks(r.Context(), limit, offset)
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	items, err := h.identity.ListBlocks(r.Context(), showNames, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

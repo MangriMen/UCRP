@@ -29,6 +29,9 @@ type MergeCandidate struct {
 	DecidedBy     string
 	DecidedAt     *time.Time
 	CreatedAt     time.Time
+
+	GuestADisplayName string
+	GuestBDisplayName string
 }
 
 type MergeBlock struct {
@@ -39,6 +42,9 @@ type MergeBlock struct {
 	CandidateID string
 	CreatedBy   string
 	CreatedAt   time.Time
+
+	GuestADisplayName string
+	GuestBDisplayName string
 }
 
 type MergeCandidateRepo interface {

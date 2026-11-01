@@ -24,6 +24,16 @@ MergeCandidate:
       description: Smaller identifier of the pair (canonical order)
     guestBId:
       type: string
+    guestADisplayName:
+      type: string
+      nullable: true
+      readOnly: true
+      description: Display name of guest A; returned only with the field.guest.display_name.read permission
+    guestBDisplayName:
+      type: string
+      nullable: true
+      readOnly: true
+      description: Display name of guest B; returned only with the field.guest.display_name.read permission
     reasonCode:
       type: string
       example: shared_phone_names_differ
@@ -140,6 +150,16 @@ MergeBlock:
       type: string
     guestBId:
       type: string
+    guestADisplayName:
+      type: string
+      nullable: true
+      readOnly: true
+      description: Display name of guest A; returned only with the field.guest.display_name.read permission
+    guestBDisplayName:
+      type: string
+      nullable: true
+      readOnly: true
+      description: Display name of guest B; returned only with the field.guest.display_name.read permission
     reason:
       type: string
       enum:

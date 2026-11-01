@@ -6,6 +6,7 @@ import {
   type MergeCandidate,
   type MergeResolution,
 } from '@/entities/merge-candidate'
+import { guestDisplayName } from '@/entities/guest'
 import { formatDateTime } from '@/shared/lib/format'
 import { ALL_OPTION, parsePage } from '@/shared/lib/search-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
@@ -16,8 +17,8 @@ const DEFAULT_RESOLUTION: MergeResolution = 'pending'
 
 const columns: Column<MergeCandidate>[] = [
   { id: 'createdAt', header: 'Создана', cell: (c) => formatDateTime(c.createdAt) },
-  { id: 'guestA', header: 'Профиль A', cell: (c) => c.guestAId },
-  { id: 'guestB', header: 'Профиль B', cell: (c) => c.guestBId },
+  { id: 'guestA', header: 'Профиль A', cell: (c) => guestDisplayName(c.guestADisplayName) },
+  { id: 'guestB', header: 'Профиль B', cell: (c) => guestDisplayName(c.guestBDisplayName) },
   { id: 'reason', header: 'Причина', cell: (c) => c.reasonText ?? c.reasonCode },
   { id: 'score', header: 'Уверенность', cell: (c) => `${c.score}%`, className: 'text-right' },
   {
