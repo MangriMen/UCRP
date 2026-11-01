@@ -15,12 +15,32 @@ type segmentRecommendationView struct {
 	Suppressed      bool     `json:"suppressed"`
 }
 
+func isSmallCell(count int) bool {
+	return count > 0 && count < minSuppressionK
+}
+
+func revealsSmallGroup(item service.SegmentRecommendationDTO) bool {
+	counts := []int{
+		item.Guests,
+		item.EligibleCount,
+		item.SegmentCount,
+		item.IncompleteCount,
+		item.SegmentCount - item.EligibleCount,
+		item.EligibleCount - item.Guests,
+	}
+	for _, count := range counts {
+		if isSmallCell(count) {
+			return true
+		}
+	}
+	return false
+}
+
 func segmentRecommendationResponse(items []service.SegmentRecommendationDTO) map[string]any {
 	views := make([]segmentRecommendationView, 0, len(items))
 	for _, item := range items {
 		view := segmentRecommendationView{TenantID: item.TenantID, TenantName: item.TenantName, CategoryID: item.CategoryID}
-		if item.Guests < 5 || item.EligibleCount < 5 || item.SegmentCount < 5 || item.IncompleteCount < 5 ||
-			item.SegmentCount-item.EligibleCount < 5 || item.EligibleCount-item.Guests < 5 {
+		if revealsSmallGroup(item) {
 			view.Suppressed = true
 		} else {
 			view.Score = &item.Score
