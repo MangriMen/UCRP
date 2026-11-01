@@ -15,7 +15,7 @@
 | `POST /auth/login`              | Вход по email+паролю; выдаёт access (15 мин) и refresh (httpOnly cookie) | pub          | E-20       | 200, 400, 401, 429 |
 | `POST /auth/refresh`            | Обновление access по refresh                                             | pub (cookie) | E-20       | 200, 401           |
 | `POST /auth/logout`             | Отзыв refresh                                                            | any          | E-20       | 204                |
-| `POST /auth/invitations/accept` | Принятие приглашения или ссылки восстановления и установка пароля        | pub          | invitation | 204, 400, 401      |
+| `POST /auth/invitations/accept` | Принятие приглашения или ссылки восстановления и установка пароля        | pub          | invitation | 204, 400, 401, 409 |
 | `GET /auth/me`                  | Профиль, роль, эффективные права (`permissions`), `tenant_id` (для R-3)  | any          | E-20       | 200, 401           |
 
 ## 2. Пользователи (UC-18)

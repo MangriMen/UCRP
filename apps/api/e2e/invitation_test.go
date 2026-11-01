@@ -309,3 +309,41 @@ func TestInvitationRecoveryInvalidatesOldPassword(t *testing.T) {
 	}
 	s.RequireStatus(newResp, 200, "new password after recovery")
 }
+
+func TestInvitationAcceptReturns409WhenEmailTakenMeanwhile(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	manager, err := s.Reg.User(ctx, "inv-taken-manager", "manager", "")
+	if err != nil {
+		t.Fatalf("fixture manager: %v", err)
+	}
+
+	email := "invited-taken-" + s.Cfg.RunID + "@e2e.local"
+	cleanupInvitationArtifacts(t, s, email)
+	token, hash := generateToken(t)
+	insertInvitation(t, s, manager.ID, email, "Taken Email", "manager", "", "invite", "", nil, hash)
+	if err := s.DB.Exec(ctx, `
+		INSERT INTO app_user (id, email, password_hash, display_name, role, is_active, created_at)
+		VALUES ($1,$2,'x','Other Account','marketer',TRUE,$3)`, uuid.NewString(), email, time.Now().UTC()); err != nil {
+		t.Fatalf("insert competing user: %v", err)
+	}
+
+	anon := anonymousClient(s)
+	resp, err := anon.Post(ctx, "/api/v1/auth/invitations/accept", map[string]string{"token": token, "password": "taken-password-1"})
+	if err != nil {
+		t.Fatalf("accept invitation: %v", err)
+	}
+	s.RequireStatus(resp, 409, "accept invitation with taken email")
+	s.RequireDeclaredStatus("POST", "/api/v1/auth/invitations/accept", resp)
+	s.RequireSchema("POST", "/api/v1/auth/invitations/accept", resp)
+
+	var consumed bool
+	if err := s.DB.QueryRowContext(ctx, `SELECT consumed_at IS NOT NULL FROM user_invitation WHERE token_hash = $1`, hash).Scan(&consumed); err != nil {
+		t.Fatalf("read invitation: %v", err)
+	}
+	if consumed {
+		t.Fatalf("invitation was consumed although acceptance failed")
+	}
+}

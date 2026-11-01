@@ -103,6 +103,9 @@ func (r *InvitationSQL) AcceptInvitation(ctx context.Context, hash []byte, userI
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO app_user (id, email, password_hash, display_name, role, tenant_id, is_active, created_at)
 			VALUES ($1,$2,$3,$4,$5,$6,TRUE,$7)`, userID, email, passwordHash, name, role, tenantID, now)
+		if isDuplicate(err) {
+			return domain.ErrConflict
+		}
 		if err != nil {
 			return err
 		}

@@ -52,7 +52,12 @@ func (h *InvitationHandler) Accept(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
-	if err := h.invitations.Accept(r.Context(), request.Token, request.Password); err != nil {
+	err := h.invitations.Accept(r.Context(), request.Token, request.Password)
+	if errors.Is(err, domain.ErrConflict) {
+		httpx.WriteError(w, r, http.StatusConflict, "conflict", "Email приглашения уже занят другой учётной записью")
+		return
+	}
+	if err != nil {
 		invitationError(w, r, err)
 		return
 	}
