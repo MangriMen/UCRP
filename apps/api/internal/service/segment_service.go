@@ -218,8 +218,8 @@ func (s *SegmentService) List(ctx context.Context, limit, offset int) (*SegmentP
 	if err != nil {
 		return nil, err
 	}
-	if limit <= 0 || limit > 100 {
-		limit = 20
+	if limit <= 0 || limit > 200 {
+		limit = 50
 	}
 	if offset < 0 {
 		offset = 0

@@ -228,7 +228,7 @@ func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
 		b := v == "true" || v == "1"
 		isControl = &b
 	}
-	limit, offset := pageParams(withDefaultPageSize(r))
+	limit, offset := pageParams(r)
 	items, total, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)

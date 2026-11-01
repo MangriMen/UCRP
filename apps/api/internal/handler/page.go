@@ -8,32 +8,24 @@ import (
 	"github.com/MangriMen/UCRP/internal/service"
 )
 
-const defaultPageSize = 50
-
-func withDefaultPageSize(r *http.Request) *http.Request {
-	query := r.URL.Query()
-	if query.Get("limit") != "" || query.Get("page_size") != "" {
-		return r
-	}
-	query.Set("page_size", strconv.Itoa(defaultPageSize))
-	clone := r.Clone(r.Context())
-	clone.URL.RawQuery = query.Encode()
-	return clone
-}
+const (
+	defaultPageSize = 50
+	maxPageSize     = 200
+)
 
 func pageParams(r *http.Request) (int, int) {
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	query := r.URL.Query()
+	limit, _ := strconv.Atoi(query.Get("limit"))
 	if limit <= 0 {
-		limit, _ = strconv.Atoi(r.URL.Query().Get("page_size"))
+		limit, _ = strconv.Atoi(query.Get("page_size"))
 	}
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	if offset < 0 {
-		offset = 0
+	if limit <= 0 {
+		limit = defaultPageSize
 	}
-	if page, _ := strconv.Atoi(r.URL.Query().Get("page")); page > 1 && offset == 0 {
-		if limit <= 0 {
-			limit = 20
-		}
+	limit = min(limit, maxPageSize)
+	offset, _ := strconv.Atoi(query.Get("offset"))
+	offset = max(offset, 0)
+	if page, _ := strconv.Atoi(query.Get("page")); page > 1 && offset == 0 {
 		offset = (page - 1) * limit
 	}
 	return limit, offset
@@ -41,18 +33,10 @@ func pageParams(r *http.Request) (int, int) {
 
 func pageMeta(limit, offset, total int) service.PageMeta {
 	if limit <= 0 {
-		limit = 20
+		limit = defaultPageSize
 	}
-	if limit > 200 {
-		limit = 200
-	}
-	if offset < 0 {
-		offset = 0
-	}
-	totalPages := (total + limit - 1) / limit
-	if totalPages < 1 {
-		totalPages = 1
-	}
+	offset = max(offset, 0)
+	totalPages := max((total+limit-1)/limit, 1)
 	return service.PageMeta{
 		Page:       offset/limit + 1,
 		PageSize:   limit,

@@ -77,7 +77,7 @@ func (h *AccessGrantHandler) Audit(w http.ResponseWriter, r *http.Request) {
 		}
 		to = &value
 	}
-	limit, offset := accessPageParams(r)
+	limit, offset := pageParams(r)
 	items, total, err := h.access.Audit(r.Context(), principal, query.Get("grant_id"), query.Get("actor"), from, to, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)

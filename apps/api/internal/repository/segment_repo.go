@@ -120,12 +120,7 @@ func (r *SegmentSQL) GetByID(ctx context.Context, id string) (*domain.Segment, *
 }
 
 func (r *SegmentSQL) List(ctx context.Context, limit, offset int) ([]domain.Segment, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset = clampPage(limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, name, COALESCE(description, ''), COALESCE(template_code, ''), is_template, current_version_no, status, COALESCE(created_by, ''), created_at, updated_at
 		FROM segment

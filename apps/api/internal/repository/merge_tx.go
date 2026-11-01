@@ -174,12 +174,7 @@ func (r *MergeSQL) GetByID(ctx context.Context, id string) (*domain.MergeCandida
 }
 
 func (r *MergeSQL) List(ctx context.Context, resolution domain.MergeResolution, limit, offset int) ([]domain.MergeCandidate, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset = clampPage(limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, guest_a_id, guest_b_id, match_type, reason_code, reason_text, score, resolution,
 			COALESCE(winner_guest_id, ''), COALESCE(merged_guest_id, ''), COALESCE(decided_by, ''), decided_at, created_at

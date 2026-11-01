@@ -66,12 +66,7 @@ const guestStatsJoin = `
 	) s ON s.guest_id = g.id`
 
 func (r *GuestSQL) Search(ctx context.Context, filter domain.GuestFilter, limit, offset int) ([]domain.GuestListEntry, int, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset = clampPage(limit, offset)
 	order, ok := guestSorts[filter.Sort]
 	if !ok {
 		order = guestSorts["-createdAt"]
