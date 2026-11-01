@@ -347,10 +347,18 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 		{`DELETE FROM tenant_category_relation WHERE category_id = ANY($1)`, []any{categoryIDs}},
 		{`DELETE FROM tenant_category WHERE id = ANY($1)`, []any{categoryIDs}},
 	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx, `LOCK TABLE segment_member, recommendation, recommendation_eval IN SHARE ROW EXCLUSIVE MODE`); err != nil {
+		return err
+	}
 	for _, step := range steps {
-		if err := s.exec(ctx, step.query, step.args...); err != nil {
+		if _, err := tx.ExecContext(ctx, step.query, step.args...); err != nil {
 			return err
 		}
 	}
-	return nil
+	return tx.Commit()
 }
