@@ -205,7 +205,6 @@ func run(log *slog.Logger, cfg config.Config) error {
 			})
 			priv.Route("/segments", func(s chi.Router) {
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", segmentHandler.List)
-				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/templates", segmentHandler.Templates)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/preview", segmentHandler.Preview)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/", segmentHandler.Create)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}", segmentHandler.Get)
