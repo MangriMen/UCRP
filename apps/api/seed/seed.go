@@ -307,6 +307,9 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 		{`DELETE FROM campaign WHERE id = ANY($1) OR segment_id = ANY($2) OR target_tenant_id = ANY($3) OR created_by = ANY($4)`, []any{campaignIDs, segmentIDs, tenantIDs, userIDs}},
 		{`DELETE FROM contact_limit WHERE id = ANY($1) OR created_by = ANY($2)`, []any{limitIDs, userIDs}},
 		{`DELETE FROM segment_member WHERE guest_id = ANY($1)`, []any{guestIDs}},
+		{`UPDATE segment_version v SET member_count = (SELECT COUNT(*) FROM segment_member m WHERE m.segment_version_id = v.id)
+			WHERE v.status = 'ready' AND v.segment_id <> ALL($1)
+				AND v.member_count IS DISTINCT FROM (SELECT COUNT(*) FROM segment_member m WHERE m.segment_version_id = v.id)`, []any{segmentIDs}},
 		{`DELETE FROM segment_member WHERE segment_version_id IN (SELECT id FROM segment_version WHERE segment_id = ANY($1))`, []any{segmentIDs}},
 		{`DELETE FROM segment_version WHERE segment_id = ANY($1)`, []any{segmentIDs}},
 		{`DELETE FROM segment WHERE id = ANY($1)`, []any{segmentIDs}},
