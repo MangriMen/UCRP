@@ -229,7 +229,12 @@ func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
 		isControl = &b
 	}
 	limit, offset := pageParams(r)
-	items, total, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl, limit, offset)
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	items, total, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl, showNames, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

@@ -118,6 +118,7 @@ func toLimitDTO(c domain.ContactLimit) ContactLimitDTO {
 
 type ExportMemberDTO struct {
 	GuestID      string                  `json:"guestId"`
+	DisplayName  *string                 `json:"displayName,omitempty"`
 	IsControl    bool                    `json:"isControl"`
 	IdentifierID string                  `json:"identifierId,omitempty"`
 	Contact      *ExportMemberContactDTO `json:"contact,omitempty"`
@@ -128,7 +129,7 @@ type ExportMemberContactDTO struct {
 	Value  string `json:"value"`
 }
 
-func (s *ExportService) Members(ctx context.Context, exportID string, isControl *bool, limit, offset int) ([]ExportMemberDTO, int, error) {
+func (s *ExportService) Members(ctx context.Context, exportID string, isControl *bool, showNames bool, limit, offset int) ([]ExportMemberDTO, int, error) {
 	if _, err := s.exports.GetByID(ctx, exportID); err != nil {
 		return nil, 0, err
 	}
@@ -141,6 +142,9 @@ func (s *ExportService) Members(ctx context.Context, exportID string, isControl 
 		member := ExportMemberDTO{GuestID: m.GuestID, IsControl: m.IsControl, IdentifierID: m.IdentifierID}
 		if m.Contact != "" {
 			member.Contact = &ExportMemberContactDTO{IDType: m.ContactType, Value: m.Contact}
+		}
+		if showNames && m.DisplayName != "" {
+			member.DisplayName = &m.DisplayName
 		}
 		out = append(out, member)
 	}

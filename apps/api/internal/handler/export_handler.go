@@ -23,7 +23,10 @@ func NewExportHandler(exports *service.ExportService, authorizer accessAuthorize
 	return &ExportHandler{exports: exports, authorizer: authorizer}
 }
 
-const exportMembersPermission = "export.members.read"
+const (
+	exportMembersPermission    = "export.members.read"
+	guestDisplayNamePermission = "field.guest.display_name.read"
+)
 
 func suppressSmallExportCounts(item *service.ExportDTO) {
 	counts := []**int{&item.TotalInSegment, &item.WithContactCount, &item.NoContactCount, &item.BlockedByLimitCount, &item.ControlCount, &item.ExportedCount}

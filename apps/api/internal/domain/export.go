@@ -60,6 +60,7 @@ type ExportMember struct {
 	IsControl    bool
 	Contact      string
 	ContactType  string
+	DisplayName  string
 }
 
 type ExportFilter struct {

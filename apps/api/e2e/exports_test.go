@@ -520,6 +520,9 @@ func TestExportMembersSplitsControlGroup(t *testing.T) {
 			if harness.StringField(contact, "idType") != "phone" || harness.StringField(contact, "value") == "" {
 				t.Fatalf("sms member must carry its phone contact: %s", members.Snippet())
 			}
+			if harness.StringField(obj, "displayName") == "" {
+				t.Fatalf("a marketer with field.guest.display_name.read must get the guest name: %s", members.Snippet())
+			}
 		}
 	}
 }
