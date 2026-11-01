@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -64,6 +65,7 @@ const purchaseEvents = `
 
 const guestHistory = `
 	SELECT e.guest_id, MIN(e.occurred_at) AS first_at,
+		MIN(e.occurred_at) FILTER (WHERE et.counts_as_presence) AS first_presence_at,
 		MIN(e.occurred_at) FILTER (WHERE et.code = 'purchase') AS first_purchase_at
 	FROM event e
 	JOIN event_type et ON et.id = e.event_type_id
@@ -131,11 +133,25 @@ func (s *AnalyticsService) TenantAggregate(ctx context.Context, q TenantAggregat
 	report.VisitsCount = reveal.count(visits, guests)
 	report.GuestsCount = reveal.count(guests, guests)
 
-	if q.Metrics.NewGuests {
-		fresh, err := s.countNewGuests(ctx, q)
-		if err != nil {
+	var fresh, firstBuyers int
+	switch {
+	case q.Metrics.NewGuests && q.Metrics.FirstPurchases:
+		var err error
+		if fresh, firstBuyers, err = s.countGuestFirsts(ctx, q); err != nil {
 			return nil, err
 		}
+	case q.Metrics.NewGuests:
+		var err error
+		if fresh, err = s.countNewGuests(ctx, q); err != nil {
+			return nil, err
+		}
+	case q.Metrics.FirstPurchases:
+		var err error
+		if firstBuyers, err = s.countFirstPurchases(ctx, q); err != nil {
+			return nil, err
+		}
+	}
+	if q.Metrics.NewGuests {
 		report.NewGuestsCount = reveal.count(fresh, fresh)
 	}
 	if q.Metrics.RepeatVisits {
@@ -158,10 +174,6 @@ func (s *AnalyticsService) TenantAggregate(ctx context.Context, q TenantAggregat
 		}
 	}
 	if q.Metrics.FirstPurchases {
-		firstBuyers, err := s.countFirstPurchases(ctx, q)
-		if err != nil {
-			return nil, err
-		}
 		report.FirstPurchasesCount = reveal.count(firstBuyers, firstBuyers)
 	}
 	report.Suppressed = reveal.suppressed
@@ -192,6 +204,16 @@ func (s *AnalyticsService) countNewGuests(ctx context.Context, q TenantAggregate
 			GROUP BY e.guest_id
 		) first_visit WHERE TRUE`+window, args...).Scan(&fresh)
 	return fresh, err
+}
+
+func (s *AnalyticsService) countGuestFirsts(ctx context.Context, q TenantAggregateQuery) (fresh, firstBuyers int, err error) {
+	window, args := periodWindow("first_presence_at", q.From, q.To, []any{q.TenantID})
+	purchaseWindow := strings.ReplaceAll(window, "first_presence_at", "first_at")
+	err = s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FILTER (WHERE first_presence_at IS NOT NULL`+window+`),
+			COUNT(*) FILTER (WHERE first_purchase_at = first_at`+purchaseWindow+`)
+		FROM (`+guestHistory+`) history`, args...).Scan(&fresh, &firstBuyers)
+	return fresh, firstBuyers, err
 }
 
 func (s *AnalyticsService) countRepeatVisits(ctx context.Context, q TenantAggregateQuery) (visits, guests int, err error) {
