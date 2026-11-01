@@ -199,7 +199,7 @@ func toSegmentDTO(seg *domain.Segment, ver *domain.SegmentVersion) *SegmentDTO {
 		return dto
 	}
 	dto.VersionStatus = string(ver.Status)
-	dto.Rule = json.RawMessage(ver.Rule)
+	dto.Rule = storedRuleJSON(ver.Rule)
 	if ver.MemberCount != nil {
 		dto.MemberCount = ver.MemberCount
 	}
@@ -382,7 +382,7 @@ func (s *SegmentService) Versions(ctx context.Context, id string) ([]SegmentVers
 			ID:          v.ID,
 			SegmentID:   id,
 			VersionNo:   v.VersionNo,
-			Rule:        json.RawMessage(v.Rule),
+			Rule:        storedRuleJSON(v.Rule),
 			RuleText:    texts[i],
 			Status:      string(v.Status),
 			MemberCount: v.MemberCount,
@@ -485,7 +485,7 @@ func (s *SegmentService) Templates(ctx context.Context) ([]SegmentTemplateView, 
 			Rule:        json.RawMessage("{}"),
 		}
 		if ver := versions[seg.ID]; ver != nil {
-			view.Rule = json.RawMessage(ver.Rule)
+			view.Rule = storedRuleJSON(ver.Rule)
 		}
 		out = append(out, view)
 	}
@@ -498,4 +498,16 @@ func (s *SegmentService) currentVersions(ctx context.Context, segments []domain.
 		ids = append(ids, seg.ID)
 	}
 	return s.segments.CurrentVersions(ctx, ids)
+}
+
+func storedRuleJSON(stored string) json.RawMessage {
+	var rule domain.SegmentRule
+	if err := json.Unmarshal([]byte(stored), &rule); err != nil {
+		return json.RawMessage(stored)
+	}
+	normalized, err := json.Marshal(rule)
+	if err != nil {
+		return json.RawMessage(stored)
+	}
+	return normalized
 }
