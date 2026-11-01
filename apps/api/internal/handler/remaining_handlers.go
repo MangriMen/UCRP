@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -65,10 +66,16 @@ func NewUserHandler(authSvc *service.AuthService) *UserHandler {
 	return &UserHandler{auth: authSvc}
 }
 
+var userListRoles = []string{"marketer", "manager", "tenant", "analyst", "system"}
+
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
 	query := r.URL.Query()
 	filter := domain.UserFilter{Query: query.Get("q"), Role: query.Get("role")}
+	if filter.Role != "" && !slices.Contains(userListRoles, filter.Role) {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "role: ожидается marketer, manager, tenant, analyst или system")
+		return
+	}
 	switch query.Get("is_active") {
 	case "":
 	case "true", "false":

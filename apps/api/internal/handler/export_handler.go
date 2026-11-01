@@ -89,6 +89,14 @@ func (h *ExportHandler) Create(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
+	hideSmall, err := h.hidesSmallCounts(r)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	if hideSmall {
+		suppressSmallExportCounts(exp)
+	}
 	httpx.WriteJSON(w, http.StatusCreated, exp)
 }
 

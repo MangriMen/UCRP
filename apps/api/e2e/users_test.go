@@ -272,6 +272,11 @@ func TestUserListFilters(t *testing.T) {
 	s.RequireStatus(resp, 400, "GET /api/v1/users with is_active=maybe")
 	s.RequireDeclaredStatus("GET", "/api/v1/users", resp)
 	s.RequireSchema("GET", "/api/v1/users", resp)
+	resp, err = manager.Get(ctx, "/api/v1/users", url.Values{"role": {"bogus"}})
+	if err != nil {
+		t.Fatalf("GET /api/v1/users with an unknown role: %v", err)
+	}
+	s.RequireStatus(resp, 400, "GET /api/v1/users with role=bogus")
 }
 
 func trackUser(s *harness.Suite, userID string) {
