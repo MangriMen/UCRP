@@ -53,13 +53,17 @@ type ZoneRef struct {
 }
 
 type SegmentRule struct {
-	VisitedTenantIDs  []string      `json:"visitedTenantIds,omitempty"`
-	ExcludedTenantIDs []string      `json:"excludedTenantIds,omitempty"`
-	PurchasedZones    []ZoneRef     `json:"purchasedZones,omitempty"`
-	PeriodDays        int           `json:"periodDays"`
-	RequireContact    string        `json:"requireContact,omitempty"`
-	Operator          string        `json:"-"`
-	Conditions        []SegmentRule `json:"-"`
+	VisitedTenantIDs    []string      `json:"visitedTenantIds,omitempty"`
+	ExcludedTenantIDs   []string      `json:"excludedTenantIds,omitempty"`
+	VisitedCategoryIDs  []string      `json:"visitedCategoryIds,omitempty"`
+	ExcludedCategoryIDs []string      `json:"excludedCategoryIds,omitempty"`
+	PurchasedZones      []ZoneRef     `json:"purchasedZones,omitempty"`
+	PeriodDays          int           `json:"periodDays"`
+	RequireContact      string        `json:"requireContact,omitempty"`
+	MinVisits           *int          `json:"minVisits,omitempty"`
+	MinAmountMinor      *int64        `json:"minAmountMinor,omitempty"`
+	Operator            string        `json:"-"`
+	Conditions          []SegmentRule `json:"-"`
 }
 
 type segmentRuleGroup struct {
@@ -92,6 +96,10 @@ func (r *SegmentRule) UnmarshalJSON(data []byte) error {
 		VisitedTenantIDs       []string  `json:"visitedTenantIds"`
 		ExcludedTenantIDs      []string  `json:"excludedTenantIds"`
 		ExcludedTenantIDsSnake []string  `json:"excluded_tenant_ids"`
+		VisitedCategoryIDs     []string  `json:"visitedCategoryIds"`
+		ExcludedCategoryIDs    []string  `json:"excludedCategoryIds"`
+		MinVisits              *int      `json:"minVisits"`
+		MinAmountMinor         *int64    `json:"minAmountMinor"`
 		PurchasedZones         []ZoneRef `json:"purchasedZones"`
 		PeriodDays             int       `json:"periodDays"`
 		PeriodDaysSNAK         int       `json:"period_days"`
@@ -106,6 +114,10 @@ func (r *SegmentRule) UnmarshalJSON(data []byte) error {
 	if len(r.ExcludedTenantIDs) == 0 {
 		r.ExcludedTenantIDs = raw.ExcludedTenantIDsSnake
 	}
+	r.VisitedCategoryIDs = raw.VisitedCategoryIDs
+	r.ExcludedCategoryIDs = raw.ExcludedCategoryIDs
+	r.MinVisits = raw.MinVisits
+	r.MinAmountMinor = raw.MinAmountMinor
 	r.PurchasedZones = raw.PurchasedZones
 	r.PeriodDays = raw.PeriodDays
 	if r.PeriodDays == 0 {

@@ -143,19 +143,32 @@ func buildQuery(rule domain.SegmentRule, since time.Time) (string, []any) {
 
 	var base string
 	var conditions []string
-	if len(rule.VisitedTenantIDs) > 0 {
-		base = `
-			SELECT DISTINCT e.guest_id
-			FROM event e
-			JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
-			WHERE e.guest_id IS NOT NULL
-				AND e.tenant_id IN (` + args.addAll(rule.VisitedTenantIDs) + `)
-				AND e.occurred_at >= ` + sinceArg
-		if len(rule.PurchasedZones) > 0 {
-			conditions = append(conditions, `EXISTS (SELECT 1 `+purchasesInZones(args, rule.PurchasedZones, sinceArg)+` AND ep.guest_id = base.guest_id)`)
+	switch {
+	case len(rule.VisitedTenantIDs) > 0:
+		base = `SELECT DISTINCT e.guest_id ` + presenceAtTenants(args, rule.VisitedTenantIDs, sinceArg) + ` AND e.guest_id IS NOT NULL`
+		if len(rule.VisitedCategoryIDs) > 0 {
+			conditions = append(conditions, `EXISTS (SELECT 1 `+presenceInCategories(args, rule.VisitedCategoryIDs, sinceArg)+` AND e.guest_id = base.guest_id)`)
 		}
-	} else {
+	case len(rule.VisitedCategoryIDs) > 0:
+		base = `SELECT DISTINCT e.guest_id ` + presenceInCategories(args, rule.VisitedCategoryIDs, sinceArg) + ` AND e.guest_id IS NOT NULL`
+	default:
 		base = `SELECT DISTINCT ep.guest_id ` + purchasesInZones(args, rule.PurchasedZones, sinceArg) + ` AND ep.guest_id IS NOT NULL`
+	}
+	if len(rule.PurchasedZones) > 0 && (len(rule.VisitedTenantIDs) > 0 || len(rule.VisitedCategoryIDs) > 0) {
+		conditions = append(conditions, `EXISTS (SELECT 1 `+purchasesInZones(args, rule.PurchasedZones, sinceArg)+` AND ep.guest_id = base.guest_id)`)
+	}
+	if len(rule.ExcludedCategoryIDs) > 0 {
+		conditions = append(conditions, `NOT EXISTS (SELECT 1 `+presenceInCategories(args, rule.ExcludedCategoryIDs, sinceArg)+` AND e.guest_id = base.guest_id)`)
+	}
+	if rule.MinVisits != nil {
+		conditions = append(conditions, `(SELECT COUNT(*) FROM event ev
+				JOIN event_type evt ON evt.id = ev.event_type_id AND evt.counts_as_presence
+				WHERE ev.guest_id = base.guest_id AND ev.occurred_at >= `+sinceArg+`) >= `+args.add(*rule.MinVisits))
+	}
+	if rule.MinAmountMinor != nil {
+		conditions = append(conditions, `(SELECT COALESCE(SUM(ev.amount_minor), 0) FROM event ev
+				JOIN event_type evt ON evt.id = ev.event_type_id AND evt.code = '`+purchaseEventCode+`'
+				WHERE ev.guest_id = base.guest_id AND ev.occurred_at >= `+sinceArg+`) >= `+args.add(*rule.MinAmountMinor))
 	}
 
 	if len(rule.ExcludedTenantIDs) > 0 {
@@ -179,6 +192,21 @@ func buildQuery(rule domain.SegmentRule, since time.Time) (string, []any) {
 		query += ` WHERE ` + strings.Join(conditions, ` AND `)
 	}
 	return query + ` ORDER BY guest_id`, args.values
+}
+
+func presenceAtTenants(args *queryArgs, tenantIDs []string, sinceArg string) string {
+	return `FROM event e
+				JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+				WHERE e.tenant_id IN (` + args.addAll(tenantIDs) + `)
+					AND e.occurred_at >= ` + sinceArg
+}
+
+func presenceInCategories(args *queryArgs, categoryIDs []string, sinceArg string) string {
+	return `FROM event e
+				JOIN event_type et ON et.id = e.event_type_id AND et.counts_as_presence
+				JOIN tenant tc ON tc.id = e.tenant_id
+				WHERE tc.category_id IN (` + args.addAll(categoryIDs) + `)
+					AND e.occurred_at >= ` + sinceArg
 }
 
 func purchasesInZones(args *queryArgs, zones []domain.ZoneRef, sinceArg string) string {
@@ -213,8 +241,19 @@ func validateRule(rule domain.SegmentRule, depth int, path string) error {
 }
 
 func validateLeaf(rule domain.SegmentRule, path string) error {
-	if len(rule.VisitedTenantIDs) == 0 && len(rule.PurchasedZones) == 0 {
-		return domain.ErrValidation
+	if len(rule.VisitedTenantIDs) == 0 && len(rule.VisitedCategoryIDs) == 0 && len(rule.PurchasedZones) == 0 {
+		return &domain.FieldError{Field: path + ".visitedTenantIds", Reason: "Выберите арендатора, категорию или этаж покупки"}
+	}
+	for _, excluded := range rule.ExcludedCategoryIDs {
+		if slices.Contains(rule.VisitedCategoryIDs, excluded) {
+			return &domain.FieldError{Field: path + ".excludedCategoryIds", Reason: "Категория указана и среди посещённых, и среди исключённых"}
+		}
+	}
+	if rule.MinVisits != nil && *rule.MinVisits < 1 {
+		return &domain.FieldError{Field: path + ".minVisits", Reason: "Не меньше 1"}
+	}
+	if rule.MinAmountMinor != nil && *rule.MinAmountMinor < 0 {
+		return &domain.FieldError{Field: path + ".minAmountMinor", Reason: "Не меньше 0"}
 	}
 	for _, excluded := range rule.ExcludedTenantIDs {
 		if slices.Contains(rule.VisitedTenantIDs, excluded) {

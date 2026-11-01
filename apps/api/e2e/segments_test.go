@@ -2,7 +2,9 @@ package e2e
 
 import (
 	"context"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/MangriMen/UCRP/e2e/harness"
 )
@@ -271,4 +273,80 @@ func containsString(haystack []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+func TestSegmentRule_CategoriesAndActivityThresholds(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	w := buildWorld(t, s, "segment-thresholds")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	otherCategory, err := s.Reg.Category(ctx, "segment-thresholds-other")
+	if err != nil {
+		t.Fatalf("fixture category: %v", err)
+	}
+	otherTenant, err := s.Reg.Tenant(ctx, "segment-thresholds-d", otherCategory.ID, 50)
+	if err != nil {
+		t.Fatalf("fixture tenant: %v", err)
+	}
+	cohort := func(name string) []string {
+		ids := make([]string, 5)
+		for i := range ids {
+			g, err := s.Reg.Guest(ctx, "segment-thresholds-"+name+"-"+strconv.Itoa(i))
+			if err != nil {
+				t.Fatalf("fixture guest %s %d: %v", name, i, err)
+			}
+			ids[i] = g.ID
+		}
+		return ids
+	}
+	visits := func(guests []string, tenantID, key string, count int) {
+		for _, guestID := range guests {
+			for day := 1; day <= count; day++ {
+				w.visit(t, s, guestID, tenantID, "segment-thresholds-"+key+"-"+guestID+"-"+strconv.Itoa(day), day)
+			}
+		}
+	}
+	frequent, single, elsewhere, buyers := cohort("frequent"), cohort("single"), cohort("elsewhere"), cohort("buyer")
+	visits(frequent, w.tenantA.ID, "frequent", 3)
+	visits(single, w.tenantA.ID, "single", 1)
+	visits(elsewhere, otherTenant.ID, "elsewhere", 1)
+	visits(buyers, w.tenantA.ID, "buyer", 1)
+	for _, guestID := range buyers {
+		for i := 1; i <= 2; i++ {
+			if err := s.Reg.PresenceEvent(ctx, "purchase", guestID, w.tenantA.ID, w.source.ID, "segment-thresholds-purchase-"+guestID+"-"+strconv.Itoa(i), time.Now().UTC().Add(-time.Duration(i)*time.Hour)); err != nil {
+				t.Fatalf("fixture purchase: %v", err)
+			}
+		}
+	}
+
+	inOtherCategory := previewMembers(t, s, map[string]any{"periodDays": 30, "visitedCategoryIds": []string{otherCategory.ID}})
+	if !containsAll(inOtherCategory, elsewhere) || containsAny(inOtherCategory, append(append(frequent, single...), buyers...)) {
+		t.Fatalf("visitedCategoryIds must match only visitors of the category, got %v", inOtherCategory)
+	}
+	notInOther := previewMembers(t, s, map[string]any{
+		"periodDays": 30, "visitedCategoryIds": []string{w.category.ID}, "excludedCategoryIds": []string{otherCategory.ID},
+	})
+	if !containsAll(notInOther, append(append(frequent, single...), buyers...)) || containsAny(notInOther, elsewhere) {
+		t.Fatalf("excludedCategoryIds must drop visitors of the category, got %v", notInOther)
+	}
+	often := previewMembers(t, s, map[string]any{"periodDays": 30, "visitedTenantIds": []string{w.tenantA.ID}, "minVisits": 3})
+	if !containsAll(often, append(frequent, buyers...)) || containsAny(often, single) {
+		t.Fatalf("minVisits=3 must keep guests with three visits, got %v", often)
+	}
+	spenders := previewMembers(t, s, map[string]any{"periodDays": 30, "visitedTenantIds": []string{w.tenantA.ID}, "minAmountMinor": 2000})
+	if !containsAll(spenders, buyers) || containsAny(spenders, append(frequent, single...)) {
+		t.Fatalf("minAmountMinor=2000 must keep guests who spent that much, got %v", spenders)
+	}
+
+	resp, err := s.API.Post(ctx, "/api/v1/segments/preview", map[string]any{"rule": map[string]any{"periodDays": 30, "minVisits": 2}})
+	if err != nil {
+		t.Fatalf("POST /api/v1/segments/preview without a target: %v", err)
+	}
+	s.RequireStatus(resp, 400, "POST /api/v1/segments/preview without a target")
+	s.RequireSchema("POST", "/api/v1/segments/preview", resp)
+	errorBody, ok := resp.ErrorBody()
+	if !ok || len(errorBody.Error.Details) == 0 || errorBody.Error.Details[0].Field != "rule.visitedTenantIds" {
+		t.Fatalf("a condition without a target must point at rule.visitedTenantIds: %s", resp.Snippet())
+	}
 }
