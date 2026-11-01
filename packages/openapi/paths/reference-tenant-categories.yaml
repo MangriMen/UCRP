@@ -27,6 +27,8 @@ paths:
                 type: array
                 items:
                   $ref: ../components/schemas/reference-tenant-categories.yaml#/TenantCategory
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
         '401':
           $ref: ../components/responses.yaml#/Unauthorized
         '403':
