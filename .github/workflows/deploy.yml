@@ -66,6 +66,7 @@ jobs:
             api:
               - 'apps/api/**'
               - 'deploy/api/**'
+              - '.github/workflows/deploy.yml'
             web:
               - 'apps/web/**'
               - 'packages/api-docs/**'
