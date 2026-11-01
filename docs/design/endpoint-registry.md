@@ -190,7 +190,7 @@
 | `import.process`     | `POST /imports`                                                      | `internal/ingestion`                     | `import:{batch_id}`           | UC-1  |
 | `connector.pull`     | расписание / `POST /data-sources/{id}/sync`                          | `internal/ingestion` (`SourceConnector`) | `pull:{source_id}:{window}`   | UC-14 |
 | `identity.resolve`   | `import.process` (на пачку событий)                                  | `internal/identity`                      | `resolve:{batch_id}:{chunk}`  | UC-12 |
-| `identity.rematch`   | появление нового идентификатора                                      | `internal/identity`                      | `rematch:{identifier_id}`     | UC-12 |
+| `identity.rematch`   | появление нового идентификатора (не реализовано, Q-42)               | `internal/identity`                      | `rematch:{identifier_id}`     | UC-12 |
 | `segment.recompute`  | событие применено / `POST /segments/{id}/recompute` / правка правила | `internal/segments`                      | `segment:{id}:{version_no}`   | UC-13 |
 | `recommend.refresh`  | изменение ленты гостя                                                | `internal/recommend`                     | `reco:{guest_id}`             | UC-15 |
 | `recommend.evaluate` | после `recommend.refresh`                                            | `internal/recommend` (`Evaluator`)       | `eval:{guest_id}`             | UC-15 |

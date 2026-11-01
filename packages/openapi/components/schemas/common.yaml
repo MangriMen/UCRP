@@ -133,7 +133,6 @@ JobAccepted:
         - import.process
         - connector.pull
         - identity.resolve
-        - identity.rematch
         - segment.recompute
         - recommend.refresh
     status:
