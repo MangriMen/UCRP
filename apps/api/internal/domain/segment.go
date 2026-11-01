@@ -170,4 +170,5 @@ type SegmentRepo interface {
 type SegmentEvaluator interface {
 	Preview(ctx context.Context, rule SegmentRule) (size int, examples []string, err error)
 	Evaluate(ctx context.Context, rule SegmentRule) ([]string, error)
+	DisplayNames(ctx context.Context, guestIDs []string) (map[string]string, error)
 }

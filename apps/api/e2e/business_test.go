@@ -246,6 +246,16 @@ func TestSegmentPreviewCountsMatchingGuests(t *testing.T) {
 	if size != 5 {
 		t.Fatalf("preview size: expected 5 guests that visited A or B and never C, got %d", size)
 	}
+	examples, _ := obj["examples"].([]any)
+	if len(examples) == 0 {
+		t.Fatalf("preview must return examples: %s", resp.Snippet())
+	}
+	for _, example := range examples {
+		entry, _ := example.(map[string]any)
+		if harness.StringField(entry, "displayName") == "" {
+			t.Fatalf("an admin with field.guest.display_name.read must get example names: %v", entry)
+		}
+	}
 }
 
 func TestSegmentPreviewDoesNotPersist(t *testing.T) {

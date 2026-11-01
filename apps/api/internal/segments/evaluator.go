@@ -40,6 +40,26 @@ func (e *SqlEvaluator) Preview(ctx context.Context, rule domain.SegmentRule) (in
 	return len(guestIDs), examples, nil
 }
 
+func (e *SqlEvaluator) DisplayNames(ctx context.Context, guestIDs []string) (map[string]string, error) {
+	names := make(map[string]string, len(guestIDs))
+	if len(guestIDs) == 0 {
+		return names, nil
+	}
+	rows, err := e.db.QueryContext(ctx, `SELECT id, COALESCE(display_name, '') FROM guest WHERE id = ANY($1)`, guestIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, err
+		}
+		names[id] = name
+	}
+	return names, rows.Err()
+}
+
 func (e *SqlEvaluator) Evaluate(ctx context.Context, rule domain.SegmentRule) ([]string, error) {
 	if err := validateRule(rule, 0, "rule"); err != nil {
 		return nil, err

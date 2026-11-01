@@ -56,7 +56,8 @@ func ruleOrFlat(rule *domain.SegmentRule, visited, excluded []string, periodDays
 }
 
 type SegmentPreviewExample struct {
-	GuestID string `json:"guestId"`
+	GuestID     string `json:"guestId"`
+	DisplayName string `json:"displayName,omitempty"`
 }
 
 type SegmentPreviewResponse struct {
@@ -105,21 +106,26 @@ type SegmentPage struct {
 	Meta  PageMeta     `json:"meta"`
 }
 
-func (s *SegmentService) Preview(ctx context.Context, req SegmentPreviewRequest) (*SegmentPreviewResponse, error) {
+func (s *SegmentService) Preview(ctx context.Context, req SegmentPreviewRequest, showNames bool) (*SegmentPreviewResponse, error) {
 	size, examples, err := s.evaluator.Preview(ctx, req.toRule())
 	if err != nil {
 		return nil, err
 	}
+	if size < 5 {
+		return &SegmentPreviewResponse{Examples: []SegmentPreviewExample{}, Suppressed: true}, nil
+	}
+	var names map[string]string
+	if showNames {
+		names, err = s.evaluator.DisplayNames(ctx, examples)
+		if err != nil {
+			return nil, err
+		}
+	}
 	out := make([]SegmentPreviewExample, 0, len(examples))
 	for _, id := range examples {
-		out = append(out, SegmentPreviewExample{GuestID: id})
+		out = append(out, SegmentPreviewExample{GuestID: id, DisplayName: names[id]})
 	}
 	res := &SegmentPreviewResponse{Examples: out, Cached: false}
-	if size < 5 {
-		res.Suppressed = true
-		res.Examples = []SegmentPreviewExample{}
-		return res, nil
-	}
 	res.Size = &size
 	return res, nil
 }

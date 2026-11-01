@@ -94,9 +94,14 @@ func (h *SegmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	res, err := h.segments.Preview(ctx, req)
+	res, err := h.segments.Preview(ctx, req, showNames)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			httpx.WriteError(w, r, http.StatusGatewayTimeout, "timeout", "Превышен таймаут предпросмотра, сузьте период")
