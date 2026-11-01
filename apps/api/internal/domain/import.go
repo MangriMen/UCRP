@@ -23,25 +23,26 @@ const (
 )
 
 type ImportBatch struct {
-	ID            string
-	DataSourceID  string
-	Mode          ImportMode
-	FileHash      string
-	FileName      string
-	FileSizeBytes int64
-	Status        ImportStatus
-	TotalRows     int
-	AcceptedRows  int
-	RejectedRows  int
-	DuplicateRows int
-	ErrorMessage  string
-	CreatedBy     string
-	CreatedAt     time.Time
-	StartedAt     *time.Time
-	FinishedAt    *time.Time
-	StorageKey    string
-	WindowFrom    *time.Time
-	WindowTo      *time.Time
+	ID             string
+	DataSourceID   string
+	DataSourceName string
+	Mode           ImportMode
+	FileHash       string
+	FileName       string
+	FileSizeBytes  int64
+	Status         ImportStatus
+	TotalRows      int
+	AcceptedRows   int
+	RejectedRows   int
+	DuplicateRows  int
+	ErrorMessage   string
+	CreatedBy      string
+	CreatedAt      time.Time
+	StartedAt      *time.Time
+	FinishedAt     *time.Time
+	StorageKey     string
+	WindowFrom     *time.Time
+	WindowTo       *time.Time
 }
 
 type RejectedRow struct {

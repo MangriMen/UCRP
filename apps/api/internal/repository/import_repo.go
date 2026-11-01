@@ -147,7 +147,7 @@ func (r *ImportBatchSQL) one(ctx context.Context, query string, args ...any) (*d
 }
 
 const batchSelect = `
-	SELECT id, data_source_id, mode, COALESCE(file_name, ''), COALESCE(file_hash, ''), COALESCE(file_size_bytes, 0),
+	SELECT id, data_source_id, COALESCE((SELECT d.name FROM data_source d WHERE d.id = import_batch.data_source_id), ''), mode, COALESCE(file_name, ''), COALESCE(file_hash, ''), COALESCE(file_size_bytes, 0),
 		status, total_rows, accepted_rows, rejected_rows, duplicate_rows, COALESCE(error_message, ''),
 		COALESCE(created_by, ''), created_at, started_at, finished_at, window_from, window_to
 	FROM import_batch`
@@ -161,7 +161,7 @@ func scanBatch(s scanner) (*domain.ImportBatch, error) {
 		winTo    sql.NullTime
 	)
 	err := s.Scan(
-		&b.ID, &b.DataSourceID, &b.Mode, &b.FileName, &b.FileHash, &b.FileSizeBytes,
+		&b.ID, &b.DataSourceID, &b.DataSourceName, &b.Mode, &b.FileName, &b.FileHash, &b.FileSizeBytes,
 		&b.Status, &b.TotalRows, &b.AcceptedRows, &b.RejectedRows, &b.DuplicateRows, &b.ErrorMessage,
 		&b.CreatedBy, &b.CreatedAt, &started, &finished, &winFrom, &winTo,
 	)

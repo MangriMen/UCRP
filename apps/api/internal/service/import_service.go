@@ -68,20 +68,21 @@ func NewImportService(
 }
 
 type ImportDTO struct {
-	ID           string     `json:"id"`
-	DataSourceID string     `json:"dataSourceId"`
-	Mode         string     `json:"mode"`
-	Status       string     `json:"status"`
-	FileName     string     `json:"fileName,omitempty"`
-	Total        int        `json:"totalRows"`
-	Accepted     int        `json:"acceptedRows"`
-	Rejected     int        `json:"rejectedRows"`
-	Duplicate    int        `json:"duplicateRows"`
-	ErrorMessage string     `json:"errorMessage,omitempty"`
-	CreatedBy    string     `json:"createdBy,omitempty"`
-	CreatedAt    time.Time  `json:"createdAt"`
-	StartedAt    *time.Time `json:"startedAt,omitempty"`
-	FinishedAt   *time.Time `json:"finishedAt,omitempty"`
+	ID             string     `json:"id"`
+	DataSourceID   string     `json:"dataSourceId"`
+	DataSourceName string     `json:"dataSourceName,omitempty"`
+	Mode           string     `json:"mode"`
+	Status         string     `json:"status"`
+	FileName       string     `json:"fileName,omitempty"`
+	Total          int        `json:"totalRows"`
+	Accepted       int        `json:"acceptedRows"`
+	Rejected       int        `json:"rejectedRows"`
+	Duplicate      int        `json:"duplicateRows"`
+	ErrorMessage   string     `json:"errorMessage,omitempty"`
+	CreatedBy      string     `json:"createdBy,omitempty"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	StartedAt      *time.Time `json:"startedAt,omitempty"`
+	FinishedAt     *time.Time `json:"finishedAt,omitempty"`
 }
 
 type CreateImportResult struct {
@@ -390,20 +391,21 @@ func readCSV(r io.Reader, mapping ingestion.FieldMapping) ([]ingestion.Row, erro
 
 func toImportDTO(b domain.ImportBatch) ImportDTO {
 	return ImportDTO{
-		ID:           b.ID,
-		DataSourceID: b.DataSourceID,
-		Mode:         string(b.Mode),
-		Status:       string(b.Status),
-		FileName:     b.FileName,
-		Total:        b.TotalRows,
-		Accepted:     b.AcceptedRows,
-		Rejected:     b.RejectedRows,
-		Duplicate:    b.DuplicateRows,
-		ErrorMessage: b.ErrorMessage,
-		CreatedBy:    b.CreatedBy,
-		CreatedAt:    b.CreatedAt,
-		StartedAt:    b.StartedAt,
-		FinishedAt:   b.FinishedAt,
+		ID:             b.ID,
+		DataSourceID:   b.DataSourceID,
+		DataSourceName: b.DataSourceName,
+		Mode:           string(b.Mode),
+		Status:         string(b.Status),
+		FileName:       b.FileName,
+		Total:          b.TotalRows,
+		Accepted:       b.AcceptedRows,
+		Rejected:       b.RejectedRows,
+		Duplicate:      b.DuplicateRows,
+		ErrorMessage:   b.ErrorMessage,
+		CreatedBy:      b.CreatedBy,
+		CreatedAt:      b.CreatedAt,
+		StartedAt:      b.StartedAt,
+		FinishedAt:     b.FinishedAt,
 	}
 }
 
