@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/MangriMen/UCRP/e2e/harness"
 )
@@ -185,4 +186,82 @@ func trackCampaign(s *harness.Suite, campaignID string) {
 type segmentRef struct {
 	ID   string
 	Name string
+}
+
+func TestCampaignResultsCountConversionsAtTheTargetTenant(t *testing.T) {
+	s := harness.New(t).WithDB().WithMarketer()
+	w := buildWorld(t, s, "campaign-results")
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	members := make([]string, 0, 2)
+	for i := 0; i < 2; i++ {
+		guest, err := s.Reg.Guest(ctx, "campaign-results-g"+string(rune('a'+i)))
+		if err != nil {
+			t.Fatalf("fixture guest %d: %v", i, err)
+		}
+		if _, err := s.Reg.Identifier(ctx, guest.ID, "phone", s.Reg.Phone(40+i), w.source.ID); err != nil {
+			t.Fatalf("fixture identifier %d: %v", i, err)
+		}
+		members = append(members, guest.ID)
+	}
+	segment, err := s.Reg.Segment(ctx, "campaign-results", `{"visitedTenantIds":[],"periodDays":90}`, members)
+	if err != nil {
+		t.Fatalf("fixture segment: %v", err)
+	}
+
+	create, err := s.API.Post(ctx, "/api/v1/campaigns", map[string]any{
+		"name":           s.Reg.Name("campaign-results"),
+		"targetTenantId": w.tenantC.ID,
+		"segmentId":      segment.ID,
+	})
+	if err != nil {
+		t.Fatalf("POST /api/v1/campaigns: %v", err)
+	}
+	s.RequireStatus(create, 201, "POST /api/v1/campaigns")
+	campaignID := harness.StringField(jsonObject(t, create, "created campaign"), "id")
+	trackCampaign(s, campaignID)
+
+	export, err := s.API.Post(ctx, "/api/v1/exports", map[string]any{
+		"segmentId":      segment.ID,
+		"channel":        "sms",
+		"format":         "csv",
+		"campaignId":     campaignID,
+		"idempotencyKey": s.Reg.Name("campaign-results-export"),
+	})
+	if err != nil {
+		t.Fatalf("POST /api/v1/exports: %v", err)
+	}
+	s.RequireStatus(export, 201, "POST /api/v1/exports for the campaign")
+	trackExport(s, harness.StringField(jsonObject(t, export, "created export"), "id"))
+
+	visitAt := time.Now().UTC().Add(time.Hour)
+	if _, err := s.Reg.Event(ctx, members[0], w.tenantC.ID, w.eventType.ID, w.source.ID, "campaign-results-visit", visitAt, nil); err != nil {
+		t.Fatalf("fixture conversion visit: %v", err)
+	}
+	if _, err := s.Reg.Event(ctx, members[1], w.tenantA.ID, w.eventType.ID, w.source.ID, "campaign-results-other", visitAt, nil); err != nil {
+		t.Fatalf("fixture visit elsewhere: %v", err)
+	}
+
+	path := "/api/v1/campaigns/" + campaignID + "/results"
+	resp, err := s.API.Get(ctx, path, nil)
+	if err != nil {
+		t.Fatalf("GET %s: %v", path, err)
+	}
+	s.RequireStatus(resp, 200, "GET /api/v1/campaigns/{id}/results")
+	s.RequireDeclaredStatus("GET", path, resp)
+	s.RequireSchema("GET", path, resp)
+	results := jsonObject(t, resp, "campaign results")
+	recipients, _ := harness.IntField(results, "recipients")
+	conversions, _ := harness.IntField(results, "conversions")
+	rate, _ := results["conversionRate"].(float64)
+	if recipients != 2 || conversions != 1 || rate != 0.5 {
+		t.Fatalf("expected 2 recipients, 1 conversion at the target tenant, rate 0.5: %s", resp.Snippet())
+	}
+
+	missing, err := s.API.Get(ctx, "/api/v1/campaigns/"+s.Reg.NewID()+"/results", nil)
+	if err != nil {
+		t.Fatalf("GET unknown campaign results: %v", err)
+	}
+	s.RequireStatus(missing, 404, "GET /api/v1/campaigns/{id}/results for an unknown campaign")
 }

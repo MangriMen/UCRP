@@ -146,6 +146,16 @@ func TestDashboardMetricsFields(t *testing.T) {
 			t.Fatalf("%q must not be negative, got %v", key, seconds)
 		}
 	}
+	sampleSizes, ok := metrics["sampleSizes"].(map[string]any)
+	if !ok {
+		t.Fatalf("the metrics payload is missing sampleSizes: %s", resp.Snippet())
+	}
+	for _, key := range []string{"events", "mergeCandidates", "exports", "contacts"} {
+		size, ok := harness.IntField(sampleSizes, key)
+		if !ok || size < 0 {
+			t.Fatalf("sampleSizes.%s must be a non-negative integer: %s", key, resp.Snippet())
+		}
+	}
 }
 
 func TestTenantAggregatesRespectsKThreshold(t *testing.T) {
