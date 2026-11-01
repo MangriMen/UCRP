@@ -78,7 +78,18 @@ func (r *Registry) Cleanup(ctx context.Context) error {
 		note(r.db.Exec(ctx, `DELETE FROM rejected_row rr USING import_batch ib, data_source ds WHERE rr.import_batch_id = ib.id AND ib.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
 		note(r.db.Exec(ctx, `DELETE FROM import_batch ib USING data_source ds WHERE ib.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
 		note(r.db.Exec(ctx, `DELETE FROM event e USING data_source ds WHERE e.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
+		note(r.db.Exec(ctx, `DELETE FROM contact_log cl USING export_member em, guest_identifier gi, data_source ds
+			WHERE cl.export_id = em.export_id AND cl.guest_id = em.guest_id AND em.identifier_id = gi.id AND gi.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
+		note(r.db.Exec(ctx, `DELETE FROM export_member em USING guest_identifier gi, data_source ds
+			WHERE em.identifier_id = gi.id AND gi.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
+		note(r.db.Exec(ctx, `DELETE FROM guest_identifier gi USING data_source ds WHERE gi.data_source_id = ds.id AND ds.tenant_id = $1`, tenantID))
 		note(r.db.Exec(ctx, `DELETE FROM data_source WHERE tenant_id = $1`, tenantID))
+	}
+
+	for _, userID := range r.created["app_user"] {
+		note(r.db.Exec(ctx, `DELETE FROM audit_log WHERE actor_user_id = $1`, userID))
+		note(r.db.Exec(ctx, `UPDATE access_grant SET created_by = NULL WHERE created_by = $1`, userID))
+		note(r.db.Exec(ctx, `UPDATE access_grant SET approved_by = NULL WHERE approved_by = $1`, userID))
 	}
 
 	for _, segID := range r.created["segment"] {
