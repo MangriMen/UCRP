@@ -17,8 +17,8 @@ type campaignSpec struct {
 func demoCampaigns() []campaignSpec {
 	return []campaignSpec{
 		{"camp-cinema", "Сеансы в кино", "SMS-кампания для гостей кинотеатра без кофейни", "cinema-sinema", "seg-sleep-cinema", 14, "active", 20, -10},
-		{"camp-fit", "Первый визит в ФитЗону", "Приглашение на пробное занятие", "fit-zone", "tpl-sleeping", 14, "finished", 60, 20},
-		{"camp-kids", "Приветственная цепочка", "Email-цепочка для новых гостей детского центра", "kids-cube", "tpl-newcomer", 7, "draft", 0, 0},
+		{"camp-fit", "Первый визит в ФитЗону", "Приглашение на пробное занятие", "fit-zone", "seg-sleeping", 14, "finished", 60, 20},
+		{"camp-kids", "Приветственная цепочка", "Email-цепочка для новых гостей детского центра", "kids-cube", "seg-newcomer", 7, "draft", 0, 0},
 	}
 }
 
