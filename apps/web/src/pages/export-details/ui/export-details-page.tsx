@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import {
   DownloadExportButton,
@@ -13,6 +12,7 @@ import { formatDateTime, formatNumber } from '@/shared/lib/format'
 import { useUrlTab } from '@/shared/lib/hooks/use-url-tab'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Card, CardContent } from '@/shared/ui/card'
+import { DescriptionRow } from '@/shared/ui/description-list'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { PageHeader } from '@/shared/ui/page-header'
@@ -24,15 +24,6 @@ import { MembersTable } from './members-table'
 const TABS = ['recipients', 'control'] as const
 
 const count = (value: number | null | undefined) => (value == null ? 'скрыто' : formatNumber(value))
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
-      <dt className="text-sm text-muted-foreground sm:w-48">{label}</dt>
-      <dd className="text-sm">{children}</dd>
-    </div>
-  )
-}
 
 function ExportCounters({ item }: { item: Export }) {
   return (
@@ -92,7 +83,7 @@ export function ExportDetailsPage() {
       <Card>
         <CardContent>
           <dl className="flex flex-col gap-3">
-            <Row label="Сегмент">
+            <DescriptionRow label="Сегмент">
               {can('segment.read') ? (
                 <Link className="underline" to={`/segments/${item.segmentId}`}>
                   {segmentName}
@@ -101,9 +92,9 @@ export function ExportDetailsPage() {
                 segmentName
               )}
               {item.segmentVersionNo != null && ` · версия ${item.segmentVersionNo}`}
-            </Row>
+            </DescriptionRow>
             {item.campaignId && (
-              <Row label="Кампания">
+              <DescriptionRow label="Кампания">
                 {can('campaign.read') ? (
                   <Link className="underline" to={`/campaigns/${item.campaignId}`}>
                     Открыть кампанию
@@ -111,13 +102,15 @@ export function ExportDetailsPage() {
                 ) : (
                   item.campaignId
                 )}
-              </Row>
+              </DescriptionRow>
             )}
-            <Row label="Канал">{exportChannelLabels[item.channel]}</Row>
-            <Row label="Формат">{exportFormatLabels[item.format]}</Row>
-            <Row label="Контрольная группа">{item.controlPercent ?? 0}%</Row>
-            <Row label="Создана">{formatDateTime(item.createdAt)}</Row>
-            <Row label="Готова">{item.finishedAt ? formatDateTime(item.finishedAt) : '—'}</Row>
+            <DescriptionRow label="Канал">{exportChannelLabels[item.channel]}</DescriptionRow>
+            <DescriptionRow label="Формат">{exportFormatLabels[item.format]}</DescriptionRow>
+            <DescriptionRow label="Контрольная группа">{item.controlPercent ?? 0}%</DescriptionRow>
+            <DescriptionRow label="Создана">{formatDateTime(item.createdAt)}</DescriptionRow>
+            <DescriptionRow label="Готова">
+              {item.finishedAt ? formatDateTime(item.finishedAt) : '—'}
+            </DescriptionRow>
           </dl>
         </CardContent>
       </Card>
