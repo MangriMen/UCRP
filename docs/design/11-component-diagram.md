@@ -56,7 +56,7 @@ flowchart TB
   MW["platform/auth Principal: role, tenant_id"]
   H["handler RequireRole по реестру"]
   SVC["service: access.Decide и проверка tenant_id в claims"]
-  REPO["repository: ForTenant WHERE tenant_id"]
+  REPO["repository: фильтр tenant_id (TenantGuestSQL)"]
   AUD["CMP-9 Audit"]
   PORTS["domain ports: Queue, BlobStore, Cache, Clock"]
   SPA -->|"Bearer JWT"| MW --> H --> SVC
