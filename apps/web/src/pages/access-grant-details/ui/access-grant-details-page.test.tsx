@@ -43,7 +43,7 @@ describe('AccessGrantDetailsPage', () => {
     renderPage('/access/grants/grant-0001')
     expect(await screen.findByRole('button', { name: 'Приостановить' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Отозвать' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Изменить' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Изменить' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Активировать' })).not.toBeInTheDocument()
   })
 
@@ -51,7 +51,7 @@ describe('AccessGrantDetailsPage', () => {
     renderPage('/access/grants/grant-0001', reader)
     await screen.findByRole('heading', { name: 'Грант: Заря' })
     expect(screen.queryByRole('button', { name: 'Отозвать' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Изменить' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Изменить' })).not.toBeInTheDocument()
   })
 
   it('shows the grant history tab from the URL', async () => {
@@ -73,7 +73,7 @@ describe('AccessGrantDetailsPage', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Отозвать' }))
     expect(await screen.findByText('Отозван')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Отозвать' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Изменить' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Изменить' })).not.toBeInTheDocument()
   })
 
   it('offers no actions or effective access for a staff role grant', async () => {
@@ -90,7 +90,7 @@ describe('AccessGrantDetailsPage', () => {
     renderPage('/access/grants/bootstrap-role-marketer')
     expect(await screen.findByText('Обзор')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Отозвать' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Изменить' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Изменить' })).not.toBeInTheDocument()
     expect(screen.queryByText('Эффективный доступ субъекта')).not.toBeInTheDocument()
   })
 

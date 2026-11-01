@@ -18,14 +18,9 @@ const accessAuditWhere = `
 	AND ($4::timestamp IS NULL OR created_at <= $4::timestamp)`
 
 func (r *AuditSQL) ListAccessAudit(ctx context.Context, grantID, actorID string, from, to *time.Time, limit, offset int) ([]domain.AuditLog, int, error) {
-	var total int
-	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_log`+accessAuditWhere,
-		grantID, actorID, from, to).Scan(&total); err != nil {
-		return nil, 0, err
-	}
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, COALESCE(actor_user_id, ''), actor_role, action, entity_type, entity_id,
-			COALESCE(details, ''), COALESCE(request_id, ''), created_at
+			COALESCE(details, ''), COALESCE(request_id, ''), created_at, COUNT(*) OVER()
 		FROM audit_log`+accessAuditWhere+`
 		ORDER BY created_at DESC, id DESC LIMIT $5 OFFSET $6`, grantID, actorID, from, to, limit, offset)
 	if err != nil {
@@ -33,15 +28,22 @@ func (r *AuditSQL) ListAccessAudit(ctx context.Context, grantID, actorID string,
 	}
 	defer func() { _ = rows.Close() }()
 	entries := make([]domain.AuditLog, 0)
+	var total int
 	for rows.Next() {
 		var entry domain.AuditLog
-		if err := rows.Scan(&entry.ID, &entry.ActorUserID, &entry.ActorRole, &entry.Action, &entry.EntityType, &entry.EntityID, &entry.Details, &entry.RequestID, &entry.CreatedAt); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.ActorUserID, &entry.ActorRole, &entry.Action, &entry.EntityType, &entry.EntityID, &entry.Details, &entry.RequestID, &entry.CreatedAt, &total); err != nil {
 			return nil, 0, err
 		}
 		entries = append(entries, entry)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, 0, err
+	}
+	if len(entries) == 0 && (offset > 0 || limit == 0) {
+		if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_log`+accessAuditWhere,
+			grantID, actorID, from, to).Scan(&total); err != nil {
+			return nil, 0, err
+		}
 	}
 	return entries, total, nil
 }

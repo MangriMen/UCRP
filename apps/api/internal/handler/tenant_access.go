@@ -82,7 +82,6 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 		{Allowed: true, PeriodDays: action.PeriodDays, Threshold: max(action.KThreshold, minSuppressionK)},
 		visits,
 	}
-	allowed := map[string]bool{}
 	for _, metric := range optionalTenantMetrics {
 		scope, err := authorizeMetric(r.Context(), h.authorizer, principal, metric, tenantID)
 		if err != nil {
@@ -93,18 +92,11 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 			httpx.WriteError(w, r, http.StatusForbidden, "metric_not_granted", "Нет доступа к метрике")
 			return
 		}
-		allowed[metric] = scope.Allowed
+		grantTenantMetric(&query.Metrics, metric, scope.Allowed)
 		scopes = append(scopes, scope)
 	}
 	periodDays, threshold := combineMetricScopes(scopes...)
 	query.Threshold = threshold
-	query.Metrics = service.TenantAggregateMetrics{
-		NewGuests:      allowed[newGuestsMetric],
-		RepeatVisits:   allowed[repeatVisitsMetric],
-		Revenue:        allowed[revenueMetric],
-		AvgCheck:       allowed[avgCheckMetric],
-		FirstPurchases: allowed[firstPurchaseMetric],
-	}
 	query.From = clampPeriodStart(query.From, periodDays, time.Now().UTC())
 	result, err := h.analytics.TenantAggregate(r.Context(), query)
 	if err != nil {
@@ -126,6 +118,21 @@ func (h *TenantAccessHandler) Aggregates(w http.ResponseWriter, r *http.Request)
 const maxAggregatePeriodDays = 366
 
 var optionalTenantMetrics = []string{newGuestsMetric, repeatVisitsMetric, revenueMetric, avgCheckMetric, firstPurchaseMetric}
+
+func grantTenantMetric(metrics *service.TenantAggregateMetrics, metric string, allowed bool) {
+	switch metric {
+	case newGuestsMetric:
+		metrics.NewGuests = allowed
+	case repeatVisitsMetric:
+		metrics.RepeatVisits = allowed
+	case revenueMetric:
+		metrics.Revenue = allowed
+	case avgCheckMetric:
+		metrics.AvgCheck = allowed
+	case firstPurchaseMetric:
+		metrics.FirstPurchases = allowed
+	}
+}
 
 func requestedTenantMetrics(r *http.Request) (map[string]bool, bool) {
 	requested := map[string]bool{}

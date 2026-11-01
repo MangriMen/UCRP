@@ -33,6 +33,8 @@ paths:
             application/json:
               schema:
                 $ref: ../components/schemas/users.yaml#/UserPage
+        '400':
+          $ref: ../components/responses.yaml#/BadRequest
         '401':
           $ref: ../components/responses.yaml#/Unauthorized
         '403':

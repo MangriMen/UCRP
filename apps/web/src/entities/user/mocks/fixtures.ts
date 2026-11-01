@@ -185,6 +185,17 @@ export const mockUserRecords: User[] = [
     updatedAt: '2026-01-05T09:00:00Z',
   })),
   {
+    id: 'user-manager-2',
+    email: 'manager2@ucrp.test',
+    displayName: 'Мила Менеджер',
+    role: 'manager',
+    tenantId: null,
+    isActive: true,
+    lastLoginAt: '2026-10-29T08:00:00Z',
+    createdAt: '2026-02-10T09:00:00Z',
+    updatedAt: '2026-02-10T09:00:00Z',
+  },
+  {
     id: 'user-marketer-2',
     email: 'olga@ucrp.test',
     displayName: 'Ольга Маркетолог',

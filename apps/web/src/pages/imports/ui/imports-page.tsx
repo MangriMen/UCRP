@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router'
+import { useNavigate } from 'react-router'
 import { useDataSourceOptions } from '@/entities/data-source'
 import {
   ImportStatusBadge,
@@ -10,7 +10,9 @@ import {
 import { useAuth } from '@/entities/user'
 import { UploadImportForm } from '@/features/upload-import'
 import { formatDateTime } from '@/shared/lib/format'
-import { ALL_OPTION, parsePage } from '@/shared/lib/search-params'
+import { useOptionParam } from '@/shared/lib/hooks/use-option-param'
+import { useListParams } from '@/shared/lib/list-params'
+import { ALL_OPTION } from '@/shared/lib/search-params'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { OptionSelect } from '@/shared/ui/option-select'
@@ -30,32 +32,27 @@ const statusItems = [
   ...Object.entries(importStatusLabels).map(([value, label]) => ({ value, label })),
 ]
 
-const isImportStatus = (value: string): value is ImportStatus => value in importStatusLabels
+const statusValues = statusItems.map((item) => item.value)
 
 export function ImportsPage() {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const dataSourceId = searchParams.get('source') ?? ALL_OPTION
-  const status = searchParams.get('status') ?? ALL_OPTION
-  const page = parsePage(searchParams.get('page'))
+  const params = useListParams()
+  const { page, pageSize, setPage, setPageSize } = params
 
   const { can } = useAuth()
   const sources = useDataSourceOptions()
+  const sourceParam = useOptionParam(
+    params,
+    'source',
+    sources.isSuccess ? sources.data.map((s) => s.id) : undefined,
+  )
+  const statusParam = useOptionParam(params, 'status', statusValues)
   const imports = useImports({
-    dataSourceId: dataSourceId === ALL_OPTION ? undefined : dataSourceId,
-    status: isImportStatus(status) ? status : undefined,
+    dataSourceId: sourceParam.value === ALL_OPTION ? undefined : sourceParam.value,
+    status: statusParam.value === ALL_OPTION ? undefined : (statusParam.value as ImportStatus),
     page,
+    pageSize,
   })
-
-  const updateParams = (changes: Record<string, string | null>) =>
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current)
-      for (const [key, value] of Object.entries(changes)) {
-        if (value === null || value === ALL_OPTION) next.delete(key)
-        else next.set(key, value)
-      }
-      return next
-    })
 
   const sourceItems = [
     { value: ALL_OPTION, label: 'Все источники' },
@@ -85,15 +82,15 @@ export function ImportsPage() {
         <div className="flex flex-wrap gap-2">
           <OptionSelect
             items={sourceItems}
-            value={dataSourceId}
-            onValueChange={(value) => updateParams({ source: value, page: null })}
+            value={sourceParam.value}
+            onValueChange={sourceParam.onChange}
             ariaLabel="Источник"
             className="w-56"
           />
           <OptionSelect
             items={statusItems}
-            value={status}
-            onValueChange={(value) => updateParams({ status: value, page: null })}
+            value={statusParam.value}
+            onValueChange={statusParam.onChange}
             ariaLabel="Статус"
             className="w-56"
           />
@@ -106,7 +103,8 @@ export function ImportsPage() {
           error={imports.error}
           emptyTitle="Загрузок пока нет"
           meta={imports.data?.meta}
-          onPageChange={(next) => updateParams({ page: String(next) })}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
           onRowClick={(b) => navigate(`/import/${b.id}`)}
         />
       </section>

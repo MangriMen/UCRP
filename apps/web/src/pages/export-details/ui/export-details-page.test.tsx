@@ -48,7 +48,7 @@ describe('ExportDetailsPage', () => {
     expect(screen.getByText('Исключено лимитом')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Скачать CSV' })).toBeInTheDocument()
     const table = await screen.findByRole('table')
-    expect(await within(table).findByText('guest-0021')).toBeInTheDocument()
+    expect(await within(table).findByText('Гость 0021')).toBeInTheDocument()
     expect(within(table).getByText('79000000021')).toBeInTheDocument()
   })
 
@@ -57,8 +57,8 @@ describe('ExportDetailsPage', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Контрольная группа' }))
     expect(screen.getByTestId('search')).toHaveTextContent('tab=control')
     const table = await screen.findByRole('table')
-    expect(await within(table).findByText('guest-0082')).toBeInTheDocument()
-    expect(within(table).queryByText('guest-0001')).not.toBeInTheDocument()
+    expect(await within(table).findByText('Гость 0082')).toBeInTheDocument()
+    expect(within(table).queryByText('Гость 0001')).not.toBeInTheDocument()
   })
 
   it('hides members and download from the manager', async () => {

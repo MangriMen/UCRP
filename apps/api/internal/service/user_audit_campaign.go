@@ -35,20 +35,21 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (LoginRe
 	}, nil
 }
 
-func (s *AuthService) ListUsers(ctx context.Context, limit, offset int) ([]UserDTO, error) {
-	items, err := s.users.List(ctx, limit, offset)
+func (s *AuthService) ListUsers(ctx context.Context, filter domain.UserFilter, limit, offset int) ([]UserDTO, int, error) {
+	items, total, err := s.users.List(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]UserDTO, 0, len(items))
 	for _, u := range items {
 		out = append(out, UserDTO{
 			ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
 			Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive,
-			CreatedAt: u.CreatedAt, UpdatedAt: u.UpdatedAt,
+			LastLoginAt: u.LastLoginAt,
+			CreatedAt:   u.CreatedAt, UpdatedAt: u.UpdatedAt,
 		})
 	}
-	return out, nil
+	return out, total, nil
 }
 
 func (s *AuthService) GetUser(ctx context.Context, id string) (*UserDTO, error) {
@@ -59,19 +60,21 @@ func (s *AuthService) GetUser(ctx context.Context, id string) (*UserDTO, error) 
 	return &UserDTO{
 		ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
 		Role: string(u.Role), TenantID: u.TenantID, IsActive: u.IsActive,
-		CreatedAt: u.CreatedAt, UpdatedAt: u.UpdatedAt,
+		LastLoginAt: u.LastLoginAt,
+		CreatedAt:   u.CreatedAt, UpdatedAt: u.UpdatedAt,
 	}, nil
 }
 
 type UserDTO struct {
-	ID          string    `json:"id"`
-	Email       string    `json:"email"`
-	DisplayName string    `json:"displayName"`
-	Role        string    `json:"role"`
-	TenantID    string    `json:"tenantId,omitempty"`
-	IsActive    bool      `json:"isActive"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID          string     `json:"id"`
+	Email       string     `json:"email"`
+	DisplayName string     `json:"displayName"`
+	Role        string     `json:"role"`
+	TenantID    string     `json:"tenantId,omitempty"`
+	IsActive    bool       `json:"isActive"`
+	LastLoginAt *time.Time `json:"lastLoginAt"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
 type UserCreateRequest struct {
@@ -173,10 +176,10 @@ type AuditDTO struct {
 	CreatedAt  string `json:"createdAt"`
 }
 
-func (s *AuditService) List(ctx context.Context, entityType, entityID, actor string, limit, offset int) ([]AuditDTO, error) {
-	items, err := s.audit.List(ctx, entityType, entityID, actor, limit, offset)
+func (s *AuditService) List(ctx context.Context, filter domain.AuditFilter, limit, offset int) ([]AuditDTO, int, error) {
+	items, total, err := s.audit.List(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]AuditDTO, 0, len(items))
 	for _, a := range items {
@@ -186,7 +189,7 @@ func (s *AuditService) List(ctx context.Context, entityType, entityID, actor str
 			CreatedAt: a.CreatedAt.UTC().Format(time.RFC3339),
 		})
 	}
-	return out, nil
+	return out, total, nil
 }
 
 type CampaignService struct {
@@ -223,16 +226,16 @@ type CampaignRequest struct {
 	Status          string `json:"status"`
 }
 
-func (s *CampaignService) List(ctx context.Context, limit, offset int) ([]CampaignDTO, error) {
-	items, err := s.campaigns.List(ctx, limit, offset)
+func (s *CampaignService) List(ctx context.Context, filter domain.CampaignFilter, limit, offset int) ([]CampaignDTO, int, error) {
+	items, total, err := s.campaigns.List(ctx, filter, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]CampaignDTO, 0, len(items))
 	for _, c := range items {
 		out = append(out, toCampaignDTO(c))
 	}
-	return out, nil
+	return out, total, nil
 }
 
 func (s *CampaignService) Get(ctx context.Context, id string) (*CampaignDTO, error) {

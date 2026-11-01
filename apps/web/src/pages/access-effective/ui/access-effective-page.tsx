@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import {
   subjectFromParams,
   subjectParams,
@@ -15,7 +15,7 @@ import {
   useSubjectDirectory,
   type SubjectValue,
 } from '@/features/manage-access-grants'
-import { Button } from '@/shared/ui/button'
+import { ButtonLink } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { PageHeader } from '@/shared/ui/page-header'
@@ -99,20 +99,11 @@ export function AccessEffectivePage() {
                 : directory.subjectLabel(subject)}
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                nativeButton={false}
-                render={<Link to={`/access/grants?${subjectQuery}`} />}
-              >
+              <ButtonLink to={`/access/grants?${subjectQuery}`} variant="outline">
                 Гранты субъекта
-              </Button>
+              </ButtonLink>
               {can('access.grant.write') && (
-                <Button
-                  nativeButton={false}
-                  render={<Link to={`/access/grants/new?${subjectQuery}`} />}
-                >
-                  Выдать доступ
-                </Button>
+                <ButtonLink to={`/access/grants/new?${subjectQuery}`}>Выдать доступ</ButtonLink>
               )}
             </div>
           </div>

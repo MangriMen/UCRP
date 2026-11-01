@@ -96,12 +96,12 @@ classDiagram
     status: active
   }
   class i1["guest_identifier i-11"] {
-    id_type: phone
-    value_normalized: 79005550101
+    id_type: email
+    value_normalized: family@example.com
   }
   class i2["guest_identifier i-12"] {
-    id_type: phone
-    value_normalized: 79005550101
+    id_type: email
+    value_normalized: family@example.com
   }
   class ev1["event e-21"] {
     type: purchase
@@ -116,9 +116,9 @@ classDiagram
   class mc1["merge_candidate mc-1"] {
     guest_a_id: g-2001
     guest_b_id: g-2002
-    reason_code: shared_phone_names_differ
-    reason_text: Общий телефон, имена различаются
-    score: 55
+    reason_code: shared_email
+    reason_text: Общий email
+    score: 70
     resolution: pending
   }
   ds_pos --> i1 : data_source_id
@@ -131,7 +131,7 @@ classDiagram
   mc1 --> g2002 : guest_b_id
 ```
 
-Пояснение. Два профиля созданы из разных источников и делят один телефон, но имена различаются (например, один номер на семью). Резолвер не имеет права сливать такую пару автоматически, поэтому создал `merge_candidate` со статусом `pending`, причиной и оценкой 55; пара видна в очереди `/identity/merge-candidates` и не меняет профили. События и идентификаторы пока остаются у своих гостей, так что рассылка по телефону не придёт «чужому» человеку с чужой историей. Индекс очереди — `ix_merge_resolution (resolution, created_at)`.
+Пояснение. Два профиля созданы из разных источников и делят один email (например, общий адрес семьи). Резолвер автоматически сливает только пары с общим телефоном (оценка 90), поэтому для общего email создал `merge_candidate` со статусом `pending`, причиной `shared_email` и оценкой 70; пара видна в очереди `/identity/merge-candidates` и не меняет профили. События и идентификаторы пока остаются у своих гостей, так что рассылка по email не придёт «чужому» человеку с чужой историей. Индекс очереди — `ix_merge_resolution (resolution, created_at)`.
 
 ### (b2) Состояние: объединили, затем разъединили вручную
 
@@ -183,7 +183,7 @@ classDiagram
   g2002 --> ev2 : guest_id
 ```
 
-Пояснение. Хронология: R-4 подтвердил пару (`POST /merge-candidates/mc-1/confirm`) — g-2002 стал `merged` с `merged_into_id = g-2001`, а e-22 и i-12 перешли к g-2001 (`origin_guest_id` остался g-2002); в `audit_log` появилась запись `merge.confirm` (a-1). Затем аналитик понял, что это разные люди, и вызвал `POST /merge-candidates/mc-1/revert`: строки с `origin_guest_id = g-2002` вернулись к g-2002, профиль снова `active`, кандидат получил `resolution = reverted`, создан `merge_block ub-1` и запись `merge.revert` (a-2) — всё в одной транзакции. На диаграмме показано конечное состояние. Новая загрузка с тем же общим телефоном пару не объединит и в очередь не вернёт, пока запрет не снят `DELETE /merge-blocks/ub-1`.
+Пояснение. Хронология: R-4 подтвердил пару (`POST /merge-candidates/mc-1/confirm`) — g-2002 стал `merged` с `merged_into_id = g-2001`, а e-22 и i-12 перешли к g-2001 (`origin_guest_id` остался g-2002); в `audit_log` появилась запись `merge.confirm` (a-1). Затем аналитик понял, что это разные люди, и вызвал `POST /merge-candidates/mc-1/revert`: строки с `origin_guest_id = g-2002` вернулись к g-2002, профиль снова `active`, кандидат получил `resolution = reverted`, создан `merge_block ub-1` и запись `merge.revert` (a-2) — всё в одной транзакции. На диаграмме показано конечное состояние. Новая загрузка с тем же общим email пару не объединит и в очередь не вернёт, пока запрет не снят `DELETE /merge-blocks/ub-1`.
 
 ---
 
@@ -202,7 +202,7 @@ classDiagram
   }
   class sv1["segment_version sv-1"] {
     version_no: 1
-    rule: visitedTenantIds Кофейня и ФитЗона, excluded_tenant_ids Кино, 90 дней, phone
+    rule: visitedTenantIds Кофейня и ФитЗона, excludedTenantIds Кино, 90 дней, phone
     member_count: 5
     status: ready
   }
@@ -280,29 +280,29 @@ classDiagram
   }
   class r1["recommendation r-1"] {
     rank: 1
-    score: 0.7800
-    algorithm_version: v1
-    explanation: Похожие гости ходят в Кинотеатр Синема, Спорт и Развлечения смежны, недавняя активность, 3 этаж
+    score: 0.6550
+    algorithm_version: v2
+    explanation: Похожие гости ходят в Кинотеатр Синема, Спорт и Развлечения смежны
   }
   class f1["recommendation_factor similar_guests"] {
-    raw_value: 0.85
-    weight: 0.40
-    contribution: 0.3400
+    raw_value: 0.80
+    weight: 0.45
+    contribution: 0.3600
   }
   class f2["recommendation_factor category_adjacency"] {
-    raw_value: 0.70
-    weight: 0.25
-    contribution: 0.1750
+    raw_value: 0.80
+    weight: 0.15
+    contribution: 0.1200
   }
-  class f3["recommendation_factor recency"] {
-    raw_value: 0.90
-    weight: 0.25
-    contribution: 0.2250
-  }
-  class f4["recommendation_factor distance"] {
+  class f3["recommendation_factor popularity"] {
     raw_value: 0.40
-    weight: 0.10
-    contribution: 0.0400
+    weight: 0.25
+    contribution: 0.1000
+  }
+  class f4["recommendation_factor tenant_priority"] {
+    raw_value: 0.50
+    weight: 0.15
+    contribution: 0.0750
   }
   class tcine["tenant Кинотеатр Синема"] {
     category: Развлечения
@@ -325,4 +325,4 @@ classDiagram
   g1 --> cl : contact_log.guest_id
 ```
 
-Пояснение. Для g-1001 кандидатами считаются только арендаторы, где она ещё не была, поэтому Кофейня Bean и ФитЗона в списке отсутствуют. Первая рекомендация — Кинотеатр Синема: оценка 0,78 складывается из вкладов факторов (похожие гости 0,34, смежность категорий 0,175, свежесть 0,225, расстояние и этаж 0,04; приоритет арендатора нейтральный и вклада не даёт); текст обоснования хранится снимком в `explanation`. Прямые конкуренты не исключаются, а понижаются фактором `competitor_penalty` — в примере такого кандидата в топ-3 не оказалось из-за низкой суммы, а не из-за фильтра (A-18, D-34). После выгрузки x-1 создана запись `contact_log` для g-1001, которая учитывается лимитом контактов и конверсией (визит в кино до 2026-11-13 — окно 14 дней по умолчанию, `campaign.attribution_days`). Диаграмма иллюстрирует инвариант: `recommendation.tenant_id` ∉ множества арендаторов событий гостя.
+Пояснение. Для g-1001 кандидатами считаются только арендаторы, где она ещё не была, поэтому Кофейня Bean и ФитЗона в списке отсутствуют. Первая рекомендация — Кинотеатр Синема: оценка 0,655 складывается из вкладов факторов (похожие гости 0,36, смежность категорий 0,12, популярность 0,10, приоритет арендатора 0,075; веса по умолчанию 0,45 / 0,15 / 0,25 / 0,15); текст обоснования хранится снимком в `explanation`. Прямые конкуренты не исключаются, а понижаются множителем `competitor_penalty` (фактор записывается только при понижении) — в примере такого кандидата в топ-3 не оказалось из-за низкой суммы, а не из-за фильтра (A-18, D-34). После выгрузки x-1 создана запись `contact_log` для g-1001, которая учитывается лимитом контактов и конверсией (визит в кино до 2026-11-13 — окно 14 дней по умолчанию, `campaign.attribution_days`). Диаграмма иллюстрирует инвариант: `recommendation.tenant_id` ∉ множества арендаторов событий гостя.

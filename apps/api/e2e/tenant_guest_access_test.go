@@ -180,6 +180,15 @@ func TestTenantGuestDataAccess(t *testing.T) {
 	if strings.Contains(string(events.Body), otherEvent.ID) || strings.Contains(string(events.Body), "sensitive-raw-payload") {
 		t.Fatalf("events expose another tenant or raw payload: %s", events.Snippet())
 	}
+	s.RequireSchema("GET", "/api/v1/guests/{id}/events", events)
+	var eventMeta struct {
+		Meta struct {
+			Total int `json:"total"`
+		} `json:"meta"`
+	}
+	if err := events.Decode(&eventMeta); err != nil || eventMeta.Meta.Total != 1 {
+		t.Fatalf("tenant events meta.total must count only own events: %v, %s", err, events.Snippet())
+	}
 	get(tenantClient, "/api/v1/guests/"+otherGuest.ID, 404)
 	get(otherClient, profilePath, 403)
 	create("field.event.amount.read", "field.event.external_id.read")

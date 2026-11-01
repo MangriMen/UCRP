@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"net/url"
 	"testing"
 
 	"github.com/MangriMen/UCRP/e2e/client"
@@ -625,4 +626,77 @@ func trackEventType(s *harness.Suite, eventTypeID string) {
 		defer cancel()
 		_ = s.DB.Exec(ctx, `DELETE FROM event_type WHERE id = $1`, eventTypeID)
 	})
+}
+
+func findCategory(t *testing.T, resp *client.Response, id string) map[string]any {
+	t.Helper()
+	items, ok := mustJSON(t, resp, "categories").([]any)
+	if !ok {
+		t.Fatalf("categories: expected an array, got %s", resp.Snippet())
+	}
+	for _, item := range items {
+		if category, _ := item.(map[string]any); harness.StringField(category, "id") == id {
+			return category
+		}
+	}
+	return nil
+}
+
+func TestCategoryDescriptionAndInactiveListing(t *testing.T) {
+	s := harness.New(t).WithDB().WithAdmin()
+	ctx, cancel := s.Ctx()
+	defer cancel()
+
+	category, err := s.Reg.Category(ctx, "inactive-listing")
+	if err != nil {
+		t.Fatalf("fixture category: %v", err)
+	}
+	path := "/api/v1/tenant-categories/" + category.ID
+
+	patch, err := s.API.Patch(ctx, path, map[string]any{"description": "  Кафе и рестораны  ", "isActive": false})
+	if err != nil {
+		t.Fatalf("PATCH category: %v", err)
+	}
+	s.RequireStatus(patch, 200, "PATCH category description and activity")
+	s.RequireSchema("PATCH", path, patch)
+	patched := jsonObject(t, patch, "patched category")
+	if patched["description"] != "Кафе и рестораны" || patched["isActive"] != false {
+		t.Fatalf("patched category: %s", patch.Snippet())
+	}
+
+	active, err := s.API.Get(ctx, "/api/v1/tenant-categories", nil)
+	if err != nil {
+		t.Fatalf("GET categories: %v", err)
+	}
+	s.RequireStatus(active, 200, "GET categories")
+	s.RequireSchema("GET", "/api/v1/tenant-categories", active)
+	if findCategory(t, active, category.ID) != nil {
+		t.Fatalf("inactive category must not be listed by default")
+	}
+
+	all, err := s.API.Get(ctx, "/api/v1/tenant-categories", url.Values{"include_inactive": {"true"}})
+	if err != nil {
+		t.Fatalf("GET categories with inactive: %v", err)
+	}
+	s.RequireStatus(all, 200, "GET categories with inactive")
+	s.RequireSchema("GET", "/api/v1/tenant-categories", all)
+	listed := findCategory(t, all, category.ID)
+	if listed == nil || listed["isActive"] != false || listed["description"] != "Кафе и рестораны" {
+		t.Fatalf("inactive category with description must be listed: %s", all.Snippet())
+	}
+
+	reactivate, err := s.API.Patch(ctx, path, map[string]any{"isActive": true})
+	if err != nil {
+		t.Fatalf("PATCH category activity: %v", err)
+	}
+	s.RequireStatus(reactivate, 200, "PATCH category activity")
+	if reactivated := jsonObject(t, reactivate, "reactivated category"); reactivated["description"] != "Кафе и рестораны" || reactivated["isActive"] != true {
+		t.Fatalf("reactivation must keep the description: %s", reactivate.Snippet())
+	}
+
+	invalid, err := s.API.Get(ctx, "/api/v1/tenant-categories", url.Values{"include_inactive": {"maybe"}})
+	if err != nil {
+		t.Fatalf("GET categories with a bad flag: %v", err)
+	}
+	s.RequireStatus(invalid, 400, "GET categories with a bad include_inactive")
 }

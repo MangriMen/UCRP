@@ -174,18 +174,16 @@ func (r *MergeSQL) GetByID(ctx context.Context, id string) (*domain.MergeCandida
 }
 
 func (r *MergeSQL) List(ctx context.Context, resolution domain.MergeResolution, limit, offset int) ([]domain.MergeCandidate, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
-	}
-	if offset < 0 {
-		offset = 0
-	}
+	limit, offset = clampPage(limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, guest_a_id, guest_b_id, match_type, reason_code, reason_text, score, resolution,
-			COALESCE(winner_guest_id, ''), COALESCE(merged_guest_id, ''), COALESCE(decided_by, ''), decided_at, created_at
-		FROM merge_candidate
-		WHERE ($1 = '' OR resolution = $1)
-		ORDER BY created_at DESC
+		SELECT c.id, c.guest_a_id, c.guest_b_id, c.match_type, c.reason_code, c.reason_text, c.score, c.resolution,
+			COALESCE(c.winner_guest_id, ''), COALESCE(c.merged_guest_id, ''), COALESCE(c.decided_by, ''), c.decided_at, c.created_at,
+			COALESCE(ga.display_name, ''), COALESCE(gb.display_name, '')
+		FROM merge_candidate c
+		LEFT JOIN guest ga ON ga.id = c.guest_a_id
+		LEFT JOIN guest gb ON gb.id = c.guest_b_id
+		WHERE ($1 = '' OR c.resolution = $1)
+		ORDER BY c.created_at DESC
 		LIMIT $2 OFFSET $3`, string(resolution), limit, offset)
 	if err != nil {
 		return nil, err
@@ -202,11 +200,21 @@ func (r *MergeSQL) List(ctx context.Context, resolution domain.MergeResolution, 
 	return out, rows.Err()
 }
 
+func (r *MergeSQL) Count(ctx context.Context, resolution domain.MergeResolution) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM merge_candidate WHERE ($1 = '' OR resolution = $1)`, string(resolution)).Scan(&total)
+	return total, err
+}
+
 func (r *MergeSQL) candidate(ctx context.Context, id string) (*domain.MergeCandidate, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, guest_a_id, guest_b_id, match_type, reason_code, reason_text, score, resolution,
-			COALESCE(winner_guest_id, ''), COALESCE(merged_guest_id, ''), COALESCE(decided_by, ''), decided_at, created_at
-		FROM merge_candidate WHERE id = $1`, id)
+		SELECT c.id, c.guest_a_id, c.guest_b_id, c.match_type, c.reason_code, c.reason_text, c.score, c.resolution,
+			COALESCE(c.winner_guest_id, ''), COALESCE(c.merged_guest_id, ''), COALESCE(c.decided_by, ''), c.decided_at, c.created_at,
+			COALESCE(ga.display_name, ''), COALESCE(gb.display_name, '')
+		FROM merge_candidate c
+		LEFT JOIN guest ga ON ga.id = c.guest_a_id
+		LEFT JOIN guest gb ON gb.id = c.guest_b_id
+		WHERE c.id = $1`, id)
 	c, err := scanCandidateRow(row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrNotFound
@@ -277,6 +285,7 @@ func scanCandidateRow(row scanner) (*domain.MergeCandidate, error) {
 	if err := row.Scan(
 		&c.ID, &c.GuestAID, &c.GuestBID, &c.MatchType, &c.ReasonCode, &c.ReasonText, &c.Score, &res,
 		&c.WinnerGuestID, &c.MergedGuestID, &c.DecidedBy, &at, &c.CreatedAt,
+		&c.GuestADisplayName, &c.GuestBDisplayName,
 	); err != nil {
 		return nil, err
 	}

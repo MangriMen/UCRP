@@ -74,13 +74,13 @@ describe('AccessGrantsPage', () => {
 
   it('offers grant creation only with access.grant.write', async () => {
     renderPage()
-    expect(await screen.findByRole('button', { name: 'Выдать доступ' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Выдать доступ' })).toBeInTheDocument()
   })
 
   it('hides grant creation from a read-only holder', async () => {
     renderPage('/access/grants', reader)
     await screen.findByText('Заря')
-    expect(screen.queryByRole('button', { name: 'Выдать доступ' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Аудит доступа' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Выдать доступ' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Аудит доступа' })).not.toBeInTheDocument()
   })
 })

@@ -8,6 +8,7 @@ paths:
       description: Lists and searches guests. All filters are optional and combined with AND; `q` is no longer mandatory when any filter is given, and an empty request lists all guests. Filters `period_from`/`period_to` select guests with activity in the period (both bounds inclusive). Search by phone, email, card, or name. The input is normalized with the same rules as during import, so `+7 900 123-45-67` and `89001234567` find the same guest. Only active profiles are returned unless `status` is given. Items carry event statistics; `totalAmountMinor` and `currency` are returned only to users with the `field.guest.total_amount.read` permission, and sorting by `totalAmountMinor` without it is rejected with 403. `maskedIdentifiers` (type and server-masked value, never the raw value) is returned only to users with the `field.guest.identifiers.read` permission. `total` in `meta` is the exact number of matching guests.
       x-roles:
         - R-1
+        - R-2
         - R-4
       x-uc:
         - UC-2
@@ -298,6 +299,7 @@ paths:
       description: '`contact_log` records across all exports. The control group is not logged as contacts.'
       x-roles:
         - R-1
+        - R-2
         - R-4
       x-uc:
         - UC-2

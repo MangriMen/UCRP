@@ -51,7 +51,10 @@ function isValidRelationSet(categoryId: string, items: TenantCategoryRelation[])
 }
 
 export const tenantCategoryHandlers = [
-  http.get(`${API}/tenant-categories`, () => HttpResponse.json(categories)),
+  http.get(`${API}/tenant-categories`, ({ request }) => {
+    const includeInactive = new URL(request.url).searchParams.get('include_inactive') === 'true'
+    return HttpResponse.json(includeInactive ? categories : categories.filter((c) => c.isActive))
+  }),
 
   http.post(`${API}/tenant-categories`, async ({ request }) => {
     const body = (await request.json()) as TenantCategoryRequest
@@ -64,6 +67,7 @@ export const tenantCategoryHandlers = [
       code: body.code,
       name: body.name,
       description: body.description ?? null,
+      isActive: true,
       createdAt: now,
       updatedAt: now,
     }

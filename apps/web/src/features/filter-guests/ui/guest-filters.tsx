@@ -4,7 +4,7 @@ import { useSegments } from '@/entities/segment'
 import { useTenants } from '@/entities/tenant'
 import { useDebouncedSearchParam } from '@/shared/lib/hooks/use-debounced-search-param'
 import type { ListParams } from '@/shared/lib/list-params'
-import { daysAgo } from '@/shared/lib/period'
+import { daysAgo, isPeriodReversed, PERIOD_REVERSED_MESSAGE } from '@/shared/lib/period'
 import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -68,7 +68,7 @@ export function GuestFiltersPanel({ params, isFiltered, onReset }: GuestFiltersP
 
   const periodFrom = get('period_from')
   const periodTo = get('period_to')
-  const invalidPeriod = periodFrom !== '' && periodTo !== '' && periodFrom > periodTo
+  const invalidPeriod = isPeriodReversed({ from: periodFrom, to: periodTo })
 
   const newSince = daysAgo(NEW_GUESTS_DAYS)
   const inactiveSince = daysAgo(INACTIVE_GUESTS_DAYS)
@@ -124,7 +124,7 @@ export function GuestFiltersPanel({ params, isFiltered, onReset }: GuestFiltersP
       <PeriodFilter
         value={{ from: periodFrom, to: periodTo }}
         onChange={({ from, to }) => update({ period_from: from, period_to: to })}
-        error={invalidPeriod ? 'Начало периода позже конца' : undefined}
+        error={invalidPeriod ? PERIOD_REVERSED_MESSAGE : undefined}
       >
         <div className="mt-5 flex flex-wrap gap-2">
           <Button

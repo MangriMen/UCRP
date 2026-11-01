@@ -34,19 +34,19 @@ flowchart LR
 
 Пояснение. Единственная связь между «записывающими» компонентами идёт через очередь: `Ingestion` не вызывает `Identity`, а ставит `identity.resolve`; `Identity` после привязки ставит пересчёт сегментов и рекомендаций. Это развязывает скорость приёма от скорости пересчёта и делает компоненты независимо масштабируемыми. `Profile and Events` — владелец данных гостей и событий, остальные читают их через репозитории-интерфейсы. `Access and Auth` и `Audit` — сквозные: каждый компонент получает `Principal` из `context.Context` и пишет аудит через `AuditService` (стрелки не показаны ради читаемости, см. CMP-D2). `Analytics` читает данные только на чтение; арендатору (R-3) доступны исключительно агрегаты через `TenantAggregateRepo` с фильтром `tenant_id`.
 
-| Компонент                | Go-пакет / слой                                                                                                           | API-контракт                                                                                                                |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| CMP-1 Ingestion          | `internal/ingestion`, `service.ImportService`                                                                             | `POST /imports`, `GET /imports*`, `POST /data-sources/{id}/sync`; очереди `import.process`, `connector.pull`                |
-| CMP-2 Identity           | `internal/identity`, `service.IdentityService`                                                                            | `/merge-candidates*`, `POST /guests/{id}/merge`, `/merge-blocks*`; очереди `identity.resolve`, `identity.rematch`           |
-| CMP-3 Profile and Events | `service.ProfileService`, `service.TenantGuestService`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `ContactLogRepo` | `GET /guests*`, `DELETE /guests/{id}`                                                                                       |
-| CMP-4 Segments           | `internal/segments`, `service.SegmentService`                                                                             | `/segments*`, `/segment-templates`; очередь `segment.recompute`                                                             |
-| CMP-5 Recommendations    | `internal/recommend` (в т.ч. оценка `Evaluator`), `service.RecommendationService`                                         | `GET /guests/{id}/recommendations`, `GET /segments/{id}/recommendations`; очереди `recommend.refresh`, `recommend.evaluate` |
-| CMP-6 Export             | `internal/export`, `service.ExportService`, `ContactLimitService`, `CampaignService`                                      | `/exports*`, `/contact-limits*`, `/campaigns*`; очередь `export.build`                                                      |
-| CMP-7 Analytics          | `service.AnalyticsService` (дашборд, агрегаты арендатора, качество данных)                                                | `/dashboard/*`, `GET /tenants/{id}/aggregates`, `/data-quality/*`                                                           |
-| CMP-8 Access and Auth    | `internal/platform/auth`, `AuthService` (в т.ч. пользователи), `InvitationService`                                        | `/auth/*`, `/users*`, `/users/invitations`, `/users/{id}/recovery`                                                          |
-| CMP-9 Audit              | `AuditService`, `AuditRepo`                                                                                               | `GET /audit-logs`                                                                                                           |
-| CMP-10 Reference         | `ReferenceService`, `MallService`, `DataSourceService`, `TenantRepo` и др. справочные репозитории                         | `/malls*`, `/tenants*`, `/tenant-categories*`, `/projects*`, `/event-types*`, `/data-sources*`, `/data-source-types*`       |
-| CMP-11 Access Policy     | `internal/access`, `service.AccessGrantService` (в т.ч. просмотр прав и аудит доступа), истечение грантов (`GrantExpiry`) | `/access/*`                                                                                                                 |
+| Компонент                | Go-пакет / слой                                                                                                           | API-контракт                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| CMP-1 Ingestion          | `internal/ingestion`, `service.ImportService`                                                                             | `POST /imports`, `GET /imports*`, `POST /data-sources/{id}/sync`; очереди `import.process`, `connector.pull`                            |
+| CMP-2 Identity           | `internal/identity`, `service.IdentityService`                                                                            | `/merge-candidates*`, `POST /guests/{id}/merge`, `/merge-blocks*`; очередь `identity.resolve`; `identity.rematch` не реализовано (Q-42) |
+| CMP-3 Profile and Events | `service.ProfileService`, `service.TenantGuestService`, `GuestRepo`, `EventRepo`, `GuestIdentifierRepo`, `ContactLogRepo` | `GET /guests*`, `DELETE /guests/{id}`                                                                                                   |
+| CMP-4 Segments           | `internal/segments`, `service.SegmentService`                                                                             | `/segments*`, `/segment-templates`; очередь `segment.recompute`                                                                         |
+| CMP-5 Recommendations    | `internal/recommend` (в т.ч. оценка `Evaluator`), `service.RecommendationService`                                         | `GET /guests/{id}/recommendations`, `GET /segments/{id}/recommendations`; очереди `recommend.refresh`, `recommend.evaluate`             |
+| CMP-6 Export             | `internal/export`, `service.ExportService`, `ContactLimitService`, `CampaignService`                                      | `/exports*`, `/contact-limits*`, `/campaigns*`                                                                                          |
+| CMP-7 Analytics          | `service.AnalyticsService` (дашборд, агрегаты арендатора, качество данных)                                                | `/dashboard/*`, `GET /tenants/{id}/aggregates`, `/data-quality/*`                                                                       |
+| CMP-8 Access and Auth    | `internal/platform/auth`, `AuthService` (в т.ч. пользователи), `InvitationService`                                        | `/auth/*`, `/users*`, `/users/invitations`, `/users/{id}/recovery`                                                                      |
+| CMP-9 Audit              | `AuditService`, `AuditRepo`                                                                                               | `GET /audit-logs`                                                                                                                       |
+| CMP-10 Reference         | `ReferenceService`, `MallService`, `DataSourceService`, `TenantRepo` и др. справочные репозитории                         | `/malls*`, `/tenants*`, `/tenant-categories*`, `/projects*`, `/event-types*`, `/data-sources*`, `/data-source-types*`                   |
+| CMP-11 Access Policy     | `internal/access`, `service.AccessGrantService` (в т.ч. просмотр прав и аудит доступа), истечение грантов (`GrantExpiry`) | `/access/*`                                                                                                                             |
 
 ## CMP-D2. Сквозные порты и изоляция R-3
 
@@ -56,7 +56,7 @@ flowchart TB
   MW["platform/auth Principal: role, tenant_id"]
   H["handler RequireRole по реестру"]
   SVC["service: access.Decide и проверка tenant_id в claims"]
-  REPO["repository: ForTenant WHERE tenant_id"]
+  REPO["repository: фильтр tenant_id (TenantGuestSQL)"]
   AUD["CMP-9 Audit"]
   PORTS["domain ports: Queue, BlobStore, Cache, Clock"]
   SPA -->|"Bearer JWT"| MW --> H --> SVC
@@ -71,16 +71,16 @@ flowchart TB
 
 ## Порты и контракты между компонентами
 
-| Порт (интерфейс)                  | Владелец (Go-пакет)  | Реализации                                 | Потребители                     |
-| --------------------------------- | -------------------- | ------------------------------------------ | ------------------------------- |
-| `SourceConnector`                 | `internal/ingestion` | CSV/Excel, CRM, POS, API                   | CMP-1                           |
-| `IdentityResolver`                | `internal/identity`  | `DefaultResolver`                          | воркер `identity.resolve`       |
-| `SegmentEvaluator`                | `internal/segments`  | `SqlEvaluator`                             | CMP-4, CMP-6 (проверка состава) |
-| `Recommender`, `Scorer`, `Factor` | `internal/recommend` | `WeightedScorer`                           | CMP-5                           |
-| `ExportChannel`, `ExportFormat`   | `internal/export`    | SMS, Push, Email; CSV, API                 | CMP-6                           |
-| `Queue`                           | `internal/domain`    | `DBQueue` (job_queue)                      | CMP-1, 2, 4, 5, 6               |
-| `BlobStore`, `Cache`, `Clock`     | `internal/domain`    | локальный диск, in-memory, системное время | CMP-1, CMP-4                    |
-| `*Repo`                           | `internal/domain`    | `internal/repository`                      | сервисы                         |
+| Порт (интерфейс)                | Владелец (Go-пакет)  | Реализации                                       | Потребители                     |
+| ------------------------------- | -------------------- | ------------------------------------------------ | ------------------------------- |
+| `CSVConnector` (структура)      | `internal/ingestion` | чтение CSV по `FieldMapping`                     | CMP-1                           |
+| `Resolver` (структура)          | `internal/identity`  | `identity.Resolver`                              | воркер `identity.resolve`       |
+| `SegmentEvaluator`              | `internal/segments`  | `SqlEvaluator`                                   | CMP-4, CMP-6 (проверка состава) |
+| `Recommender`                   | `internal/domain`    | `recommend.WeightedRecommender`                  | CMP-5                           |
+| `ExportChannel`, `ExportFormat` | `internal/domain`    | строковые типы: sms, push, email; csv, api, xlsx | CMP-6                           |
+| `Queue`                         | `internal/domain`    | `DBQueue` (job_queue)                            | CMP-1, 2, 4, 5, 6               |
+| `BlobStore`, `Cache`, `Clock`   | `internal/domain`    | локальный диск, in-memory, системное время       | CMP-1, CMP-4                    |
+| `*Repo`                         | `internal/domain`    | `internal/repository`                            | сервисы                         |
 
 ## Точки масштабирования
 
@@ -95,18 +95,18 @@ flowchart TB
 
 ## Матрица влияния изменений требований
 
-| Изменение требований                                       | Затронутые компоненты | Что меняется                                                                                                             |
-| ---------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Новый формат источника (например, 1С)                      | CMP-1, CMP-10         | Новая реализация `SourceConnector` + запись `data_source_type`; остальное без изменений                                  |
-| Новый тип события                                          | CMP-10 (данные)       | Запись в `event_type`; код только при новой логике присутствия. Так добавлены `top_up`, `spend`, `reversal` (A-20, D-36) |
-| Новый тип идентификатора (Wi-Fi MAC, Q-3)                  | CMP-2, CMP-10         | Правило в `identity.Policy`, `id_type`; схема не меняется                                                                |
-| Новый канал рассылки                                       | CMP-6                 | Реализация `ExportChannel`, значение `channel` (миграция CHECK, D-11)                                                    |
-| Другой формат выгрузки провайдера (Q-20)                   | CMP-6                 | Реализация `ExportFormat`                                                                                                |
-| Новый фактор скоринга                                      | CMP-5                 | Реализация `Factor`, вес в конфигурации (D-15)                                                                           |
-| Новое условие правила сегмента                             | CMP-4                 | Расширение `RuleCompiler` и DSL; старые версии правил читаются                                                           |
-| Новая роль (Q-16)                                          | CMP-8                 | Значение `role` (миграция CHECK, D-10) и RequireRole                                                                     |
-| Расширение прав R-3 (Q-6)                                  | CMP-7, CMP-11         | Новые разрешения в каталоге `permission` и пресеты грантов; ядро не меняется                                             |
-| Другое определение конверсии (Q-9)                         | CMP-6, CMP-7          | Запросы метрик; схема та же                                                                                              |
-| Реалтайм-обновление UI (D-22)                              | CMP-4, CMP-5          | SSE в `handler`; API остаётся stateless                                                                                  |
-| Конкурент перестаёт понижаться и исключается жёстко (D-34) | CMP-5                 | Значение коэффициента и флаг категории в конфигурации; схема та же                                                       |
-| Внешние партнёры вне комплекса (A-22, D-38)                | CMP-10, CMP-5         | Значение `tenant.kind`; фильтр в скоринге и в справочниках                                                               |
+| Изменение требований                                       | Затронутые компоненты | Что меняется                                                                                                                   |
+| ---------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Новый формат источника (например, 1С)                      | CMP-1, CMP-10         | Новый читатель источника в `internal/ingestion` по образцу `CSVConnector` + запись `data_source_type`; остальное без изменений |
+| Новый тип события                                          | CMP-10 (данные)       | Запись в `event_type`; код только при новой логике присутствия. Так добавлены `top_up`, `spend`, `reversal` (A-20, D-36)       |
+| Новый тип идентификатора (Wi-Fi MAC, Q-3)                  | CMP-2, CMP-10         | Правило в `identity.Resolver` (порядок надёжных ключей), `id_type`; схема не меняется                                          |
+| Новый канал рассылки                                       | CMP-6                 | Значение `domain.ExportChannel`, значение `channel` (миграция CHECK, D-11)                                                     |
+| Другой формат выгрузки провайдера (Q-20)                   | CMP-6                 | Значение `domain.ExportFormat` и сборка файла в `internal/export`                                                              |
+| Новый фактор скоринга                                      | CMP-5                 | Новый множитель в `recommend.ScoreCandidates`, вес в конфигурации (D-15)                                                       |
+| Новое условие правила сегмента                             | CMP-4                 | Расширение `segments.SqlEvaluator` (`buildQuery`, `validateRule`) и DSL; старые версии правил читаются                         |
+| Новая роль (Q-16)                                          | CMP-8                 | Значение `role` (миграция CHECK, D-10) и RequireRole                                                                           |
+| Расширение прав R-3 (Q-6)                                  | CMP-7, CMP-11         | Новые разрешения в каталоге `permission` и пресеты грантов; ядро не меняется                                                   |
+| Другое определение конверсии (Q-9)                         | CMP-6, CMP-7          | Запросы метрик; схема та же                                                                                                    |
+| Реалтайм-обновление UI (D-22)                              | CMP-4, CMP-5          | SSE в `handler`; API остаётся stateless                                                                                        |
+| Конкурент перестаёт понижаться и исключается жёстко (D-34) | CMP-5                 | Значение коэффициента и флаг категории в конфигурации; схема та же                                                             |
+| Внешние партнёры вне комплекса (A-22, D-38)                | CMP-10, CMP-5         | Значение `tenant.kind`; фильтр в скоринге и в справочниках                                                                     |

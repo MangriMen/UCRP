@@ -4,6 +4,7 @@ import { Button } from '@/shared/ui/button'
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { ErrorBanner } from '@/shared/ui/error-banner'
+import { StatusBadge } from '@/shared/ui/status-badge'
 import { useDeleteTenantCategory } from '../api/use-tenant-category-mutations'
 import { TenantCategoryFormDialog } from './tenant-category-form-dialog'
 import { TenantCategoryRelationsDialog } from './tenant-category-relations-dialog'
@@ -23,16 +24,27 @@ export function TenantCategoriesManager({
   relationsCategoryId,
   onRelationsCategoryChange,
 }: TenantCategoriesManagerProps) {
-  const categories = useTenantCategories()
+  const categories = useTenantCategories({ includeInactive: canEdit })
   const remove = useDeleteTenantCategory()
   const [form, setForm] = useState<FormState | null>(null)
   const [deleting, setDeleting] = useState<TenantCategory | null>(null)
   const relationsCategory = categories.data?.find((c) => c.id === relationsCategoryId)
 
+  const statusColumn: Column<TenantCategory> = {
+    id: 'status',
+    header: 'Статус',
+    cell: (c) => (
+      <StatusBadge tone={c.isActive ? 'success' : 'neutral'}>
+        {c.isActive ? 'Активна' : 'Отключена'}
+      </StatusBadge>
+    ),
+  }
+
   const columns: Column<TenantCategory>[] = [
     { id: 'code', header: 'Код', cell: (c) => c.code },
     { id: 'name', header: 'Название', cell: (c) => c.name },
     { id: 'description', header: 'Описание', cell: (c) => c.description ?? '—' },
+    ...(canEdit ? [statusColumn] : []),
     {
       id: 'actions',
       header: '',

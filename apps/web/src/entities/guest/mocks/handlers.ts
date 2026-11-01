@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw'
+import { mockMergeBlocks } from '@/entities/merge-block/mocks'
 import { API, apiError, paged } from '@/shared/api/mocks/helpers'
 import { MIN_SEARCH_LENGTH } from '../model/keys'
 import {
@@ -103,6 +104,13 @@ const listGuests = (request: Request, tenantId: string | null) => {
   return HttpResponse.json(paged(request, matched))
 }
 
+const isBlockedPair = (firstId: string, secondId: string) =>
+  mockMergeBlocks.some(
+    (block) =>
+      (block.guestAId === firstId && block.guestBId === secondId) ||
+      (block.guestAId === secondId && block.guestBId === firstId),
+  )
+
 export const guestHandlers = [
   http.get(`${API}/guests`, ({ request }) => listGuests(request, null)),
 
@@ -121,6 +129,36 @@ export const guestHandlers = [
       ? new HttpResponse(null, { status: 204 })
       : apiError(404, 'not_found', 'Гость не найден'),
   ),
+
+  http.post(`${API}/guests/:id/merge`, async ({ params, request }) => {
+    const { targetGuestId } = (await request.json()) as { targetGuestId: string }
+    const source = mockGuests.find((g) => g.id === params.id)
+    const target = mockGuests.find((g) => g.id === targetGuestId)
+    if (!source || !target) return apiError(404, 'not_found', 'Гость не найден')
+    if (source.id === target.id) {
+      return apiError(400, 'validation_error', 'Нельзя объединить профиль с самим собой')
+    }
+    if (isBlockedPair(source.id, target.id)) {
+      return apiError(409, 'merge_blocked', 'Объединение этой пары запрещено')
+    }
+    const movedEvents = mockGuestEvents.filter((event) => event.guestId === source.id)
+    movedEvents.forEach((event) => {
+      event.guestId = target.id
+    })
+    const movedIdentifiers = mockGuestMaskedIdentifiers[source.id] ?? []
+    mockGuestMaskedIdentifiers[target.id] = [
+      ...(mockGuestMaskedIdentifiers[target.id] ?? []),
+      ...movedIdentifiers,
+    ]
+    delete mockGuestMaskedIdentifiers[source.id]
+    Object.assign(source, { status: 'merged', mergedIntoId: target.id })
+    return HttpResponse.json({
+      winnerGuestId: target.id,
+      mergedGuestId: source.id,
+      eventsMoved: movedEvents.length,
+      identifiersMoved: movedIdentifiers.length,
+    })
+  }),
 
   http.get(`${API}/guests/:id/events`, ({ params, request }) => {
     const query = new URL(request.url).searchParams

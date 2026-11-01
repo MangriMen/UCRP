@@ -2,7 +2,9 @@ import { useMalls } from '@/entities/mall'
 import { useTenantCategories } from '@/entities/tenant-category'
 import { useDebouncedSearchParam } from '@/shared/lib/hooks/use-debounced-search-param'
 import type { ListParams } from '@/shared/lib/list-params'
-import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
+import { useOptionParam } from '@/shared/lib/hooks/use-option-param'
+import { isPeriodReversed, PERIOD_REVERSED_MESSAGE } from '@/shared/lib/period'
+import { ALL_OPTION } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { OptionSelect, type Option } from '@/shared/ui/option-select'
@@ -25,6 +27,21 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
   const search = useDebouncedSearchParam(params, 'q')
   const malls = useMalls()
   const categories = useTenantCategories()
+  const mallParam = useOptionParam(
+    params,
+    'mall_id',
+    malls.isSuccess ? malls.data.map((mall) => mall.id) : undefined,
+  )
+  const categoryParam = useOptionParam(
+    params,
+    'category_id',
+    categories.isSuccess ? categories.data.map((category) => category.id) : undefined,
+  )
+  const activityParam = useOptionParam(
+    params,
+    'is_active',
+    activityOptions.map((option) => option.value),
+  )
 
   const reset = () => {
     search.clear()
@@ -39,12 +56,10 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
     { value: ALL_OPTION, label: 'Все категории' },
     ...(categories.data ?? []).map((category) => ({ value: category.id, label: category.name })),
   ]
-  const selectValue = (key: string) => get(key) || ALL_OPTION
-  const changeSelect = (key: string) => (value: string) => update({ [key]: optionParam(value) })
 
   const periodFrom = get('period_from')
   const periodTo = get('period_to')
-  const invalidPeriod = periodFrom !== '' && periodTo !== '' && periodFrom > periodTo
+  const invalidPeriod = isPeriodReversed({ from: periodFrom, to: periodTo })
 
   return (
     <div className="flex flex-col gap-3">
@@ -60,15 +75,15 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
           ariaLabel="ТЦ"
           className="w-48"
           items={mallItems}
-          value={selectValue('mall_id')}
-          onValueChange={changeSelect('mall_id')}
+          value={mallParam.value}
+          onValueChange={mallParam.onChange}
         />
         <OptionSelect
           ariaLabel="Категория"
           className="w-56"
           items={categoryItems}
-          value={selectValue('category_id')}
-          onValueChange={changeSelect('category_id')}
+          value={categoryParam.value}
+          onValueChange={categoryParam.onChange}
         />
         <Input
           type="number"
@@ -83,14 +98,14 @@ export function TenantFilters({ params, isFiltered, onReset }: TenantFiltersProp
           ariaLabel="Активность"
           className="w-48"
           items={activityOptions}
-          value={selectValue('is_active')}
-          onValueChange={changeSelect('is_active')}
+          value={activityParam.value}
+          onValueChange={activityParam.onChange}
         />
       </div>
       <PeriodFilter
         value={{ from: periodFrom, to: periodTo }}
         onChange={({ from, to }) => update({ period_from: from, period_to: to })}
-        error={invalidPeriod ? 'Начало периода позже конца' : undefined}
+        error={invalidPeriod ? PERIOD_REVERSED_MESSAGE : undefined}
       >
         <div className="mt-5">
           <Button type="button" variant="outline" disabled={!isFiltered} onClick={reset}>

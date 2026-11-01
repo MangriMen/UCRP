@@ -50,6 +50,12 @@ func TestE2EIdentityMergeLifecycle(t *testing.T) {
 	if !containsID(queueItems, candidate.ID) {
 		t.Fatalf("step 1: candidate %s is absent from the pending queue", candidate.ID)
 	}
+	if len(queueItems) > 1 {
+		pageItems, total := listPage(t, s, s.API, "/api/v1/merge-candidates", map[string][]string{"resolution": {"pending"}, "page_size": {"1"}})
+		if len(pageItems) != 1 || total < len(queueItems) {
+			t.Fatalf("step 1: pending queue meta.total: expected at least %d, got total=%d items=%d", len(queueItems), total, len(pageItems))
+		}
+	}
 
 	detail, err := s.API.Get(ctx, "/api/v1/merge-candidates/"+candidate.ID, nil)
 	if err != nil {

@@ -27,7 +27,7 @@ type Decision struct {
 }
 
 func Decide(principal domain.Principal, permission string, resource Resource, ceiling []domain.AccessRolePermission, grants []domain.AccessGrant, now time.Time) Decision {
-	if !inCeiling(permission, ceiling) {
+	if !InCeiling(permission, ceiling) {
 		return Decision{Reason: "forbidden_permission"}
 	}
 	if principal.Role == domain.RoleTenant && (principal.TenantID == "" || principal.TenantID != resource.TenantID) {
@@ -95,7 +95,7 @@ func hasTenantScope(scopes []domain.AccessGrantScope) bool {
 	return false
 }
 
-func inCeiling(permission string, ceiling []domain.AccessRolePermission) bool {
+func InCeiling(permission string, ceiling []domain.AccessRolePermission) bool {
 	allowed := false
 	for _, entry := range ceiling {
 		if entry.PermissionCode != permission {

@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import type { TenantCategory } from '@/entities/tenant-category'
 import { hasErrorCode } from '@/shared/api/errors'
+import { CheckboxField } from '@/shared/ui/checkbox-field'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { FormDialog } from '@/shared/ui/form-dialog'
 import { FormField } from '@/shared/ui/form-field'
@@ -17,6 +18,7 @@ const schema = z.object({
   code: z.string().trim().min(1, 'Введите код').max(64, 'Не более 64 символов'),
   name: z.string().trim().min(1, 'Введите название').max(200, 'Не более 200 символов'),
   description: z.string().trim().max(1000, 'Не более 1000 символов'),
+  isActive: z.boolean(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -37,6 +39,7 @@ export function TenantCategoryFormDialog({
   const mutation = category ? update : create
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors },
@@ -46,11 +49,13 @@ export function TenantCategoryFormDialog({
       code: category?.code ?? '',
       name: category?.name ?? '',
       description: category?.description ?? '',
+      isActive: category?.isActive ?? true,
     },
   })
 
   const submit = handleSubmit((values) => {
-    const body = { ...values, description: values.description || null }
+    const { isActive, ...fields } = values
+    const body = { ...fields, description: values.description || null }
     const options = {
       onSuccess: () => onOpenChange(false),
       onError: (error: unknown) => {
@@ -59,7 +64,7 @@ export function TenantCategoryFormDialog({
         }
       },
     }
-    if (category) update.mutate({ id: category.id, body }, options)
+    if (category) update.mutate({ id: category.id, body: { ...body, isActive } }, options)
     else create.mutate(body, options)
   })
 
@@ -84,6 +89,15 @@ export function TenantCategoryFormDialog({
       <FormField label="Описание" error={errors.description?.message}>
         {(field) => <Textarea {...field} {...register('description')} />}
       </FormField>
+      {category && (
+        <Controller
+          control={control}
+          name="isActive"
+          render={({ field: { value, onChange } }) => (
+            <CheckboxField label="Активна" checked={value} onCheckedChange={onChange} />
+          )}
+        />
+      )}
     </FormDialog>
   )
 }

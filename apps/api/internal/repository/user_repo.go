@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -42,15 +43,34 @@ func (r *UserSQL) Insert(ctx context.Context, u *domain.User) error {
 	return err
 }
 
-func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
+func (r *UserSQL) List(ctx context.Context, filter domain.UserFilter, limit, offset int) ([]domain.User, int, error) {
+	limit, offset = clampPage(limit, offset)
+	var args []any
+	where := []string{"TRUE"}
+	add := func(condition string, value any) {
+		args = append(args, value)
+		where = append(where, fmt.Sprintf(condition, len(args)))
 	}
+	if q := strings.TrimSpace(filter.Query); q != "" {
+		add("(email ILIKE '%%' || $%[1]d || '%%' OR display_name ILIKE '%%' || $%[1]d || '%%')", escapeLike(q))
+	}
+	if filter.Role != "" {
+		add("role = $%d", filter.Role)
+	}
+	if filter.IsActive != nil {
+		add("is_active = $%d", *filter.IsActive)
+	}
+	whereSQL := strings.Join(where, " AND ")
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM app_user WHERE `+whereSQL, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	args = append(args, limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, email, password_hash, display_name, role, COALESCE(tenant_id, ''), is_active, last_login_at, created_at, updated_at, auth_version
-		FROM app_user ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+		FROM app_user WHERE `+whereSQL+fmt.Sprintf(` ORDER BY created_at DESC LIMIT $%d OFFSET $%d`, len(args)-1, len(args)), args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.User, 0)
@@ -64,7 +84,7 @@ func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, e
 			updated   time.Time
 		)
 		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &role, &u.TenantID, &active, &lastLogin, &created, &updated, &u.AuthVersion); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		u.Role = domain.Role(role)
 		u.IsActive = active
@@ -76,7 +96,7 @@ func (r *UserSQL) List(ctx context.Context, limit, offset int) ([]domain.User, e
 		}
 		out = append(out, u)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 func (r *UserSQL) Update(ctx context.Context, u *domain.User) error {

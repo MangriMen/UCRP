@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router'
+import { useNavigate } from 'react-router'
 import {
   CampaignStatusBadge,
   campaignStatusLabels,
@@ -7,7 +7,9 @@ import {
   type CampaignStatus,
 } from '@/entities/campaign'
 import { formatDate } from '@/shared/lib/format'
-import { ALL_OPTION, parsePage } from '@/shared/lib/search-params'
+import { useOptionParam } from '@/shared/lib/hooks/use-option-param'
+import { useListParams } from '@/shared/lib/list-params'
+import { ALL_OPTION } from '@/shared/lib/search-params'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { OptionSelect } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
@@ -30,27 +32,18 @@ const statusItems = [
   ...Object.entries(campaignStatusLabels).map(([value, label]) => ({ value, label })),
 ]
 
-const isCampaignStatus = (value: string): value is CampaignStatus => value in campaignStatusLabels
+const statusValues = statusItems.map((item) => item.value)
 
 export function CampaignsPage() {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const status = searchParams.get('status') ?? ALL_OPTION
-  const page = parsePage(searchParams.get('page'))
-
-  const updateParams = (changes: Record<string, string | null>) =>
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current)
-      for (const [key, value] of Object.entries(changes)) {
-        if (value === null || value === ALL_OPTION) next.delete(key)
-        else next.set(key, value)
-      }
-      return next
-    })
+  const params = useListParams()
+  const { page, pageSize, setPage, setPageSize } = params
+  const statusParam = useOptionParam(params, 'status', statusValues)
 
   const campaigns = useCampaigns({
-    status: isCampaignStatus(status) ? status : undefined,
+    status: statusParam.value === ALL_OPTION ? undefined : (statusParam.value as CampaignStatus),
     page,
+    pageSize,
   })
 
   return (
@@ -58,8 +51,8 @@ export function CampaignsPage() {
       <PageHeader title="Кампании" description="Рассылки по сегментам и их эффективность" />
       <OptionSelect
         items={statusItems}
-        value={status}
-        onValueChange={(value) => updateParams({ status: value, page: null })}
+        value={statusParam.value}
+        onValueChange={statusParam.onChange}
         ariaLabel="Статус"
         className="w-56"
       />
@@ -71,7 +64,8 @@ export function CampaignsPage() {
         error={campaigns.error}
         emptyTitle="Кампаний пока нет"
         meta={campaigns.data?.meta}
-        onPageChange={(next) => updateParams({ page: String(next) })}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
         onRowClick={(c) => navigate(`/campaigns/${c.id}`)}
       />
     </div>

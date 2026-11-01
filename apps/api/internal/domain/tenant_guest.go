@@ -32,4 +32,5 @@ type TenantGuestRepo interface {
 	Get(ctx context.Context, tenantID, guestID string, since time.Time) (*TenantGuest, error)
 	Identifiers(ctx context.Context, tenantID, guestID string, since time.Time, limit int) ([]TenantGuestIdentifier, error)
 	Events(ctx context.Context, tenantID, guestID string, since time.Time, limit, offset int) ([]TenantGuestEvent, error)
+	CountEvents(ctx context.Context, tenantID, guestID string, since time.Time) (int, error)
 }

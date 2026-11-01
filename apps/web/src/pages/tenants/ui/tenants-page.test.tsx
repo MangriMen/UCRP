@@ -147,6 +147,13 @@ describe('TenantsPage tenant creation', () => {
     expect(await screen.findByText('Книжный')).toBeInTheDocument()
   })
 
+  it('drops an unknown mall from the URL once malls are loaded', async () => {
+    renderPage('/tenants?mall_id=xxx&q=Заря')
+    await waitFor(() => expect(screen.getByTestId('search')).not.toHaveTextContent('mall_id'))
+    expect(screen.getByTestId('search')).toHaveTextContent('q=')
+    expect(screen.getByRole('combobox', { name: 'ТЦ' })).toHaveTextContent('Все ТЦ')
+  })
+
   it('reports a duplicate code on the code field', async () => {
     renderPage()
     await userEvent.click(await screen.findByRole('button', { name: 'Добавить арендатора' }))

@@ -246,6 +246,16 @@ func TestSegmentPreviewCountsMatchingGuests(t *testing.T) {
 	if size != 5 {
 		t.Fatalf("preview size: expected 5 guests that visited A or B and never C, got %d", size)
 	}
+	examples, _ := obj["examples"].([]any)
+	if len(examples) == 0 {
+		t.Fatalf("preview must return examples: %s", resp.Snippet())
+	}
+	for _, example := range examples {
+		entry, _ := example.(map[string]any)
+		if harness.StringField(entry, "displayName") == "" {
+			t.Fatalf("an admin with field.guest.display_name.read must get example names: %v", entry)
+		}
+	}
 }
 
 func TestSegmentPreviewDoesNotPersist(t *testing.T) {
@@ -621,6 +631,12 @@ func TestMergeCandidateListFiltersByResolution(t *testing.T) {
 			if resolution := harness.StringField(obj, "resolution"); resolution != "pending" {
 				t.Fatalf("candidate %s: expected resolution pending, got %q", candidate.ID, resolution)
 			}
+			if name := harness.StringField(obj, "guestADisplayName"); name != guestA.DisplayName {
+				t.Fatalf("candidate %s: expected guestADisplayName %q, got %q", candidate.ID, guestA.DisplayName, name)
+			}
+			if name := harness.StringField(obj, "guestBDisplayName"); name != guestB.DisplayName {
+				t.Fatalf("candidate %s: expected guestBDisplayName %q, got %q", candidate.ID, guestB.DisplayName, name)
+			}
 		}
 	}
 	if !found {
@@ -777,6 +793,42 @@ func TestMergeCandidateRejectCreatesBlock(t *testing.T) {
 	}
 	if blocks != 1 {
 		t.Fatalf("reject must create exactly one merge_block for the pair, got %d", blocks)
+	}
+
+	detail, err := s.API.Get(ctx, "/api/v1/merge-candidates/"+candidate.ID, nil)
+	if err != nil {
+		t.Fatalf("GET /api/v1/merge-candidates/{id}: %v", err)
+	}
+	s.RequireStatus(detail, 200, "GET /api/v1/merge-candidates/{id}")
+	s.RequireSchema("GET", "/api/v1/merge-candidates/{id}", detail)
+	detailObj, _ := mustJSON(t, detail, "merge candidate detail").(map[string]any)
+	if harness.StringField(detailObj, "guestADisplayName") != guestA.DisplayName ||
+		harness.StringField(detailObj, "guestBDisplayName") != guestB.DisplayName {
+		t.Fatalf("candidate detail must carry both guest names: %s", detail.Snippet())
+	}
+
+	list, err := s.API.Get(ctx, "/api/v1/merge-blocks", nil)
+	if err != nil {
+		t.Fatalf("GET /api/v1/merge-blocks: %v", err)
+	}
+	s.RequireStatus(list, 200, "GET /api/v1/merge-blocks")
+	s.RequireSchema("GET", "/api/v1/merge-blocks", list)
+	blockItems, _ := harness.Items(mustJSON(t, list, "merge blocks"))
+	named := false
+	for _, item := range blockItems {
+		obj, _ := item.(map[string]any)
+		ids := []string{harness.StringField(obj, "guestAId"), harness.StringField(obj, "guestBId")}
+		if !containsString(ids, guestA.ID) || !containsString(ids, guestB.ID) {
+			continue
+		}
+		names := []string{harness.StringField(obj, "guestADisplayName"), harness.StringField(obj, "guestBDisplayName")}
+		if !containsString(names, guestA.DisplayName) || !containsString(names, guestB.DisplayName) {
+			t.Fatalf("merge block must carry both guest names: %v", obj)
+		}
+		named = true
+	}
+	if !named {
+		t.Fatalf("the rejected pair is missing from the merge blocks list: %s", list.Snippet())
 	}
 }
 

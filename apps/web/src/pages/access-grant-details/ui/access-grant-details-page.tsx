@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import {
   AccessAuditTable,
   GrantStatusBadge,
@@ -18,9 +17,10 @@ import { AuditActor, GrantActions, useSubjectDirectory } from '@/features/manage
 import { formatDateTime } from '@/shared/lib/format'
 import { useUrlTab } from '@/shared/lib/hooks/use-url-tab'
 import { useListParams } from '@/shared/lib/list-params'
-import { Button } from '@/shared/ui/button'
+import { ButtonLink } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DataTable, type Column } from '@/shared/ui/data-table'
+import { DescriptionField } from '@/shared/ui/description-list'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { PageHeader } from '@/shared/ui/page-header'
@@ -29,15 +29,6 @@ import { StatusBadge } from '@/shared/ui/status-badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
 const TABS = ['overview', 'history'] as const
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm break-words">{children}</dd>
-    </div>
-  )
-}
 
 function GrantItems({ grant }: { grant: AccessGrant }) {
   const permissions = useAccessPermissions()
@@ -121,20 +112,26 @@ export function AccessGrantDetailsPage() {
             </CardHeader>
             <CardContent>
               <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Field label="Статус">
+                <DescriptionField label="Статус">
                   <GrantStatusBadge status={grant.status} />
-                </Field>
-                <Field label="Срок">
+                </DescriptionField>
+                <DescriptionField label="Срок">
                   {`${formatDateTime(grant.validFrom)} — ${grant.validTo ? formatDateTime(grant.validTo) : 'бессрочно'}`}
-                </Field>
-                <Field label="Пресет">
+                </DescriptionField>
+                <DescriptionField label="Пресет">
                   {grant.presetCode ? presetLabel(grant.presetCode) : '—'}
-                </Field>
-                <Field label="Причина">{grant.reason || '—'}</Field>
-                <Field label="Выдал">{directory.userLabel(grant.createdBy)}</Field>
-                <Field label="Версия политики">{grant.policyVersion}</Field>
-                <Field label="Создан">{formatDateTime(grant.createdAt)}</Field>
-                <Field label="Изменён">{formatDateTime(grant.updatedAt)}</Field>
+                </DescriptionField>
+                <DescriptionField label="Причина">{grant.reason || '—'}</DescriptionField>
+                <DescriptionField label="Выдал">
+                  {directory.userLabel(grant.createdBy)}
+                </DescriptionField>
+                <DescriptionField label="Версия политики">{grant.policyVersion}</DescriptionField>
+                <DescriptionField label="Создан">
+                  {formatDateTime(grant.createdAt)}
+                </DescriptionField>
+                <DescriptionField label="Изменён">
+                  {formatDateTime(grant.updatedAt)}
+                </DescriptionField>
               </dl>
             </CardContent>
           </Card>
@@ -158,13 +155,9 @@ export function AccessGrantDetailsPage() {
           </section>
           {!isStaffRoleGrant(grant) && (
             <div>
-              <Button
-                variant="outline"
-                nativeButton={false}
-                render={<Link to={`/access/effective?${subjectQuery}`} />}
-              >
+              <ButtonLink to={`/access/effective?${subjectQuery}`} variant="outline">
                 Эффективный доступ субъекта
-              </Button>
+              </ButtonLink>
             </div>
           )}
         </TabsContent>

@@ -1,3 +1,4 @@
+import { guestDisplayName } from '@/entities/guest'
 import { mergeBlockReasonLabels, useMergeBlocks, type MergeBlock } from '@/entities/merge-block'
 import { DeleteMergeBlockButton } from '@/features/delete-merge-block'
 import { formatDateTime } from '@/shared/lib/format'
@@ -7,8 +8,8 @@ import { PageHeader } from '@/shared/ui/page-header'
 
 const columns: Column<MergeBlock>[] = [
   { id: 'createdAt', header: 'Создан', cell: (b) => formatDateTime(b.createdAt) },
-  { id: 'guestA', header: 'Профиль A', cell: (b) => b.guestAId },
-  { id: 'guestB', header: 'Профиль B', cell: (b) => b.guestBId },
+  { id: 'guestA', header: 'Профиль A', cell: (b) => guestDisplayName(b.guestADisplayName) },
+  { id: 'guestB', header: 'Профиль B', cell: (b) => guestDisplayName(b.guestBDisplayName) },
   { id: 'reason', header: 'Причина', cell: (b) => mergeBlockReasonLabels[b.reason] },
   {
     id: 'actions',

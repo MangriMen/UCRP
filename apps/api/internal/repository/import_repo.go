@@ -69,40 +69,39 @@ func (r *ImportBatchSQL) GetByID(ctx context.Context, id string) (*domain.Import
 	return r.one(ctx, batchSelect+` WHERE id = $1`, id)
 }
 
-func (r *ImportBatchSQL) List(ctx context.Context, dataSourceID, status string, limit, offset int) ([]domain.ImportBatch, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
-	if offset < 0 {
-		offset = 0
-	}
-	query := batchSelect + ` WHERE 1=1`
+func (r *ImportBatchSQL) List(ctx context.Context, dataSourceID, status string, limit, offset int) ([]domain.ImportBatch, int, error) {
+	limit, offset = clampPage(limit, offset)
+	where := ` WHERE TRUE`
 	args := make([]any, 0, 4)
 	if dataSourceID != "" {
 		args = append(args, dataSourceID)
-		query += ` AND data_source_id = $` + strconv.Itoa(len(args))
+		where += ` AND data_source_id = $` + strconv.Itoa(len(args))
 	}
 	if status != "" {
 		args = append(args, status)
-		query += ` AND status = $` + strconv.Itoa(len(args))
+		where += ` AND status = $` + strconv.Itoa(len(args))
+	}
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM import_batch`+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
 	}
 	args = append(args, limit, offset)
-	query += ` ORDER BY created_at DESC LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	query := batchSelect + where + ` ORDER BY created_at DESC LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() { _ = rows.Close() }()
 	out := make([]domain.ImportBatch, 0)
 	for rows.Next() {
 		b, err := scanBatch(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		out = append(out, *b)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 func (r *ImportBatchSQL) MarkRunning(ctx context.Context, id string, startedAt time.Time) error {
@@ -219,6 +218,12 @@ func (r *RejectedRowSQL) ListByBatch(ctx context.Context, batchID string, limit,
 		out = append(out, rr)
 	}
 	return out, rows.Err()
+}
+
+func (r *RejectedRowSQL) CountByBatch(ctx context.Context, batchID string) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM rejected_row WHERE import_batch_id = $1`, batchID).Scan(&total)
+	return total, err
 }
 
 func (r *RejectedRowSQL) InsertBatch(ctx context.Context, rows []domain.RejectedRow) error {

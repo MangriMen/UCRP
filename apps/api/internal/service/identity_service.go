@@ -37,26 +37,33 @@ type MergeCandidateDTO struct {
 	WinnerGuestID string `json:"winnerGuestId,omitempty"`
 	MergedGuestID string `json:"mergedGuestId,omitempty"`
 	CreatedAt     string `json:"createdAt"`
+
+	GuestADisplayName string `json:"guestADisplayName,omitempty"`
+	GuestBDisplayName string `json:"guestBDisplayName,omitempty"`
 }
 
-func (s *IdentityService) List(ctx context.Context, resolution string, limit, offset int) ([]MergeCandidateDTO, error) {
+func (s *IdentityService) List(ctx context.Context, resolution string, showNames bool, limit, offset int) ([]MergeCandidateDTO, error) {
 	items, err := s.candidates.List(ctx, domain.MergeResolution(resolution), limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]MergeCandidateDTO, 0, len(items))
 	for _, c := range items {
-		out = append(out, toMergeDTO(c))
+		out = append(out, withCandidateNames(toMergeDTO(c), c, showNames))
 	}
 	return out, nil
 }
 
-func (s *IdentityService) Get(ctx context.Context, id string) (*MergeCandidateDTO, error) {
+func (s *IdentityService) Count(ctx context.Context, resolution string) (int, error) {
+	return s.candidates.Count(ctx, domain.MergeResolution(resolution))
+}
+
+func (s *IdentityService) Get(ctx context.Context, id string, showNames bool) (*MergeCandidateDTO, error) {
 	c, err := s.candidates.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	dto := toMergeDTO(*c)
+	dto := withCandidateNames(toMergeDTO(*c), *c, showNames)
 	return &dto, nil
 }
 
@@ -134,24 +141,36 @@ type MergeBlockDTO struct {
 	GuestBID  string `json:"guestBId"`
 	Reason    string `json:"reason"`
 	CreatedAt string `json:"createdAt"`
+
+	GuestADisplayName string `json:"guestADisplayName,omitempty"`
+	GuestBDisplayName string `json:"guestBDisplayName,omitempty"`
 }
 
-func (s *IdentityService) ListBlocks(ctx context.Context, limit, offset int) ([]MergeBlockDTO, error) {
+func (s *IdentityService) ListBlocks(ctx context.Context, showNames bool, limit, offset int) ([]MergeBlockDTO, error) {
 	items, err := s.blocks.List(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]MergeBlockDTO, 0, len(items))
 	for _, b := range items {
-		out = append(out, MergeBlockDTO{
+		dto := MergeBlockDTO{
 			ID:        b.ID,
 			GuestAID:  b.GuestAID,
 			GuestBID:  b.GuestBID,
 			Reason:    b.Reason,
 			CreatedAt: b.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-		})
+		}
+		if showNames {
+			dto.GuestADisplayName = b.GuestADisplayName
+			dto.GuestBDisplayName = b.GuestBDisplayName
+		}
+		out = append(out, dto)
 	}
 	return out, nil
+}
+
+func (s *IdentityService) CountBlocks(ctx context.Context) (int, error) {
+	return s.blocks.Count(ctx)
 }
 
 func (s *IdentityService) DeleteBlock(ctx context.Context, id string) error {
@@ -159,6 +178,14 @@ func (s *IdentityService) DeleteBlock(ctx context.Context, id string) error {
 		return err
 	}
 	return s.blocks.Delete(ctx, id)
+}
+
+func withCandidateNames(dto MergeCandidateDTO, c domain.MergeCandidate, showNames bool) MergeCandidateDTO {
+	if showNames {
+		dto.GuestADisplayName = c.GuestADisplayName
+		dto.GuestBDisplayName = c.GuestBDisplayName
+	}
+	return dto
 }
 
 func toMergeDTO(c domain.MergeCandidate) MergeCandidateDTO {

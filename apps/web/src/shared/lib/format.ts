@@ -13,3 +13,8 @@ export const formatMoney = (amountMinor: number) => rubles.format(amountMinor / 
 const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 1 })
 
 export const formatPercent = (ratio: number) => percent.format(ratio)
+
+export const SUPPRESSED_LABEL = 'скрыто'
+
+export const formatSuppressed = <T>(value: T | null | undefined, format: (value: T) => string) =>
+  value == null ? SUPPRESSED_LABEL : format(value)

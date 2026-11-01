@@ -1,4 +1,4 @@
-import { formatNumber } from '@/shared/lib/format'
+import { formatNumber, formatSuppressed, SUPPRESSED_LABEL } from '@/shared/lib/format'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DataTable, type Column } from '@/shared/ui/data-table'
@@ -10,22 +10,20 @@ import {
 } from '../model/keys'
 import type { SegmentRecommendation } from '../model/types'
 
-const HIDDEN = 'скрыто'
-
 const limitOptions = SEGMENT_TOP_TENANTS_LIMITS.map((limit) => ({
   value: String(limit),
   label: `Топ ${limit}`,
 }))
 
-const count = (value: number | null | undefined) => (value == null ? HIDDEN : formatNumber(value))
+const count = (value: number | null | undefined) => formatSuppressed(value, formatNumber)
 
 const reach = (tenant: SegmentRecommendation) =>
   tenant.guests == null || tenant.eligibleCount == null
-    ? HIDDEN
+    ? SUPPRESSED_LABEL
     : `${formatNumber(tenant.guests)} из ${formatNumber(tenant.eligibleCount)}`
 
 const averageScore = (tenant: SegmentRecommendation) =>
-  tenant.averageScore == null ? HIDDEN : tenant.averageScore.toFixed(2)
+  formatSuppressed(tenant.averageScore, (score) => score.toFixed(2))
 
 interface SegmentTopTenantsProps {
   segmentId: string

@@ -172,3 +172,24 @@ func TestPrincipalRoleScope(t *testing.T) {
 		}
 	}
 }
+
+func TestInCeiling_DeniesWhenAnyEntryForCodeIsNotAllow(t *testing.T) {
+	cases := []struct {
+		name    string
+		ceiling []domain.AccessRolePermission
+		allowed bool
+	}{
+		{name: "allow only", ceiling: []domain.AccessRolePermission{{PermissionCode: "read", Effect: "allow"}}, allowed: true},
+		{name: "allow then deny", ceiling: []domain.AccessRolePermission{{PermissionCode: "read", Effect: "allow"}, {PermissionCode: "read", Effect: "deny"}}},
+		{name: "deny then allow", ceiling: []domain.AccessRolePermission{{PermissionCode: "read", Effect: "deny"}, {PermissionCode: "read", Effect: "allow"}}},
+		{name: "other code only", ceiling: []domain.AccessRolePermission{{PermissionCode: "write", Effect: "allow"}}},
+		{name: "empty"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := InCeiling("read", tc.ceiling); got != tc.allowed {
+				t.Fatalf("InCeiling = %v, want %v", got, tc.allowed)
+			}
+		})
+	}
+}

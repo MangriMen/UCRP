@@ -14,7 +14,7 @@ func TestSegmentRecommendationSuppression(t *testing.T) {
 		{TenantID: "difference", Guests: 6, EligibleCount: 10, SegmentCount: 20, IncompleteCount: 6, Score: 0.7},
 		{TenantID: "zeros", Guests: 10, EligibleCount: 10, SegmentCount: 10, IncompleteCount: 0, Score: 0.6},
 	}
-	body, err := json.Marshal(segmentRecommendationResponse(items))
+	body, err := json.Marshal(segmentRecommendationResponse("segment-1", items))
 	if err != nil {
 		t.Fatal(err)
 	}

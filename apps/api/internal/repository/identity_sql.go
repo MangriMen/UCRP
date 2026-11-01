@@ -27,6 +27,12 @@ func (r *MergeBlockSQL) HasBlock(ctx context.Context, guestA, guestB string) (bo
 	return n > 0, err
 }
 
+func (r *MergeBlockSQL) Count(ctx context.Context) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM merge_block`).Scan(&total)
+	return total, err
+}
+
 func (r *MergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain.MergeBlock, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
@@ -35,8 +41,12 @@ func (r *MergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain.M
 		offset = 0
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, guest_a_id, guest_b_id, reason, COALESCE(candidate_id, ''), COALESCE(created_by, ''), created_at
-		FROM merge_block ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+		SELECT b.id, b.guest_a_id, b.guest_b_id, b.reason, COALESCE(b.candidate_id, ''), COALESCE(b.created_by, ''), b.created_at,
+			COALESCE(ga.display_name, ''), COALESCE(gb.display_name, '')
+		FROM merge_block b
+		LEFT JOIN guest ga ON ga.id = b.guest_a_id
+		LEFT JOIN guest gb ON gb.id = b.guest_b_id
+		ORDER BY b.created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +54,7 @@ func (r *MergeBlockSQL) List(ctx context.Context, limit, offset int) ([]domain.M
 	out := make([]domain.MergeBlock, 0)
 	for rows.Next() {
 		var b domain.MergeBlock
-		if err := rows.Scan(&b.ID, &b.GuestAID, &b.GuestBID, &b.Reason, &b.CandidateID, &b.CreatedBy, &b.CreatedAt); err != nil {
+		if err := rows.Scan(&b.ID, &b.GuestAID, &b.GuestBID, &b.Reason, &b.CandidateID, &b.CreatedBy, &b.CreatedAt, &b.GuestADisplayName, &b.GuestBDisplayName); err != nil {
 			return nil, err
 		}
 		out = append(out, b)

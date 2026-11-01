@@ -34,6 +34,9 @@ type fakeContacts struct {
 func (f *fakeContacts) ListByGuest(context.Context, string, int, int) ([]domain.ContactLog, error) {
 	return nil, nil
 }
+func (f *fakeContacts) CountByGuest(context.Context, string) (int, error) {
+	return 0, nil
+}
 func (f *fakeContacts) CountSince(_ context.Context, ids []string, _ time.Time) (map[string]int, error) {
 	out := map[string]int{}
 	for _, id := range ids {
@@ -187,8 +190,8 @@ func (f *fakeSegments) Insert(context.Context, *domain.Segment, *domain.SegmentV
 func (f *fakeSegments) GetByID(context.Context, string) (*domain.Segment, *domain.SegmentVersion, error) {
 	return &domain.Segment{ID: "seg"}, &domain.SegmentVersion{ID: "v1", Status: f.status}, nil
 }
-func (f *fakeSegments) List(context.Context, int, int) ([]domain.Segment, error) {
-	return nil, nil
+func (f *fakeSegments) List(context.Context, domain.SegmentFilter, int, int) ([]domain.Segment, int, error) {
+	return nil, 0, nil
 }
 func (f *fakeSegments) ListTemplates(context.Context) ([]domain.Segment, error) {
 	return nil, nil
@@ -205,7 +208,7 @@ func (f *fakeSegments) MarkComputing(context.Context, string) error             
 func (f *fakeSegments) ReplaceMembers(context.Context, string, []string, time.Time) error {
 	return nil
 }
-func (f *fakeSegments) ListMembers(context.Context, string, int, int) ([]string, error) {
+func (f *fakeSegments) ListMembers(context.Context, string, int, int) ([]domain.SegmentMemberEntry, error) {
 	return nil, nil
 }
 func (f *fakeSegments) CountMembers(context.Context, string) (int, error) {

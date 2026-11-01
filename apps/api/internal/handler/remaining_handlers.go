@@ -3,10 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/auth"
 	"github.com/MangriMen/UCRP/internal/platform/httpx"
 	"github.com/MangriMen/UCRP/internal/service"
@@ -64,14 +66,31 @@ func NewUserHandler(authSvc *service.AuthService) *UserHandler {
 	return &UserHandler{auth: authSvc}
 }
 
+var userListRoles = []string{"marketer", "manager", "tenant", "analyst", "system"}
+
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	items, err := h.auth.ListUsers(r.Context(), limit, offset)
+	query := r.URL.Query()
+	filter := domain.UserFilter{Query: query.Get("q"), Role: query.Get("role")}
+	if filter.Role != "" && !slices.Contains(userListRoles, filter.Role) {
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "role: ожидается marketer, manager, tenant, analyst или system")
+		return
+	}
+	switch query.Get("is_active") {
+	case "":
+	case "true", "false":
+		active := query.Get("is_active") == "true"
+		filter.IsActive = &active
+	default:
+		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "is_active: ожидается true или false")
+		return
+	}
+	items, total, err := h.auth.ListUsers(r.Context(), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -134,13 +153,29 @@ func NewAuditHandler(audit *service.AuditService) *AuditHandler {
 
 func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
+	from, ok := optionalTime(w, r, "from")
+	if !ok {
+		return
+	}
+	to, ok := optionalTime(w, r, "to")
+	if !ok {
+		return
+	}
 	limit, offset := pageParams(r)
-	items, err := h.audit.List(r.Context(), q.Get("entity_type"), q.Get("entity_id"), q.Get("actor"), limit, offset)
+	filter := domain.AuditFilter{
+		EntityType: q.Get("entity_type"),
+		EntityID:   q.Get("entity_id"),
+		Actor:      q.Get("actor"),
+		Action:     q.Get("action"),
+		From:       from,
+		To:         to,
+	}
+	items, total, err := h.audit.List(r.Context(), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, total)
 }
 
 type CampaignHandler struct {
@@ -153,12 +188,13 @@ func NewCampaignHandler(campaigns *service.CampaignService) *CampaignHandler {
 
 func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	items, err := h.campaigns.List(r.Context(), limit, offset)
+	q := r.URL.Query()
+	items, total, err := h.campaigns.List(r.Context(), domain.CampaignFilter{Status: q.Get("status"), SegmentID: q.Get("segment_id")}, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {

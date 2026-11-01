@@ -172,8 +172,8 @@ func (s *ProfileService) Movement(ctx context.Context, guestID string, from, to 
 }
 
 func (s *ProfileService) Search(ctx context.Context, filter domain.GuestFilter, limit, offset int, fields GuestListAccess) (*GuestPage, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
+	if limit <= 0 || limit > 200 {
+		limit = 50
 	}
 	if offset < 0 {
 		offset = 0

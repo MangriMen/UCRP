@@ -3,10 +3,14 @@ export interface Period {
   to: string
 }
 
+export const DAY_MS = 86_400_000
+
+export const PERIOD_REVERSED_MESSAGE = 'Начало периода позже конца'
+
 const dayOf = (date: Date) => date.toISOString().slice(0, 10)
 
 export const daysAgo = (days: number, now = new Date()) =>
-  dayOf(new Date(now.getTime() - days * 86_400_000))
+  dayOf(new Date(now.getTime() - days * DAY_MS))
 
 export function defaultPeriod(months = 6, now = new Date()): Period {
   const year = now.getUTCFullYear()
@@ -17,6 +21,8 @@ export function defaultPeriod(months = 6, now = new Date()): Period {
 }
 
 export const isPeriodValid = ({ from, to }: Period) => from !== '' && to !== '' && from <= to
+
+export const isPeriodReversed = ({ from, to }: Period) => from !== '' && to !== '' && from > to
 
 export const startOfDay = (day: string) => `${day}T00:00:00Z`
 export const endOfDay = (day: string) => `${day}T23:59:59Z`

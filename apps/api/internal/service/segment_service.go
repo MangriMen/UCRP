@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/MangriMen/UCRP/internal/domain"
 	"github.com/MangriMen/UCRP/internal/platform/idgen"
@@ -55,7 +56,8 @@ func ruleOrFlat(rule *domain.SegmentRule, visited, excluded []string, periodDays
 }
 
 type SegmentPreviewExample struct {
-	GuestID string `json:"guestId"`
+	GuestID     string `json:"guestId"`
+	DisplayName string `json:"displayName,omitempty"`
 }
 
 type SegmentPreviewResponse struct {
@@ -104,21 +106,26 @@ type SegmentPage struct {
 	Meta  PageMeta     `json:"meta"`
 }
 
-func (s *SegmentService) Preview(ctx context.Context, req SegmentPreviewRequest) (*SegmentPreviewResponse, error) {
+func (s *SegmentService) Preview(ctx context.Context, req SegmentPreviewRequest, showNames bool) (*SegmentPreviewResponse, error) {
 	size, examples, err := s.evaluator.Preview(ctx, req.toRule())
 	if err != nil {
 		return nil, err
 	}
+	if size < 5 {
+		return &SegmentPreviewResponse{Examples: []SegmentPreviewExample{}, Suppressed: true}, nil
+	}
+	var names map[string]string
+	if showNames {
+		names, err = s.evaluator.DisplayNames(ctx, examples)
+		if err != nil {
+			return nil, err
+		}
+	}
 	out := make([]SegmentPreviewExample, 0, len(examples))
 	for _, id := range examples {
-		out = append(out, SegmentPreviewExample{GuestID: id})
+		out = append(out, SegmentPreviewExample{GuestID: id, DisplayName: names[id]})
 	}
 	res := &SegmentPreviewResponse{Examples: out, Cached: false}
-	if size < 5 {
-		res.Suppressed = true
-		res.Examples = []SegmentPreviewExample{}
-		return res, nil
-	}
 	res.Size = &size
 	return res, nil
 }
@@ -199,7 +206,7 @@ func toSegmentDTO(seg *domain.Segment, ver *domain.SegmentVersion) *SegmentDTO {
 		return dto
 	}
 	dto.VersionStatus = string(ver.Status)
-	dto.Rule = json.RawMessage(ver.Rule)
+	dto.Rule = storedRuleJSON(ver.Rule)
 	if ver.MemberCount != nil {
 		dto.MemberCount = ver.MemberCount
 	}
@@ -213,13 +220,13 @@ func toSegmentDTO(seg *domain.Segment, ver *domain.SegmentVersion) *SegmentDTO {
 	return dto
 }
 
-func (s *SegmentService) List(ctx context.Context, limit, offset int) (*SegmentPage, error) {
-	items, err := s.segments.List(ctx, limit, offset)
+func (s *SegmentService) List(ctx context.Context, filter domain.SegmentFilter, limit, offset int) (*SegmentPage, error) {
+	items, total, err := s.segments.List(ctx, filter, limit, offset)
 	if err != nil {
 		return nil, err
 	}
-	if limit <= 0 || limit > 100 {
-		limit = 20
+	if limit <= 0 || limit > 200 {
+		limit = 50
 	}
 	if offset < 0 {
 		offset = 0
@@ -246,7 +253,6 @@ func (s *SegmentService) List(ctx context.Context, limit, offset int) (*SegmentP
 		dto.RuleText = texts[i]
 		out = append(out, *dto)
 	}
-	total := offset + len(out)
 	totalPages := (total + limit - 1) / limit
 	if totalPages < 1 {
 		totalPages = 1
@@ -304,7 +310,11 @@ func (s *SegmentService) Delete(ctx context.Context, id string) error {
 }
 
 type SegmentMemberView struct {
-	GuestID string `json:"guestId"`
+	GuestID     string     `json:"guestId"`
+	DisplayName *string    `json:"displayName,omitempty"`
+	TenantCount int        `json:"tenantCount"`
+	LastSeenAt  *time.Time `json:"lastSeenAt"`
+	AddedAt     time.Time  `json:"addedAt"`
 }
 
 type SegmentMemberPage struct {
@@ -312,7 +322,7 @@ type SegmentMemberPage struct {
 	Meta  PageMeta            `json:"meta"`
 }
 
-func (s *SegmentService) Members(ctx context.Context, id string, versionNo, limit, offset int) (*SegmentMemberPage, error) {
+func (s *SegmentService) Members(ctx context.Context, id string, versionNo int, showNames bool, limit, offset int) (*SegmentMemberPage, error) {
 	var (
 		seg *domain.Segment
 		ver *domain.SegmentVersion
@@ -330,7 +340,7 @@ func (s *SegmentService) Members(ctx context.Context, id string, versionNo, limi
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	guestIDs, err := s.segments.ListMembers(ctx, ver.ID, limit, offset)
+	members, err := s.segments.ListMembers(ctx, ver.ID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -338,9 +348,13 @@ func (s *SegmentService) Members(ctx context.Context, id string, versionNo, limi
 	if err != nil {
 		return nil, err
 	}
-	items := make([]SegmentMemberView, 0, len(guestIDs))
-	for _, guestID := range guestIDs {
-		items = append(items, SegmentMemberView{GuestID: guestID})
+	items := make([]SegmentMemberView, 0, len(members))
+	for _, member := range members {
+		view := SegmentMemberView{GuestID: member.GuestID, TenantCount: member.TenantCount, LastSeenAt: member.LastSeenAt, AddedAt: member.AddedAt.UTC()}
+		if showNames && member.DisplayName != "" {
+			view.DisplayName = &member.DisplayName
+		}
+		items = append(items, view)
 	}
 	if offset < 0 {
 		offset = 0
@@ -382,7 +396,7 @@ func (s *SegmentService) Versions(ctx context.Context, id string) ([]SegmentVers
 			ID:          v.ID,
 			SegmentID:   id,
 			VersionNo:   v.VersionNo,
-			Rule:        json.RawMessage(v.Rule),
+			Rule:        storedRuleJSON(v.Rule),
 			RuleText:    texts[i],
 			Status:      string(v.Status),
 			MemberCount: v.MemberCount,
@@ -485,7 +499,7 @@ func (s *SegmentService) Templates(ctx context.Context) ([]SegmentTemplateView, 
 			Rule:        json.RawMessage("{}"),
 		}
 		if ver := versions[seg.ID]; ver != nil {
-			view.Rule = json.RawMessage(ver.Rule)
+			view.Rule = storedRuleJSON(ver.Rule)
 		}
 		out = append(out, view)
 	}
@@ -498,4 +512,16 @@ func (s *SegmentService) currentVersions(ctx context.Context, segments []domain.
 		ids = append(ids, seg.ID)
 	}
 	return s.segments.CurrentVersions(ctx, ids)
+}
+
+func storedRuleJSON(stored string) json.RawMessage {
+	var rule domain.SegmentRule
+	if err := json.Unmarshal([]byte(stored), &rule); err != nil {
+		return json.RawMessage(stored)
+	}
+	normalized, err := json.Marshal(rule)
+	if err != nil {
+		return json.RawMessage(stored)
+	}
+	return normalized
 }

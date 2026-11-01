@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 import { useDataSources, type DataSource } from '@/entities/data-source'
 import { useDataSourceTypes } from '@/entities/data-source-type'
 import { ImportStatusBadge, isImportActive } from '@/entities/import-batch'
@@ -9,7 +8,7 @@ import { SyncSourceButton } from '@/features/sync-source'
 import { formatDateTime } from '@/shared/lib/format'
 import { formatSort, useListParams } from '@/shared/lib/list-params'
 import { ActiveBadge } from '@/shared/ui/active-badge'
-import { Button } from '@/shared/ui/button'
+import { Button, ButtonLink } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { PageHeader } from '@/shared/ui/page-header'
 import { sourceKindLabel } from '../lib/source-kind'
@@ -29,7 +28,7 @@ export function DataSourcesPage() {
   const params = useListParams()
   const { get, page, pageSize, setPage, setPageSize, setSort, reset } = params
   const isActive = get('is_active')
-  const isFiltered = DATA_SOURCE_FILTER_KEYS.some((key) => get(key) !== '')
+  const isFiltered = params.isFiltered(DATA_SOURCE_FILTER_KEYS)
   const sort = params.sort && SORTABLE_FIELDS.includes(params.sort.field) ? params.sort : undefined
 
   const sources = useDataSources({
@@ -90,9 +89,9 @@ export function DataSourcesPage() {
               />
             )}
             {canImport && type?.supportsFile && (
-              <Button variant="outline" size="sm" render={<Link to={`/import?source=${s.id}`} />}>
+              <ButtonLink to={`/import?source=${s.id}`} variant="outline" size="sm">
                 Загрузить файл
-              </Button>
+              </ButtonLink>
             )}
             {canEdit && (
               <>
@@ -127,13 +126,7 @@ export function DataSourcesPage() {
         isLoading={sources.isLoading}
         error={sources.error}
         emptyTitle={isFiltered ? 'Источники по фильтрам не найдены' : 'Источников пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={reset}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? reset : undefined}
         meta={sources.data?.meta}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}

@@ -1,10 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/api/api'
 import { tenantCategoryKeys } from '../model/keys'
 
-export function useTenantCategories() {
+interface UseTenantCategoriesOptions {
+  includeInactive?: boolean
+}
+
+export function useTenantCategories({ includeInactive = false }: UseTenantCategoriesOptions = {}) {
   return useQuery({
-    queryKey: tenantCategoryKeys.all,
-    queryFn: () => api.get('/tenant-categories'),
+    queryKey: tenantCategoryKeys.list(includeInactive),
+    queryFn: () =>
+      api.get('/tenant-categories', {
+        query: includeInactive ? { include_inactive: true } : undefined,
+      }),
+    placeholderData: keepPreviousData,
   })
 }

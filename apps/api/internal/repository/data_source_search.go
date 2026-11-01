@@ -58,10 +58,11 @@ func (r *DataSourceSQL) Search(ctx context.Context, filter domain.DataSourceFilt
 	}
 	whereSQL := strings.Join(where, " AND ")
 
-	const from = `
+	const base = `
 		FROM data_source d
 		JOIN data_source_type t ON t.id = d.type_id
-		LEFT JOIN tenant tn ON tn.id = d.tenant_id
+		LEFT JOIN tenant tn ON tn.id = d.tenant_id`
+	const lastBatch = `
 		LEFT JOIN LATERAL (
 			SELECT b.id, b.status, b.created_at, b.finished_at, b.rejected_rows
 			FROM import_batch b
@@ -70,8 +71,12 @@ func (r *DataSourceSQL) Search(ctx context.Context, filter domain.DataSourceFilt
 			LIMIT 1
 		) lb ON TRUE`
 
+	countFrom := base
+	if filter.ImportStatus != "" {
+		countFrom += lastBatch
+	}
 	var total int
-	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*)`+from+` WHERE `+whereSQL, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*)`+countFrom+` WHERE `+whereSQL, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
@@ -80,7 +85,7 @@ func (r *DataSourceSQL) Search(ctx context.Context, filter domain.DataSourceFilt
 		SELECT d.id, d.tenant_id, d.type_id, t.code, d.name, COALESCE(d.config, ''), COALESCE(d.field_mapping, ''),
 			COALESCE(d.schedule_cron, ''), d.is_active, t.supports_file, t.supports_pull, d.last_import_at,
 			d.created_at, d.updated_at, tn.name AS tenant_name,
-			lb.id, lb.status, lb.created_at, lb.finished_at, lb.rejected_rows`+from+`
+			lb.id, lb.status, lb.created_at, lb.finished_at, lb.rejected_rows`+base+lastBatch+`
 		WHERE %s
 		ORDER BY %s, d.id ASC
 		LIMIT $%d OFFSET $%d`, whereSQL, order, len(args)-1, len(args)), args...)

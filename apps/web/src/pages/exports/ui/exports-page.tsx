@@ -11,7 +11,7 @@ import {
 } from '@/entities/export'
 import { useAuth } from '@/entities/user'
 import { CreateExportButton } from '@/features/create-export'
-import { formatDateTime, formatNumber } from '@/shared/lib/format'
+import { formatDateTime, formatNumber, formatSuppressed } from '@/shared/lib/format'
 import { useListParams } from '@/shared/lib/list-params'
 import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
@@ -52,7 +52,7 @@ const baseColumns: Column<Export>[] = [
   {
     id: 'size',
     header: 'Получателей',
-    cell: (e) => (e.exportedCount == null ? 'скрыто' : formatNumber(e.exportedCount)),
+    cell: (e) => formatSuppressed(e.exportedCount, formatNumber),
     className: 'text-right',
   },
 ]
@@ -60,9 +60,10 @@ const baseColumns: Column<Export>[] = [
 export function ExportsPage() {
   const navigate = useNavigate()
   const { can } = useAuth()
-  const { get, update, page, pageSize, setPage, setPageSize, reset } = useListParams()
+  const params = useListParams()
+  const { get, update, page, pageSize, setPage, setPageSize, reset } = params
   const columns = can('export.download') ? [...baseColumns, downloadColumn] : baseColumns
-  const isFiltered = FILTER_KEYS.some((key) => get(key) !== '')
+  const isFiltered = params.isFiltered(FILTER_KEYS)
   const exports = useExports({
     channel: (get('channel') as ExportChannel) || undefined,
     status: (get('status') as ExportStatus) || undefined,
@@ -110,13 +111,7 @@ export function ExportsPage() {
         isLoading={exports.isLoading}
         error={exports.error}
         emptyTitle={isFiltered ? 'Выгрузки по фильтрам не найдены' : 'Выгрузок пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={reset}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? reset : undefined}
         meta={exports.data?.meta}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}

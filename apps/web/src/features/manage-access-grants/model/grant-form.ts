@@ -6,6 +6,7 @@ import type {
   AccessGrantScope,
   GrantScopeType,
 } from '@/entities/access'
+import { DAY_MS } from '@/shared/lib/period'
 import { toSubject, type SubjectValue } from './subject'
 
 export type ExtraScopeType = Exclude<GrantScopeType, 'tenant'>
@@ -42,7 +43,6 @@ export const EXTRA_SCOPE_TYPES: ExtraScopeType[] = [
 
 const NUMERIC_SCOPES: ExtraScopeType[] = ['period_days', 'k_threshold', 'row_limit']
 const DEFAULT_DURATION_DAYS = 30
-const DAY_MS = 86_400_000
 
 const pad = (value: number) => String(value).padStart(2, '0')
 

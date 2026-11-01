@@ -74,6 +74,12 @@ describe('navigationFor', () => {
     expect(titles('tenant')).not.toContain('Доступы')
   })
 
+  it('gives audit readers without grant access a direct access audit entry', () => {
+    expect(titles('analyst')).toContain('Аудит доступа')
+    expect(titles('manager')).not.toContain('Аудит доступа')
+    expect(titles('marketer')).not.toContain('Аудит доступа')
+  })
+
   it('hides the tenant entry from staff', () => {
     expect(titles('manager')).not.toContain('Мой арендатор')
   })

@@ -26,7 +26,7 @@ SegmentRule:
   properties:
     purchasedZones:
       type: array
-      description: Guest made at least one purchase (event type `purchase`) at a tenant of any of these zones within the period. Combined with `visitedTenantIds` by AND. A rule needs `visitedTenantIds` or `purchasedZones`.
+      description: Guest made at least one purchase (event type `purchase`) at a tenant of any of these zones within the period. Combined with the other conditions by AND. A flat rule needs at least one of `visitedTenantIds`, `visitedCategoryIds`, `purchasedZones`; otherwise 400 with `details[].field` = `rule.visitedTenantIds`.
       items:
         $ref: ./segments.yaml#/ZoneRef
     visitedTenantIds:
@@ -41,11 +41,12 @@ SegmentRule:
         type: string
     visitedCategoryIds:
       type: array
-      description: Guest visited a tenant in the category
+      description: Guest had a presence event at a tenant of any of these categories within the period. Combined with `visitedTenantIds` by AND.
       items:
         type: string
     excludedCategoryIds:
       type: array
+      description: Guest had no presence events at tenants of these categories within the period
       items:
         type: string
     periodDays:
@@ -64,11 +65,13 @@ SegmentRule:
       type: integer
       minimum: 1
       nullable: true
+      description: At least this many presence events anywhere in the complex within the period (Q-44)
     minAmountMinor:
       type: integer
       format: int64
       minimum: 0
       nullable: true
+      description: Total of `purchase` events anywhere in the complex within the period is at least this amount, in minor units (Q-44)
 SegmentRuleNode:
   description: 'A rule tree node: either a flat `SegmentRule` or a `SegmentRuleGroup`. A node with `operator` and `conditions` is a group; otherwise it is a flat rule. Existing flat rules remain valid unchanged.'
   oneOf:

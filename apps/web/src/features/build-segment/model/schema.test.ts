@@ -82,7 +82,11 @@ describe('segment rule form', () => {
 
   it('accepts a nested group within the depth limit', () => {
     expect(MAX_GROUP_DEPTH).toBe(1)
-    const values = group({ groups: [group({ operator: 'or' })] })
+    const targeted = { ...emptyLeafValues, visitedTenantIds: ['t1'] }
+    const values = group({
+      conditions: [targeted],
+      groups: [group({ operator: 'or', conditions: [targeted] })],
+    })
     expect(ruleFormSchema.safeParse(values).success).toBe(true)
   })
 
@@ -96,6 +100,15 @@ describe('segment rule form', () => {
     expect(ruleFormSchema.safeParse(group({ groups: [group({ conditions: [] })] })).success).toBe(
       false,
     )
+  })
+
+  it('rejects a condition without a tenant, category or purchase zone', () => {
+    const result = ruleFormSchema.safeParse(group())
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]).toMatchObject({
+      path: ['conditions', 0, 'visitedTenantIds'],
+      message: 'Выберите арендатора, категорию или этаж покупки',
+    })
   })
 
   it('rejects a period outside the contract range', () => {

@@ -15,7 +15,7 @@ const schema = z.object({
 type LoginValues = z.infer<typeof schema>
 
 interface LoginFormProps {
-  onSuccess: () => void
+  onSuccess?: () => void
 }
 
 export function LoginForm({ onSuccess }: LoginFormProps) {

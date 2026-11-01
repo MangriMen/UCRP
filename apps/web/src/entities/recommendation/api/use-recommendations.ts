@@ -4,11 +4,13 @@ import { pollWhile, DEFAULT_POLL_MS } from '@/shared/api/polling'
 import { recommendationKeys, SEGMENT_TOP_TENANTS_LIMIT } from '../model/keys'
 import type { RecommendationList, SegmentRecommendationList } from '../model/types'
 
+const GUEST_POLL_MAX_UPDATES = 12
+
 export function useGuestRecommendations(guestId: string) {
   return useQuery<RecommendationList>({
     queryKey: recommendationKeys.guest(guestId),
     queryFn: () => api.get('/guests/{id}/recommendations', { params: { id: guestId } }),
-    refetchInterval: pollWhile((list) => !list.computedAt, DEFAULT_POLL_MS),
+    refetchInterval: pollWhile((list) => !list.computedAt, DEFAULT_POLL_MS, GUEST_POLL_MAX_UPDATES),
   })
 }
 

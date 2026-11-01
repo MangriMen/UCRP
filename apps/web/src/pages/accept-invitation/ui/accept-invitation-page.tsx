@@ -1,15 +1,15 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { AcceptInvitationForm } from '@/features/accept-invitation'
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'
-import { Button } from '@/shared/ui/button'
+import { ButtonLink } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 
 function LoginLink() {
   return (
-    <Button nativeButton={false} render={<Link to="/login" />} variant="outline" className="w-full">
+    <ButtonLink to="/login" variant="outline" className="w-full">
       Перейти ко входу
-    </Button>
+    </ButtonLink>
   )
 }
 

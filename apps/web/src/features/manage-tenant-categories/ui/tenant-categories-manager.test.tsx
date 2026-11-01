@@ -41,6 +41,36 @@ describe('TenantCategoriesManager', () => {
     expect(screen.queryByRole('button', { name: 'Добавить категорию' })).not.toBeInTheDocument()
   })
 
+  it('shows inactive categories with a status to editors', async () => {
+    renderManager()
+    expect(await screen.findByText('Сезонные товары')).toBeInTheDocument()
+    expect(rowOf('Сезонные товары').getByText('Отключена')).toBeInTheDocument()
+    expect(rowOf('Питание').getByText('Активна')).toBeInTheDocument()
+  })
+
+  it('hides inactive categories from read-only viewers', async () => {
+    renderManager(false)
+    await screen.findByText('Питание')
+    expect(screen.queryByText('Сезонные товары')).not.toBeInTheDocument()
+    expect(screen.queryByText('Отключена')).not.toBeInTheDocument()
+  })
+
+  it('re-activates a category through the edit dialog', async () => {
+    renderManager()
+    await screen.findByText('Сезонные товары')
+    await userEvent.click(rowOf('Сезонные товары').getByRole('button', { name: 'Изменить' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('checkbox', { name: 'Активна' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Сохранить' }))
+    await waitFor(() => expect(rowOf('Сезонные товары').getByText('Активна')).toBeInTheDocument())
+  })
+
+  it('does not offer the active flag when creating', async () => {
+    renderManager()
+    await userEvent.click(await screen.findByRole('button', { name: 'Добавить категорию' }))
+    expect(within(screen.getByRole('dialog')).queryByRole('checkbox')).not.toBeInTheDocument()
+  })
+
   it('validates required fields', async () => {
     renderManager()
     await userEvent.click(await screen.findByRole('button', { name: 'Добавить категорию' }))

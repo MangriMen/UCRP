@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import {
   GRANT_SUBJECT_TYPES,
   GrantStatusBadge,
@@ -16,7 +16,7 @@ import { useSubjectDirectory, type SubjectDirectory } from '@/features/manage-ac
 import { formatDateTime } from '@/shared/lib/format'
 import { useListParams } from '@/shared/lib/list-params'
 import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
-import { Button } from '@/shared/ui/button'
+import { Button, ButtonLink } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { OptionSelect, type Option } from '@/shared/ui/option-select'
 import { PageHeader } from '@/shared/ui/page-header'
@@ -55,11 +55,12 @@ export function AccessGrantsPage() {
   const navigate = useNavigate()
   const { can } = useAuth()
   const directory = useSubjectDirectory()
-  const { get, update, page, pageSize, setPage, setPageSize, reset } = useListParams()
+  const params = useListParams()
+  const { get, update, page, pageSize, setPage, setPageSize, reset } = params
   const status = pick(STATUSES, get('status'))
   const subjectType = parseSubjectType(get('subject_type'))
   const subjectId = get('subject_id')
-  const isFiltered = FILTER_KEYS.some((key) => get(key) !== '')
+  const isFiltered = params.isFiltered(FILTER_KEYS)
 
   const grants = useAccessGrants({
     status,
@@ -102,18 +103,16 @@ export function AccessGrantsPage() {
         description="Гранты арендаторам и управляющим: кто, что и до какого срока видит"
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" nativeButton={false} render={<Link to="/access/effective" />}>
+            <ButtonLink to="/access/effective" variant="outline">
               Эффективный доступ
-            </Button>
+            </ButtonLink>
             {can('audit.read') && (
-              <Button variant="outline" nativeButton={false} render={<Link to="/access/audit" />}>
+              <ButtonLink to="/access/audit" variant="outline">
                 Аудит доступа
-              </Button>
+              </ButtonLink>
             )}
             {can('access.grant.write') && (
-              <Button nativeButton={false} render={<Link to="/access/grants/new" />}>
-                Выдать доступ
-              </Button>
+              <ButtonLink to="/access/grants/new">Выдать доступ</ButtonLink>
             )}
           </div>
         }
@@ -153,13 +152,7 @@ export function AccessGrantsPage() {
         isLoading={grants.isLoading}
         error={grants.error}
         emptyTitle={isFiltered ? 'Гранты по фильтрам не найдены' : 'Грантов пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={reset}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? reset : undefined}
         meta={grants.data?.meta}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}

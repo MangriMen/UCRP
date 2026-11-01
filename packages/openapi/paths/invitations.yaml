@@ -71,7 +71,7 @@ paths:
         - Auth
       operationId: acceptUserInvitation
       summary: Accept an invitation or a recovery link and choose a password
-      description: Accepts both invitation and recovery tokens. Tokens expire after 24 hours, are single-use and become invalid after a policy change or when the issuing manager is deactivated. Expired, used and unknown tokens are indistinguishable and return 401.
+      description: Accepts both invitation and recovery tokens. Tokens expire after 24 hours, are single-use and become invalid after a policy change or when the issuing manager is deactivated. Expired, used and unknown tokens are indistinguishable and return 401. An invitation whose email was taken by another account before acceptance returns 409 and stays unused.
       security: []
       requestBody:
         required: true
@@ -86,3 +86,5 @@ paths:
           $ref: ../components/responses.yaml#/BadRequest
         '401':
           $ref: ../components/responses.yaml#/Unauthorized
+        '409':
+          $ref: ../components/responses.yaml#/Conflict

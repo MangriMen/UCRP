@@ -1,11 +1,11 @@
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { useAuth } from '@/entities/user'
 import { DataSourceTypesManager } from '@/features/manage-data-source-types'
 import { EventTypesManager } from '@/features/manage-event-types'
 import { MallsManager } from '@/features/manage-malls'
 import { ProjectsManager } from '@/features/manage-projects'
 import { TenantCategoriesManager } from '@/features/manage-tenant-categories'
-import { Button } from '@/shared/ui/button'
+import { ButtonLink } from '@/shared/ui/button'
 import { PageHeader } from '@/shared/ui/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 
@@ -53,7 +53,7 @@ export function AdminDictionariesPage() {
           <p className="text-sm text-muted-foreground">
             Арендаторы с показателями, источниками и настройками вынесены в отдельный раздел.
           </p>
-          <Button render={<Link to="/tenants" />}>Открыть арендаторов</Button>
+          <ButtonLink to="/tenants">Открыть арендаторов</ButtonLink>
         </TabsContent>
         <TabsContent value="malls">
           <MallsManager canEdit={canEditReference} />

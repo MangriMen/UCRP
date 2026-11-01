@@ -10,7 +10,7 @@ import {
 import { formatAggregateCell } from '@/entities/tenant-aggregates'
 import { useAuth } from '@/entities/user'
 import type { Period } from '@/shared/lib/period'
-import { Button } from '@/shared/ui/button'
+import { ButtonLink } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
@@ -81,9 +81,9 @@ export function TenantBreakdown({ period }: { period: Period }) {
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
         <CardTitle>Арендаторы за период</CardTitle>
-        <Button variant="outline" size="sm" render={<Link to={`/tenants?${allTenantsQuery}`} />}>
+        <ButtonLink to={`/tenants?${allTenantsQuery}`} variant="outline" size="sm">
           Все арендаторы
-        </Button>
+        </ButtonLink>
       </CardHeader>
       <CardContent>
         <DataTable

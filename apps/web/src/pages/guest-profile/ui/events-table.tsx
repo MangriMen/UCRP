@@ -4,6 +4,7 @@ import { useAuth } from '@/entities/user'
 import { hasErrorCode } from '@/shared/api/errors'
 import { formatDateTime, formatMoney } from '@/shared/lib/format'
 import { useListParams, type SortState } from '@/shared/lib/list-params'
+import { isPeriodReversed, PERIOD_REVERSED_MESSAGE } from '@/shared/lib/period'
 import { ALL_OPTION } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
@@ -39,7 +40,7 @@ export function EventsTable({ guestId, tenants, purchasesOnly = false }: EventsT
   const from = params.get('from')
   const to = params.get('to')
   const isFiltered = Boolean(tenantId || from || to || (!purchasesOnly && type))
-  const invalidPeriod = from !== '' && to !== '' && from > to
+  const invalidPeriod = isPeriodReversed({ from, to })
 
   const sortField = params.sort && SORT_FIELDS[params.sort.field]
   const sort = sortField
@@ -125,7 +126,7 @@ export function EventsTable({ guestId, tenants, purchasesOnly = false }: EventsT
         <PeriodFilter
           value={{ from, to }}
           onChange={(period) => params.update({ from: period.from, to: period.to })}
-          error={invalidPeriod ? 'Начало периода позже конца' : undefined}
+          error={invalidPeriod ? PERIOD_REVERSED_MESSAGE : undefined}
         >
           <Button
             type="button"

@@ -114,12 +114,12 @@ flowchart LR
 
 ## Сверка потоков
 
-| DFD-поток           | Sequence      | C4                                   |
-| ------------------- | ------------- | ------------------------------------ |
-| TS → 1.1 → D4/D7    | SD-2, SD-3    | L2: SPA/API → БД, Worker → HTTP pull |
-| 1.2 → D1/D4         | SD-2 (worker) | L3a: `ingestion` → `repository`      |
-| 1.3, 1.4 ↔ D1, D3   | SD-6          | L3a, L4 identity                     |
-| R-1 → P2 → D5       | SD-4          | L3a: `segments`                      |
-| P4 → D6, PRV        | SD-5          | L2: PRV → API (members)              |
-| R-3 ↔ P5            | SD-7          | L1, L2, L3a: RequireRole + ForTenant |
-| D7 (аудит, очередь) | SD-1…SD-6     | L2: БД с `job_queue`                 |
+| DFD-поток           | Sequence      | C4                                                          |
+| ------------------- | ------------- | ----------------------------------------------------------- |
+| TS → 1.1 → D4/D7    | SD-2, SD-3    | L2: SPA/API → БД, Worker → HTTP pull                        |
+| 1.2 → D1/D4         | SD-2 (worker) | L3a: `ingestion` → `repository`                             |
+| 1.3, 1.4 ↔ D1, D3   | SD-6          | L3a, L4 identity                                            |
+| R-1 → P2 → D5       | SD-4          | L3a: `segments`                                             |
+| P4 → D6, PRV        | SD-5          | L2: PRV → API (members)                                     |
+| R-3 ↔ P5            | SD-7          | L1, L2, L3a: RequireRole + access.Decide + фильтр tenant_id |
+| D7 (аудит, очередь) | SD-1…SD-6     | L2: БД с `job_queue`                                        |

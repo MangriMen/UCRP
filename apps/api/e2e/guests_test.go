@@ -42,6 +42,11 @@ func TestGuestContactsList(t *testing.T) {
 	if got := harness.StringField(entry, "exportId"); got != exportID {
 		t.Fatalf("contact record exportId: expected %s, got %q", exportID, got)
 	}
+
+	pageItems, total := listPage(t, s, s.API, "/api/v1/guests/"+ew.guests[0].ID+"/contacts", map[string][]string{"page_size": {"1"}})
+	if len(pageItems) != 1 || total != 1 {
+		t.Fatalf("contacts meta.total: expected 1, got total=%d items=%d", total, len(pageItems))
+	}
 }
 
 func TestGuestContactsUnknownReturns404(t *testing.T) {

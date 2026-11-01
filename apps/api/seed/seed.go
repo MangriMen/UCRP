@@ -171,6 +171,41 @@ func (s *Seeder) leftoverGuestIDs(ctx context.Context, sourceIDs []string) ([]st
 	return out, rows.Err()
 }
 
+func (s *Seeder) leftoverIDs(ctx context.Context, query string, ids []string) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]string, 0)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
+const demoExportIDsSQL = `
+	SELECT id FROM export_job
+	WHERE idempotency_key LIKE 'demo-%'
+		OR segment_id = ANY($3) OR campaign_id = ANY($4) OR created_by = ANY($5)
+		OR id IN (SELECT export_id FROM export_member WHERE guest_id = ANY($1) OR identifier_id IN (
+			SELECT id FROM guest_identifier WHERE guest_id = ANY($1) OR data_source_id = ANY($2)))
+		OR id IN (SELECT export_id FROM contact_log WHERE guest_id = ANY($1))`
+
+const demoGrantIDsSQL = `
+	SELECT id FROM access_grant
+	WHERE id = ANY($1)
+		OR (subject_type = 'tenant' AND subject_id = ANY($2))
+		OR (subject_type = 'user' AND subject_id = ANY($3))`
+
+const demoMergeCandidateSQL = `
+	id = ANY($1) OR guest_a_id = ANY($2) OR guest_b_id = ANY($2)
+	OR winner_guest_id = ANY($2) OR merged_guest_id = ANY($2)`
+
 func (s *Seeder) cleanup(ctx context.Context) error {
 	categoryIDs := make([]string, 0, len(demoCategories()))
 	for _, c := range demoCategories() {
@@ -246,6 +281,16 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 	for _, g := range demoDeletedGuests() {
 		guestIDs = append(guestIDs, demoID("guest", g.Key))
 	}
+	leftoverSources, err := s.leftoverIDs(ctx, `SELECT id FROM data_source WHERE tenant_id = ANY($1)`, tenantIDs)
+	if err != nil {
+		return err
+	}
+	sourceIDs = append(sourceIDs, leftoverSources...)
+	leftoverUsers, err := s.leftoverIDs(ctx, `SELECT id FROM app_user WHERE tenant_id = ANY($1)`, tenantIDs)
+	if err != nil {
+		return err
+	}
+	userIDs = append(userIDs, leftoverUsers...)
 	leftovers, err := s.leftoverGuestIDs(ctx, sourceIDs)
 	if err != nil {
 		return err
@@ -256,44 +301,64 @@ func (s *Seeder) cleanup(ctx context.Context) error {
 		query string
 		args  []any
 	}{
-		{`DELETE FROM contact_log WHERE export_id IN (SELECT id FROM export_job WHERE idempotency_key LIKE 'demo-%')`, nil},
-		{`DELETE FROM export_member WHERE export_id IN (SELECT id FROM export_job WHERE idempotency_key LIKE 'demo-%')`, nil},
-		{`DELETE FROM export_job WHERE idempotency_key LIKE 'demo-%'`, nil},
-		{`DELETE FROM contact_log WHERE guest_id = ANY($1)`, []any{guestIDs}},
-		{`DELETE FROM export_member WHERE guest_id = ANY($1)`, []any{guestIDs}},
-		{`DELETE FROM campaign WHERE id = ANY($1)`, []any{campaignIDs}},
-		{`DELETE FROM contact_limit WHERE id = ANY($1)`, []any{limitIDs}},
+		{`DELETE FROM contact_log WHERE export_id IN (` + demoExportIDsSQL + `)`, []any{guestIDs, sourceIDs, segmentIDs, campaignIDs, userIDs}},
+		{`DELETE FROM export_member WHERE export_id IN (` + demoExportIDsSQL + `)`, []any{guestIDs, sourceIDs, segmentIDs, campaignIDs, userIDs}},
+		{`DELETE FROM export_job WHERE id IN (` + demoExportIDsSQL + `)`, []any{guestIDs, sourceIDs, segmentIDs, campaignIDs, userIDs}},
+		{`DELETE FROM campaign WHERE id = ANY($1) OR segment_id = ANY($2) OR target_tenant_id = ANY($3) OR created_by = ANY($4)`, []any{campaignIDs, segmentIDs, tenantIDs, userIDs}},
+		{`DELETE FROM contact_limit WHERE id = ANY($1) OR created_by = ANY($2)`, []any{limitIDs, userIDs}},
+		{`DELETE FROM segment_member WHERE guest_id = ANY($1)`, []any{guestIDs}},
+		{`UPDATE segment_version v SET member_count = (SELECT COUNT(*) FROM segment_member m WHERE m.segment_version_id = v.id)
+			WHERE v.status = 'ready' AND v.segment_id <> ALL($1)
+				AND v.member_count IS DISTINCT FROM (SELECT COUNT(*) FROM segment_member m WHERE m.segment_version_id = v.id)`, []any{segmentIDs}},
 		{`DELETE FROM segment_member WHERE segment_version_id IN (SELECT id FROM segment_version WHERE segment_id = ANY($1))`, []any{segmentIDs}},
 		{`DELETE FROM segment_version WHERE segment_id = ANY($1)`, []any{segmentIDs}},
 		{`DELETE FROM segment WHERE id = ANY($1)`, []any{segmentIDs}},
-		{`DELETE FROM recommendation_eval WHERE guest_id = ANY($1)`, []any{guestIDs}},
 		{`DELETE FROM recommendation WHERE guest_id = ANY($1) OR tenant_id = ANY($2)`, []any{guestIDs, tenantIDs}},
-		{`DELETE FROM merge_block WHERE id = ANY($1)`, []any{blockIDs}},
-		{`DELETE FROM merge_candidate WHERE id = ANY($1)`, []any{candidateIDs}},
+		{`DELETE FROM recommendation_eval WHERE guest_id = ANY($1)`, []any{guestIDs}},
+		{`DELETE FROM merge_block WHERE id = ANY($4) OR guest_a_id = ANY($2) OR guest_b_id = ANY($2) OR created_by = ANY($3)
+			OR candidate_id IN (SELECT id FROM merge_candidate WHERE ` + demoMergeCandidateSQL + `)`,
+			[]any{candidateIDs, guestIDs, userIDs, blockIDs}},
+		{`DELETE FROM merge_candidate WHERE ` + demoMergeCandidateSQL, []any{candidateIDs, guestIDs}},
 		{`UPDATE event SET reverses_event_id = NULL WHERE data_source_id = ANY($1)`, []any{sourceIDs}},
 		{`DELETE FROM event WHERE data_source_id = ANY($1)`, []any{sourceIDs}},
 		{`DELETE FROM guest_identifier WHERE data_source_id = ANY($1)`, []any{sourceIDs}},
 		{`UPDATE guest SET status = 'active', merged_into_id = NULL WHERE id = ANY($1)`, []any{guestIDs}},
 		{`DELETE FROM guest WHERE id = ANY($1)`, []any{guestIDs}},
 		{`DELETE FROM rejected_row WHERE import_batch_id = ANY($1)`, []any{batchIDs}},
-		{`DELETE FROM import_batch WHERE id = ANY($1)`, []any{batchIDs}},
+		{`DELETE FROM import_batch WHERE id = ANY($1) OR data_source_id = ANY($2)`, []any{batchIDs, sourceIDs}},
 		{`DELETE FROM data_source WHERE id = ANY($1)`, []any{sourceIDs}},
-		{`DELETE FROM project WHERE id = ANY($1)`, []any{projectIDs}},
+		{`DELETE FROM project WHERE id = ANY($1) OR tenant_id = ANY($2)`, []any{projectIDs, tenantIDs}},
 		{`DELETE FROM audit_log WHERE id = ANY($1)`, []any{auditIDs}},
 		{`DELETE FROM job_queue WHERE id = ANY($1)`, []any{jobIDs}},
-		{`DELETE FROM access_grant_scope WHERE grant_id = ANY($1)`, []any{grantIDs}},
-		{`DELETE FROM access_grant_item WHERE grant_id = ANY($1)`, []any{grantIDs}},
-		{`DELETE FROM access_grant WHERE id = ANY($1)`, []any{grantIDs}},
+		{`DELETE FROM access_grant_scope WHERE grant_id IN (` + demoGrantIDsSQL + `)`, []any{grantIDs, tenantIDs, userIDs}},
+		{`DELETE FROM access_grant_item WHERE grant_id IN (` + demoGrantIDsSQL + `)`, []any{grantIDs, tenantIDs, userIDs}},
+		{`DELETE FROM access_grant WHERE id IN (` + demoGrantIDsSQL + `)`, []any{grantIDs, tenantIDs, userIDs}},
+		{`UPDATE access_grant SET created_by = NULL WHERE created_by = ANY($1)`, []any{userIDs}},
+		{`UPDATE access_grant SET approved_by = NULL WHERE approved_by = ANY($1)`, []any{userIDs}},
+		{`UPDATE audit_log SET actor_user_id = NULL WHERE actor_user_id = ANY($1)`, []any{userIDs}},
+		{`UPDATE segment SET created_by = NULL WHERE created_by = ANY($1)`, []any{userIDs}},
+		{`UPDATE segment_version SET created_by = NULL WHERE created_by = ANY($1)`, []any{userIDs}},
+		{`UPDATE import_batch SET created_by = NULL WHERE created_by = ANY($1)`, []any{userIDs}},
+		{`UPDATE merge_candidate SET decided_by = NULL WHERE decided_by = ANY($1)`, []any{userIDs}},
+		{`DELETE FROM user_invitation WHERE created_by = ANY($1) OR target_user_id = ANY($1) OR tenant_id = ANY($2)`, []any{userIDs, tenantIDs}},
 		{`DELETE FROM app_user WHERE id = ANY($1)`, []any{userIDs}},
 		{`DELETE FROM tenant WHERE id = ANY($1)`, []any{tenantIDs}},
 		{`DELETE FROM mall WHERE id = ANY($1)`, []any{mallIDs}},
 		{`DELETE FROM tenant_category_relation WHERE category_id = ANY($1)`, []any{categoryIDs}},
 		{`DELETE FROM tenant_category WHERE id = ANY($1)`, []any{categoryIDs}},
 	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx, `LOCK TABLE segment_member, recommendation, recommendation_eval IN SHARE ROW EXCLUSIVE MODE`); err != nil {
+		return err
+	}
 	for _, step := range steps {
-		if err := s.exec(ctx, step.query, step.args...); err != nil {
+		if _, err := tx.ExecContext(ctx, step.query, step.args...); err != nil {
 			return err
 		}
 	}
-	return nil
+	return tx.Commit()
 }

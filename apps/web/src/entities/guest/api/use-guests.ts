@@ -10,8 +10,9 @@ import {
 } from '../model/keys'
 import type { GuestEventSort, GuestListSort, GuestProfile } from '../model/types'
 
-export function useGuestSearch(filters: GuestSearchFilters) {
+export function useGuestSearch(filters: GuestSearchFilters, options: { enabled?: boolean } = {}) {
   return useQuery({
+    enabled: options.enabled,
     queryKey: guestKeys.list(filters),
     queryFn: () =>
       api.get('/guests', {

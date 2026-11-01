@@ -12,7 +12,6 @@ import { useAuth } from '@/entities/user'
 import { GUEST_FILTER_KEYS, GuestFiltersPanel } from '@/features/filter-guests'
 import { formatDateTime, formatMoney } from '@/shared/lib/format'
 import { formatSort, useListParams } from '@/shared/lib/list-params'
-import { Button } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 import { PageHeader } from '@/shared/ui/page-header'
 
@@ -77,7 +76,7 @@ export function GuestsPage() {
 
   const sort = params.sort && SORTABLE_FIELDS.includes(params.sort.field) ? params.sort : undefined
   const hasPurchases = get('has_purchases')
-  const isFiltered = GUEST_FILTER_KEYS.some((key) => get(key) !== '')
+  const isFiltered = params.isFiltered(GUEST_FILTER_KEYS)
 
   const columns = useMemo(
     () => [
@@ -120,13 +119,7 @@ export function GuestsPage() {
         isLoading={guests.isLoading}
         error={guests.error}
         emptyTitle={isFiltered ? 'Гости по фильтрам не найдены' : 'Гостей пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={reset}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? reset : undefined}
         meta={guests.data?.meta}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}

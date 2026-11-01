@@ -108,7 +108,7 @@ export function TenantsPage() {
   const sort = params.sort && sortableFields.includes(params.sort.field) ? params.sort : undefined
   const isActive = get('is_active')
   const floor = get('floor')
-  const isFiltered = TENANT_FILTER_KEYS.some((key) => get(key) !== '')
+  const isFiltered = params.isFiltered(TENANT_FILTER_KEYS)
 
   const tenants = useTenants({
     q: get('q') || undefined,
@@ -142,13 +142,7 @@ export function TenantsPage() {
         isLoading={tenants.isLoading}
         error={tenants.error}
         emptyTitle={isFiltered ? 'Арендаторы по фильтрам не найдены' : 'Арендаторов пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={reset}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? reset : undefined}
         meta={tenants.data?.meta}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}

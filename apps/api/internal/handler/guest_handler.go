@@ -263,7 +263,7 @@ func (h *GuestHandler) Events(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", problem)
 		return
 	}
-	limit, offset := pageParams(withDefaultPageSize(r))
+	limit, offset := pageParams(r)
 	events, total, err := h.profiles.Events(r.Context(), chi.URLParam(r, "id"), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)

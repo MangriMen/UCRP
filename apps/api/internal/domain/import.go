@@ -109,7 +109,7 @@ type ImportBatchRepo interface {
 	CreateQueued(ctx context.Context, batch *ImportBatch, jobType, dedupKey string) error
 	FindByHash(ctx context.Context, dataSourceID, fileHash string) (*ImportBatch, error)
 	GetByID(ctx context.Context, id string) (*ImportBatch, error)
-	List(ctx context.Context, dataSourceID, status string, limit, offset int) ([]ImportBatch, error)
+	List(ctx context.Context, dataSourceID, status string, limit, offset int) ([]ImportBatch, int, error)
 	MarkRunning(ctx context.Context, id string, startedAt time.Time) error
 	MarkFinished(ctx context.Context, id string, status ImportStatus, total, accepted, rejected, duplicate int, errMsg string, finishedAt time.Time) error
 	HasActivePull(ctx context.Context, dataSourceID string) (bool, error)
@@ -117,6 +117,7 @@ type ImportBatchRepo interface {
 
 type RejectedRowRepo interface {
 	ListByBatch(ctx context.Context, batchID string, limit, offset int) ([]RejectedRow, error)
+	CountByBatch(ctx context.Context, batchID string) (int, error)
 	InsertBatch(ctx context.Context, rows []RejectedRow) error
 }
 

@@ -36,7 +36,7 @@ func revealsSmallGroup(item service.SegmentRecommendationDTO) bool {
 	return false
 }
 
-func segmentRecommendationResponse(items []service.SegmentRecommendationDTO) map[string]any {
+func segmentRecommendationResponse(segmentID string, items []service.SegmentRecommendationDTO) map[string]any {
 	views := make([]segmentRecommendationView, 0, len(items))
 	for _, item := range items {
 		view := segmentRecommendationView{TenantID: item.TenantID, TenantName: item.TenantName, CategoryID: item.CategoryID}
@@ -52,5 +52,5 @@ func segmentRecommendationResponse(items []service.SegmentRecommendationDTO) map
 		}
 		views = append(views, view)
 	}
-	return map[string]any{"items": views}
+	return map[string]any{"segmentId": segmentID, "items": views}
 }

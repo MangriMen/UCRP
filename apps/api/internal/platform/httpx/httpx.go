@@ -93,6 +93,16 @@ func WriteError(w http.ResponseWriter, r *http.Request, status int, code, messag
 }
 
 func WriteDomainError(w http.ResponseWriter, r *http.Request, err error) {
+	var fieldErr *domain.FieldError
+	if errors.As(err, &fieldErr) {
+		WriteJSON(w, http.StatusBadRequest, ErrorBody{Error: ErrorDetail{
+			Code:      "validation_error",
+			Message:   "Некорректные данные",
+			Details:   []ErrorField{{Field: fieldErr.Field, Reason: fieldErr.Reason}},
+			RequestID: RequestID(r.Context()),
+		}})
+		return
+	}
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		WriteError(w, r, http.StatusNotFound, "not_found", "Не найдено")

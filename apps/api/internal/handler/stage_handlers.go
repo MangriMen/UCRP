@@ -76,11 +76,12 @@ func (h *ContactLimitHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 type SegmentHandler struct {
-	segments *service.SegmentService
+	segments   *service.SegmentService
+	authorizer accessAuthorizer
 }
 
-func NewSegmentHandler(segments *service.SegmentService) *SegmentHandler {
-	return &SegmentHandler{segments: segments}
+func NewSegmentHandler(segments *service.SegmentService, authorizer accessAuthorizer) *SegmentHandler {
+	return &SegmentHandler{segments: segments, authorizer: authorizer}
 }
 
 func (h *SegmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
@@ -93,9 +94,14 @@ func (h *SegmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "Некорректное тело")
 		return
 	}
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	res, err := h.segments.Preview(ctx, req)
+	res, err := h.segments.Preview(ctx, req, showNames)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			httpx.WriteError(w, r, http.StatusGatewayTimeout, "timeout", "Превышен таймаут предпросмотра, сузьте период")
@@ -145,7 +151,8 @@ func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
-	page, err := h.segments.List(r.Context(), limit, offset)
+	query := r.URL.Query()
+	page, err := h.segments.List(r.Context(), domain.SegmentFilter{Query: query.Get("q"), Status: query.Get("status")}, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
@@ -187,7 +194,12 @@ func (h *SegmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *SegmentHandler) Members(w http.ResponseWriter, r *http.Request) {
 	limit, offset := pageParams(r)
 	versionNo, _ := strconv.Atoi(r.URL.Query().Get("version"))
-	page, err := h.segments.Members(r.Context(), chi.URLParam(r, "id"), versionNo, limit, offset)
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	page, err := h.segments.Members(r.Context(), chi.URLParam(r, "id"), versionNo, showNames, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
@@ -228,8 +240,13 @@ func (h *ExportHandler) Members(w http.ResponseWriter, r *http.Request) {
 		b := v == "true" || v == "1"
 		isControl = &b
 	}
-	limit, offset := pageParams(withDefaultPageSize(r))
-	items, total, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl, limit, offset)
+	limit, offset := pageParams(r)
+	showNames, err := canReadGuestField(r, h.authorizer, guestDisplayNamePermission)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	items, total, err := h.exports.Members(r.Context(), chi.URLParam(r, "id"), isControl, showNames, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
@@ -244,7 +261,12 @@ func (h *GuestHandler) Contacts(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	writePage(w, items, limit, offset, offset+len(items))
+	total, err := h.profiles.CountContacts(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	writePage(w, items, limit, offset, total)
 }
 
 func (h *GuestHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -320,7 +342,16 @@ func (h *ReferenceHandler) DeleteTenant(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ReferenceHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
-	items, err := h.ref.ListCategories(r.Context())
+	includeInactive := false
+	if raw := r.URL.Query().Get("include_inactive"); raw != "" {
+		value, err := strconv.ParseBool(raw)
+		if err != nil {
+			httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", "include_inactive должен быть true или false")
+			return
+		}
+		includeInactive = value
+	}
+	items, err := h.ref.ListCategories(r.Context(), includeInactive)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return

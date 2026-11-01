@@ -114,7 +114,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		return err
 	}
 	segmentSvc := service.NewSegmentService(segmentRepo, segments.NewSqlEvaluator(store.DB), repository.NewTenantSQL(store.DB), q)
-	segmentHandler := handler.NewSegmentHandler(segmentSvc)
+	segmentHandler := handler.NewSegmentHandler(segmentSvc, accessSvc)
 	recommender := recommend.NewWeightedRecommender(store.DB, cfg.Recommend)
 	recoSvc := service.NewRecommendationService(guests, repository.NewRecommendationSQL(store.DB), repository.NewRecommendationEvalSQL(store.DB), recommender, q)
 	recoHandler := handler.NewRecommendationHandler(recoSvc)
@@ -124,7 +124,7 @@ func run(log *slog.Logger, cfg config.Config) error {
 		contacts,
 		segmentRepo,
 	)
-	exportHandler := handler.NewExportHandler(exportSvc)
+	exportHandler := handler.NewExportHandler(exportSvc, accessSvc)
 	limitSvc := service.NewContactLimitService(repository.NewContactLimitSQL(store.DB))
 	limitHandler := handler.NewContactLimitHandler(limitSvc)
 	dataSources := repository.NewDataSourceSQL(store.DB)
@@ -205,7 +205,6 @@ func run(log *slog.Logger, cfg config.Config) error {
 			})
 			priv.Route("/segments", func(s chi.Router) {
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/", segmentHandler.List)
-				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Get("/templates", segmentHandler.Templates)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/preview", segmentHandler.Preview)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleAnalyst)).Post("/", segmentHandler.Create)
 				s.With(auth.RequireRole(domain.RoleMarketer, domain.RoleManager, domain.RoleAnalyst)).Get("/{id}", segmentHandler.Get)

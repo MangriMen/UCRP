@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -64,6 +65,7 @@ const purchaseEvents = `
 
 const guestHistory = `
 	SELECT e.guest_id, MIN(e.occurred_at) AS first_at,
+		MIN(e.occurred_at) FILTER (WHERE et.counts_as_presence) AS first_presence_at,
 		MIN(e.occurred_at) FILTER (WHERE et.code = 'purchase') AS first_purchase_at
 	FROM event e
 	JOIN event_type et ON et.id = e.event_type_id
@@ -131,11 +133,25 @@ func (s *AnalyticsService) TenantAggregate(ctx context.Context, q TenantAggregat
 	report.VisitsCount = reveal.count(visits, guests)
 	report.GuestsCount = reveal.count(guests, guests)
 
-	if q.Metrics.NewGuests {
-		fresh, err := s.countNewGuests(ctx, q)
-		if err != nil {
+	var fresh, firstBuyers int
+	switch {
+	case q.Metrics.NewGuests && q.Metrics.FirstPurchases:
+		var err error
+		if fresh, firstBuyers, err = s.countGuestFirsts(ctx, q); err != nil {
 			return nil, err
 		}
+	case q.Metrics.NewGuests:
+		var err error
+		if fresh, err = s.countNewGuests(ctx, q); err != nil {
+			return nil, err
+		}
+	case q.Metrics.FirstPurchases:
+		var err error
+		if firstBuyers, err = s.countFirstPurchases(ctx, q); err != nil {
+			return nil, err
+		}
+	}
+	if q.Metrics.NewGuests {
 		report.NewGuestsCount = reveal.count(fresh, fresh)
 	}
 	if q.Metrics.RepeatVisits {
@@ -158,10 +174,6 @@ func (s *AnalyticsService) TenantAggregate(ctx context.Context, q TenantAggregat
 		}
 	}
 	if q.Metrics.FirstPurchases {
-		firstBuyers, err := s.countFirstPurchases(ctx, q)
-		if err != nil {
-			return nil, err
-		}
 		report.FirstPurchasesCount = reveal.count(firstBuyers, firstBuyers)
 	}
 	report.Suppressed = reveal.suppressed
@@ -194,6 +206,16 @@ func (s *AnalyticsService) countNewGuests(ctx context.Context, q TenantAggregate
 	return fresh, err
 }
 
+func (s *AnalyticsService) countGuestFirsts(ctx context.Context, q TenantAggregateQuery) (fresh, firstBuyers int, err error) {
+	window, args := periodWindow("first_presence_at", q.From, q.To, []any{q.TenantID})
+	purchaseWindow := strings.ReplaceAll(window, "first_presence_at", "first_at")
+	err = s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FILTER (WHERE first_presence_at IS NOT NULL`+window+`),
+			COUNT(*) FILTER (WHERE first_purchase_at = first_at`+purchaseWindow+`)
+		FROM (`+guestHistory+`) history`, args...).Scan(&fresh, &firstBuyers)
+	return fresh, firstBuyers, err
+}
+
 func (s *AnalyticsService) countRepeatVisits(ctx context.Context, q TenantAggregateQuery) (visits, guests int, err error) {
 	window, args := periodWindow("occurred_at", q.From, q.To, []any{q.TenantID})
 	err = s.db.QueryRowContext(ctx, `
@@ -220,40 +242,55 @@ func (s *AnalyticsService) countFirstPurchases(ctx context.Context, q TenantAggr
 }
 
 func (s *AnalyticsService) tenantSeries(ctx context.Context, q TenantAggregateQuery, threshold int) ([]TenantAggregateDay, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		WITH days AS (
+	ctes := `
+		days AS (
 			SELECT d::date AS day FROM generate_series($2::timestamp::date, ($3::timestamp::date - 1), interval '1 day') d
 		),
 		daily AS (
 			SELECT e.occurred_at::date AS day, COUNT(*) AS visits, COUNT(DISTINCT e.guest_id) AS guests
-			`+presenceEvents+` AND e.occurred_at >= $2::timestamp AND e.occurred_at < $3::timestamp
+			` + presenceEvents + ` AND e.occurred_at >= $2::timestamp AND e.occurred_at < $3::timestamp
 			GROUP BY 1
 		),
 		first_visit AS (
-			SELECT e.guest_id, MIN(e.occurred_at)::date AS day `+presenceEvents+`
+			SELECT e.guest_id, MIN(e.occurred_at)::date AS day ` + presenceEvents + `
 			GROUP BY e.guest_id
 		),
 		fresh AS (
 			SELECT day, COUNT(*) AS guests FROM first_visit WHERE day >= $2::timestamp::date AND day < $3::timestamp::date GROUP BY day
-		),
+		)`
+	joins := `
+		LEFT JOIN daily ON daily.day = days.day
+		LEFT JOIN fresh ON fresh.day = days.day`
+	repeatColumns := "0, 0"
+	if q.Metrics.RepeatVisits {
+		ctes += `,
 		repeats AS (
 			SELECT occurred_at::date AS day, COUNT(*) AS visits, COUNT(DISTINCT guest_id) AS guests
-			FROM (`+numberedPresence+`) numbered
+			FROM (` + numberedPresence + `) numbered
 			WHERE visit_number > 1 AND occurred_at >= $2::timestamp AND occurred_at < $3::timestamp
 			GROUP BY 1
-		),
+		)`
+		joins += `
+		LEFT JOIN repeats ON repeats.day = days.day`
+		repeatColumns = "COALESCE(repeats.visits, 0), COALESCE(repeats.guests, 0)"
+	}
+	revenueColumns := "0, 0"
+	if q.Metrics.Revenue {
+		ctes += `,
 		revenue AS (
 			SELECT e.occurred_at::date AS day, SUM(e.amount_minor) AS total, COUNT(DISTINCT e.guest_id) AS guests
-			`+purchaseEvents+` AND e.occurred_at >= $2::timestamp AND e.occurred_at < $3::timestamp
+			` + purchaseEvents + ` AND e.occurred_at >= $2::timestamp AND e.occurred_at < $3::timestamp
 			GROUP BY 1
-		)
+		)`
+		joins += `
+		LEFT JOIN revenue ON revenue.day = days.day`
+		revenueColumns = "COALESCE(revenue.total, 0), COALESCE(revenue.guests, 0)"
+	}
+	rows, err := s.db.QueryContext(ctx, `
+		WITH `+ctes+`
 		SELECT days.day, COALESCE(daily.visits, 0), COALESCE(daily.guests, 0), COALESCE(fresh.guests, 0),
-			COALESCE(repeats.visits, 0), COALESCE(repeats.guests, 0), COALESCE(revenue.total, 0), COALESCE(revenue.guests, 0)
-		FROM days
-		LEFT JOIN daily ON daily.day = days.day
-		LEFT JOIN fresh ON fresh.day = days.day
-		LEFT JOIN repeats ON repeats.day = days.day
-		LEFT JOIN revenue ON revenue.day = days.day
+			`+repeatColumns+`, `+revenueColumns+`
+		FROM days`+joins+`
 		ORDER BY days.day`, q.TenantID, *q.From, *q.To)
 	if err != nil {
 		return nil, err

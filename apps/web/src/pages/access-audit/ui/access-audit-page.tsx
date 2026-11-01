@@ -3,7 +3,12 @@ import { useAuth } from '@/entities/user'
 import { AuditActor, useSubjectDirectory } from '@/features/manage-access-grants'
 import { useDebouncedSearchParam } from '@/shared/lib/hooks/use-debounced-search-param'
 import { useListParams } from '@/shared/lib/list-params'
-import { endOfDay, startOfDay } from '@/shared/lib/period'
+import {
+  endOfDay,
+  isPeriodReversed,
+  PERIOD_REVERSED_MESSAGE,
+  startOfDay,
+} from '@/shared/lib/period'
 import { ALL_OPTION, optionParam } from '@/shared/lib/search-params'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -22,8 +27,8 @@ export function AccessAuditPage() {
 
   const from = get('from')
   const to = get('to')
-  const invalidPeriod = from !== '' && to !== '' && from > to
-  const isFiltered = FILTER_KEYS.some((key) => get(key) !== '')
+  const invalidPeriod = isPeriodReversed({ from, to })
+  const isFiltered = params.isFiltered(FILTER_KEYS)
 
   const resetFilters = () => {
     grant.clear()
@@ -65,7 +70,7 @@ export function AccessAuditPage() {
         <PeriodFilter
           value={{ from, to }}
           onChange={(next) => update({ from: next.from, to: next.to })}
-          error={invalidPeriod ? 'Начало периода позже конца' : undefined}
+          error={invalidPeriod ? PERIOD_REVERSED_MESSAGE : undefined}
         >
           <div className="mt-5">
             <Button type="button" variant="outline" disabled={!isFiltered} onClick={resetFilters}>
@@ -87,13 +92,7 @@ export function AccessAuditPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         emptyTitle={isFiltered ? 'Записи по фильтрам не найдены' : 'Записей пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={resetFilters}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? resetFilters : undefined}
       />
     </div>
   )

@@ -54,6 +54,14 @@ func (r *TenantGuestSQL) Identifiers(ctx context.Context, tenantID, guestID stri
 	return identifiers, rows.Err()
 }
 
+func (r *TenantGuestSQL) CountEvents(ctx context.Context, tenantID, guestID string, since time.Time) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM event e
+		WHERE e.guest_id = $1 AND e.tenant_id = $2 AND e.occurred_at >= $3`, guestID, tenantID, since).Scan(&total)
+	return total, err
+}
+
 func (r *TenantGuestSQL) Events(ctx context.Context, tenantID, guestID string, since time.Time, limit, offset int) ([]domain.TenantGuestEvent, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT e.id, e.event_type_id, e.tenant_id, COALESCE(p.id, ''), e.external_id, e.occurred_at, e.amount_minor, e.currency

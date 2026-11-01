@@ -71,9 +71,10 @@ func (r *ExportSQL) ListMemberPage(ctx context.Context, exportID string, isContr
 	}
 	args = append(args, limit, offset)
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT m.export_id, m.guest_id, m.identifier_id, m.is_control, COALESCE(i.value_normalized, ''), COALESCE(i.id_type, '')
+		SELECT m.export_id, m.guest_id, m.identifier_id, m.is_control, COALESCE(i.value_normalized, ''), COALESCE(i.id_type, ''), COALESCE(g.display_name, '')
 		FROM export_member m
-		LEFT JOIN guest_identifier i ON i.id = m.identifier_id`+where+`
+		LEFT JOIN guest_identifier i ON i.id = m.identifier_id
+		LEFT JOIN guest g ON g.id = m.guest_id`+where+`
 		ORDER BY m.is_control, m.guest_id
 		LIMIT $`+strconv.Itoa(len(args)-1)+` OFFSET $`+strconv.Itoa(len(args)), args...)
 	if err != nil {
@@ -83,7 +84,7 @@ func (r *ExportSQL) ListMemberPage(ctx context.Context, exportID string, isContr
 	out := make([]domain.ExportMember, 0)
 	for rows.Next() {
 		var m domain.ExportMember
-		if err := rows.Scan(&m.ExportID, &m.GuestID, &m.IdentifierID, &m.IsControl, &m.Contact, &m.ContactType); err != nil {
+		if err := rows.Scan(&m.ExportID, &m.GuestID, &m.IdentifierID, &m.IsControl, &m.Contact, &m.ContactType, &m.DisplayName); err != nil {
 			return nil, 0, err
 		}
 		out = append(out, m)

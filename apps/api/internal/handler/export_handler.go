@@ -15,11 +15,39 @@ import (
 )
 
 type ExportHandler struct {
-	exports *service.ExportService
+	exports    *service.ExportService
+	authorizer accessAuthorizer
 }
 
-func NewExportHandler(exports *service.ExportService) *ExportHandler {
-	return &ExportHandler{exports: exports}
+func NewExportHandler(exports *service.ExportService, authorizer accessAuthorizer) *ExportHandler {
+	return &ExportHandler{exports: exports, authorizer: authorizer}
+}
+
+const (
+	exportMembersPermission    = "export.members.read"
+	guestDisplayNamePermission = "field.guest.display_name.read"
+)
+
+func suppressSmallExportCounts(item *service.ExportDTO) {
+	counts := []**int{&item.TotalInSegment, &item.WithContactCount, &item.NoContactCount, &item.BlockedByLimitCount, &item.ControlCount, &item.ExportedCount}
+	small := false
+	for _, count := range counts {
+		if *count != nil && isSmallCell(**count) {
+			small = true
+		}
+	}
+	if !small {
+		return
+	}
+	for _, count := range counts {
+		*count = nil
+	}
+	item.Suppressed = true
+}
+
+func (h *ExportHandler) hidesSmallCounts(r *http.Request) (bool, error) {
+	seesMembers, err := canReadGuestField(r, h.authorizer, exportMembersPermission)
+	return !seesMembers, err
 }
 
 func (h *ExportHandler) Preview(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +89,14 @@ func (h *ExportHandler) Create(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
+	hideSmall, err := h.hidesSmallCounts(r)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	if hideSmall {
+		suppressSmallExportCounts(exp)
+	}
 	httpx.WriteJSON(w, http.StatusCreated, exp)
 }
 
@@ -70,11 +106,19 @@ func (h *ExportHandler) Get(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
+	hideSmall, err := h.hidesSmallCounts(r)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	if hideSmall {
+		suppressSmallExportCounts(exp)
+	}
 	httpx.WriteJSON(w, http.StatusOK, exp)
 }
 
 func (h *ExportHandler) List(w http.ResponseWriter, r *http.Request) {
-	limit, offset := pageParams(withDefaultPageSize(r))
+	limit, offset := pageParams(r)
 	query := r.URL.Query()
 	filter := domain.ExportFilter{
 		SegmentID:  query.Get("segment_id"),
@@ -86,6 +130,16 @@ func (h *ExportHandler) List(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)
 		return
+	}
+	hideSmall, err := h.hidesSmallCounts(r)
+	if err != nil {
+		httpx.WriteDomainError(w, r, err)
+		return
+	}
+	if hideSmall {
+		for i := range items {
+			suppressSmallExportCounts(&items[i])
+		}
 	}
 	writePage(w, items, limit, offset, total)
 }

@@ -38,7 +38,7 @@ paths:
         - Exports
       operationId: createExport
       summary: Create a segment export to a channel
-      description: 'The `Idempotency-Key` header is required: repeating the same key returns the same export and creates no new `contact_log` rows. Order: key check → segment version `ready` (otherwise 409 `segment_not_ready`) → channel contact filter (`sms`/`push` — phone, `email` — email) → strictest limit rule → control group by `controlSeed` → transactional write with a repeated limit check. If no recipients remain — 409 `contact_limit_exceeded` with a breakdown of reasons. Up to 20,000 members are built synchronously (201); larger exports use the `export.build` job (202).'
+      description: 'The `Idempotency-Key` header is required: repeating the same key returns the same export and creates no new `contact_log` rows. Order: key check → segment version `ready` (otherwise 409 `segment_not_ready`) → channel contact filter (`sms`/`push` — phone, `email` — email) → strictest limit rule → control group by `controlSeed` → transactional write with a repeated limit check. If no recipients remain — 409 `contact_limit_exceeded` with a breakdown of reasons. The export is always built synchronously within the request (201); the request deadline is set by Q-23 (504 on timeout). Asynchronous builds are out of MVP scope.'
       x-roles:
         - R-1
       x-uc:
@@ -55,12 +55,6 @@ paths:
       responses:
         '201':
           description: Export ready
-          content:
-            application/json:
-              schema:
-                $ref: ../components/schemas/exports.yaml#/Export
-        '202':
-          description: Export is being built asynchronously
           content:
             application/json:
               schema:

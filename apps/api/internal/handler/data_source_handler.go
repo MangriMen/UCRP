@@ -91,7 +91,7 @@ func (h *DataSourceHandler) List(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, r, http.StatusBadRequest, "validation_error", problem)
 		return
 	}
-	limit, offset := pageParams(withDefaultPageSize(r))
+	limit, offset := pageParams(r)
 	items, total, err := h.sources.Search(r.Context(), filter, limit, offset)
 	if err != nil {
 		httpx.WriteDomainError(w, r, err)

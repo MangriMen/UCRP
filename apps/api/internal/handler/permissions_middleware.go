@@ -149,7 +149,6 @@ var protectedRoutes = []protectedRoute{
 	{http.MethodPost, "/merge-candidates/{id}/revert", []string{"identity.decide"}},
 	{http.MethodGet, "/merge-blocks", []string{"identity.queue.read"}},
 	{http.MethodDelete, "/merge-blocks/{id}", []string{"identity.decide"}},
-	{http.MethodGet, "/segments/templates", []string{"segment.read"}},
 	{http.MethodPost, "/segments/preview", []string{"segment.preview", "metric.segment_size.read"}},
 	{http.MethodGet, "/segments", []string{"segment.read", "metric.segment_size.read"}},
 	{http.MethodPost, "/segments", []string{"segment.write", "metric.segment_size.read"}},

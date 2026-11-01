@@ -18,7 +18,6 @@ import { useReplaceTenantCategoryRelations } from '../api/use-tenant-category-mu
 interface DraftRow {
   key: number
   relatedCategoryId: string
-  relatedCategoryName: string
   relationType: CategoryRelationType
   weightPct: string
 }
@@ -55,7 +54,6 @@ export function TenantCategoryRelationsEditor({
     relations.map((r, index) => ({
       key: index,
       relatedCategoryId: r.relatedCategoryId,
-      relatedCategoryName: r.relatedCategoryName ?? r.relatedCategoryId,
       relationType: r.relationType,
       weightPct: String(r.weightPct ?? DEFAULT_RELATION_WEIGHT_PCT),
     })),
@@ -66,6 +64,11 @@ export function TenantCategoryRelationsEditor({
     rows.some((r) => r.relatedCategoryId === categoryId && r.key !== exceptKey)
   const available = candidates.filter((c) => !isTaken(c.id))
 
+  const nameOf = (categoryId: string) =>
+    candidates.find((c) => c.id === categoryId)?.name ??
+    relations.find((r) => r.relatedCategoryId === categoryId)?.relatedCategoryName ??
+    categoryId
+
   const optionsFor = (row: DraftRow): Option[] => {
     const options = candidates
       .filter((c) => !isTaken(c.id, row.key))
@@ -73,7 +76,7 @@ export function TenantCategoryRelationsEditor({
     if (!options.some((o) => o.value === row.relatedCategoryId)) {
       options.unshift({
         value: row.relatedCategoryId,
-        label: `${row.relatedCategoryName} (неактивна)`,
+        label: `${nameOf(row.relatedCategoryId)} (неактивна)`,
       })
     }
     return options
@@ -91,7 +94,6 @@ export function TenantCategoryRelationsEditor({
       {
         key,
         relatedCategoryId: first.id,
-        relatedCategoryName: first.name,
         relationType: 'adjacent',
         weightPct: String(DEFAULT_RELATION_WEIGHT_PCT),
       },
@@ -128,14 +130,7 @@ export function TenantCategoryRelationsEditor({
                   ariaLabel={`Категория, связь ${position}`}
                   items={optionsFor(row)}
                   value={row.relatedCategoryId}
-                  onValueChange={(relatedCategoryId) =>
-                    updateRow(row.key, {
-                      relatedCategoryId,
-                      relatedCategoryName:
-                        candidates.find((c) => c.id === relatedCategoryId)?.name ??
-                        relatedCategoryId,
-                    })
-                  }
+                  onValueChange={(relatedCategoryId) => updateRow(row.key, { relatedCategoryId })}
                   className="min-w-40 flex-1"
                 />
                 <OptionSelect
@@ -167,7 +162,7 @@ export function TenantCategoryRelationsEditor({
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={`Удалить связь с «${row.relatedCategoryName}»`}
+                  aria-label={`Удалить связь с «${nameOf(row.relatedCategoryId)}»`}
                   onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))}
                 >
                   <Trash2Icon />

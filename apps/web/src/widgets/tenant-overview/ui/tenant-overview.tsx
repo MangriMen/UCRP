@@ -15,7 +15,13 @@ import {
   TENANT_REVENUE_PERMISSION,
 } from '@/entities/tenant'
 import { useAuth } from '@/entities/user'
-import { daysAgo, type Period } from '@/shared/lib/period'
+import {
+  DAY_MS,
+  daysAgo,
+  isPeriodReversed,
+  PERIOD_REVERSED_MESSAGE,
+  type Period,
+} from '@/shared/lib/period'
 import { EmptyState } from '@/shared/ui/empty-state'
 import { ErrorBanner } from '@/shared/ui/error-banner'
 import { PeriodFilter } from '@/shared/ui/period-filter'
@@ -26,7 +32,6 @@ import { SmallCellNotice } from './small-cell-notice'
 
 const DEFAULT_PERIOD_DAYS = 29
 const MAX_PERIOD_DAYS = 366
-const DAY_MS = 86_400_000
 
 type AggregateValue = (data: TenantVisitAggregate) => number | null | undefined
 
@@ -98,7 +103,7 @@ const periodLength = ({ from, to }: Period) => (Date.parse(to) - Date.parse(from
 
 const periodError = (period: Period) => {
   if (period.from === '' || period.to === '') return 'Укажите начало и конец периода'
-  if (period.from > period.to) return 'Начало периода позже конца'
+  if (isPeriodReversed(period)) return PERIOD_REVERSED_MESSAGE
   if (periodLength(period) > MAX_PERIOD_DAYS) return 'Период не может быть длиннее 366 дней'
   return undefined
 }

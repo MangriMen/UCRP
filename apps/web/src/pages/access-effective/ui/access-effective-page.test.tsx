@@ -37,7 +37,7 @@ describe('AccessEffectivePage', () => {
     expect(await screen.findByText('Агрегаты только своего арендатора')).toBeInTheDocument()
     expect(screen.getByText('Справочники')).toBeInTheDocument()
     expect(screen.getByText(/Заря: прав 5/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Гранты субъекта' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Гранты субъекта' })).toHaveAttribute(
       'href',
       '/access/grants?subject_type=tenant&subject_id=tenant-0001',
     )

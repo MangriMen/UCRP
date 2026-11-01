@@ -1,7 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
+import { server } from '@/app/mocks/server'
+import { API } from '@/shared/api/mocks/helpers'
 import { TenantOverview } from './tenant-overview'
 
 const auth = vi.hoisted(() => ({ permissions: [] as string[] }))
@@ -32,15 +35,38 @@ function renderOverview(tenantId: string, url = '/?from=2026-10-01&to=2026-10-07
 }
 
 describe('TenantOverview', () => {
-  it('shows every granted metric and marks a suppressed amount', async () => {
+  it('shows every granted metric', async () => {
     auth.permissions = ALL_METRICS
     renderOverview('tenant-0002')
     expect(await screen.findByTestId('repeat-visits-count')).toHaveTextContent('82')
     expect(screen.getByTestId('first-purchases-count')).toHaveTextContent('17')
     expect(screen.getByTestId('revenue-total')).toHaveTextContent('45 120,00')
-    expect(screen.getByTestId('avg-check')).toHaveTextContent('меньше 5 гостей')
+    expect(screen.getByTestId('avg-check')).toHaveTextContent('960,00')
     expect(screen.getByText('Часть значений скрыта')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: /Выручка по дням: 7 дн\./ })).toBeInTheDocument()
+  })
+
+  it('marks suppressed amounts', async () => {
+    auth.permissions = ALL_METRICS
+    server.use(
+      http.get(`${API}/tenants/:id/aggregates`, () =>
+        HttpResponse.json({
+          visitsCount: 3,
+          guestsCount: 3,
+          newGuestsCount: 1,
+          repeatVisitsCount: 2,
+          revenueTotalMinor: null,
+          avgCheckMinor: null,
+          firstPurchasesCount: 1,
+          suppressed: true,
+          suppressionThreshold: 5,
+          series: [],
+        }),
+      ),
+    )
+    renderOverview('tenant-0002')
+    expect(await screen.findByTestId('revenue-total')).toHaveTextContent('меньше 5 гостей')
+    expect(screen.getByTestId('avg-check')).toHaveTextContent('меньше 5 гостей')
   })
 
   it('hides metrics without their permission', async () => {

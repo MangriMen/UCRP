@@ -1,11 +1,10 @@
-import { Link } from 'react-router'
 import { useDataSources, type DataSource } from '@/entities/data-source'
 import { useDataSourceTypes } from '@/entities/data-source-type'
 import { ImportStatusBadge } from '@/entities/import-batch'
 import { formatDateTime } from '@/shared/lib/format'
 import { useListParams } from '@/shared/lib/list-params'
 import { ActiveBadge } from '@/shared/ui/active-badge'
-import { Button } from '@/shared/ui/button'
+import { ButtonLink } from '@/shared/ui/button'
 import { DataTable, type Column } from '@/shared/ui/data-table'
 
 export function SourcesTab({ tenantId }: { tenantId: string }) {
@@ -35,9 +34,9 @@ export function SourcesTab({ tenantId }: { tenantId: string }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-end">
-        <Button variant="outline" render={<Link to="/data-sources" />}>
+        <ButtonLink to="/data-sources" variant="outline">
           Все источники данных
-        </Button>
+        </ButtonLink>
       </div>
       <DataTable
         columns={columns}

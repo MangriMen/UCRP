@@ -187,6 +187,12 @@ func TestImportRejectedRowCodes(t *testing.T) {
 			t.Fatalf("rejected rows must contain error code %q, got %v", want, codes)
 		}
 	}
+
+	path := "/api/v1/imports/" + batchID + "/rejected-rows"
+	pageItems, total := listPage(t, s, s.API, path, map[string][]string{"page_size": {"1"}})
+	if len(pageItems) != 1 || total != len(items) || total < 2 {
+		t.Fatalf("rejected rows meta.total: expected %d with one item per page, got total=%d items=%d", len(items), total, len(pageItems))
+	}
 }
 
 func TestImportRejectedRowsCSV(t *testing.T) {

@@ -157,38 +157,39 @@ func (s *TenantGuestService) Profile(ctx context.Context, principal domain.Princ
 	return result, nil
 }
 
-func (s *TenantGuestService) Events(ctx context.Context, principal domain.Principal, guestID string, limit, offset int) (result []TenantGuestEvent, err error) {
+func (s *TenantGuestService) Events(ctx context.Context, principal domain.Principal, guestID string, limit, offset int) (result []TenantGuestEvent, total int, err error) {
 	version, err := s.policy.PolicyVersion(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() {
 		if err == nil {
 			err = s.checkVersion(ctx, version)
 			if err != nil {
 				result = nil
+				total = 0
 			}
 		}
 	}()
 	limits := tenantGuestLimits{masked: make(map[string]bool)}
 	allowed, err := s.decide(ctx, principal, "guest.event.read", &limits)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if !allowed {
-		return nil, domain.ErrForbidden
+		return nil, 0, domain.ErrForbidden
 	}
 	amountAllowed, err := s.decide(ctx, principal, "field.event.amount.read", &limits)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	externalAllowed, err := s.decide(ctx, principal, "field.event.external_id.read", &limits)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	since := limits.since()
 	if _, err := s.repo.Get(ctx, principal.TenantID, guestID, since); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if limit <= 0 || limit > 200 {
 		limit = 50
@@ -196,9 +197,16 @@ func (s *TenantGuestService) Events(ctx context.Context, principal domain.Princi
 	if offset < 0 {
 		offset = 0
 	}
+	total, err = s.repo.CountEvents(ctx, principal.TenantID, guestID, since)
+	if err != nil {
+		return nil, 0, err
+	}
 	if limits.rowLimit > 0 {
+		if total > limits.rowLimit {
+			total = limits.rowLimit
+		}
 		if offset >= limits.rowLimit {
-			return []TenantGuestEvent{}, nil
+			return []TenantGuestEvent{}, total, nil
 		}
 		if limit > limits.rowLimit-offset {
 			limit = limits.rowLimit - offset
@@ -206,7 +214,7 @@ func (s *TenantGuestService) Events(ctx context.Context, principal domain.Princi
 	}
 	events, err := s.repo.Events(ctx, principal.TenantID, guestID, since, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	result = make([]TenantGuestEvent, 0, len(events))
 	for _, event := range events {
@@ -223,7 +231,7 @@ func (s *TenantGuestService) Events(ctx context.Context, principal domain.Princi
 		}
 		result = append(result, item)
 	}
-	return result, nil
+	return result, total, nil
 }
 
 func (s *TenantGuestService) checkVersion(ctx context.Context, version int64) error {
