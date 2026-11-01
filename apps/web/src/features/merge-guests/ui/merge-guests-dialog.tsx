@@ -38,12 +38,15 @@ interface GuestPickerProps {
 function GuestPicker({ excludedGuestId, selectedGuestId, onSelect }: GuestPickerProps) {
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebouncedValue(query.trim(), SEARCH_DEBOUNCE_MS)
-  const guests = useGuestSearch({
-    query: debouncedQuery,
-    status: 'active',
-    pageSize: RESULTS_PAGE_SIZE,
-  })
   const isSearchable = debouncedQuery.length >= MIN_SEARCH_LENGTH
+  const guests = useGuestSearch(
+    {
+      query: debouncedQuery,
+      status: 'active',
+      pageSize: RESULTS_PAGE_SIZE,
+    },
+    { enabled: isSearchable },
+  )
   const candidates = guests.data?.items.filter((item) => item.id !== excludedGuestId) ?? []
 
   const renderResults = () => {

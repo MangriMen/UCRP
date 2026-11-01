@@ -82,6 +82,20 @@ describe('MergeGuestsDialog', () => {
     expect(screen.queryByText('Мария Иванова')).not.toBeInTheDocument()
   })
 
+  it('does not request guests while the query is too short', async () => {
+    const requested = vi.fn()
+    server.use(
+      http.get(`${API}/guests`, () => {
+        requested()
+        return HttpResponse.json({ items: [] })
+      }),
+    )
+    await openDialog()
+    await userEvent.type(screen.getByLabelText('Поиск гостя'), 'И')
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    expect(requested).not.toHaveBeenCalled()
+  })
+
   it('keeps the submit button disabled until a guest is selected', async () => {
     await openDialog()
     expect(screen.getByRole('button', { name: 'Объединить' })).toBeDisabled()
