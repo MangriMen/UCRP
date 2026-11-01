@@ -75,4 +75,16 @@ describe('DataTable', () => {
     )
     expect(screen.getByRole('alert')).toBeInTheDocument()
   })
+
+  it('offers to reset filters on an empty table only when a handler is given', async () => {
+    const onResetFilters = vi.fn()
+    const { rerender } = render(
+      <DataTable columns={columns} rows={[]} getRowId={getRowId} onResetFilters={onResetFilters} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Сбросить фильтры' }))
+    expect(onResetFilters).toHaveBeenCalledTimes(1)
+
+    rerender(<DataTable columns={columns} rows={[]} getRowId={getRowId} />)
+    expect(screen.queryByRole('button', { name: 'Сбросить фильтры' })).not.toBeInTheDocument()
+  })
 })

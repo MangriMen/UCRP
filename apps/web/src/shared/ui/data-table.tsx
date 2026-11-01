@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
 import type { Schema } from '@/shared/api/types'
 import { nextSort, type SortState } from '@/shared/lib/list-params'
+import { Button } from './button'
 import { EmptyState } from './empty-state'
 import { ErrorBanner } from './error-banner'
 import { Skeleton } from './skeleton'
@@ -23,7 +24,7 @@ interface DataTableProps<T> {
   isLoading?: boolean
   error?: unknown
   emptyTitle?: string
-  emptyAction?: ReactNode
+  onResetFilters?: () => void
   meta?: Schema<'PageMeta'>
   onPageChange?: (page: number) => void
   onPageSizeChange?: (pageSize: number) => void
@@ -55,7 +56,7 @@ export function DataTable<T>({
   isLoading,
   error,
   emptyTitle = 'Нет данных',
-  emptyAction,
+  onResetFilters,
   meta,
   onPageChange,
   onPageSizeChange,
@@ -64,8 +65,14 @@ export function DataTable<T>({
   onRowClick,
 }: DataTableProps<T>) {
   if (error) return <ErrorBanner error={error} />
-  if (!isLoading && rows?.length === 0)
-    return <EmptyState title={emptyTitle} action={emptyAction} />
+  if (!isLoading && rows?.length === 0) {
+    const resetAction = onResetFilters && (
+      <Button type="button" variant="outline" onClick={onResetFilters}>
+        Сбросить фильтры
+      </Button>
+    )
+    return <EmptyState title={emptyTitle} action={resetAction} />
+  }
 
   return (
     <div>

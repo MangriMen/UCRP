@@ -55,11 +55,12 @@ export function AccessGrantsPage() {
   const navigate = useNavigate()
   const { can } = useAuth()
   const directory = useSubjectDirectory()
-  const { get, update, page, pageSize, setPage, setPageSize, reset } = useListParams()
+  const params = useListParams()
+  const { get, update, page, pageSize, setPage, setPageSize, reset } = params
   const status = pick(STATUSES, get('status'))
   const subjectType = parseSubjectType(get('subject_type'))
   const subjectId = get('subject_id')
-  const isFiltered = FILTER_KEYS.some((key) => get(key) !== '')
+  const isFiltered = params.isFiltered(FILTER_KEYS)
 
   const grants = useAccessGrants({
     status,
@@ -151,13 +152,7 @@ export function AccessGrantsPage() {
         isLoading={grants.isLoading}
         error={grants.error}
         emptyTitle={isFiltered ? 'Гранты по фильтрам не найдены' : 'Грантов пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={reset}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? reset : undefined}
         meta={grants.data?.meta}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}

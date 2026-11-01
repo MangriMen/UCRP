@@ -14,7 +14,7 @@ interface AccessAuditTableProps {
   onPageChange: (page: number) => void
   onPageSizeChange?: (pageSize: number) => void
   emptyTitle: string
-  emptyAction?: ReactNode
+  onResetFilters?: () => void
 }
 
 const objectCell = (entry: AccessAuditEntry) =>
@@ -32,7 +32,7 @@ export function AccessAuditTable({
   onPageChange,
   onPageSizeChange,
   emptyTitle,
-  emptyAction,
+  onResetFilters,
 }: AccessAuditTableProps) {
   const audit = useAccessAudit(filters)
   const columns: Column<AccessAuditEntry>[] = [
@@ -55,7 +55,7 @@ export function AccessAuditTable({
       isLoading={audit.isLoading}
       error={audit.error}
       emptyTitle={emptyTitle}
-      emptyAction={emptyAction}
+      onResetFilters={onResetFilters}
       meta={audit.data?.meta}
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}

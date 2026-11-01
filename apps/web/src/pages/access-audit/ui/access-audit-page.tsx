@@ -23,7 +23,7 @@ export function AccessAuditPage() {
   const from = get('from')
   const to = get('to')
   const invalidPeriod = from !== '' && to !== '' && from > to
-  const isFiltered = FILTER_KEYS.some((key) => get(key) !== '')
+  const isFiltered = params.isFiltered(FILTER_KEYS)
 
   const resetFilters = () => {
     grant.clear()
@@ -87,13 +87,7 @@ export function AccessAuditPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
         emptyTitle={isFiltered ? 'Записи по фильтрам не найдены' : 'Записей пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={resetFilters}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? resetFilters : undefined}
       />
     </div>
   )

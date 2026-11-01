@@ -32,7 +32,7 @@ export function UsersManager() {
   const { get, update, page, pageSize, setPage, setPageSize, reset } = params
   const search = useDebouncedSearchParam(params, 'q')
   const role = get('role')
-  const isFiltered = get('q') !== '' || role !== ''
+  const isFiltered = params.isFiltered(['q', 'role'])
 
   const users = useUsers({
     q: get('q') || undefined,
@@ -138,13 +138,7 @@ export function UsersManager() {
         isLoading={users.isLoading}
         error={users.error}
         emptyTitle={isFiltered ? 'Пользователи по фильтрам не найдены' : 'Пользователей пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={resetFilters}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? resetFilters : undefined}
         meta={users.data?.meta}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}

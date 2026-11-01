@@ -60,9 +60,10 @@ const baseColumns: Column<Export>[] = [
 export function ExportsPage() {
   const navigate = useNavigate()
   const { can } = useAuth()
-  const { get, update, page, pageSize, setPage, setPageSize, reset } = useListParams()
+  const params = useListParams()
+  const { get, update, page, pageSize, setPage, setPageSize, reset } = params
   const columns = can('export.download') ? [...baseColumns, downloadColumn] : baseColumns
-  const isFiltered = FILTER_KEYS.some((key) => get(key) !== '')
+  const isFiltered = params.isFiltered(FILTER_KEYS)
   const exports = useExports({
     channel: (get('channel') as ExportChannel) || undefined,
     status: (get('status') as ExportStatus) || undefined,
@@ -110,13 +111,7 @@ export function ExportsPage() {
         isLoading={exports.isLoading}
         error={exports.error}
         emptyTitle={isFiltered ? 'Выгрузки по фильтрам не найдены' : 'Выгрузок пока нет'}
-        emptyAction={
-          isFiltered ? (
-            <Button type="button" variant="outline" onClick={reset}>
-              Сбросить фильтры
-            </Button>
-          ) : undefined
-        }
+        onResetFilters={isFiltered ? reset : undefined}
         meta={exports.data?.meta}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}

@@ -82,6 +82,11 @@ export function useListParams() {
     [update],
   )
 
+  const isFiltered = useCallback(
+    (keys: readonly string[]) => keys.some((key) => get(key) !== ''),
+    [get],
+  )
+
   const reset = useCallback(() => setSearchParams(new URLSearchParams()), [setSearchParams])
 
   return {
@@ -93,6 +98,7 @@ export function useListParams() {
     setPage,
     setPageSize,
     setSort,
+    isFiltered,
     reset,
   }
 }
