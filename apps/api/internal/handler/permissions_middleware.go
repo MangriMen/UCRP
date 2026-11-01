@@ -220,6 +220,7 @@ var protectedRoutes = []protectedRoute{
 	{http.MethodGet, "/campaigns", []string{"campaign.read"}},
 	{http.MethodPost, "/campaigns", []string{"campaign.write"}},
 	{http.MethodGet, "/campaigns/{id}", []string{"campaign.read"}},
+	{http.MethodGet, "/campaigns/{id}/results", []string{"campaign.read"}},
 	{http.MethodPatch, "/campaigns/{id}", []string{"campaign.write"}},
 	{http.MethodDelete, "/campaigns/{id}", []string{"campaign.write"}},
 	{http.MethodGet, "/dashboard/cross-tenant", []string{"dashboard.read", "metric.cross_tenant_distribution.read", "metric.cross_tenant_rate.read"}},

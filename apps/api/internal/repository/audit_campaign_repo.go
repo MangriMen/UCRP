@@ -66,6 +66,14 @@ func (r *AuditSQL) Insert(ctx context.Context, a *domain.AuditLog) error {
 	return err
 }
 
+const (
+	campaignColumns = `c.id, c.name, COALESCE(c.target_tenant_id, ''), COALESCE(t.name, ''), COALESCE(c.segment_id, ''), COALESCE(sg.name, ''),
+		c.attribution_days, c.status, c.starts_at, c.ends_at, COALESCE(c.created_by, ''), c.created_at, c.created_at`
+	campaignFrom = `campaign c
+		LEFT JOIN tenant t ON t.id = c.target_tenant_id
+		LEFT JOIN segment sg ON sg.id = c.segment_id`
+)
+
 type CampaignSQL struct {
 	db *sql.DB
 }
@@ -79,8 +87,8 @@ func (r *CampaignSQL) List(ctx context.Context, limit, offset int) ([]domain.Cam
 		limit = 50
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, name, COALESCE(target_tenant_id, ''), COALESCE(segment_id, ''), attribution_days, status, COALESCE(created_by, ''), created_at, created_at
-		FROM campaign ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+		SELECT `+campaignColumns+`
+		FROM `+campaignFrom+` ORDER BY c.created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -98,8 +106,8 @@ func (r *CampaignSQL) List(ctx context.Context, limit, offset int) ([]domain.Cam
 
 func (r *CampaignSQL) GetByID(ctx context.Context, id string) (*domain.Campaign, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, name, COALESCE(target_tenant_id, ''), COALESCE(segment_id, ''), attribution_days, status, COALESCE(created_by, ''), created_at, created_at
-		FROM campaign WHERE id = $1`, id)
+		SELECT `+campaignColumns+`
+		FROM `+campaignFrom+` WHERE c.id = $1`, id)
 	c, err := scanCampaign(row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrNotFound
@@ -136,10 +144,54 @@ func (r *CampaignSQL) HasExports(ctx context.Context, campaignID string) (bool, 
 	return n > 0, err
 }
 
+func (r *CampaignSQL) Conversion(ctx context.Context, filter domain.ConversionFilter) (domain.Conversion, error) {
+	var out domain.Conversion
+	err := r.db.QueryRowContext(ctx, `
+		WITH members AS (
+			SELECT m.guest_id, m.is_control, c.target_tenant_id, c.attribution_days,
+				COALESCE(cl.contacted_at, j.created_at) AS contacted_at
+			FROM export_job j
+			JOIN campaign c ON c.id = j.campaign_id
+			JOIN export_member m ON m.export_id = j.id
+			LEFT JOIN contact_log cl ON cl.export_id = j.id AND cl.guest_id = m.guest_id
+			WHERE (m.is_control OR cl.id IS NOT NULL)
+				AND ($1 = '' OR c.id = $1)
+				AND ($2::timestamp IS NULL OR j.created_at >= $2)
+				AND ($3::timestamp IS NULL OR j.created_at <= $3)
+		),
+		scored AS (
+			SELECT mb.is_control, EXISTS (
+				SELECT 1 FROM event e
+				WHERE e.guest_id = mb.guest_id AND e.tenant_id = mb.target_tenant_id
+					AND e.occurred_at > mb.contacted_at
+					AND e.occurred_at <= mb.contacted_at + make_interval(days => mb.attribution_days::int)
+			) AS converted
+			FROM members mb
+		)
+		SELECT
+			COUNT(*) FILTER (WHERE NOT is_control),
+			COUNT(*) FILTER (WHERE is_control),
+			COUNT(*) FILTER (WHERE NOT is_control AND converted),
+			COUNT(*) FILTER (WHERE is_control AND converted)
+		FROM scored`, filter.CampaignID, nullTime(filter.From), nullTime(filter.To),
+	).Scan(&out.Recipients, &out.ControlGroup, &out.Conversions, &out.ControlConversions)
+	return out, err
+}
+
 func scanCampaign(s scanner) (*domain.Campaign, error) {
-	var c domain.Campaign
-	if err := s.Scan(&c.ID, &c.Name, &c.TenantID, &c.SegmentID, &c.AttributionDays, &c.Status, &c.CreatedBy, &c.CreatedAt, &c.UpdatedAt); err != nil {
+	var (
+		c        domain.Campaign
+		startsAt sql.NullTime
+		endsAt   sql.NullTime
+	)
+	if err := s.Scan(&c.ID, &c.Name, &c.TenantID, &c.TenantName, &c.SegmentID, &c.SegmentName, &c.AttributionDays, &c.Status, &startsAt, &endsAt, &c.CreatedBy, &c.CreatedAt, &c.UpdatedAt); err != nil {
 		return nil, err
+	}
+	if startsAt.Valid {
+		c.StartsAt = &startsAt.Time
+	}
+	if endsAt.Valid {
+		c.EndsAt = &endsAt.Time
 	}
 	return &c, nil
 }

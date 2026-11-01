@@ -10,7 +10,12 @@ export { GuestStatusBadge } from './ui/guest-status-badge'
 export { MaskedIdentifierList } from './ui/masked-identifier-list'
 export { guestKeys, MIN_SEARCH_LENGTH } from './model/keys'
 export type { GuestContactFilters, GuestEventFilters, GuestSearchFilters } from './model/keys'
-export { contactChannelLabels, guestStatusLabels, identifierTypeLabels } from './model/labels'
+export {
+  contactChannelLabels,
+  guestDisplayName,
+  guestStatusLabels,
+  identifierTypeLabels,
+} from './model/labels'
 export type {
   ContactChannel,
   Guest,

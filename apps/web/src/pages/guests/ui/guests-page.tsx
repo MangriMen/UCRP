@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import {
+  guestDisplayName,
   GuestStatusBadge,
   MaskedIdentifierList,
   useGuestSearch,
@@ -22,7 +23,7 @@ const SORTABLE_FIELDS = ['eventCount', 'totalAmountMinor', 'firstSeenAt', 'lastS
 const formatDate = (value?: string | null) => (value ? formatDateTime(value) : '—')
 
 const identityColumns: Column<GuestListItem>[] = [
-  { id: 'name', header: 'Гость', cell: (g) => g.displayName ?? 'Без имени' },
+  { id: 'name', header: 'Гость', cell: (g) => guestDisplayName(g.displayName) },
   { id: 'status', header: 'Статус', cell: (g) => <GuestStatusBadge status={g.status} /> },
 ]
 

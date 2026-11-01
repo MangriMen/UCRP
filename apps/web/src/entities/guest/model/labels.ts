@@ -20,3 +20,8 @@ export const contactChannelLabels: Record<ContactChannel, string> = {
   push: 'Push',
   email: 'Email',
 }
+
+export const UNNAMED_GUEST_LABEL = 'Без имени'
+
+export const guestDisplayName = (displayName?: string | null) =>
+  displayName?.trim() || UNNAMED_GUEST_LABEL

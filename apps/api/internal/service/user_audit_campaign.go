@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"math"
 	"strings"
 	"time"
 
@@ -199,15 +200,19 @@ func NewCampaignService(campaigns domain.CampaignRepo) *CampaignService {
 }
 
 type CampaignDTO struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	TargetTenantID  string    `json:"targetTenantId"`
-	SegmentID       string    `json:"segmentId"`
-	AttributionDays int       `json:"attributionDays"`
-	Status          string    `json:"status"`
-	CreatedBy       string    `json:"createdBy,omitempty"`
-	CreatedAt       time.Time `json:"createdAt"`
-	UpdatedAt       time.Time `json:"updatedAt"`
+	ID               string     `json:"id"`
+	Name             string     `json:"name"`
+	TargetTenantID   string     `json:"targetTenantId"`
+	TargetTenantName string     `json:"targetTenantName,omitempty"`
+	SegmentID        string     `json:"segmentId"`
+	SegmentName      string     `json:"segmentName,omitempty"`
+	AttributionDays  int        `json:"attributionDays"`
+	Status           string     `json:"status"`
+	StartsAt         *time.Time `json:"startsAt"`
+	EndsAt           *time.Time `json:"endsAt"`
+	CreatedBy        string     `json:"createdBy,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
 }
 
 type CampaignRequest struct {
@@ -305,10 +310,59 @@ func (s *CampaignService) Delete(ctx context.Context, id string) error {
 	return s.campaigns.Delete(ctx, id)
 }
 
+type CampaignResultsDTO struct {
+	CampaignID            string   `json:"campaignId"`
+	SegmentID             string   `json:"segmentId,omitempty"`
+	AttributionDays       int      `json:"attributionDays"`
+	Recipients            int      `json:"recipients"`
+	ControlGroup          int      `json:"controlGroup"`
+	Conversions           int      `json:"conversions"`
+	ConversionRate        float64  `json:"conversionRate"`
+	ControlConversions    int      `json:"controlConversions"`
+	ControlConversionRate float64  `json:"controlConversionRate"`
+	ConversionLift        float64  `json:"conversionLift"`
+	IncrementalVisits     int      `json:"incrementalVisits"`
+	PValue                *float64 `json:"pValue"`
+	IsSignificant         *bool    `json:"isSignificant"`
+	ComputedAt            string   `json:"computedAt"`
+}
+
+func (s *CampaignService) Results(ctx context.Context, id string) (*CampaignResultsDTO, error) {
+	c, err := s.campaigns.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	conversion, err := s.campaigns.Conversion(ctx, domain.ConversionFilter{CampaignID: id})
+	if err != nil {
+		return nil, err
+	}
+	out := &CampaignResultsDTO{
+		CampaignID:            c.ID,
+		SegmentID:             c.SegmentID,
+		AttributionDays:       c.AttributionDays,
+		Recipients:            conversion.Recipients,
+		ControlGroup:          conversion.ControlGroup,
+		Conversions:           conversion.Conversions,
+		ConversionRate:        conversion.Rate(),
+		ControlConversions:    conversion.ControlConversions,
+		ControlConversionRate: conversion.ControlRate(),
+		ConversionLift:        conversion.Lift(),
+		IncrementalVisits:     int(math.Round(conversion.Lift() * float64(conversion.Recipients))),
+		ComputedAt:            s.clock.Now().UTC().Format(time.RFC3339),
+	}
+	if pValue, ok := conversion.PValue(); ok {
+		significant := pValue < 0.05
+		out.PValue = &pValue
+		out.IsSignificant = &significant
+	}
+	return out, nil
+}
+
 func toCampaignDTO(c domain.Campaign) CampaignDTO {
 	return CampaignDTO{
-		ID: c.ID, Name: c.Name, TargetTenantID: c.TenantID, SegmentID: c.SegmentID,
-		AttributionDays: c.AttributionDays, Status: c.Status,
+		ID: c.ID, Name: c.Name, TargetTenantID: c.TenantID, TargetTenantName: c.TenantName,
+		SegmentID: c.SegmentID, SegmentName: c.SegmentName,
+		AttributionDays: c.AttributionDays, Status: c.Status, StartsAt: c.StartsAt, EndsAt: c.EndsAt,
 		CreatedBy: c.CreatedBy, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt,
 	}
 }

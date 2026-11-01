@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { GuestStatusBadge, useTenantGuests, type Guest } from '@/entities/guest'
+import { guestDisplayName, GuestStatusBadge, useTenantGuests, type Guest } from '@/entities/guest'
 import { useAuth } from '@/entities/user'
 import { formatDateTime, formatMoney } from '@/shared/lib/format'
 import { formatSort, useListParams } from '@/shared/lib/list-params'
@@ -11,7 +11,7 @@ const AMOUNT_PERMISSION = 'field.guest.total_amount.read'
 const formatDate = (value?: string | null) => (value ? formatDateTime(value) : '—')
 
 const baseColumns: Column<Guest>[] = [
-  { id: 'name', header: 'Гость', cell: (g) => g.displayName ?? 'Без имени' },
+  { id: 'name', header: 'Гость', cell: (g) => guestDisplayName(g.displayName) },
   { id: 'status', header: 'Статус', cell: (g) => <GuestStatusBadge status={g.status} /> },
   {
     id: 'eventCount',

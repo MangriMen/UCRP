@@ -5,7 +5,7 @@ export { userKeys } from './model/keys'
 export type { UserListFilters } from './model/keys'
 export { endSession, startSession } from './model/session'
 export { roleLabels } from './model/role-labels'
-export { hasAnyPermission, hasPermission } from './model/permissions'
+export { hasAllPermissions, hasAnyPermission, hasPermission } from './model/permissions'
 export type { PermissionCode } from './model/permissions'
 export type {
   InvitableRole,
