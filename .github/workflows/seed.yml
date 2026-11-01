@@ -1,0 +1,63 @@
+name: Seed demo data
+
+on:
+  workflow_dispatch:
+    inputs:
+      guests:
+        description: Number of background guests (10..2000)
+        type: number
+        default: 92
+      reset:
+        description: Remove demo data instead of seeding
+        type: boolean
+        default: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    environment: ucrp-prod
+    concurrency:
+      group: ucrp-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Run seed via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          COMPOSE_FILE_NAME: ${{ vars.COMPOSE_FILE_NAME }}
+          SERVER_DIR: ${{ vars.SERVER_DIR }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEED_GUESTS: ${{ inputs.guests }}
+          SEED_RESET: ${{ inputs.reset }}
+          UCRP_JWT_SECRET: ${{ secrets.UCRP_JWT_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: COMPOSE_FILE_NAME,SERVER_DIR,GHCR_USER,GHCR_TOKEN,SEED_GUESTS,SEED_RESET,UCRP_JWT_SECRET,POSTGRES_PASSWORD
+          script: |
+            set -e
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            trap 'docker logout ghcr.io' EXIT
+
+            cd "$SERVER_DIR"
+
+            OVERRIDE="${COMPOSE_FILE_NAME%.yml}.override.yml"
+            if [ -f "$OVERRIDE" ]; then
+              COMPOSE="docker compose -f $COMPOSE_FILE_NAME -f $OVERRIDE --profile tools"
+            else
+              COMPOSE="docker compose -f $COMPOSE_FILE_NAME --profile tools"
+            fi
+
+            export IMAGE_TAG=latest
+
+            $COMPOSE pull seed
+
+            if [ "$SEED_RESET" = "true" ]; then
+              $COMPOSE run --rm seed -reset
+            else
+              $COMPOSE run --rm seed -guests "$SEED_GUESTS"
+            fi

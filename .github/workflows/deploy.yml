@@ -92,6 +92,8 @@ jobs:
             image: mangrimen/ucrp/ucrp-api
           - app: worker
             image: mangrimen/ucrp/ucrp-worker
+          - app: seed
+            image: mangrimen/ucrp/ucrp-seed
     steps:
       - uses: actions/checkout@v7
 

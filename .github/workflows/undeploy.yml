@@ -1,0 +1,59 @@
+name: Undeploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      remove-volumes:
+        description: Also remove volumes (database and uploads are lost)
+        type: boolean
+        default: false
+      confirm:
+        description: Type "down" to confirm
+        type: string
+        required: true
+
+jobs:
+  undeploy:
+    runs-on: ubuntu-latest
+    environment: ucrp-prod
+    concurrency:
+      group: ucrp-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Check confirmation
+        if: ${{ inputs.confirm != 'down' }}
+        run: |
+          echo "Confirmation must be \"down\"" >&2
+          exit 1
+
+      - name: Compose down via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          COMPOSE_FILE_NAME: ${{ vars.COMPOSE_FILE_NAME }}
+          SERVER_DIR: ${{ vars.SERVER_DIR }}
+          REMOVE_VOLUMES: ${{ inputs.remove-volumes }}
+          UCRP_JWT_SECRET: ${{ secrets.UCRP_JWT_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: COMPOSE_FILE_NAME,SERVER_DIR,REMOVE_VOLUMES,UCRP_JWT_SECRET,POSTGRES_PASSWORD
+          script: |
+            set -e
+
+            cd "$SERVER_DIR"
+
+            OVERRIDE="${COMPOSE_FILE_NAME%.yml}.override.yml"
+            if [ -f "$OVERRIDE" ]; then
+              COMPOSE="docker compose -f $COMPOSE_FILE_NAME -f $OVERRIDE"
+            else
+              COMPOSE="docker compose -f $COMPOSE_FILE_NAME"
+            fi
+
+            if [ "$REMOVE_VOLUMES" = "true" ]; then
+              $COMPOSE --profile tools down --remove-orphans --volumes
+            else
+              $COMPOSE --profile tools down --remove-orphans
+            fi
