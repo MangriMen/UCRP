@@ -40,9 +40,7 @@ func (h *RecommendationHandler) SegmentRecommendations(w http.ResponseWriter, r 
 		httpx.WriteDomainError(w, r, err)
 		return
 	}
-	response := segmentRecommendationResponse(items)
-	response["segmentId"] = segmentID
-	httpx.WriteJSON(w, http.StatusOK, response)
+	httpx.WriteJSON(w, http.StatusOK, segmentRecommendationResponse(segmentID, items))
 }
 
 func (h *RecommendationHandler) Refresh(w http.ResponseWriter, r *http.Request) {
